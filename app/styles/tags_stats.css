@@ -1,0 +1,603 @@
+/* =========================================================
+   TAGS STATS PAGE
+   ../../../styles/tags_stats.css
+========================================================= */
+
+/* =========================
+   PAGE
+========================= */
+
+.tags_stats_page {
+    min-height: 100vh;
+    padding: 24px;
+    background: #f4f7fb;
+}
+
+/* =========================
+   LOADING
+========================= */
+
+.tags_stats_loading {
+    min-height: 100vh;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    font-size: 18px;
+    font-weight: 600;
+
+    color: #374151;
+    background: #f4f7fb;
+}
+
+/* =========================================
+   HERO
+========================================= */
+
+.tags_dashboard_hero {
+    width: 100%;
+    background: linear-gradient(135deg, #0f172a 0%, #111827 100%);
+    border-radius: 24px;
+    padding: 28px 32px;
+    margin-bottom: 28px;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+
+    box-shadow:
+        0 10px 30px rgba(0, 0, 0, 0.10),
+        inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.tags_dashboard_hero_left {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+}
+
+.tags_dashboard_logo_box {
+    width: 86px;
+    height: 86px;
+    border-radius: 22px;
+    background: rgba(255, 255, 255, 0.08);
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    border: 1px solid rgba(255, 255, 255, 0.08);
+
+    backdrop-filter: blur(8px);
+}
+
+.tags_dashboard_title {
+    margin: 0;
+    color: #ffffff;
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+}
+
+.tags_dashboard_subtitle {
+    margin: 6px 0 0 0;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 1rem;
+    font-weight: 400;
+}
+
+.tags_stats_client_email {
+    margin-top: 4px;
+    margin-bottom: 0;
+
+    font-size: 22px !important;
+    font-weight: 700 !important;
+
+    color: #111827;
+}
+
+/* =========================================
+   HERO ACTIONS
+========================================= */
+
+.tags_dashboard_hero_actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+/* =========================================
+   BACK BUTTON
+========================================= */
+
+.tags_dashboard_back_btn {
+    border: none;
+    border-radius: 14px;
+    padding: 14px 22px;
+
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+
+    font-size: 0.95rem;
+    font-weight: 700;
+
+    transition: all 0.2s ease;
+}
+
+.tags_dashboard_back_btn:hover {
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.14);
+}
+
+/* =========================================
+   PDF BUTTON
+========================================= */
+
+.tags_stats_pdf_btn {
+    border: none;
+    border-radius: 14px;
+    padding: 14px 22px;
+
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: #ffffff;
+
+    font-size: 0.95rem;
+    font-weight: 700;
+
+    box-shadow: 0 8px 20px rgba(239, 68, 68, 0.22);
+
+    transition: all 0.2s ease;
+}
+
+.tags_stats_pdf_btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 26px rgba(239, 68, 68, 0.30);
+}
+
+/* =========================================
+   MOBILE
+========================================= */
+
+@media (max-width: 768px) {
+
+    .tags_dashboard_hero {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 24px;
+    }
+
+    .tags_dashboard_hero_left {
+        width: 100%;
+    }
+
+    .tags_dashboard_hero_actions {
+        width: 100%;
+        flex-direction: column;
+    }
+
+    .tags_dashboard_back_btn,
+    .tags_stats_pdf_btn {
+        width: 100%;
+    }
+
+    .tags_dashboard_title {
+        font-size: 1.6rem;
+    }
+
+}
+
+/* =========================
+   CLIENT CARD
+========================= */
+
+
+.tags_stats_client_card {
+    background: #ffffff;
+
+    border-radius: 24px;
+
+    padding: 20px 24px;
+    margin-bottom: 24px;
+
+    border: 1px solid #e5e7eb;
+
+    box-shadow:
+        0 4px 20px rgba(15, 23, 42, 0.04);
+}
+
+.tags_stats_client_right {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+
+    margin-left: auto;
+
+    flex-wrap: wrap;
+}
+.tags_stats_client_row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 20px;
+}
+
+.tags_stats_label {
+    font-size: 14px;
+    /* font-weight: 700; */
+    color: #111827;
+
+    margin-right: 8px;
+}
+
+.tags_stats_value {
+    font-size: 14px;
+    color: #4b5563;
+}
+
+.tags_stats_plan {
+    padding: 8px 12px;
+
+    border-radius: 999px;
+
+    background: #eff6ff;
+    color: #2563eb;
+
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.tags_stats_status {
+    padding: 8px 14px;
+
+    border-radius: 999px;
+
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.tags_stats_status.active {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+.tags_stats_status.disabled {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+/* =========================
+   FILTERS
+========================= */
+
+.tags_stats_filters {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+
+    margin-bottom: 24px;
+}
+
+.tags_stats_filter_card {
+    background: #ffffff;
+
+    border-radius: 24px;
+
+    padding: 24px;
+
+    border: 1px solid #e5e7eb;
+
+    box-shadow:
+        0 4px 20px rgba(15, 23, 42, 0.04);
+}
+
+/* =========================
+   INFO
+========================= */
+
+.tags_stats_info {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+
+    margin-bottom: 24px;
+}
+
+.tags_stats_info_item {
+    padding: 12px 16px;
+
+    border-radius: 14px;
+
+    background: #ffffff;
+
+    border: 1px solid #e5e7eb;
+
+    color: #374151;
+    font-size: 14px;
+    font-weight: 500;
+
+    box-shadow:
+        0 4px 12px rgba(15, 23, 42, 0.03);
+}
+
+/* =========================
+   KPI
+========================= */
+
+.tags_stats_kpis {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+
+    margin-bottom: 28px;
+}
+
+.tags_stats_kpi_card {
+    background: #ffffff;
+
+    border-radius: 24px;
+
+    padding: 28px;
+
+    border: 1px solid #e5e7eb;
+
+    box-shadow:
+        0 6px 20px rgba(15, 23, 42, 0.05);
+
+    transition: all 0.2s ease;
+}
+
+.tags_stats_kpi_card:hover {
+    transform: translateY(-2px);
+}
+
+.tags_stats_kpi_label {
+    margin: 0 0 10px;
+
+    color: #6b7280;
+
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.tags_stats_kpi_number {
+    margin: 0;
+
+    font-size: 42px;
+    font-weight: 800;
+
+    color: #111827;
+}
+
+/* =========================
+   GRID
+========================= */
+
+.tags_stats_grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+
+    margin-bottom: 24px;
+}
+
+/* =========================
+   CARD
+========================= */
+
+.tags_stats_card {
+    background: #ffffff;
+
+    border-radius: 24px;
+
+    padding: 24px;
+
+    border: 1px solid #e5e7eb;
+
+    box-shadow:
+        0 4px 20px rgba(15, 23, 42, 0.04);
+}
+
+.tags_stats_card_header {
+    margin-bottom: 20px;
+}
+
+.tags_stats_card_header h3 {
+    margin: 0;
+
+    font-size: 18px;
+    font-weight: 700;
+
+    color: #111827;
+}
+
+/* =========================
+   TABLE
+========================= */
+
+.tags_stats_table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.tags_stats_table thead tr {
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.tags_stats_table th {
+    padding: 14px 10px;
+
+    text-align: left;
+
+    font-size: 13px;
+    font-weight: 700;
+
+    color: #6b7280;
+}
+
+.tags_stats_table td {
+    padding: 14px 10px;
+
+    border-bottom: 1px solid #f1f5f9;
+
+    font-size: 14px;
+    color: #374151;
+}
+
+.tags_stats_table tbody tr {
+    transition: background 0.2s ease;
+}
+
+.tags_stats_table tbody tr:hover {
+    background: #f9fafb;
+}
+
+/* =========================
+   MOVEMENTS
+========================= */
+
+.tags_stats_movements {
+    margin-bottom: 24px;
+}
+
+/* =========================
+   CHARTS
+========================= */
+
+.tags_stats_charts {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.tags_stats_chart_card {
+    background: #ffffff;
+
+    border-radius: 24px;
+
+    padding: 24px;
+
+    border: 1px solid #e5e7eb;
+
+    box-shadow:
+        0 4px 20px rgba(15, 23, 42, 0.04);
+}
+
+/* =========================
+   BOOTSTRAP OVERRIDE
+========================= */
+
+.tags_stats_page .table {
+    margin-bottom: 0;
+}
+
+.tags_stats_page .card {
+    border: none;
+    box-shadow: none;
+    background: transparent;
+}
+
+/* =========================
+   SCROLL
+========================= */
+
+.table-responsive::-webkit-scrollbar {
+    height: 8px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 999px;
+}
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 992px) {
+
+    .tags_stats_grid {
+        grid-template-columns: 1fr;
+    }
+
+    .tags_stats_filters {
+        grid-template-columns: 1fr;
+    }
+
+}
+
+@media (max-width: 768px) {
+
+
+    .tags_stats_client_right {
+        width: 100%;
+        justify-content: start;
+
+        margin-left: 0;
+    }
+
+    .tags_stats_client_email {
+    margin-top: 4px;
+    margin-bottom: 0;
+
+    font-size: 16px !important;
+    font-weight: 700 !important;
+
+    color: #111827;
+}
+
+
+
+    .tags_stats_page {
+        padding: 18px;
+    }
+
+    .tags_stats_header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .tags_stats_kpis {
+        grid-template-columns: 1fr;
+    }
+
+    .tags_stats_title {
+        font-size: 28px;
+    }
+
+    .tags_stats_kpi_number {
+        font-size: 34px;
+    }
+
+    .tags_stats_client_row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .tags_stats_pdf_btn {
+        width: 100%;
+    }
+
+}
+
+@media (max-width: 576px) {
+
+    .tags_stats_card,
+    .tags_stats_filter_card,
+    .tags_stats_client_card,
+    .tags_stats_chart_card,
+    .tags_stats_kpi_card,
+    .tags_stats_header {
+        padding: 18px;
+        border-radius: 18px;
+    }
+
+    .tags_stats_table th,
+    .tags_stats_table td {
+        padding: 12px 8px;
+        font-size: 13px;
+    }
+
+}

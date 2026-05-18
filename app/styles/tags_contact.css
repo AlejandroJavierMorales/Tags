@@ -1,0 +1,297 @@
+/* =========================================================
+   CONTACT PAGE
+========================================================= */
+
+.tags_contact_section{
+    padding: 100px 0;
+}
+
+/* =========================================================
+   CARDS
+========================================================= */
+
+.tags_contact_card,
+.tags_contact_info_card{
+    background: #ffffff;
+    border-radius: 28px;
+    padding: 42px;
+    border: 1px solid rgba(0,0,0,0.06);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.04);
+    height: 100%;
+}
+
+.tags_contact_info_card{
+    position: sticky;
+    top: 120px;
+}
+
+/* =========================================================
+   TITLES
+========================================================= */
+
+.tags_contact_badge{
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 18px;
+    border-radius: 999px;
+    background: rgba(29, 201, 76, 0.1);
+    color: #1dc94c;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 18px;
+}
+
+.tags_contact_title{
+    font-size: 42px;
+    line-height: 1.1;
+    font-weight: 800;
+    color: #111111;
+    margin-bottom: 20px;
+}
+
+.tags_contact_title span{
+    color: #1dc94c;
+}
+
+.tags_contact_subtitle{
+    font-size: 17px;
+    line-height: 1.7;
+    color: #666666;
+    margin-bottom: 0;
+}
+
+/* =========================================================
+   FORM
+========================================================= */
+
+.tags_contact_form{
+    margin-top: 30px;
+}
+
+.tags_contact_label{
+    display: block;
+    font-size: 14px;
+    font-weight: 700;
+    color: #111111;
+    margin-bottom: 12px;
+}
+
+.tags_contact_input,
+.tags_contact_textarea,
+.tags_contact_select{
+    width: 100%;
+    border: 1px solid rgba(0,0,0,0.08);
+    background: #ebf2f9;
+    border-radius: 18px;
+    padding: 16px 18px;
+    font-size: 15px;
+    color: #111111;
+    transition: all .2s ease;
+    outline: none;
+}
+
+.tags_contact_input:focus,
+.tags_contact_textarea:focus,
+.tags_contact_select:focus{
+    border-color: #1dc94c;
+    box-shadow: 0 0 0 4px rgba(29, 201, 76, 0.08);
+}
+
+.tags_contact_input::placeholder,
+.tags_contact_textarea::placeholder{
+    color: #999999;
+}
+
+.tags_contact_textarea{
+    min-height: 180px;
+    resize: none;
+}
+
+/* =========================================================
+   BUTTONS
+========================================================= */
+
+.tags_contact_buttons{
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+
+.tags_contact_btn_primary{
+    height: 52px;
+    border: none;
+    padding: 0 28px;
+    border-radius: 16px;
+    background: #1dc94c;
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 15px;
+    transition: all .2s ease;
+    box-shadow: 0 8px 24px rgba(29, 201, 76, 0.25);
+}
+
+.tags_contact_btn_primary:hover{
+    transform: translateY(-2px);
+    background: #18b542;
+}
+
+.tags_contact_btn_secondary{
+    height: 52px;
+    border: 1px solid rgba(0,0,0,0.08);
+    padding: 0 28px;
+    border-radius: 16px;
+    background: #ffffff;
+    color: #111111;
+    font-weight: 700;
+    font-size: 15px;
+    transition: all .2s ease;
+}
+
+.tags_contact_btn_secondary:hover{
+    transform: translateY(-2px);
+    border-color: #1dc94c;
+    color: #1dc94c;
+}
+
+/* =========================================================
+   CONTACT INFO
+========================================================= */
+
+.tags_contact_info_title{
+    font-size: 32px;
+    font-weight: 800;
+    color: #111111;
+    margin-bottom: 28px;
+}
+
+.tags_contact_info_item{
+    margin-bottom: 28px;
+}
+
+.tags_contact_info_item:last-child{
+    margin-bottom: 0;
+}
+
+.tags_contact_info_label{
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    color: #999999;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    margin-bottom: 8px;
+}
+
+.tags_contact_info_text{
+    font-size: 16px;
+    line-height: 1.6;
+    color: #111111;
+    margin: 0;
+}
+
+/* =========================================================
+   IMAGES GRID
+========================================================= */
+
+.tags_contact_gallery{
+    padding: 40px 0 80px;
+}
+
+.tags_contact_gallery_card{
+    overflow: hidden;
+    border-radius: 24px;
+    background: #f7f7f7;
+}
+
+.tags_contact_gallery_card img{
+    transition: transform .35s ease;
+}
+
+.tags_contact_gallery_card:hover img{
+    transform: scale(1.04);
+}
+
+/* =========================================================
+   SEO CONTENT
+========================================================= */
+
+.tags_contact_seo{
+    padding-bottom: 100px;
+}
+
+.tags_contact_seo_content{
+    max-width: 980px;
+}
+
+.tags_contact_seo_title{
+    font-size: 42px;
+    line-height: 1.15;
+    font-weight: 800;
+    color: #111111;
+    margin-bottom: 24px;
+}
+
+.tags_contact_seo_text{
+    font-size: 17px;
+    line-height: 1.9;
+    color: #666666;
+    margin-bottom: 22px;
+}
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 992px){
+
+    .tags_contact_section{
+        padding: 70px 0;
+    }
+
+    .tags_contact_card,
+    .tags_contact_info_card{
+        padding: 28px;
+    }
+
+    .tags_contact_title,
+    .tags_contact_seo_title{
+        font-size: 34px;
+    }
+
+    .tags_contact_info_card{
+        position: relative;
+        top: initial;
+    }
+
+}
+
+@media (max-width: 768px){
+
+    .tags_contact_title,
+    .tags_contact_seo_title{
+        font-size: 30px;
+    }
+
+    .tags_contact_subtitle,
+    .tags_contact_seo_text{
+        font-size: 16px;
+    }
+
+    .tags_contact_buttons{
+        flex-direction: column;
+    }
+
+    .tags_contact_btn_primary,
+    .tags_contact_btn_secondary{
+        width: 100%;
+    }
+
+    .tags_contact_card,
+    .tags_contact_info_card{
+        border-radius: 22px;
+        padding: 24px;
+    }
+
+}

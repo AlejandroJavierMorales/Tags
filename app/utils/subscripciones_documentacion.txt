@@ -1,0 +1,238 @@
+📘 MÓDULO DE SUSCRIPCIONES — DOCUMENTACIÓN TÉCNICA
+🧭 1. Propósito del módulo
+
+El módulo de suscripciones gestiona:
+
+Clientes (businesses)
+Planes disponibles
+Suscripción activa por cliente
+Renovaciones (manuales actualmente)
+Control de vigencia (fechas de inicio y expiración)
+🗄️ 2. MODELO DE BASE DE DATOS
+🏢 2.1 tags_businesses
+
+Representa el cliente.
+
+Campos:
+id (PK)
+name
+email
+phone
+created_at
+updated_at
+Relación:
+1 business → N subscriptions
+📦 2.2 tags_plans
+
+Catálogo de planes disponibles.
+
+Campos:
+id (PK)
+name
+code
+price
+currency
+
+👉 Es una tabla estática (configuración del sistema).
+
+🔁 2.3 tags_subscriptions
+
+Entidad central del sistema.
+
+Campos:
+id (PK)
+business_id (FK → tags_businesses)
+plan_id (FK → tags_plans)
+status (active | inactive)
+payment_provider (ej: manual, futuro mercadopago)
+amount
+currency
+duration_months
+started_at
+expires_at
+created_at
+updated_at
+🧠 Regla principal
+
+Cada business puede tener múltiples suscripciones, pero SOLO una activa.
+
+🔌 3. APIs DEL MÓDULO
+📌 3.1 Crear cliente
+Endpoint:
+POST /api/business/create
+Input:
+{
+  "name": "",
+  "email": "",
+  "phone": "",
+  "plan_id": "",
+  "start_date": "",
+  "duration_months": 1
+}
+Proceso:
+Insert en tags_businesses
+Obtener plan
+Calcular fechas:
+started_at
+expires_at
+Insert en tags_subscriptions con status active
+📌 3.2 Actualizar cliente
+Endpoint:
+POST /api/business/update
+Input:
+{
+  "id": "",
+  "name": "",
+  "email": "",
+  "phone": "",
+  "plan_id": "",
+  "start_date": "",
+  "duration_months": 1
+}
+Proceso:
+Update tags_businesses
+Cerrar suscripción activa:
+status = 'inactive'
+Crear nueva suscripción active
+📌 3.3 Listar clientes
+Endpoint:
+GET /api/business/list
+Proceso SQL:
+JOIN business + subscription activa
+JOIN plan
+LEFT JOIN QR codes
+GROUP BY business.id
+Retorna:
+datos del cliente
+plan activo
+estado de suscripción
+métricas QR
+📌 3.4 Eliminar cliente
+Endpoint:
+DELETE /api/business/delete
+Proceso:
+elimina business
+(dependencias futuras: subscriptions y QR)
+🔁 4. FLUJO DE SUSCRIPCIONES
+➕ CREACIÓN
+Business creado
+    ↓
+Plan seleccionado
+    ↓
+Se calcula duración
+    ↓
+Se crea subscription (ACTIVE)
+✏️ ACTUALIZACIÓN
+Business update
+    ↓
+Se desactiva subscription actual
+    ↓
+Se crea nueva subscription ACTIVE
+🔄 ESTADO ACTUAL
+
+Siempre existe:
+
+1 subscription ACTIVE
+N subscription INACTIVE (histórico implícito)
+⏳ 5. REGLAS DE FECHAS
+Cálculo base:
+startedAt = start_date || now
+expiresAt = startedAt + duration_months
+Formato UI:
+Backend: ISO string
+Frontend: dd/mm/yyyy
+📊 6. REGLAS DE NEGOCIO
+6.1 Suscripción activa
+status = 'active'
+
+Solo una por business.
+
+6.2 Suscripción vencida
+
+Se determina por:
+
+expiresAt < now
+6.3 Próxima a vencer
+diffDays <= 15
+💰 7. MODELO FINANCIERO (IMPORTANTE PARA FUTURO)
+
+Actualmente:
+
+Pago manual
+Precio tomado del plan en el momento de creación
+amount = plan.price
+currency = plan.currency
+⚠️ Importante:
+
+Esto es un SNAPSHOT, no dinámico.
+
+🔌 8. PUNTOS DE EXTENSIÓN FUTURA (PAGOS)
+
+Este módulo está preparado para evolucionar a:
+
+8.1 Mercado Pago
+
+Se agregaría:
+
+nueva tabla:
+tags_payments
+
+Campos:
+
+id
+subscription_id
+provider = mercadopago
+external_id
+status
+amount
+8.2 flujo futuro:
+User selecciona plan
+    ↓
+Se crea payment en Mercado Pago
+    ↓
+Webhook confirma pago
+    ↓
+Se activa subscription
+8.3 cambios necesarios:
+status pending
+status paid
+status failed
+status expired
+📌 9. DEPENDENCIAS DEL MÓDULO
+
+Este módulo impacta:
+
+Dashboard de clientes
+Listado de business
+QR codes
+Stats de negocio
+Filtros de vencimiento
+⚠️ 10. PROBLEMAS CONOCIDOS
+10.1 SQL MODE ONLY_FULL_GROUP_BY
+Query de listado depende de GROUP BY débil
+10.2 Falta historial explícito
+No hay tabla de "subscriptions history consultable"
+10.3 Falta estado de pago
+Solo "manual"
+🧱 11. RESUMEN ARQUITECTÓNICO
+Business
+   │
+   ├── Subscription (ACTIVE)
+   ├── Subscription (INACTIVE)
+   ├── Subscription (INACTIVE)
+   │
+   └── Plan (referencia estática)
+🚀 12. BASE PARA FUTURO (IMPORTANTE)
+
+Este módulo está diseñado como:
+
+👉 “Subscription switching system”
+(no billing system todavía)
+
+Si querés, en el siguiente paso puedo ayudarte a:
+
+convertir esto en un README.md listo para repo
+o diseñarte el módulo de pagos con Mercado Pago encima de esta base
+o corregirte el SQL para eliminar el GROUP BY de raíz y dejarlo profesional
+
+Solo decime hacia dónde querés llevarlo.

@@ -1,0 +1,267 @@
+📦 CalamuchitAr Tags — Modelo de Datos (Documentación)
+
+Este módulo gestiona el sistema de QR dinámicos + tracking + suscripciones para negocios dentro del ecosistema CalamuchitAr.
+
+🏢 1. tags_businesses
+🎯 Propósito
+
+Representa los comercios o clientes que utilizan el sistema CalamuchitAr Tags.
+Es la entidad principal sobre la cual se construyen los QR, estadísticas y suscripciones.
+
+🧱 Estructura
+CREATE TABLE tags_businesses (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  global_user_id INT,
+  name VARCHAR(255),
+  email VARCHAR(255),
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+📌 Campos
+🔹 id
+
+Identificador único del comercio dentro del módulo Tags.
+
+🔹 global_user_id
+
+Referencia al usuario del sistema principal CalamuchitAr.
+👉 Permite integración con el login general del ecosistema.
+
+🔹 name
+
+Nombre del negocio o comercio.
+Ej: “Cabañas Los Reartes”
+
+🔹 email
+
+Email de contacto del comercio.
+Se utiliza para notificaciones, acceso al dashboard y facturación.
+
+🔹 created_at
+
+Fecha de alta del comercio en el sistema Tags.
+
+🔳 2. tags_qr_codes
+🎯 Propósito
+
+Representa cada QR dinámico generado para un comercio.
+Es el núcleo funcional del sistema.
+
+🧱 Estructura
+CREATE TABLE tags_qr_codes (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  business_id INT NOT NULL,
+  code VARCHAR(20) UNIQUE NOT NULL,
+  label VARCHAR(255),
+  destination_type ENUM('url','whatsapp','instagram','google_review','multi'),
+  destination_url TEXT,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+📌 Campos
+🔹 id
+
+Identificador interno del QR.
+
+🔹 business_id
+
+Relación con el comercio propietario del QR.
+
+👉 Permite multi-tenant (cada negocio ve solo sus QRs).
+
+🔹 code
+
+Código único público del QR.
+Ejemplo: A8F3K9X2
+
+👉 Este valor es el que se imprime en el QR físico.
+
+🔹 label
+
+Nombre descriptivo del QR.
+Ej:
+
+“Entrada local”
+“Mesa 3”
+“Recepción”
+🔹 destination_type
+
+Tipo de destino del QR:
+
+url → página web
+whatsapp → chat directo
+instagram → perfil
+google_review → reseña
+multi → múltiples destinos (versión avanzada)
+🔹 destination_url
+
+URL final a la que redirige el QR.
+
+Ej:
+
+https://instagram.com/negocio
+https://wa.me/549
+...
+🔹 is_active
+
+Activa o desactiva el QR sin necesidad de borrarlo.
+
+🔹 created_at
+
+Fecha de creación del QR.
+
+📊 3. tags_clicks
+🎯 Propósito
+
+Registra cada escaneo o interacción con un QR.
+Es la base del sistema de analítica.
+
+🧱 Estructura
+CREATE TABLE tags_clicks (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  qr_code_id INT,
+  ip VARCHAR(100),
+  user_agent TEXT,
+  referrer TEXT,
+  country VARCHAR(100),
+  city VARCHAR(100),
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+📌 Campos
+🔹 id
+
+Identificador del evento de click.
+
+🔹 qr_code_id
+
+QR que fue escaneado.
+
+🔹 ip
+
+IP del usuario (para análisis de unicidad y geolocalización aproximada).
+
+🔹 user_agent
+
+Información del dispositivo:
+
+móvil
+desktop
+navegador
+🔹 referrer
+
+Origen del acceso si aplica (web, social, etc.).
+
+🔹 country / city
+
+Geolocalización estimada del usuario.
+
+👉 Permite analítica turística (clave en Calamuchita).
+
+🔹 created_at
+
+Momento exacto del escaneo.
+
+📈 4. tags_stats_daily
+🎯 Propósito
+
+Tabla de agregación diaria para optimizar performance de analítica.
+
+👉 Evita recalcular clicks cada vez.
+
+🧱 Estructura
+CREATE TABLE tags_stats_daily (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  qr_code_id INT,
+  date DATE,
+  clicks INT DEFAULT 0,
+  unique_clicks INT DEFAULT 0,
+  UNIQUE KEY uq (qr_code_id, date)
+);
+📌 Campos
+🔹 id
+
+Identificador interno del registro diario.
+
+🔹 qr_code_id
+
+QR asociado a la estadística.
+
+🔹 date
+
+Fecha del día (agrupación diaria).
+
+🔹 clicks
+
+Cantidad total de escaneos ese día.
+
+🔹 unique_clicks
+
+Cantidad de usuarios únicos (evita duplicados por IP o sesión).
+
+🔹 UNIQUE KEY (qr_code_id, date)
+
+Garantiza un solo registro por QR por día.
+
+💳 5. tags_subscriptions
+🎯 Propósito
+
+Gestiona los planes de pago de cada comercio dentro del sistema Tags (SaaS).
+
+🧱 Estructura
+CREATE TABLE tags_subscriptions (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  business_id INT,
+  plan ENUM('free','basic','pro','premium'),
+  status ENUM('active','cancelled'),
+  start_date DATE,
+  end_date DATE
+);
+📌 Campos
+🔹 id
+
+Identificador de la suscripción.
+
+🔹 business_id
+
+Comercio suscripto.
+
+🔹 plan
+
+Plan contratado:
+
+free → básico
+basic → inicial pago
+pro → analítica avanzada
+premium → full SaaS
+🔹 status
+
+Estado de la suscripción:
+
+active → activa
+cancelled → cancelada
+🔹 start_date
+
+Fecha de inicio del plan.
+
+🔹 end_date
+
+Fecha de expiración o renovación.
+
+🧠 RESUMEN ARQUITECTÓNICO
+
+Este modelo permite:
+
+✔ Multi-negocio (SaaS real)
+✔ QR dinámicos editables
+✔ Tracking completo de interacciones
+✔ Analítica turística y comercial
+✔ Sistema de monetización por suscripción
+✔ Escalabilidad tipo Bitly + Google Analytics local
+
+
+QUERYS A CORRER PARA DEJAR LA BASE DE DATOS SEGUN DEBE FUNCIONAR
+
+ALTER TABLE tags_qr_codes
+ADD COLUMN qr_type VARCHAR(20) NOT NULL DEFAULT 'url';
+
+ALTER TABLE tags_qr_codes
+MODIFY business_id INT NULL;

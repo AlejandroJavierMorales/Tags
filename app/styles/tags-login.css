@@ -1,0 +1,427 @@
+/* =========================================
+LOGIN V2
+========================================= */
+
+.tags_login_page {
+  min-height: 100vh;
+
+  background:
+    linear-gradient(
+      180deg,
+      #f7fff9 0%,
+      #eefaf3 100%
+    );
+
+  overflow: hidden;
+}
+
+.tags_login_topbar {
+  background:
+    linear-gradient(
+      90deg,
+      #0fd15a,
+      #08b74b
+    );
+
+  color: white;
+
+  text-align: center;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  padding: 10px;
+}
+
+.tags_login_wrapper {
+  width: 100%;
+  max-width: 1250px;
+
+  margin: auto;
+
+  padding: 60px 20px;
+}
+
+.tags_login_layout {
+  display: grid;
+
+  grid-template-columns: 1.1fr 0.9fr;
+
+  gap: 60px;
+
+  align-items: center;
+}
+
+/* LEFT */
+
+.tags_login_brand {
+  margin-bottom: 40px;
+}
+
+.tags_login_logo img {
+  max-width: 180px;
+}
+
+.tags_login_badge {
+  display: inline-flex;
+
+  align-items: center;
+  gap: 8px;
+
+  background: rgba(15, 209, 90, 0.1);
+
+  color: #0ba84a;
+
+  border: 1px solid rgba(15, 209, 90, 0.15);
+
+  padding: 8px 14px;
+
+  border-radius: 999px;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  margin-bottom: 20px;
+}
+
+.tags_login_title {
+  font-size: 54px;
+  font-weight: 800;
+
+  line-height: 1;
+
+  margin-bottom: 20px;
+
+  color: #111827;
+}
+
+.tags_login_subtitle {
+  font-size: 18px;
+
+  line-height: 1.7;
+
+  color: #4b5563;
+
+  max-width: 600px;
+}
+
+/* BENEFITS */
+
+.tags_login_benefits {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tags_login_benefit_card {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+
+  background: rgba(255,255,255,0.65);
+
+  backdrop-filter: blur(10px);
+
+  border: 1px solid rgba(255,255,255,0.7);
+
+  padding: 20px;
+
+  border-radius: 24px;
+
+  box-shadow:
+    0 10px 40px rgba(0,0,0,0.04);
+}
+
+.tags_login_benefit_card span {
+  font-size: 24px;
+}
+
+.tags_login_benefit_card strong {
+  display: block;
+
+  margin-bottom: 4px;
+
+  color: #111827;
+}
+
+.tags_login_benefit_card p {
+  margin: 0;
+
+  color: #6b7280;
+
+  font-size: 14px;
+}
+
+/* RIGHT */
+
+.tags_login_right {
+  display: flex;
+  justify-content: center;
+}
+
+.tags_login_card {
+  width: 100%;
+  max-width: 480px;
+
+  background: rgba(255,255,255,0.75);
+
+  backdrop-filter: blur(12px);
+
+  border: 1px solid rgba(255,255,255,0.9);
+
+  border-radius: 32px;
+
+  padding: 40px;
+
+  box-shadow:
+    0 25px 60px rgba(0,0,0,0.08),
+    0 0 0 1px rgba(15,209,90,0.08);
+}
+
+.tags_login_card_header {
+  display: flex;
+  gap: 16px;
+
+  align-items: center;
+
+  margin-bottom: 30px;
+}
+
+.tags_login_card_icon {
+  width: 60px;
+  height: 60px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 18px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #0fd15a,
+      #10b84e
+    );
+
+  color: white;
+
+  font-size: 26px;
+
+  box-shadow:
+    0 10px 30px rgba(15,209,90,0.25);
+}
+
+.tags_login_card_header h2 {
+  margin: 0;
+
+  font-size: 28px;
+  font-weight: 700;
+
+  color: #111827;
+}
+
+.tags_login_card_header p {
+  margin: 4px 0 0;
+
+  color: #6b7280;
+}
+
+/* FORM */
+
+.tags_login_form_group {
+  margin-bottom: 24px;
+}
+
+.tags_login_form_group label {
+  display: block;
+
+  margin-bottom: 10px;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  color: #374151;
+}
+
+.tags_login_input {
+  width: 100%;
+
+  height: 58px;
+
+  border-radius: 18px;
+
+  border: 1px solid #d1d5db;
+
+  background: white;
+
+  padding: 0 18px;
+
+  font-size: 15px;
+
+  transition: 0.2s ease;
+}
+
+.tags_login_input:focus {
+  outline: none;
+
+  border-color: #0fd15a;
+
+  box-shadow:
+    0 0 0 4px rgba(15,209,90,0.15);
+}
+
+/* BUTTON */
+
+.tags_login_btn {
+  width: 100%;
+  height: 58px;
+
+  border: none;
+
+  border-radius: 18px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #0fd15a,
+      #08b74b
+    );
+
+  color: white;
+
+  font-size: 16px;
+  font-weight: 700;
+
+  transition: 0.2s ease;
+
+  box-shadow:
+    0 12px 30px rgba(15,209,90,0.25);
+}
+
+.tags_login_btn:hover {
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 18px 40px rgba(15,209,90,0.3);
+}
+
+/* ERROR */
+
+.tags_login_error {
+  margin-top: 16px;
+
+  padding: 14px;
+
+  border-radius: 14px;
+
+  background: rgba(239,68,68,0.08);
+
+  color: #dc2626;
+
+  font-size: 14px;
+}
+
+/* FOOTER */
+
+.tags_login_footer {
+  margin-top: 24px;
+
+  text-align: center;
+}
+
+.tags_login_change_account {
+  color: #0ba84a;
+
+  text-decoration: none;
+
+  font-weight: 600;
+
+  font-size: 14px;
+}
+
+/* SUCCESS */
+
+.tags_login_success_card {
+  width: 100%;
+  max-width: 480px;
+
+  margin: auto;
+
+  text-align: center;
+
+  background: white;
+
+  border-radius: 32px;
+
+  padding: 50px;
+
+  box-shadow:
+    0 20px 60px rgba(0,0,0,0.08);
+}
+
+.tags_login_success_icon {
+  font-size: 50px;
+
+  margin-bottom: 20px;
+}
+
+.tags_login_success_title {
+  font-size: 34px;
+  font-weight: 800;
+
+  margin-bottom: 16px;
+}
+
+.tags_login_success_text {
+  color: #6b7280;
+
+  margin-bottom: 30px;
+}
+
+/* MOBILE */
+
+@media (max-width: 991px) {
+
+  .tags_login_layout {
+    grid-template-columns: 1fr;
+
+    gap: 40px;
+  }
+
+  .tags_login_left {
+    text-align: center;
+  }
+
+  .tags_login_subtitle {
+    margin: auto;
+  }
+
+  .tags_login_title {
+    font-size: 42px;
+  }
+}
+
+@media (max-width: 768px) {
+
+  .tags_login_wrapper {
+    padding: 30px 16px;
+  }
+
+  .tags_login_card {
+    padding: 28px;
+    border-radius: 24px;
+  }
+
+  .tags_login_title {
+    font-size: 34px;
+  }
+
+  .tags_login_subtitle {
+    font-size: 16px;
+  }
+
+  .tags_login_card_header h2 {
+    font-size: 22px;
+  }
+}

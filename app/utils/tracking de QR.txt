@@ -1,0 +1,62 @@
+🧭 RESUMEN ESTRUCTURAL
+🧱 CORE NUEVO:
+
+✔ tags_qr_clicks (tabla central)
+
+⚡ OPTIMIZACIÓN:
+
+✔ total_clicks en:
+
+qr_codes
+businesses
+qr_types
+
+✔ last_click_at
+
+📈 ANALYTICS QUE YA QUEDAN HABILITADOS:
+🧭 QR
+clicks totales
+clicks diarios
+último click
+ranking
+👤 Cliente
+actividad total
+QRs activos
+comportamiento
+🏷 Tipo QR
+rendimiento por canal
+📍 Tiempo + Geo
+país / ciudad
+hora pico
+dispositivo
+
+------------------------------------
+------------------------------------
+📊 8. LO QUE YA PODÉS VENDER CON ESTO
+
+Con esta estructura ya podés decir:
+
+🟢 “QR Analytics System”
+Dashboard por QR:
+clicks totales
+evolución diaria
+últimos clicks
+Dashboard por cliente:
+actividad total
+QRs más usados
+inactividad
+Dashboard por tipo:
+WhatsApp vs Instagram vs Web
+rendimiento por canal
+🔥 9. NIVEL SaaS (lo que te diferencia)
+
+Cuando agregues esto:
+
+🌍 Geo + Device + Tiempo
+
+Podés ofrecer:
+
+mapa de actividad
+heatmaps horarios
+comportamiento por país
+insights automáticos

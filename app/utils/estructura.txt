@@ -1,0 +1,58 @@
+🚀 AHORA TU SISTEMA QUEDA ASÍ
+/t/code → router inteligente
+/activate → cliente
+/setup → admin
+/dashboard → vos
+
+
+FLUJO DE VENTA A ACTIVACION DE CADA QR:
+---------------------------------------
+
+🔥 Estados correctos (según tu lógica real)
+
+Tu flujo correcto sería este:
+
+1. Creación del QR (stock inicial)
+status = 'available'
+Sin cliente
+Sin email
+Libre para vender
+2. Venta / asignación manual a cliente
+status = 'assigned'
+Tiene business_id o client_slug (según tu modelo)
+Todavía no está activo (no escaneado / no configurado)
+3. Cliente lo configura (setup)
+status = 'active'
+Tiene email
+Tiene value
+Ya está funcionando
+4. Desactivado manualmente por vos
+status = 'disabled'
+No importa si tenía cliente o no
+No se usa más
+5. Reactivación / edición de QR activo
+
+Acá tu idea es correcta, pero mejor separar:
+
+status = 'pending' (o reactivation_pending)
+cuando el cliente quiere cambiar link o reconfigurar
+o cuando vos habilitás edición
+
+Luego vuelve a:
+
+active
+⚠️ Conclusión importante
+
+👉 Sí: tu planteo es correcto
+👉 No: no uses is_active + email como lógica de stock nunca más
+
+Eso ya quedó obsoleto.
+
+🧠 Modelo final recomendado
+status ENUM(
+  'available',         -- libre en stock
+  'assigned',          -- vendido/asignado a cliente
+  'active',            -- funcionando
+  'pending',           -- reconfiguración / reactivación
+  'disabled'           -- fuera de uso
+)

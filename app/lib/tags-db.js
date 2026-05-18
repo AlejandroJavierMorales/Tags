@@ -9,8 +9,8 @@ export const db = await mysql.createPool({
   
 });
 
-console.log({
+/* console.log({
   HOST: process.env.DB_HOST,
   USER: process.env.DB_USER,
   DATABASE: process.env.DB_DATABASE_NAME,
-});
+}); */

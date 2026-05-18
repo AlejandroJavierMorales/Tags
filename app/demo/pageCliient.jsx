@@ -370,9 +370,6 @@ export default function TagsDemoPage() {
                 clicks: Number(c.clicks)
             })) || [];
 
-
-    console.log("CITY DATA:", JSON.stringify(cityData));
-    console.log("CITY DATA:", stats?.stats?.cities);
     // =========================
     // UI
     // =========================

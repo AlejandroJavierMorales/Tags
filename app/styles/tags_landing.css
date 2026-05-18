@@ -2597,6 +2597,33 @@ RESPONSIVE
 .tags_card_carousel_btn_right {
     right: 8px;
 }
+.tags_card_carousel_dots {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.tags_card_carousel_dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 9999px;
+    border: none;
+    background-color: #cfcfcf;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0;
+}
+
+.tags_card_carousel_dot:hover {
+    transform: scale(1.1);
+}
+
+.tags_card_carousel_dot_active {
+    background-color: #0fd15a;
+    width: 24px;
+}
 
 .tags_product_card img {
     border-radius: 0;

@@ -33,6 +33,16 @@ export async function GET(req) {
   q.label,
   q.final_url,
   q.status,
+  q.stop_message,
+  q.has_qr_page,
+
+  
+  qrp.id as qr_page_id,
+  qrp.status as qr_page_status,
+  qrp.slug as qr_page_slug,
+  qrp.slug_locked,
+  qrp.page_type as qr_page_type,
+
 
   p.id as product_id,
   p.name as product_name,
@@ -51,6 +61,10 @@ LEFT JOIN tags_products p
 
 LEFT JOIN tags_qr_types t
   ON t.id = p.qr_type_id
+
+LEFT JOIN tags_qr_pages qrp
+  ON qrp.qr_code_id = q.id
+  AND qrp.business_id = q.business_id
 
 WHERE q.business_id = ?
 ORDER BY q.id DESC

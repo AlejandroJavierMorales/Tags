@@ -60,7 +60,7 @@ export default function Products() {
                                 </div>
 
                                 <div>
-                                    <h5>Analytics</h5>
+                                    <h3>Analytics</h3>
 
                                     <p>
                                         Datos por horario, ciudad,
@@ -76,7 +76,7 @@ export default function Products() {
                                 </div>
 
                                 <div>
-                                    <h5>QR Dinámico</h5>
+                                    <h3>QR Dinámico</h3>
 
                                     <p>
                                         Editá destinos, pausá,
@@ -92,7 +92,7 @@ export default function Products() {
                                 </div>
 
                                 <div>
-                                    <h5>Carteles Físicos</h5>
+                                    <h3>Carteles Físicos</h3>
 
                                     <p>
                                         Diseños premium y materiales
@@ -107,7 +107,7 @@ export default function Products() {
                                 </div>
 
                                 <div>
-                                    <h5>QRs Digitales + NFC</h5>
+                                    <h3>QRs Digitales + NFC</h3>
 
                                     <p>
                                         Links y códigos digitales

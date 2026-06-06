@@ -195,7 +195,9 @@ export async function GET(req) {
         const redirectUrl =
             session.role === "admin"
                 ? `/dashboard`
-                : `/dashboard/businesses/${business.id}`;
+                :  session.role === "event_client"
+                ? `/dashboard/events/${business.id}`
+                :`/dashboard/businesses/${business.id}`;
 
 
         const isDev = process.env.NODE_ENV === "development";

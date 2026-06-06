@@ -14,7 +14,8 @@ export async function POST(req) {
             name,
             is_digital,
             qr_type_id,
-            support_id
+            support_id,
+            url_prefix
         } = body;
 
         // =========================
@@ -146,15 +147,17 @@ export async function POST(req) {
                 name,
                 is_digital,
                 qr_type_id,
-                support_id
+                support_id,
+                url_prefix
             )
-            VALUES (?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?)
             `,
             [
                 name.trim(),
                 is_digital ? 1 : 0,
                 qr_type_id,
-                support_id
+                support_id,
+                url_prefix
             ]
         );
 

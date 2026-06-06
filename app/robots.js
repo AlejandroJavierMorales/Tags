@@ -15,6 +15,7 @@ export default function robots() {
                     "/contact",
                     "/store-products",
                     "/demo",
+                    "/p/",
                 ],
 
                 disallow: [

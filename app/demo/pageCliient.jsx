@@ -110,7 +110,7 @@ export default function TagsDemoPage() {
 
             const data = await res.json();
 
-            console.log("INITIAL DATA:", data);
+            /* console.log("INITIAL DATA:", data); */
 
             if (data.success) {
 
@@ -145,7 +145,7 @@ export default function TagsDemoPage() {
 
             const data = await res.json();
 
-            console.log("STATS:", data);
+            /* console.log("STATS:", data); */
 
             if (data.success) {
 

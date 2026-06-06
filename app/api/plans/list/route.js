@@ -15,6 +15,7 @@ export async function GET() {
                 price,
                 currency,
                 max_qr_codes,
+
                 dashboard_enabled,
                 reports_enabled,
                 reports_email_enabled,
@@ -23,9 +24,16 @@ export async function GET() {
                 analytics_plus_enabled,
                 allow_pause_qr,
                 allow_edit_qr,
-                priority_support
+                priority_support,
+                
+
+                is_active,
+                is_public,
+                is_free,
+                sort_order
+
             FROM tags_plans
-            ORDER BY price ASC
+            ORDER BY sort_order ASC, price ASC
         `);
 
         return Response.json(rows);

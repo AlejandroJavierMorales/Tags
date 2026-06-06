@@ -1,5 +1,5 @@
 // page.jsx (SIN "use client")
-import BusinessesPageClient from "./page";
+import BusinessesPageClient from "./pageClient";
 import HeaderSwitcher from "../../components/HeaderSwitcher";
 
 

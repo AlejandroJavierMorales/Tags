@@ -25,6 +25,7 @@ export async function GET(req) {
         qr.final_url,
         qr.value,
         qr.status,
+        qr.stop_message
 
         -- 👤 CLIENTE
         b.name as business_name,

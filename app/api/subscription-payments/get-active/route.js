@@ -1,45 +1,47 @@
+// =====================================
+// API: /api/subscription-payment/get-active
+// Descripción: Lista suscripciones activas disponibles para registrar pagos.
+// =====================================
+
 import { db } from "@/app/lib/tags-db";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-
-
 export async function GET() {
 
     try {
 
-        const [rows] =
-            await db.query(`
+        const [rows] = await db.query(
+            `
+            SELECT
+                s.id,
+                s.business_id,
+                s.plan_id,
+                s.amount,
+                s.currency,
+                s.expires_at,
+                s.duration_months,
 
-                SELECT
+                b.name AS business_name,
+                b.email AS business_email,
 
-                    s.id,
+                p.name AS plan_name,
+                p.code AS plan_code
 
-                    s.business_id,
+            FROM tags_subscriptions s
 
-                    s.plan_id,
+            INNER JOIN tags_businesses b
+                ON b.id = s.business_id
 
-                    s.amount,
+            INNER JOIN tags_plans p
+                ON p.id = s.plan_id
 
-                    s.expires_at,
+            WHERE s.status = 'active'
 
-                    b.name AS business_name,
-
-                    p.name AS plan_name
-
-                FROM tags_subscriptions s
-
-                INNER JOIN businesses b
-                    ON b.id = s.business_id
-
-                INNER JOIN tags_plans p
-                    ON p.id = s.plan_id
-
-                WHERE s.status = 'active'
-
-                ORDER BY b.name ASC
-            `);
+            ORDER BY b.name ASC
+            `
+        );
 
         return Response.json({
             success: true,
@@ -48,15 +50,11 @@ export async function GET() {
 
     } catch (err) {
 
-        console.log(err);
+        console.log("SUBSCRIPTION PAYMENT GET ACTIVE ERROR:", err);
 
         return Response.json(
-            {
-                error: "Error"
-            },
-            {
-                status: 500
-            }
+            { error: "Error obteniendo suscripciones activas" },
+            { status: 500 }
         );
     }
 }

@@ -99,7 +99,7 @@ export default function TagsHeader() {
               )
             }
           >
-            Ventas ▾
+            Comercial ▾
           </span>
 
           {adminOpen === "sales" && (
@@ -109,6 +109,20 @@ export default function TagsHeader() {
               <Item
                 href="/dashboard/businesses"
                 label="Clientes"
+              />
+               <div className="dropdown_divider" />
+
+              <Item
+                href="/dashboard/plans"
+                label="Planes"
+              />
+              <Item
+                href="/dashboard/addons"
+                label="Funcionalidades/Productos"
+              />
+              <Item
+                href="/dashboard/businesses/subscriptions"
+                label="Subscripciones"
               />
 
               <div className="dropdown_divider" />

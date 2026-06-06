@@ -103,7 +103,8 @@ export default function Services() {
 
                             <p>
                                 Recibís tu QR y lo activás
-                                en segundos desde tu email.
+                                en el primer escaneo, en sólo segundos.
+                                Con tu email tenés el control permanente.
                                 Todo es dinámico, editable
                                 y reutilizable.
                             </p>

@@ -20,6 +20,14 @@
 # production
 /build
 
+#google credentials
+app/private/*.json
+*.json
+!package.json
+!package-lock.json
+!tsconfig.json
+!jsconfig.json
+
 # misc
 .DS_Store
 *.pem

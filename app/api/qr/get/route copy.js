@@ -1,4 +1,9 @@
 import { db } from "@/app/lib/tags-db";
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+
+
 
 export async function GET(req) {
   try {
@@ -16,11 +21,24 @@ export async function GET(req) {
       `
       SELECT 
         qr.*,
+
+        p.name AS product_name,
+        p.id AS product_code,
+
+        qt.id AS qr_type_id,
+        qt.code AS qr_type_code,
         qt.name AS qr_type_name,
-        qt.code AS qr_type_code
+        qt.input_type AS qr_input_type,
+        qt.url_prefix AS qr_url_prefix
+
       FROM tags_qr_codes qr
-      LEFT JOIN tags_qr_types qt 
-        ON qr.qr_type_id = qt.id
+
+      JOIN tags_products p 
+        ON p.id = qr.product_id
+
+      LEFT JOIN tags_qr_types qt
+        ON qt.id = p.qr_type_id
+
       WHERE qr.code = ?
       LIMIT 1
       `,
@@ -36,7 +54,10 @@ export async function GET(req) {
       );
     }
 
-    return Response.json(qr);
+    return Response.json({
+      ...qr,
+      status: qr.status || "available"
+    });
 
   } catch (error) {
     console.error("GET QR ERROR:", error);

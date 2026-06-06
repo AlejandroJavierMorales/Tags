@@ -35,11 +35,17 @@ export default function BusinessDetailClient({ session, isAdmin }) {
   const [editQR, setEditQR] = useState(null);
   const [editLabel, setEditLabel] = useState("");
   const [editValue, setEditValue] = useState("");
+  const [editStopMessage, setEditStopMessage] = useState("");
 
   const router = useRouter();
 
   const [openQRModal, setOpenQRModal] = useState(false);
   const [selectedQR, setSelectedQR] = useState(null);
+  const [features, setFeatures] = useState(null);
+
+  const [subscriptionSummary, setSubscriptionSummary] =
+    useState(null);
+
 
   // =====================================
   // 🔐 DATOS
@@ -78,6 +84,7 @@ export default function BusinessDetailClient({ session, isAdmin }) {
 
   useEffect(() => {
     load();
+    loadSubscriptionSummary();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
@@ -105,17 +112,54 @@ export default function BusinessDetailClient({ session, isAdmin }) {
     );
 
     setQrs(filteredQrs);
+    const featuresRes =
+      await fetch(`/api/business/features?business_id=${id}`);
 
+    const featuresData =
+      await featuresRes.json().catch(() => null);
+
+    if (featuresData?.ok) {
+      setFeatures(featuresData.features);
+    }
     setBusiness(data.business || null);
+
+
   }
+
+  async function loadSubscriptionSummary() {
+
+    try {
+
+      const res =
+        await fetch(
+          `/api/business/subscription-summary?id=${id}`
+        );
+
+      const data =
+        await res.json().catch(() => null);
+
+      if (res.ok && data?.ok) {
+        setSubscriptionSummary(data);
+      }
+
+    } catch (err) {
+
+      console.error(
+        "SUBSCRIPTION SUMMARY LOAD ERROR:",
+        err
+      );
+    }
+  }
+
 
   function openEdit(qr) {
     setEditQR(qr);
     setEditLabel(qr.label || "");
     setEditValue(extractEditableValue(qr));
+    setEditStopMessage(qr.stop_message || "");
   }
 
-  async function updateStatus(code, action, extra = {}) {
+  async function updateStatus(code, action, stopped_message = '', extra = {}) {
     if (action === "deactivate") {
       const confirm = await showAlert({
         title: "Confirmar acción",
@@ -134,12 +178,22 @@ export default function BusinessDetailClient({ session, isAdmin }) {
       body: JSON.stringify({
         code,
         action,
+        stopped_message,
         email: extra.email,
         ...extra,
       }),
     });
 
+
     const data = await res.json().catch(() => ({}));
+
+    console.log(JSON.stringify({
+      code,
+      action,
+      stopped_message,
+      email: extra.email,
+      ...extra,
+    }))
 
     if (!res.ok) {
       showAlert({
@@ -234,6 +288,7 @@ export default function BusinessDetailClient({ session, isAdmin }) {
         code: editQR.code,
         label: editLabel,
         value: result.value,
+        stop_message: editStopMessage
       }),
     });
 
@@ -259,6 +314,54 @@ export default function BusinessDetailClient({ session, isAdmin }) {
 
     load();
   }
+
+  function handleViewQRPage(qr) {
+
+    if (
+      qr.qr_page_status === "published" &&
+      qr.qr_page_slug
+    ) {
+      window.open(
+        `/p/${qr.qr_page_slug}`,
+        "_blank"
+      );
+
+      return;
+    }
+
+    showAlert({
+      title: "Página no publicada",
+      text: "Esta QR-Page todavía no está publicada.",
+      icon: "info"
+    });
+  }
+
+
+
+  function normalizePageType(value) {
+    return String(value || "")
+      .toLowerCase()
+      .replace(/[\s-]+/g, "_");
+  }
+
+  function isTagsIdPage(qr) {
+    return qr.qr_page_type === "tags_id";
+  }
+
+  function hasAnyPage(qr) {
+    return Number(qr.has_qr_page) === 1 || !!qr.qr_page_id;
+  }
+
+  const hasTagsIdAlready =
+    qrs.some(isTagsIdPage) ||
+    Number(features?.tagsId?.used || 0) > 0;
+
+  const canActivateTagsId =
+    !hasTagsIdAlready &&
+    Number(features?.tagsId?.available || 0) > 0;
+
+
+  /*  UI  */
 
   return (
     <div className="tags_dashboard_page">
@@ -295,7 +398,7 @@ export default function BusinessDetailClient({ session, isAdmin }) {
 
         </div>
 
-        {canUseAnalytics && (
+        {(isAdmin || features?.plan?.permissions?.analytics) && (
 
           <button
             className="tags_dashboard_stats_btn"
@@ -350,6 +453,255 @@ export default function BusinessDetailClient({ session, isAdmin }) {
         </div>
 
       </div>
+      
+      {/* RESUMEN DE SUBCRIPCION */}
+      {subscriptionSummary && (
+        <div className=" mb-4 W-100 mt-3 mb-5">
+
+          <div className="row align-items-start">
+
+            <div className="col-12 col-md-4 mb-3 mb-md-0">
+
+              <small className="text-muted">
+                Plan contratado
+              </small>
+
+              <h3 className="m-0">
+                {subscriptionSummary.plan?.name || "-"}
+              </h3>
+
+              <p className="m-0 text-muted">
+                {subscriptionSummary.plan?.description || "Sin descripción"}
+              </p>
+
+              <div className="mt-2 d-flex gap-2 flex-wrap">
+
+                <span className="tags_badge tags_badge_info">
+                  {subscriptionSummary.plan?.currency || "ARS"}{" "}
+                  {Number(subscriptionSummary.plan?.price || 0).toLocaleString("es-AR")}
+                </span>
+
+                <span className={
+                  subscriptionSummary.subscription?.status === "active"
+                    ? "tags_badge tags_badge_success"
+                    : "tags_badge tags_badge_warning"
+                }>
+                  {subscriptionSummary.subscription?.status || "-"}
+                </span>
+
+              </div>
+
+            </div>
+
+            <div className="col-12 col-md-4 mb-3 mb-md-0">
+
+              <small className="text-muted">
+                Suscripción
+              </small>
+
+              <p className="m-0">
+                <strong>Inicio:</strong>{" "}
+                {
+                  subscriptionSummary.subscription?.started_at
+                    ? new Date(subscriptionSummary.subscription.started_at).toLocaleDateString("es-AR")
+                    : "-"
+                }
+              </p>
+
+              <p className="m-0">
+                <strong>Vence:</strong>{" "}
+                {
+                  subscriptionSummary.subscription?.expires_at
+                    ? new Date(subscriptionSummary.subscription.expires_at).toLocaleDateString("es-AR")
+                    : "Sin vencimiento"
+                }
+              </p>
+
+              <p className="m-0">
+                <strong>Auto renovación:</strong>{" "}
+                {
+                  Number(subscriptionSummary.subscription?.auto_renew) === 1
+                    ? "Sí"
+                    : "No"
+                }
+              </p>
+
+            </div>
+
+            <div className="col-12 col-md-4">
+
+              <small className="text-muted">
+                Último pago
+              </small>
+
+              {
+                subscriptionSummary.lastPayment ? (
+                  <>
+                    <p className="m-0">
+                      <strong>Monto:</strong>{" "}
+                      {subscriptionSummary.lastPayment.currency}{" "}
+                      {Number(subscriptionSummary.lastPayment.amount || 0).toLocaleString("es-AR")}
+                    </p>
+
+                    <p className="m-0">
+                      <strong>Medio:</strong>{" "}
+                      {subscriptionSummary.lastPayment.provider}
+                    </p>
+
+                    <p className="m-0">
+                      <strong>Fecha:</strong>{" "}
+                      {
+                        subscriptionSummary.lastPayment.paid_at
+                          ? new Date(subscriptionSummary.lastPayment.paid_at).toLocaleDateString("es-AR")
+                          : "-"
+                      }
+                    </p>
+                  </>
+                ) : (
+                  <p className="m-0">
+                    No hay pagos registrados.
+                  </p>
+                )
+              }
+
+            </div>
+
+          </div>
+
+          <hr />
+
+          <div className="row">
+
+            <div className="col-6 col-md-3 mb-3">
+              <strong>QRs</strong>
+              <div>
+                {subscriptionSummary.usage.qrs_used}
+                {" / "}
+                {subscriptionSummary.usage.qrs_total}
+              </div>
+            </div>
+
+            <div className="col-6 col-md-3 mb-3">
+              <strong>QR-Pages</strong>
+              <div>
+                {subscriptionSummary.usage.qr_pages_used}
+                {" / "}
+                {subscriptionSummary.usage.qr_pages_total}
+              </div>
+            </div>
+
+            <div className="col-6 col-md-3 mb-3">
+              <strong>TagsID</strong>
+              <div>
+                {subscriptionSummary.usage.tags_id_used}
+                {" / "}
+                {subscriptionSummary.usage.tags_id_total}
+              </div>
+            </div>
+
+            <div className="col-6 col-md-3 mb-3">
+              <strong>Analytics</strong>
+              <div>
+                {
+                  subscriptionSummary.features.analytics_plus_enabled
+                    ? "Full"
+                    : subscriptionSummary.features.analytics_enabled
+                      ? "Básico"
+                      : "No incluido"
+                }
+              </div>
+            </div>
+
+          </div>
+
+          <div className="d-flex gap-2 flex-wrap mt-2">
+
+            {subscriptionSummary.features.dashboard_enabled && (
+              <span className="tags_badge tags_badge_success">
+                Dashboard
+              </span>
+            )}
+
+            {subscriptionSummary.features.reports_enabled && (
+              <span className="tags_badge tags_badge_success">
+                Reportes
+              </span>
+            )}
+
+            {subscriptionSummary.features.reports_email_enabled && (
+              <span className="tags_badge tags_badge_success">
+                Reportes email
+              </span>
+            )}
+
+            {subscriptionSummary.features.reports_whatsapp_enabled && (
+              <span className="tags_badge tags_badge_success">
+                Reportes WhatsApp
+              </span>
+            )}
+
+            {subscriptionSummary.features.allow_edit_qr && (
+              <span className="tags_badge tags_badge_success">
+                Editar QR
+              </span>
+            )}
+
+            {subscriptionSummary.features.allow_pause_qr && (
+              <span className="tags_badge tags_badge_success">
+                Pausar QR
+              </span>
+            )}
+
+            {subscriptionSummary.features.priority_support && (
+              <span className="tags_badge tags_badge_info">
+                Soporte prioritario
+              </span>
+            )}
+
+          </div>
+
+          {!isAdmin && (
+            <div className="mt-3">
+              <button
+                type="button"
+                className="tags_btn rounded tags_text_normal"
+                style={{
+                  maxWidth: "230px"
+                }}
+                onClick={() =>
+                  showAlert({
+                    title: "Plan y suscripción",
+                    text: "Para renovar, cambiar de plan o consultar tu suscripción, contactanos.",
+                    icon: "info"
+                  })
+                }
+              >
+                💬 Consultar plan
+              </button>
+            </div>
+          )}
+
+          {isAdmin && (
+            <div className="mt-3">
+              <button
+                type="button"
+                className="tags_btn rounded tags_text_normal"
+                style={{
+                  maxWidth: "230px"
+                }}
+                onClick={() =>
+                  router.push(
+                    `/dashboard/businesses/${id}/subscriptions`
+                  )
+                }
+              >
+                👤 Administrar suscripción
+              </button>
+            </div>
+          )}
+
+        </div>
+      )}
 
       {/* TABLE */}
 
@@ -372,6 +724,8 @@ export default function BusinessDetailClient({ session, isAdmin }) {
                 <th>Destino</th>
 
                 <th>Estado</th>
+
+                <th>Mensaje Pausado</th>
 
                 <th>Acciones</th>
 
@@ -478,6 +832,17 @@ export default function BusinessDetailClient({ session, isAdmin }) {
 
                   </td>
 
+                  {/* Stop_Message */}
+                  {/* TYPE */}
+
+                  <td>
+
+                    <div className="tags_dashboard_type">
+                      {qr.stop_message || "-"}
+                    </div>
+
+                  </td>
+
                   {/* ACTIONS */}
 
                   <td>
@@ -492,6 +857,121 @@ export default function BusinessDetailClient({ session, isAdmin }) {
                         ✏️
                       </button>
 
+
+                      {/* ========================= */}
+                      {/* QR-PAGE / TAGSID */}
+                      {/* ========================= */}
+
+                      {hasAnyPage(qr) && (
+                        <>
+                          <button
+                            style={{
+                              minWidth: "80px"
+                            }}
+                            type="button"
+                            className="tags_dashboard_icon_btn"
+                            title={
+                              qr.qr_page_status === "published"
+                                ? "Ver página pública"
+                                : "Página no publicada"
+                            }
+                            onClick={() => handleViewQRPage(qr)}
+                          >
+                            <div
+                              className="d-flex flex-column align-items-center justify-content-center"
+                              style={{
+                                lineHeight: 1.1
+                              }}
+                            >
+                              <span style={{ fontSize: "14px" }}>
+                                {
+                                  qr.qr_page_status === "published"
+                                    ? "🟢"
+                                    : "🟡"
+                                }
+                              </span>
+
+                              <span
+                                style={{
+                                  fontSize: "10px",
+                                  marginTop: 2
+                                }}
+                              >
+                                {
+                                  qr.qr_page_status === "published"
+                                    ? (
+                                      isTagsIdPage(qr)
+                                        ? "Ver TagsID"
+                                        : "Ver QR-Page"
+                                    )
+                                    : "Sin publicar"
+                                }
+                              </span>
+                            </div>
+                          </button>
+
+                          <button
+                            className="tags_dashboard_icon_btn"
+                            title={
+                              isTagsIdPage(qr)
+                                ? "Editar TagsID"
+                                : "Editar QR-Page"
+                            }
+                            onClick={() =>
+                              router.push(
+                                `/dashboard/businesses/${id}/qrs/${qr.id}/qr-page`
+                              )
+                            }
+                          >
+                            {isTagsIdPage(qr) ? "🪪" : "📄"}
+                          </button>
+                        </>
+                      )}
+
+                      {!hasAnyPage(qr) && Number(features?.qrPages?.available || 0) > 0 && (
+                        <button
+                          className="tags_dashboard_icon_btn"
+                          title="Activar QR-Page"
+                          onClick={() =>
+                            router.push(
+                              `/dashboard/businesses/${id}/qrs/${qr.id}/qr-page/activate`
+                            )
+                          }
+                        >
+                          ➕📄
+                        </button>
+                      )}
+
+                      {!hasAnyPage(qr) && Number(features?.qrPages?.available || 0) <= 0 && (
+                        <button
+                          className="tags_dashboard_icon_btn"
+                          title="Sin cupo QR-Page"
+                          onClick={() =>
+                            showAlert({
+                              title: "Sin cupo QR-Page",
+                              text: "Este cliente no tiene QR-Pages disponibles.",
+                              icon: "info"
+                            })
+                          }
+                        >
+                          🚫📄
+                        </button>
+                      )}
+
+                      {!hasAnyPage(qr) && canActivateTagsId && (
+                        <button
+                          className="tags_dashboard_icon_btn"
+                          title="Activar TagsID"
+                          onClick={() =>
+                            router.push(
+                              `/dashboard/businesses/${id}/qrs/${qr.id}/tags-id`
+                            )
+                          }
+                        >
+                          🪪
+                        </button>
+                      )}
+
                       {qr.status === "active" ? (
 
                         <button
@@ -500,7 +980,8 @@ export default function BusinessDetailClient({ session, isAdmin }) {
                           onClick={() =>
                             updateStatus(
                               qr.code,
-                              "stopped"
+                              "stopped",
+                              qr.stop_message
                             )
                           }
                         >
@@ -604,7 +1085,7 @@ export default function BusinessDetailClient({ session, isAdmin }) {
 
               </div>
 
-              <div className="tags_modal_group tags_modal_badge_container">
+              <div className="tags_modal_group tags_modal_badge_container m-2">
 
                 <span className="tags_modal_badge">
 
@@ -634,6 +1115,24 @@ export default function BusinessDetailClient({ session, isAdmin }) {
                       editQR?.qr_type_code
                     ).place
                   }
+                />
+
+              </div>
+              {/* Stop_Message */}
+              <div className="tags_modal_group mt-4">
+
+                <label className="tags_modal_label tags_text_normal">
+                  Mensaje cuando el QR está pausado
+                </label>
+
+                <textarea
+                  className="tags_modal_input tags_text_normal"
+                  rows={3}
+                  value={editStopMessage}
+                  onChange={(e) =>
+                    setEditStopMessage(e.target.value)
+                  }
+                  placeholder="Este QR se encuentra temporalmente deshabilitado."
                 />
 
               </div>

@@ -80,7 +80,7 @@ export default function Header() {
             <div className="container tags_landing_nav_inner">
 
                 {/* LOGO */}
-                <Link href="/tags">
+                <Link href="/">
                     <Image
                         src="/logo_tags_transparente.webp"
                         alt="Logo"
@@ -103,7 +103,9 @@ export default function Header() {
                     <li>
                         <a href="/demo">Demo</a>
                     </li>
-
+                    <li>
+                        <a href="/qr-dinamico">QR Dinámico vs.Tradicional</a>
+                    </li>
                     <li>
                         <a href="/contact">Contacto</a>
                     </li>
@@ -120,14 +122,14 @@ export default function Header() {
                             onClick={() => setClientOpen((v) => !v)}
                         >
                             <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    width="18"
-                                    height="18"
-                                    fill="currentColor"
-                                    viewBox="0 0 16 16"
-                                >
-                                    <path d="M8 1a2 2 0 0 0-2 2v3H5a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2H10V3a2 2 0 0 0-2-2zm1 5H7V3a1 1 0 1 1 2 0z" />
-                                </svg>
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="18"
+                                height="18"
+                                fill="currentColor"
+                                viewBox="0 0 16 16"
+                            >
+                                <path d="M8 1a2 2 0 0 0-2 2v3H5a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2H10V3a2 2 0 0 0-2-2zm1 5H7V3a1 1 0 1 1 2 0z" />
+                            </svg>
                             Acceso Clientes ▾
                         </button>
 
@@ -184,13 +186,19 @@ export default function Header() {
                         >
                             🚀 Demo
                         </a>
-<a
+                        <a
                             href="/contact"
                             onClick={() => setOpen(false)}
                         >
                             📲 Contacto
                         </a>
-                        
+                        <a
+                            href="/qr-dinamico"
+                            onClick={() => setOpen(false)}
+                        >
+                            ⌗ QR Dinámico vs.Tradicional
+                        </a>
+
 
                         {/* CLIENTES MOBILE */}
                         <div

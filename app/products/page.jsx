@@ -24,6 +24,9 @@ export default function ProductsPage() {
     const [qrTypes, setQrTypes] = useState([]);
     const [supports, setSupports] = useState([]);
 
+    const [urlPrefix, setUrlPrefix] =
+        useState("");
+
     // CREATE
     const [qrTypeId, setQrTypeId] = useState("");
     const [supportId, setSupportId] = useState("");
@@ -31,6 +34,8 @@ export default function ProductsPage() {
     // EDIT
     const [editQrTypeId, setEditQrTypeId] = useState("");
     const [editSupportId, setEditSupportId] = useState("");
+    const [editUrlPrefix, setEditUrlPrefix] =
+        useState("");
 
     const [editQrTypes, setEditQrTypes] = useState([]);
     const [editSupports, setEditSupports] = useState([]);
@@ -151,7 +156,8 @@ export default function ProductsPage() {
                 name: name.trim(),
                 is_digital: isDigital,
                 qr_type_id: qrTypeId,
-                support_id: supportId
+                support_id: supportId,
+                url_prefix: urlPrefix.trim()
             })
         });
 
@@ -175,6 +181,7 @@ export default function ProductsPage() {
         setName("");
         setIsDigital(false);
         setOpen(false);
+        setUrlPrefix("");
 
         load();
     }
@@ -202,6 +209,10 @@ export default function ProductsPage() {
             product.support_id
                 ? String(product.support_id)
                 : ""
+        );
+
+        setEditUrlPrefix(
+            product.url_prefix || ""
         );
 
         setEditOpen(true);
@@ -243,14 +254,11 @@ export default function ProductsPage() {
             },
             body: JSON.stringify({
                 id: editId,
-
                 name: editName.trim(),
-
                 is_digital: editIsDigital,
-
                 qr_type_id: editQrTypeId,
-
-                support_id: editSupportId
+                support_id: editSupportId,
+                url_prefix: editUrlPrefix.trim()
             })
         });
 
@@ -426,6 +434,8 @@ export default function ProductsPage() {
 
                             <th>Tipo QR</th>
 
+                            <th>URL Prefix</th>
+
                             <th>Soporte</th>
 
                             <th className="text-center">
@@ -456,7 +466,10 @@ export default function ProductsPage() {
                                     </span>
 
                                 </td>
-
+                                {/* URL_PREFIX */}
+                                <td>
+                                    {p.url_prefix || "-"}
+                                </td>
                                 {/* SOPORTE */}
                                 <td>
 
@@ -617,6 +630,23 @@ export default function ProductsPage() {
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
                                 />
+                            </div>
+                            {/* URL_PREFIX */}
+                            <div className="tags_modal_group">
+
+                                <label className="tags_modal_label">
+                                    URL Prefix
+                                </label>
+
+                                <input
+                                    className="tags_modal_input"
+                                    placeholder="instagram.com/"
+                                    value={urlPrefix}
+                                    onChange={(e) =>
+                                        setUrlPrefix(e.target.value)
+                                    }
+                                />
+
                             </div>
 
                             {/* DIGITAL */}
@@ -788,7 +818,21 @@ export default function ProductsPage() {
                                     </select>
 
                                 </div>
+                                {/* URL_PREFIX */}
+                                <div className="tags_modal_group">
 
+                                    <label className="tags_modal_label">
+                                        URL Prefix
+                                    </label>
+
+                                    <input
+                                        className="tags_modal_input"
+                                        value={editUrlPrefix}
+                                        onChange={(e) =>
+                                            setEditUrlPrefix(e.target.value)
+                                        }
+                                    />
+                                </div>
                                 {/* NAME */}
                                 <div className="tags_modal_group">
 

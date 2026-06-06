@@ -1,6 +1,9 @@
 import { db } from "@/app/lib/tags-db";
+import { canCreateQR } from "@/app/modules/qr-page/lib/canCreateQR";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+
 
 
 
@@ -54,7 +57,36 @@ export async function POST(req) {
       }
     }
 
+    // =========================
+    // 🔒 VALIDAR LÍMITE PLAN
+    // =========================
 
+    if (business_id) {
+
+      const canCreate =
+        await canCreateQR({
+          businessId: business_id,
+          quantity
+        });
+
+      if (!canCreate.ok) {
+
+        return Response.json(
+          {
+            error:
+              canCreate.error,
+            currentTotal:
+              canCreate.currentTotal || 0,
+            maxAllowed:
+              canCreate.maxAllowed || 0
+          },
+          {
+            status:
+              canCreate.status
+          }
+        );
+      }
+    }
 
 
     // =========================

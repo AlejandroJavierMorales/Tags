@@ -1,4 +1,4 @@
-export const InstagramIcon = ({ size = 28 }) => (
+export const InstagramIcon = ({ size = 40 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
     <path d="M7 2C4.2 2 2 4.2 2 7v10c0 2.8 2.2 5 5 5h10c2.8 
     0 5-2.2 5-5V7c0-2.8-2.2-5-5-5H7zm5 5a5 5 0 110 
@@ -7,7 +7,7 @@ export const InstagramIcon = ({ size = 28 }) => (
   </svg>
 );
 
-export const FacebookIcon = ({ size = 28 }) => (
+export const FacebookIcon = ({ size = 40 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
     <path d="M22 12a10 10 0 10-11.5 9.9v-7H8v-3h2.5V9.5c0-2.5 
     1.5-3.9 3.8-3.9 1.1 0 2.2.2 
@@ -17,7 +17,7 @@ export const FacebookIcon = ({ size = 28 }) => (
   </svg>
 );
 
-export const TikTokIcon = ({ size = 28 }) => (
+export const TikTokIcon = ({ size = 40 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
     <path d="M16 2c.5 2 2 3.5 4 4v3c-1.5 0-3-.5-4-1.5V14a6 
     6 0 11-6-6c.3 0 .7 0 1 .1v3a3 
@@ -25,14 +25,14 @@ export const TikTokIcon = ({ size = 28 }) => (
   </svg>
 );
 
-export const XIcon = ({ size = 28 }) => (
+export const XIcon = ({ size = 40 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
     <path d="M18 2h3l-7 8 8 12h-6l-5-8-7 
     8H1l8-9L1 2h6l5 7 6-7z"/>
   </svg>
 );
 
-export const WhatsAppIcon = ({ size = 28 }) => (
+export const WhatsAppIcon = ({ size = 40 }) => (
   <svg
     width={size}
     height={size}

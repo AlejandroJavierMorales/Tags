@@ -1,0 +1,400 @@
+-- =====================================================
+-- TAGS EVENTS - INVITATION SYSTEM
+-- =====================================================
+
+-- =====================================================
+-- TEMPLATES
+-- =====================================================
+
+CREATE TABLE tags_event_invitation_templates (
+
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+
+    slug VARCHAR(100) NOT NULL UNIQUE,
+
+    name VARCHAR(255) NOT NULL,
+
+    category VARCHAR(100),
+
+    preview_image TEXT,
+
+    description TEXT,
+
+    config_json JSON,
+
+    is_system TINYINT(1) DEFAULT 1,
+
+    is_active TINYINT(1) DEFAULT 1,
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP
+
+);
+
+-- =====================================================
+-- THEMES
+-- =====================================================
+
+CREATE TABLE tags_event_invitation_themes (
+
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+
+    slug VARCHAR(100) NOT NULL UNIQUE,
+
+    name VARCHAR(255) NOT NULL,
+
+    preview_image TEXT,
+
+    config_json JSON,
+
+    is_system TINYINT(1) DEFAULT 1,
+
+    is_active TINYINT(1) DEFAULT 1,
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP
+
+);
+
+-- =====================================================
+-- INVITATIONS
+-- =====================================================
+
+CREATE TABLE tags_event_invitations (
+
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+
+    event_id BIGINT NOT NULL,
+
+    template_id BIGINT,
+
+    theme_id BIGINT,
+
+    title VARCHAR(255) NOT NULL,
+
+    slug VARCHAR(255) UNIQUE,
+
+    cover_image TEXT,
+
+    logo_image TEXT,
+
+    background_music_url TEXT,
+
+    settings_json JSON,
+
+    is_public TINYINT(1) DEFAULT 1,
+
+    requires_password TINYINT(1) DEFAULT 0,
+
+    password_hash TEXT,
+
+    published_at DATETIME,
+
+    created_by BIGINT,
+
+    is_active TINYINT(1) DEFAULT 1,
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+
+    INDEX(event_id),
+    INDEX(template_id),
+    INDEX(theme_id)
+
+);
+
+-- =====================================================
+-- INVITATION BLOCKS
+-- =====================================================
+
+CREATE TABLE tags_event_invitation_blocks (
+
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+
+    invitation_id BIGINT NOT NULL,
+
+    type VARCHAR(100) NOT NULL,
+
+    position INT DEFAULT 0,
+
+    title VARCHAR(255),
+
+    config_json JSON,
+
+    is_active TINYINT(1) DEFAULT 1,
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+
+    INDEX(invitation_id),
+    INDEX(type)
+
+);
+
+-- =====================================================
+-- INVITATION GUESTS
+-- =====================================================
+
+CREATE TABLE tags_event_invitation_guests (
+
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+
+    invitation_id BIGINT NOT NULL,
+
+    attendee_id BIGINT,
+
+    access_token VARCHAR(255) UNIQUE,
+
+    qr_code TEXT,
+
+    personalized_message TEXT,
+
+    max_companions INT DEFAULT 0,
+
+    rsvp_status ENUM(
+        'pending',
+        'confirmed',
+        'declined'
+    ) DEFAULT 'pending',
+
+    viewed_at DATETIME,
+
+    confirmed_at DATETIME,
+
+    last_access_at DATETIME,
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+
+    INDEX(invitation_id),
+    INDEX(attendee_id),
+    INDEX(access_token),
+    INDEX(rsvp_status)
+
+);
+
+-- =====================================================
+-- RSVP RESPONSES
+-- =====================================================
+
+CREATE TABLE tags_event_invitation_rsvps (
+
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+
+    invitation_guest_id BIGINT NOT NULL,
+
+    status ENUM(
+        'pending',
+        'confirmed',
+        'declined'
+    ) DEFAULT 'pending',
+
+    companions_count INT DEFAULT 0,
+
+    dietary_notes TEXT,
+
+    message TEXT,
+
+    responded_at DATETIME,
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+
+    INDEX(invitation_guest_id),
+    INDEX(status)
+
+);
+
+-- =====================================================
+-- INVITATION MEDIA
+-- =====================================================
+
+CREATE TABLE tags_event_invitation_media (
+
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+
+    invitation_id BIGINT NOT NULL,
+
+    type ENUM(
+        'image',
+        'video',
+        'audio'
+    ) DEFAULT 'image',
+
+    file_url TEXT NOT NULL,
+
+    position INT DEFAULT 0,
+
+    alt_text VARCHAR(255),
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    INDEX(invitation_id),
+    INDEX(type)
+
+);
+
+-- =====================================================
+-- INVITATION ANALYTICS
+-- =====================================================
+
+CREATE TABLE tags_event_invitation_analytics (
+
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+
+    invitation_id BIGINT NOT NULL,
+
+    invitation_guest_id BIGINT,
+
+    action_type VARCHAR(100),
+
+    ip_address VARCHAR(100),
+
+    user_agent TEXT,
+
+    metadata_json JSON,
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    INDEX(invitation_id),
+    INDEX(invitation_guest_id),
+    INDEX(action_type)
+
+);
+
+-- =====================================================
+-- AVAILABLE BLOCK TYPES
+-- =====================================================
+
+CREATE TABLE tags_event_invitation_block_types (
+
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+
+    slug VARCHAR(100) UNIQUE,
+
+    name VARCHAR(255),
+
+    description TEXT,
+
+    icon VARCHAR(100),
+
+    config_schema JSON,
+
+    is_system TINYINT(1) DEFAULT 1,
+
+    is_active TINYINT(1) DEFAULT 1,
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+
+);
+
+-- =====================================================
+-- TEMPLATE AVAILABLE BLOCKS
+-- =====================================================
+
+CREATE TABLE tags_event_invitation_template_blocks (
+
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+
+    template_id BIGINT NOT NULL,
+
+    block_type_id BIGINT NOT NULL,
+
+    is_required TINYINT(1) DEFAULT 0,
+
+    position INT DEFAULT 0,
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    INDEX(template_id),
+    INDEX(block_type_id)
+
+);
+
+-- =====================================================
+-- INVITATION CUSTOM CSS
+-- =====================================================
+
+CREATE TABLE tags_event_invitation_custom_styles (
+
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+
+    invitation_id BIGINT NOT NULL,
+
+    custom_css LONGTEXT,
+
+    custom_js LONGTEXT,
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+
+    UNIQUE KEY unique_invitation(invitation_id)
+
+);
+
+-- =====================================================
+-- SEO CONFIG
+-- =====================================================
+
+CREATE TABLE tags_event_invitation_seo (
+
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+
+    invitation_id BIGINT NOT NULL,
+
+    meta_title VARCHAR(255),
+
+    meta_description TEXT,
+
+    og_image TEXT,
+
+    noindex TINYINT(1) DEFAULT 0,
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+
+    UNIQUE KEY unique_invitation(invitation_id)
+
+);
+
+-- =====================================================
+-- PASSWORD ACCESS LOGS
+-- =====================================================
+
+CREATE TABLE tags_event_invitation_access_logs (
+
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+
+    invitation_id BIGINT NOT NULL,
+
+    invitation_guest_id BIGINT,
+
+    ip_address VARCHAR(100),
+
+    access_result ENUM(
+        'success',
+        'denied'
+    ),
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    INDEX(invitation_id),
+    INDEX(invitation_guest_id)
+
+);

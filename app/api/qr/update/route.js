@@ -19,8 +19,11 @@ export async function POST(req) {
             business_id,
             email,
             phone,
-            name
+            name,
+            stop_message
         } = body;
+
+        console.log('Body de QR **** '+ JSON.stringify(body,2,null))
 
         if (!code) {
             return Response.json(
@@ -152,7 +155,8 @@ export async function POST(req) {
                 label = ?,
                 value = ?,
                 business_id = ?,
-                final_url = ?,
+                final_url = ?,                
+                stop_message = ?,
                 status = 'active'
             WHERE code = ?
             `,
@@ -161,6 +165,7 @@ export async function POST(req) {
                 safeValue,
                 safeBusinessId,
                 finalUrl,
+                stop_message,
                 code
             ]
         );

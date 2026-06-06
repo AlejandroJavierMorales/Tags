@@ -150,12 +150,10 @@
 
 .tags_service_number {
     font-size: 90px;
-
     font-weight: 800;
-
     line-height: 1;
 
-    color: rgba(15, 209, 90, 0.16);
+    color: rgba(15, 209, 90, 0.45);
 
     margin-bottom: 20px;
 }
@@ -207,9 +205,9 @@
 
     border-radius: 16px;
 
-    background: #0fd15a;
+    background: #0bb14b;
 
-    color: white;
+    color: #fff;
 
     text-decoration: none;
 
@@ -221,6 +219,11 @@
 
     box-shadow:
         0 20px 40px rgba(15, 209, 90, 0.24);
+}
+
+a.contact-link {
+    padding: 10px 0 !important;
+    margin: 16px 0 !important;
 }
 
 .tags_services_button:hover {
@@ -723,13 +726,13 @@
 
     border-radius: 999px;
 
-    background: rgba(15, 209, 90, 0.08);
+    background: rgba(56, 247, 3, 0.08);
 
     border: 1px solid rgba(15, 209, 90, 0.15);
 
     color: #0ea84a;
 
-    font-size: 14px;
+    font-size: 15px;
 
     font-weight: 700;
 
@@ -872,18 +875,16 @@
 
 .tags_products_button {
     display: inline-flex;
-
     justify-content: center;
-
     align-items: center;
 
     padding: 18px 34px;
 
     border-radius: 16px;
 
-    background: #0fd15a;
+    background: #0bb14b;
 
-    color: white;
+    color: #fff;
 
     text-decoration: none;
 
@@ -1599,9 +1600,9 @@
 }
 
 .tags_btn_primary {
-    background: #0fd15a;
+    background: #0bb14b;
 
-    color: white;
+    color: #fff;
 
     box-shadow:
         0 12px 24px rgba(15, 209, 90, 0.22);

@@ -4,10 +4,10 @@ import { FacebookIcon, InstagramIcon } from "../SocialIcons";
 import PoweredBy from "../PoweredBy";
 
 export default function TagsFooter() {
-  const { name, contact, social } = tagsSiteConfig ;
+  const { name, contact, social } = tagsSiteConfig;
 
   return (
-    <footer className="footer tags_text_normal" style={{backgroundColor:"#282727", color:"#d9d6d6", paddingBottom:"180px"}}>
+    <footer className="footer tags_text_normal" style={{ backgroundColor: "#282727", color: "#d9d6d6", paddingBottom: "180px" }}>
       <div className="container py-5" >
         <div className="row">
 
@@ -35,7 +35,7 @@ export default function TagsFooter() {
 
             <p className="mb-1">{contact.address}</p>
 
-            <p className="mb-1">
+            <p className="mt-1 mb-1 pt-1 pb-1">
               Tel/WhatsApp:{" "}
               <a
                 href={`https://wa.me/${contact.phone}`}
@@ -46,14 +46,16 @@ export default function TagsFooter() {
               </a>
             </p>
 
-            <p className="mb-1">
-              <a href={`mailto:${contact.email}`}>
+            <p className="mt-1 mb-1 pt-1 pb-1">
+              <a href={`mailto:${contact.email}`}
+              >
                 {contact.email}
               </a>
             </p>
 
-            <p>
-              <a href={contact.web} target="_blank" rel="noopener noreferrer">
+            <p className="mt-1 mb-1 pt-1 pb-1">
+              <a href={contact.web} target="_blank" rel="noopener noreferrer"
+              >
                 {contact.web}
               </a>
             </p>
@@ -70,6 +72,7 @@ export default function TagsFooter() {
                 className="social-icon"
                 target="_blank"
                 rel="noopener noreferrer"
+                aria-label="Instagram"
               >
                 <InstagramIcon />
               </a>
@@ -79,6 +82,7 @@ export default function TagsFooter() {
                 className="social-icon"
                 target="_blank"
                 rel="noopener noreferrer"
+                aria-label="Facebook"
               >
                 <FacebookIcon />
               </a>

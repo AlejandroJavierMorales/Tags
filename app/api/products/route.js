@@ -14,12 +14,12 @@ export async function GET() {
         p.is_digital,
         p.qr_type_id,
         p.support_id,
+        p.url_prefix,
 
         -- QR TYPE
         qt.code AS qr_type_code,
         qt.name AS qr_type_name,
         qt.input_type,
-        qt.url_prefix,
         qt.placeholder,
         qt.helper_text,
         qt.validation_regex,

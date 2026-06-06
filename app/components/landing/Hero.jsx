@@ -61,10 +61,11 @@ export default function Hero() {
                                 <Image
                                     src="/assets/images/tags/qr-estadisticas.webp"
                                     alt="Carteles QR inteligentes con estadísticas"
-                                    width={700}
-                                    height={550}
+                                    width={750}
+                                    height={570}
                                     className="img-fluid tags_hero_image"
                                     priority
+                                    style={{height:"auto"}}
                                 />
 
                             </div>

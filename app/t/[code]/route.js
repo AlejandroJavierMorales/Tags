@@ -272,7 +272,7 @@ export async function GET(req, { params }) {
       // -----------------------------
       // 🌍 GEO ASYNC (NO BLOQUEANTE)
       // -----------------------------
-      console.log("*** Click Id " + clickId + " ip " + ip)
+      /* console.log("*** Click Id " + clickId + " ip " + ip) */
       if (
         clickId &&
         ip &&

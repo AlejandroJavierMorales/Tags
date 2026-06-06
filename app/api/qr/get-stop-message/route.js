@@ -11,7 +11,7 @@ export async function GET(req) {
         const { searchParams } = new URL(req.url);
 
         const code = searchParams.get("code");
-        console.log('Codigo QR Stopped: ' + code)
+        /* console.log('Codigo QR Stopped: ' + code) */
         if (!code) {
 
             return Response.json(
@@ -31,7 +31,7 @@ export async function GET(req) {
         );
 
         const qr = rows[0];
-        console.log('QR Stopped: ' + JSON.stringify(qr))
+        /* console.log('QR Stopped: ' + JSON.stringify(qr)) */
         return Response.json({
             stop_message:
                 qr?.stop_message ||

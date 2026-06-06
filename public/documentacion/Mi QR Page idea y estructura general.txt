@@ -1,0 +1,403 @@
+Mi QR Page
+************************
+
+Bueno vamos a enacar un modulo nuevo - MiQR-Page app/modules/miqr-page
+
+el mismo va a estar destinado a que cualquier usuario con plan superior al Basic.
+
+la idea es dar distinto nivel de utilidades, pero la finalidad basica a la de crear y persoonalizar una landingpage a modo de web personal o pagina de aterrizaje del QR asociado.
+
+necesito me ayudes a definir como encararlo, tablas necesarias ai yo te digo si ya tengo alguna y con que estructura para encararlo prolijo y escalable.
+La idea es que hasta pueda agregar secciones, imagenes, que puedan mostrar un catalogo, una carta de menu, y hasta que pueda agregar paginas y se en menues. Tembien personalizar la paleta de colores.
+Que todo quede encapsulado y reutilizable para agregarlo en otros proyectos 
+
+Te conviene encararlo como un mini CMS/headless builder modular desde el día 1.
+Porque lo que describís ya NO es:
+
+“una landing”
+“un perfil QR”
+
+sino una plataforma tipo:
+
+Linktree avanzado
+mini Shopify
+mini CMS
+mini website builder
+
+Y si no lo modelás bien ahora, en 3 meses explota.
+
+La clave:
+
+separar
+contenido
+estructura
+diseño
+módulos
+render
+Arquitectura recomendada
+app/modules/miqr-page
+
+internamente:
+
+/modules/miqr-page
+  /builder
+  /renderer
+  /themes
+  /blocks
+  /services
+  /controllers
+  /components
+Concepto CORE
+ENTIDADES
+
+Tenés 5 conceptos principales:
+
+1. SITE
+
+(el sitio del usuario)
+
+Ejemplo:
+
+micafeteria
+juan-peluquero
+drinks-bar
+
+Tabla:
+
+miqr_sites
+Estructura
+id
+user_id
+slug
+name
+description
+logo
+favicon
+plan
+theme_id
+is_published
+created_at
+updated_at
+2. PAGES
+
+(páginas internas)
+
+Ejemplo:
+
+Home
+Menú
+Nosotros
+Contacto
+Promos
+
+Tabla:
+
+miqr_pages
+Estructura
+id
+site_id
+title
+slug
+type
+is_home
+is_published
+sort_order
+seo_title
+seo_description
+created_at
+updated_at
+3. BLOCKS / SECTIONS
+
+(el builder)
+
+Esto es EL núcleo.
+
+Cada página tiene bloques dinámicos.
+
+Ejemplo:
+
+Hero
+Gallery
+Menu
+Catalog
+Testimonials
+Contact
+QR
+Map
+Products
+CTA
+Video
+
+Tabla:
+
+miqr_page_blocks
+Estructura
+id
+page_id
+type
+position
+settings_json
+is_visible
+created_at
+updated_at
+
+MUY importante:
+
+settings_json
+
+porque ahí guardás:
+
+textos
+imágenes
+estilos
+links
+botones
+etc
+
+Ejemplo:
+
+{
+  "title": "Nuestra Carta",
+  "subtitle": "Las mejores hamburguesas",
+  "backgroundColor": "#000",
+  "textColor": "#fff",
+  "image": "/uploads/hero.jpg"
+}
+
+Eso hace el sistema HIPER escalable.
+
+4. THEME
+
+(personalización visual)
+
+Tabla:
+
+miqr_themes
+Estructura
+id
+name
+settings_json
+is_public
+
+Ejemplo:
+
+{
+  "primaryColor": "#000",
+  "secondaryColor": "#fff",
+  "fontFamily": "Inter",
+  "borderRadius": "12px",
+  "buttonStyle": "rounded"
+}
+5. ASSETS
+
+(imágenes/videos/files)
+
+Tabla:
+
+miqr_assets
+Estructura
+id
+site_id
+type
+path
+alt
+metadata_json
+created_at
+Módulos reutilizables
+
+NO hardcodees.
+
+Cada bloque:
+
+HeroBlock
+GalleryBlock
+MenuBlock
+CatalogBlock
+TestimonialsBlock
+MapBlock
+
+vive separado:
+
+/modules/miqr-page/blocks
+
+y exporta:
+
+{
+  type: 'hero',
+  component: HeroBlock,
+  schema: {},
+  defaultData: {}
+}
+
+Eso te permite:
+
+reusar
+agregar bloques nuevos
+tener editor visual
+drag & drop futuro
+Tipos de bloque recomendados
+Base MVP
+Visuales
+Hero
+Gallery
+Cover
+Slider
+Banner
+Video
+Negocio
+Menu
+Catalog
+Products
+Services
+Pricing
+Conversión
+WhatsApp CTA
+Form
+Reservation
+Contact
+Social
+Instagram feed
+Reviews
+Testimonials
+Utilidad
+QR
+Map
+Opening hours
+FAQ
+Render Engine
+
+MUY importante.
+
+NO hagas:
+
+if(type === 'hero')
+
+Hacé registry:
+
+const BLOCKS = {
+  hero: HeroBlock,
+  gallery: GalleryBlock,
+  menu: MenuBlock
+}
+
+y:
+
+const Component = BLOCKS[block.type]
+
+return <Component settings={block.settings_json} />
+
+Eso te salva el proyecto.
+
+SEO
+
+Cada página:
+
+metadata propia
+OpenGraph
+JSON-LD
+sitemap dinámico
+
+Entonces:
+
+seo_title
+seo_description
+seo_image
+URLs
+
+Ejemplo:
+
+/miqr/mi-cafeteria
+/miqr/mi-cafeteria/menu
+/miqr/mi-cafeteria/promos
+
+o subdominio futuro:
+
+micafeteria.tudominio.com
+
+Diseñalo YA pensando en eso.
+
+PLANES
+
+Tabla:
+
+miqr_plans
+
+Ejemplo:
+
+Basic
+Pro
+Business
+Premium
+
+Y features:
+
+{
+  "maxPages": 10,
+  "customDomain": true,
+  "catalog": true,
+  "analytics": true
+}
+MUY IMPORTANTE
+
+NO guardes HTML.
+
+Guardá:
+
+JSON
+estructura
+bloques
+config
+
+Renderizá React dinámicamente.
+
+Recomendación FUERTE
+Stack ideal
+Editor
+dnd-kit
+Zustand
+React Hook Form
+Contenido
+JSON schema driven
+Render
+Server Components
+Media
+Cloudinary / S3
+Escalabilidad futura
+
+Esto después te deja agregar:
+
+ecommerce
+reservas
+pedidos
+analytics
+themes marketplace
+templates
+IA generadora
+clonación de sitios
+multi idioma
+dominios custom
+
+SIN rehacer arquitectura.
+
+Mi recomendación real
+
+Primero hacé:
+
+MVP
+Site
+Pages
+Blocks
+Theme
+Assets
+
+y 5 bloques:
+
+Hero
+Gallery
+Menu
+CTA
+Contact
+
+Con eso ya tenés algo MUY potente.
+
+Después escalás.

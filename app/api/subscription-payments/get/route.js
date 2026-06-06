@@ -1,35 +1,69 @@
+// =====================================
+// API: /api/subscription-payment/get
+// Descripción: Lista pagos de suscripciones con información de cliente y plan.
+// =====================================
+
 import { db } from "@/app/lib/tags-db";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-
-
-export async function GET() {
+export async function GET(req) {
 
     try {
 
-        const [rows] =
-            await db.query(`
+        const { searchParams } = new URL(req.url);
 
-                SELECT
+        const business_id = searchParams.get("business_id");
+        const subscription_id = searchParams.get("subscription_id");
+        const status = searchParams.get("status");
 
-                    p.*,
+        let sql = `
+            SELECT
+                pay.*,
+                b.name AS business_name,
+                b.email AS business_email,
+                pl.name AS plan_name,
+                pl.code AS plan_code
+            FROM tags_subscription_payments pay
+            INNER JOIN tags_businesses b
+                ON b.id = pay.business_id
+            INNER JOIN tags_plans pl
+                ON pl.id = pay.plan_id
+            WHERE 1 = 1
+        `;
 
-                    b.name AS business_name,
+        const values = [];
 
-                    pl.name AS plan_name
+        if (business_id) {
+            sql += `
+                AND pay.business_id = ?
+            `;
+            values.push(business_id);
+        }
 
-                FROM tags_subscription_payments p
+        if (subscription_id) {
+            sql += `
+                AND pay.subscription_id = ?
+            `;
+            values.push(subscription_id);
+        }
 
-                INNER JOIN businesses b
-                    ON b.id = p.business_id
+        if (status) {
+            sql += `
+                AND pay.status = ?
+            `;
+            values.push(status);
+        }
 
-                INNER JOIN tags_plans pl
-                    ON pl.id = p.plan_id
+        sql += `
+            ORDER BY pay.id DESC
+        `;
 
-                ORDER BY p.id DESC
-            `);
+        const [rows] = await db.query(
+            sql,
+            values
+        );
 
         return Response.json({
             success: true,
@@ -38,15 +72,11 @@ export async function GET() {
 
     } catch (err) {
 
-        console.log(err);
+        console.log("SUBSCRIPTION PAYMENTS GET ERROR:", err);
 
         return Response.json(
-            {
-                error: "Error obteniendo pagos"
-            },
-            {
-                status: 500
-            }
+            { error: "Error obteniendo pagos" },
+            { status: 500 }
         );
     }
 }

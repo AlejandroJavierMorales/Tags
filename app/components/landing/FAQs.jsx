@@ -120,11 +120,11 @@ export default function FAQs({
 
                     border-radius: 999px;
 
-                    background: rgba(0, 128, 96, 0.08);
+                    background: rgba(0, 128, 96, 0.16);
 
-                    border: 1px solid rgba(0, 128, 96, 0.15);
+                    border: 1px solid rgba(0, 128, 96, 0.28);
 
-                    color: #0d7a5f;
+                    color: #22c79a;
 
                     font-size: 13px;
                     font-weight: 700;

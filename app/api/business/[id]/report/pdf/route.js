@@ -17,13 +17,13 @@ export async function POST(req, { params }) {
         const body = await req.json();
         const charts = body?.charts || {};
 
-        console.log("📄 API Report:", {
+/*         console.log("📄 API Report:", {
             businessId,
             from,
             to,
             qrId,
             hasCharts: !!charts
-        });
+        }); */
 
         // ================= DATA =================
         const stats = await getBusinessStats({

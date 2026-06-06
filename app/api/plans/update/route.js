@@ -1,8 +1,12 @@
+// =====================================
+// API: /api/plans/update
+// Descripción: Actualiza un plan comercial existente.
+// =====================================
+
 import { db } from "@/app/lib/tags-db";
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-
 
 export async function POST(req) {
 
@@ -29,7 +33,11 @@ export async function POST(req) {
             analytics_plus_enabled,
             allow_pause_qr,
             allow_edit_qr,
-            priority_support
+            priority_support,
+            is_active,
+            is_public,
+            is_free,
+            sort_order
         } = body;
 
         if (!id || !name || !code || price == null) {
@@ -39,33 +47,60 @@ export async function POST(req) {
             );
         }
 
+        const cleanCode =
+            code.trim().toLowerCase();
+
+        const [existing] =
+            await conn.execute(
+                `
+                SELECT id
+                FROM tags_plans
+                WHERE code = ?
+                AND id <> ?
+                LIMIT 1
+                `,
+                [
+                    cleanCode,
+                    id
+                ]
+            );
+
+        if (existing.length) {
+            return Response.json(
+                { error: "Ya existe otro plan con ese código" },
+                { status: 409 }
+            );
+        }
+
         await conn.execute(
             `
-      UPDATE tags_plans
-      SET
-        name = ?,
-        code = ?,
-        description = ?,
-        price = ?,
-        currency = ?,
-        max_qr_codes = ?,
+            UPDATE tags_plans
+            SET
+                name = ?,
+                code = ?,
+                description = ?,
+                price = ?,
+                currency = ?,
+                max_qr_codes = ?,
 
-        dashboard_enabled = ?,
-        reports_enabled = ?,
-        reports_email_enabled = ?,
-        reports_whatsapp_enabled = ?,
-        analytics_enabled = ?,
-        analytics_plus_enabled = ?,
-        allow_pause_qr = ?,
-        allow_edit_qr = ?,
-        priority_support = ?,
-
-        updated_at = NOW()
-      WHERE id = ?
-      `,
+                dashboard_enabled = ?,
+                reports_enabled = ?,
+                reports_email_enabled = ?,
+                reports_whatsapp_enabled = ?,
+                analytics_enabled = ?,
+                analytics_plus_enabled = ?,
+                allow_pause_qr = ?,
+                allow_edit_qr = ?,
+                priority_support = ?,
+                is_active = ?,
+                is_public = ?,
+                is_free = ?,
+                sort_order = ?
+            WHERE id = ?
+            `,
             [
                 name.trim(),
-                code.trim().toLowerCase(),
+                cleanCode,
                 description || null,
                 Number(price),
                 currency || "ARS",
@@ -80,18 +115,24 @@ export async function POST(req) {
                 allow_pause_qr ? 1 : 0,
                 allow_edit_qr ? 1 : 0,
                 priority_support ? 1 : 0,
-
+                is_active ? 1 : 0,
+                is_public ? 1 : 0,
+                is_free ? 1 : 0,
+                Number(sort_order || 0),
                 id
             ]
         );
 
-        conn.release();
-
-        return Response.json({ ok: true });
+        return Response.json({
+            ok: true
+        });
 
     } catch (e) {
 
-        console.error("PLAN UPDATE ERROR:", e);
+        console.error(
+            "PLAN UPDATE ERROR:",
+            e
+        );
 
         return Response.json(
             { error: "Error actualizando plan" },
@@ -99,6 +140,7 @@ export async function POST(req) {
         );
 
     } finally {
+
         conn.release();
     }
 }

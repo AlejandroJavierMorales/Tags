@@ -1,0 +1,303 @@
+DOCUMENTACIÓN DEL MÓDULO E-EVENTS
+¿Qué es E-Events?
+
+E-Events es el módulo de:
+
+gestión de eventos
+asistentes
+check-in
+QR dinámicos
+control de acceso
+estadísticas en tiempo real
+
+integrado dentro de TAGS.
+
+OBJETIVO DEL MÓDULO
+
+Permitir que un negocio pueda:
+
+crear un evento
+→ registrar asistentes
+→ generar QRs únicos
+→ controlar accesos
+→ ver estadísticas en tiempo real
+ESTRUCTURA GENERAL
+
+El módulo se compone de:
+
+1. Eventos
+
+Tabla:
+
+tags_events
+
+Representa:
+
+congresos
+fiestas
+workshops
+networking
+festivales
+reuniones
+ferias
+eventos empresariales
+2. Asistentes
+
+Tabla:
+
+tags_event_attendees
+
+Representa:
+
+personas registradas
+invitados
+participantes
+asistentes VIP
+staff
+prensa
+3. Check-ins
+
+Tabla:
+
+tags_event_checkins
+
+Representa:
+
+ingresos reales
+validaciones
+accesos registrados
+historial de escaneo
+ESTADOS DEL EVENTO
+
+La tabla:
+
+tags_events
+
+usa:
+
+status
+
+para controlar el ciclo de vida del evento.
+
+ESTADOS DEFINIDOS
+BORRADOR
+draft
+Significa
+
+El evento:
+
+todavía se está configurando
+no está publicado
+no está activo
+no acepta check-ins
+Uso
+
+Mientras el organizador:
+
+carga datos
+agrega asistentes
+configura el evento
+PUBLICADO
+published
+Significa
+
+El evento:
+
+ya fue publicado
+puede compartirse
+puede recibir registros
+todavía NO comenzó
+Uso
+
+Ejemplo:
+
+venta anticipada
+difusión
+preinscripción
+ACTIVO
+active
+Significa
+
+El evento:
+
+está ocurriendo ahora
+acepta check-ins
+registra ingresos
+habilita estadísticas live
+Uso
+
+Estado operativo principal.
+
+FINALIZADO
+finished
+Significa
+
+El evento:
+
+terminó
+ya no acepta ingresos
+conserva estadísticas
+conserva historial
+Uso
+
+Consulta histórica y analytics.
+
+CANCELADO
+cancelled
+Significa
+
+El evento:
+
+fue suspendido
+ya no puede utilizarse
+deshabilita accesos
+invalida check-ins
+FLUJO NORMAL
+BORRADOR
+→ PUBLICADO
+→ ACTIVO
+→ FINALIZADO
+FLUJO EXCEPCIONAL
+BORRADOR
+→ CANCELADO
+
+o:
+
+PUBLICADO
+→ CANCELADO
+IMPORTANTE
+NO mezclar estados
+
+Por ejemplo:
+
+ACTIVE + FINISHED
+
+no puede existir.
+
+El evento tiene UN estado operativo principal.
+
+ESTADOS EN EL DASHBOARD
+Traducción visual
+
+Internamente:
+
+draft
+published
+active
+finished
+cancelled
+
+Pero visualmente mostrar:
+
+DB	Dashboard
+draft	Borrador
+published	Publicado
+active	Activo
+finished	Finalizado
+cancelled	Cancelado
+BADGES VISUALES
+Borrador
+
+Color:
+
+amarillo
+pending
+Publicado
+
+Color:
+
+azul
+Activo
+
+Color:
+
+verde
+Finalizado
+
+Color:
+
+gris
+Cancelado
+
+Color:
+
+rojo
+FUNCIONAMIENTO DEL CHECK-IN
+
+El estado del evento controla:
+
+Estado	Permite ingreso
+Borrador	❌
+Publicado	❌
+Activo	✅
+Finalizado	❌
+Cancelado	❌
+IMPORTANTE PARA /e/[code]
+
+Cuando llegue un scan:
+
+Validar:
+evento.status === 'active'
+
+Si NO:
+
+acceso denegado
+ESTADOS DEL ASISTENTE
+
+Tabla:
+
+tags_event_attendees
+
+usa:
+
+status
+REGISTERED
+registered
+
+Registrado pero todavía no ingresó.
+
+Visual:
+
+Registrado
+CHECKED_IN
+checked_in
+
+Ya ingresó al evento.
+
+Visual:
+
+Ingresó
+CANCELLED
+cancelled
+
+Entrada anulada.
+
+Visual:
+
+Cancelado
+REGLAS IMPORTANTES
+Un asistente NO puede:
+hacer check-in dos veces
+CHECK-IN DUPLICADO
+
+Debe mostrar:
+
+⚠ Entrada ya registrada
+OBJETIVO DEL MVP
+
+El MVP NO busca:
+
+vender tickets
+manejar asientos
+generar wallets
+controlar pagos
+
+todavía.
+
+EL OBJETIVO REAL
+
+Es validar:
+
+QR + ingreso + analytics + eventos
+
+porque eso ya tiene valor comercial enorme.

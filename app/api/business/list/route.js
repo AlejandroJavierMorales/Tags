@@ -25,6 +25,7 @@ export async function GET() {
   s.currency AS subscription_currency,
   s.started_at AS subscription_started_at,
   s.expires_at AS subscription_expires_at,
+  s.duration_months AS subscription_duration_months,
 
   p.name AS plan_name,
   p.code AS plan_code
@@ -56,6 +57,7 @@ GROUP BY
   s.currency,
   s.started_at,
   s.expires_at,
+  s.duration_months,
   p.name,
   p.code
 

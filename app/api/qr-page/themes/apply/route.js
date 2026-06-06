@@ -1,0 +1,117 @@
+// =====================================
+// API: /api/qr-page/themes/apply
+// Nombre: Aplicar theme QR-Page
+// Descripción: Asocia un theme activo a una QR-Page.
+// =====================================
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+import { db }
+    from "@/app/lib/tags-db";
+
+import { requireQRPageAccess }
+    from "@/app/modules/qr-page/lib/requireQRPageAccess";
+
+export async function POST(req) {
+
+    try {
+
+        const {
+            businessId,
+            pageId,
+            themeId
+        } = await req.json();
+
+        if (!businessId) {
+            return Response.json(
+                { error: "businessId requerido" },
+                { status: 400 }
+            );
+        }
+
+        if (!pageId) {
+            return Response.json(
+                { error: "pageId requerido" },
+                { status: 400 }
+            );
+        }
+
+        if (!themeId) {
+            return Response.json(
+                { error: "themeId requerido" },
+                { status: 400 }
+            );
+        }
+
+        const access =
+            await requireQRPageAccess(
+                businessId
+            );
+
+        if (!access.ok) {
+            return Response.json(
+                { error: access.error },
+                { status: access.status }
+            );
+        }
+
+        const [themes] =
+            await db.query(
+                `
+                SELECT id
+                FROM tags_qr_page_themes
+                WHERE id = ?
+                AND is_active = 1
+                LIMIT 1
+                `,
+                [themeId]
+            );
+
+        if (!themes.length) {
+            return Response.json(
+                { error: "Theme no encontrado" },
+                { status: 404 }
+            );
+        }
+
+        await db.query(
+            `
+            UPDATE tags_qr_pages
+            SET
+                theme_id = ?,
+                header_config = JSON_REMOVE(
+                    COALESCE(header_config, JSON_OBJECT()),
+                    '$.backgroundColor',
+                    '$.textColor'
+                ),
+                footer_config = JSON_REMOVE(
+                    COALESCE(footer_config, JSON_OBJECT()),
+                    '$.backgroundColor',
+                    '$.textColor'
+                ),
+                updated_at = NOW()
+            WHERE id = ?
+            AND business_id = ?
+            `,
+            [
+                themeId,
+                pageId,
+                businessId
+            ]
+        );
+
+        return Response.json({
+            ok: true
+        });
+
+    } catch (err) {
+
+        console.log(err);
+
+        return Response.json(
+            { error: err.message },
+            { status: 500 }
+        );
+    }
+}

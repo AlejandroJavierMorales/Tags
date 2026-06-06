@@ -19,7 +19,7 @@ export async function POST(req) {
             value,
             name,
             phone,
-            stop_message
+            stopped_message
         } = await req.json();
 
         if (!code || !action) {
@@ -75,7 +75,7 @@ export async function POST(req) {
             case "stopped":
                 updateFields.status = "stopped";
                 updateFields.stop_message =
-                    stop_message ||
+                    stopped_message ||
                     "Este código QR está temporalmente fuera de servicio.";
                 break;
 

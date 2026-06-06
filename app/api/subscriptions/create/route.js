@@ -1,157 +1,164 @@
+// =====================================
+// API: /api/subscriptions/create
+// Descripción: Crea una suscripción para un cliente, desactiva suscripciones activas previas y sincroniza el estado del cliente.
+// =====================================
+
 import { db } from "@/app/lib/tags-db";
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-
-
 export async function POST(req) {
+
+    const conn = await db.getConnection();
 
     try {
 
-        const body =
-            await req.json();
+        const body = await req.json();
 
         const {
-
             business_id,
             plan_id,
-            status,
-            payment_provider,
-            duration_months,
+            status = "active",
+            payment_provider = "manual",
+            duration_months = 1,
             amount,
-            currency
-
+            currency,
+            auto_renew = 0,
+            auto_disable_on_expire = 1,
+            grace_days = 0,
+            admin_override_until = null,
+            admin_override_notes = null
         } = body;
 
         if (!business_id) {
-
             return Response.json(
-                {
-                    error:
-                        "Falta cliente"
-                },
-                {
-                    status: 400
-                }
+                { error: "Falta cliente" },
+                { status: 400 }
             );
         }
 
         if (!plan_id) {
-
             return Response.json(
-                {
-                    error:
-                        "Falta plan"
-                },
-                {
-                    status: 400
-                }
+                { error: "Falta plan" },
+                { status: 400 }
             );
         }
 
-        // =====================================
-        // FECHAS
-        // =====================================
-
-        const startedAt =
-            new Date();
-
-        const expiresAt =
-            new Date();
-
-        expiresAt.setMonth(
-            expiresAt.getMonth()
-            + Number(duration_months || 1)
+        const [planRows] = await conn.query(
+            `
+            SELECT *
+            FROM tags_plans
+            WHERE id = ?
+            LIMIT 1
+            `,
+            [plan_id]
         );
 
-        // =====================================
-        // EL CLIENTE YA TIENE SUBSCRIPCION?
-        // =====================================
-        const [existing] =
-            await db.execute(`
-        SELECT id
-        FROM tags_subscriptions
-        WHERE business_id = ?
-        AND status IN (
-            'active',
-            'trial',
-            'past_due'
-        )
-        LIMIT 1
-    `,
-                [business_id]
-            );
+        const plan = planRows[0];
 
-        if (existing.length > 0) {
-
+        if (!plan) {
             return Response.json(
-                {
-                    error:
-                        "El cliente ya posee una suscripción activa"
-                },
-                {
-                    status: 400
-                }
+                { error: "Plan inexistente" },
+                { status: 404 }
             );
         }
 
-        // =====================================
-        // INSERT
-        // =====================================
+        const startedAt = new Date();
 
-        const [result] =
-            await db.query(`
+        const isFree =
+            Number(plan.is_free) === 1 ||
+            Number(plan.price || 0) === 0;
 
-                INSERT INTO
-                tags_subscriptions (
+        const expiresAt =
+            isFree
+                ? null
+                : new Date(startedAt);
 
-                    business_id,
-                    plan_id,
+        if (expiresAt) {
+            expiresAt.setMonth(
+                expiresAt.getMonth() + Number(duration_months || 1)
+            );
+        }
 
-                    status,
-                    payment_provider,
+        await conn.beginTransaction();
 
-                    amount,
-                    currency,
+        await conn.query(
+            `
+            UPDATE tags_subscriptions
+            SET
+                status = 'inactive',
+                updated_at = NOW()
+            WHERE business_id = ?
+            AND status IN ('active', 'trial', 'past_due')
+            `,
+            [business_id]
+        );
 
-                    started_at,
-                    expires_at,
-
-                    duration_months,
-
-                    source,
-
-                    created_at,
-                    updated_at
-                )
-
-                VALUES (
-
-                    ?, ?,
-                    ?, ?,
-                    ?, ?,
-                    ?, ?,
-                    ?,
-                    'manual',
-                    NOW(),
-                    NOW()
-                )
-            `, [
-
+        const [result] = await conn.query(
+            `
+            INSERT INTO tags_subscriptions (
                 business_id,
                 plan_id,
-
                 status,
                 payment_provider,
-
                 amount,
                 currency,
-
+                started_at,
+                expires_at,
+                duration_months,
+                source,
+                next_billing_at,
+                auto_renew,
+                auto_disable_on_expire,
+                grace_days,
+                admin_override_until,
+                admin_override_notes,
+                created_at,
+                updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'manual', ?, ?, ?, ?, ?, ?, NOW(), NOW())
+            `,
+            [
+                business_id,
+                plan_id,
+                status,
+                payment_provider,
+                amount ?? plan.price ?? 0,
+                currency || plan.currency || "ARS",
                 startedAt,
                 expiresAt,
+                Number(duration_months || 1),
+                expiresAt,
+                auto_renew ? 1 : 0,
+                auto_disable_on_expire ? 1 : 0,
+                Number(grace_days || 0),
+                admin_override_until || null,
+                admin_override_notes || null
+            ]
+        );
 
-                duration_months
-            ]);
+        await conn.query(
+            `
+            UPDATE tags_businesses
+            SET
+                plan_id = ?,
+                subscription_status = ?,
+                plan_started_at = ?,
+                plan_expires_at = ?,
+                updated_at = NOW()
+            WHERE id = ?
+            `,
+            [
+                plan_id,
+                status,
+                startedAt,
+                expiresAt,
+                business_id
+            ]
+        );
+
+        await conn.commit();
 
         return Response.json({
             success: true,
@@ -160,16 +167,16 @@ export async function POST(req) {
 
     } catch (err) {
 
-        console.log(err);
+        await conn.rollback();
+
+        console.log("SUBSCRIPTION CREATE ERROR:", err);
 
         return Response.json(
-            {
-                error:
-                    "Error creando suscripción"
-            },
-            {
-                status: 500
-            }
+            { error: "Error creando suscripción" },
+            { status: 500 }
         );
+
+    } finally {
+        conn.release();
     }
 }

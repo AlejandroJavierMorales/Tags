@@ -114,7 +114,7 @@ export async function GET(req, { params }) {
         const qrTarget =
             `${baseUrl}/t/${qr.code}`;
 
-        console.log("QR TARGET:", qrTarget);
+        /* console.log("QR TARGET:", qrTarget); */
 
         // =========================
         // SVG

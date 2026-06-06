@@ -67,6 +67,18 @@ export default function LoginPage() {
   }
 
   // =========================
+  // OWNER DE EVENTOS
+  // =========================
+console.log('*** ROLE *** ' + JSON.stringify(parsed,2,null) )
+
+  if (parsed?.role === "event_client") {
+
+    redirect(`${baseUrl}/dashboard/events`);
+
+
+  }
+
+  // =========================
   // BUSINESS
   // =========================
 

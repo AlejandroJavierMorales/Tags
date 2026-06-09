@@ -1,6 +1,6 @@
 // =====================================
 // API: /api/business/addons/create
-// Descripción: Crea/asigna un addon a un cliente.
+// Descripción: Crea/asigna un addon activo a un cliente validando contra el catálogo global.
 // =====================================
 
 export const runtime = "nodejs";
@@ -8,13 +8,6 @@ export const dynamic = "force-dynamic";
 
 import { db }
     from "@/app/lib/tags-db";
-
-const VALID_ADDONS = [
-    "qr_page",
-    "tagsid",
-    "custom_domain",
-    "analytics_plus"
-];
 
 export async function POST(req) {
 
@@ -48,7 +41,35 @@ export async function POST(req) {
             );
         }
 
-        if (!VALID_ADDONS.includes(addon_code)) {
+        const cleanAddonCode =
+            String(addon_code).trim();
+
+        // =========================
+        // VALIDAR ADDON DESDE DB
+        // =========================
+
+        const [addonRows] =
+            await db.query(
+                `
+                SELECT
+                    id,
+                    code,
+                    name,
+                    default_quantity,
+                    price,
+                    currency
+                FROM tags_addons
+                WHERE code = ?
+                AND is_active = 1
+                LIMIT 1
+                `,
+                [cleanAddonCode]
+            );
+
+        const addon =
+            addonRows[0];
+
+        if (!addon) {
             return Response.json(
                 { error: "addon_code inválido" },
                 { status: 400 }
@@ -56,7 +77,7 @@ export async function POST(req) {
         }
 
         const finalQuantity =
-            Number(quantity || 1);
+            Number(quantity || addon.default_quantity || 1);
 
         if (finalQuantity < 1) {
             return Response.json(
@@ -64,6 +85,10 @@ export async function POST(req) {
                 { status: 400 }
             );
         }
+
+        // =========================
+        // VALIDAR CLIENTE
+        // =========================
 
         const [businessRows] =
             await db.query(
@@ -83,7 +108,11 @@ export async function POST(req) {
             );
         }
 
-        if (addon_code === "tagsid") {
+        // =========================
+        // REGLA: TAGSID ÚNICO POR CLIENTE
+        // =========================
+
+        if (cleanAddonCode === "tags_id") {
 
             const [existingTagsId] =
                 await db.query(
@@ -91,7 +120,7 @@ export async function POST(req) {
                     SELECT id
                     FROM tags_business_addons
                     WHERE business_id = ?
-                    AND addon_code = 'tagsid'
+                    AND addon_code = 'tags_id'
                     AND status = 'active'
                     LIMIT 1
                     `,
@@ -105,6 +134,10 @@ export async function POST(req) {
                 );
             }
         }
+
+        // =========================
+        // CREAR ADDON
+        // =========================
 
         await db.query(
             `
@@ -125,12 +158,12 @@ export async function POST(req) {
             `,
             [
                 business_id,
-                addon_code,
+                cleanAddonCode,
                 finalQuantity,
                 started_at || null,
                 expires_at || null,
-                amount || 0,
-                currency || "ARS",
+                amount ?? addon.price ?? 0,
+                currency || addon.currency || "ARS",
                 notes || null
             ]
         );
@@ -141,7 +174,10 @@ export async function POST(req) {
 
     } catch (err) {
 
-        console.log("BUSINESS ADDONS CREATE ERROR:", err);
+        console.log(
+            "BUSINESS ADDONS CREATE ERROR:",
+            err
+        );
 
         return Response.json(
             { error: "Error creando addon" },

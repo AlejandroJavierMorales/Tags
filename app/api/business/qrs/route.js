@@ -1,18 +1,19 @@
 import { db } from "@/app/lib/tags-db";
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-
 
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");
 
   if (!id) {
-    return Response.json({ error: "Missing id" }, { status: 400 });
+    return Response.json(
+      { error: "Missing id" },
+      { status: 400 }
+    );
   }
 
-  // 👤 CLIENTE
   const [businessRows] = await db.execute(
     `
     SELECT id, name, email, phone
@@ -24,56 +25,111 @@ export async function GET(req) {
 
   const business = businessRows[0] || null;
 
-  // 📦 QRs DEL CLIENTE (🔥 NUEVO MODELO)
   const [qrRows] = await db.execute(
     `
-   SELECT 
-  q.id,
-  q.code,
-  q.label,
-  q.final_url,
-  q.status,
-  q.stop_message,
-  q.has_qr_page,
+  SELECT 
+    q.id,
+    q.code,
+    q.label,
+    q.final_url,
+    q.status,
+    q.stop_message,
+    q.has_qr_page,
 
-  
-  qrp.id as qr_page_id,
-  qrp.status as qr_page_status,
-  qrp.slug as qr_page_slug,
-  qrp.slug_locked,
-  qrp.page_type as qr_page_type,
+    qrp.id AS qr_page_id,
+    qrp.status AS qr_page_status,
+    qrp.slug AS qr_page_slug,
+    qrp.slug_locked,
+    qrp.page_type AS qr_page_type,
 
+    p.id AS product_id,
+    p.name AS product_name,
 
-  p.id as product_id,
-  p.name as product_name,
+    t.id AS qr_type_id,
+    t.code AS qr_type_code,
+    t.name AS qr_type_name,
+    t.url_prefix,
+    t.placeholder,
+    t.input_type,
 
-  t.id as qr_type_id,
-  t.code as qr_type_code,
-  t.name as qr_type_name,
-  t.url_prefix,
-  t.placeholder,
-  t.input_type
+    GROUP_CONCAT(
+      DISTINCT qau.addon_code
+      ORDER BY qau.addon_code
+      SEPARATOR ','
+    ) AS addon_features
 
-FROM tags_qr_codes q
+  FROM tags_qr_codes q
 
-LEFT JOIN tags_products p 
-  ON p.id = q.product_id
+  LEFT JOIN tags_products p 
+    ON p.id = q.product_id
 
-LEFT JOIN tags_qr_types t
-  ON t.id = p.qr_type_id
+  LEFT JOIN tags_qr_types t
+    ON t.id = p.qr_type_id
 
-LEFT JOIN tags_qr_pages qrp
-  ON qrp.qr_code_id = q.id
-  AND qrp.business_id = q.business_id
+  LEFT JOIN tags_qr_pages qrp
+    ON qrp.qr_code_id = q.id
+    AND qrp.business_id = q.business_id
 
-WHERE q.business_id = ?
-ORDER BY q.id DESC
-    `,
+  LEFT JOIN tags_qr_addon_usage qau
+    ON qau.qr_code_id = q.id
+    AND qau.status = 'active'
+
+  WHERE q.business_id = ?
+
+  GROUP BY
+    q.id,
+    q.code,
+    q.label,
+    q.final_url,
+    q.status,
+    q.stop_message,
+    q.has_qr_page,
+    qrp.id,
+    qrp.status,
+    qrp.slug,
+    qrp.slug_locked,
+    qrp.page_type,
+    p.id,
+    p.name,
+    t.id,
+    t.code,
+    t.name,
+    t.url_prefix,
+    t.placeholder,
+    t.input_type
+
+  ORDER BY q.id DESC
+  `,
+    [id]
+  );
+
+  const [addonRows] = await db.execute(
+    `
+  SELECT
+    ba.addon_code,
+    ba.quantity,
+    ba.status,
+    a.name
+  FROM tags_business_addons ba
+
+  LEFT JOIN tags_addons a
+    ON a.code = ba.addon_code
+
+  WHERE ba.business_id = ?
+  AND ba.status = 'active'
+  AND (
+    ba.expires_at IS NULL
+    OR ba.expires_at >= NOW()
+  )
+
+  ORDER BY a.sort_order ASC, a.name ASC
+  `,
     [id]
   );
 
   return Response.json({
     business,
-    qrs: qrRows
+    qrs: qrRows,
+    addons: addonRows
   });
 }

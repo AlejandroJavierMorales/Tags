@@ -16,7 +16,8 @@ import { getSubscriptionStatusLabel } from "../../lib/helpers/getSubscriptionSta
 import { isExpiring } from "../../lib/dateUtils";
 import showAlert from "@/app/components/showAlert";
 
-
+import { FiDownload } from "react-icons/fi";
+import { FaGoogle } from "react-icons/fa";
 
 export default function BusinessesPageClient({ session }) {
     const [list, setList] = useState([]);

@@ -21,6 +21,9 @@ import { createSlug }
 import { safeParseJSON }
     from "@/app/modules/qr-page/lib/safeParseJSON";
 
+import { registerQRAddonUsage }
+    from "@/app/modules/addons/lib/registerQRAddonUsage";
+
 function getBaseUrl() {
 
     return process.env.NODE_ENV === "development"
@@ -678,6 +681,18 @@ export async function POST(req) {
                 ]
             );
         }
+
+        // =====================================
+        // REGISTRAR USO DE ADDON TAGSID
+        // =====================================
+
+        await registerQRAddonUsage({
+            qrCodeId: qr.id,
+            businessId: business.id,
+            addonCode: "tags_id",
+            sourceTable: "tags_qr_pages",
+            sourceId: pageId
+        });
 
         // =====================================
         // ACTIVAR QR

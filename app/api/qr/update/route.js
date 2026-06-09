@@ -23,7 +23,7 @@ export async function POST(req) {
             stop_message
         } = body;
 
-        console.log('Body de QR **** '+ JSON.stringify(body,2,null))
+        console.log('Body de QR **** ' + JSON.stringify(body, 2, null))
 
         if (!code) {
             return Response.json(
@@ -98,7 +98,7 @@ export async function POST(req) {
 
         if (cleanValue) {
 
-            const productCode = qr.product_code;
+            const productCode = qr.qr_type_code;
 
             // 🔥 WHATSAPP
             if (productCode === "whatsapp") {
@@ -163,9 +163,9 @@ export async function POST(req) {
             [
                 safeLabel,
                 safeValue,
-                safeBusinessId,
-                finalUrl,
-                stop_message,
+                safe(safeBusinessId),
+                safe(finalUrl),
+                safe(stop_message ?? qr.stop_message),
                 code
             ]
         );

@@ -131,11 +131,11 @@ export async function POST(req) {
     // Los digitales sí pueden quedar activos/asignados
     // porque no dependen de producción física
 
-    if (product.is_digital && business_id) {
+   /*  if (product.is_digital && business_id) {
 
       stockBefore = 0;
       stockAfter = 0;
-    }
+    } */
 
     // =========================
     // 🔳 CREAR QRs

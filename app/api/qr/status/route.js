@@ -70,34 +70,20 @@ export async function POST(req) {
         switch (action) {
 
             // =====================================
-            // ⛔ STOPPED
+            // ♻️ GENERATED (solo desde Stock --
+            // para sacarlo de stock si, por ejemplo, hay que re clasificarlo
             // =====================================
-            case "stopped":
-                updateFields.status = "stopped";
-                updateFields.stop_message =
-                    stopped_message ||
-                    "Este código QR está temporalmente fuera de servicio.";
-                break;
 
-            // =====================================
-            // 📌 ASSIGN
-            // =====================================
-            case "assign":
+            case "generated": {
 
-                updateFields.status = "assigned";
-
-                updateFields.email =
-                    email || null;
-
-                updateFields.business_id =
-                    business_id || qr.business_id;
-
-                // =====================================
-                // 📦 DESCONTAR STOCK SOLO EN VENTA
-                // =====================================
+                if (qr.status !== "available") {
+                    return Response.json(
+                        { error: "Solo se puede pasar a generated desde stock" },
+                        { status: 400 }
+                    );
+                }
 
                 if (!qr.is_digital) {
-
                     const [stockRows] = await db.execute(
                         `
             SELECT quantity
@@ -111,20 +97,124 @@ export async function POST(req) {
                     const currentStock =
                         Number(stockRows[0]?.quantity || 0);
 
-                    // 🚨 SIN STOCK
                     if (currentStock <= 0) {
-
                         return Response.json(
-                            {
-                                error: "No hay stock disponible"
-                            },
-                            {
-                                status: 400
-                            }
+                            { error: "No hay stock disponible para descontar" },
+                            { status: 400 }
                         );
                     }
 
-                    // ✅ DESCONTAR STOCK
+                    await db.execute(
+                        `
+            UPDATE tags_stock
+            SET quantity = quantity - 1
+            WHERE product_id = ?
+            `,
+                        [qr.product_id]
+                    );
+                }
+
+                updateFields.status = "generated";
+                updateFields.email = null;
+                updateFields.business_id = null;
+                updateFields.label = null;
+                updateFields.value = null;
+                updateFields.final_url = null;
+                updateFields.stop_message = null;
+
+                break;
+            }
+
+            // =====================================
+            // ⛔ STOPPED
+            // =====================================
+            case "stopped":
+                updateFields.status = "stopped";
+                updateFields.stop_message =
+                    stopped_message ||
+                    "Este código QR está temporalmente fuera de servicio.";
+                break;
+
+            // =====================================
+            // 📌 ASSIGN
+            // =====================================
+
+            case "assign": {
+
+                if (!email) {
+                    return Response.json(
+                        { error: "Email requerido para asignar QR" },
+                        { status: 400 }
+                    );
+                }
+
+                if (qr.status !== "available") {
+                    return Response.json(
+                        { error: "Solo se puede asignar un QR que está en stock" },
+                        { status: 400 }
+                    );
+                }
+
+                let finalBusinessId =
+                    business_id || null;
+
+                if (!finalBusinessId) {
+                    const [existingBusiness] = await db.execute(
+                        `
+                    SELECT id
+                    FROM tags_businesses
+                    WHERE email = ?
+                    LIMIT 1
+                    `,
+                        [email]
+                    );
+
+                    if (existingBusiness.length > 0) {
+                        finalBusinessId =
+                            existingBusiness[0].id;
+                    }
+                }
+
+                if (!finalBusinessId) {
+                    const [insertBusiness] = await db.execute(
+                        `
+                    INSERT INTO tags_businesses
+                        (name, email, phone)
+                    VALUES
+                        (?, ?, ?)
+                    `,
+                        [
+                            name || email,
+                            email,
+                            phone || null
+                        ]
+                    );
+
+                    finalBusinessId =
+                        insertBusiness.insertId;
+                }
+
+                if (!qr.is_digital) {
+                    const [stockRows] = await db.execute(
+                        `
+                    SELECT quantity
+                    FROM tags_stock
+                    WHERE product_id = ?
+                    LIMIT 1
+                   `,
+                        [qr.product_id]
+                    );
+
+                    const currentStock =
+                        Number(stockRows[0]?.quantity || 0);
+
+                    if (currentStock <= 0) {
+                        return Response.json(
+                            { error: "No hay stock disponible" },
+                            { status: 400 }
+                        );
+                    }
+
                     await db.execute(
                         `
                     UPDATE tags_stock
@@ -135,7 +225,13 @@ export async function POST(req) {
                     );
                 }
 
+                updateFields.status = "assigned";
+                updateFields.email = email;
+                updateFields.business_id = finalBusinessId;
+                updateFields.label = label || qr.label || name || email;
+
                 break;
+            }
 
             // =====================================
             // 🟡 PENDING
@@ -152,48 +248,37 @@ export async function POST(req) {
                 break;
 
             // =====================================
-            // ⚪ RESET
+            // 📦 DEVOLVER STOCK
+            // SOLO SI ESTABA ASIGNADO
             // =====================================
-            case "available":
 
-                // =====================================
-                // 📦 DEVOLVER STOCK
-                // SOLO SI ESTABA ASIGNADO
-                // =====================================
+            case "available": {
 
-                if (
-                    !qr.is_digital &&
-                    qr.status === "assigned"
-                ) {
-
+                if (!qr.is_digital && qr.status !== "available") {
                     await db.execute(
                         `
-            INSERT INTO tags_stock
-            (product_id, quantity)
-            VALUES (?, 1)
-
-            ON DUPLICATE KEY UPDATE
-            quantity = quantity + 1
-            `,
+                    INSERT INTO tags_stock
+                        (product_id, quantity)
+                    VALUES
+                        (?, 1)
+                    ON DUPLICATE KEY UPDATE
+                        quantity = quantity + 1
+                    `,
                         [qr.product_id]
                     );
                 }
 
                 updateFields.status = "available";
-
                 updateFields.email = null;
-
                 updateFields.business_id = null;
-
                 updateFields.label = null;
-
                 updateFields.value = null;
-
                 updateFields.final_url = null;
-
                 updateFields.stop_message = null;
 
                 break;
+            }
+
 
             // =====================================
             // 🟢RE-ACTIVE (solo cambia el estado despues de estar Stopped)
@@ -321,6 +406,58 @@ export async function POST(req) {
                 updateFields.label = label || qr.label;
                 updateFields.value = normalizedValue;
                 updateFields.final_url = finalUrl;
+
+                break;
+            }
+
+            /* ////  RECLAIM  */
+            /*  Devoluccion de QR que borra todo historial de la
+            Base de datos y lo pone en Stock nuevamente */
+            case "reclaim": {
+
+                if (
+                    qr.is_digital ||
+                    !["assigned", "active", "stopped"].includes(qr.status)
+                ) {
+                    return Response.json(
+                        { error: "Este QR no está en condiciones de ser recuperado" },
+                        { status: 400 }
+                    );
+                }
+
+                // Acá después agregamos limpieza completa de historial,
+                // QR-Page, TagsID, estadísticas, etc.
+                await db.execute(
+                    `
+                    UPDATE tags_qr_addon_usage
+                    SET
+                        status = 'inactive',
+                        updated_at = NOW()
+                    WHERE qr_code_id = ?
+                    `,
+                    [qr.id]
+                );
+                
+
+                await db.execute(
+                    `
+                INSERT INTO tags_stock
+                    (product_id, quantity)
+                VALUES
+                    (?, 1)
+                ON DUPLICATE KEY UPDATE
+                    quantity = quantity + 1
+                `,
+                    [qr.product_id]
+                );
+
+                updateFields.status = "available";
+                updateFields.email = null;
+                updateFields.business_id = null;
+                updateFields.label = null;
+                updateFields.value = null;
+                updateFields.final_url = null;
+                updateFields.stop_message = null;
 
                 break;
             }

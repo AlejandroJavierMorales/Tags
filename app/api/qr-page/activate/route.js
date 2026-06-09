@@ -17,6 +17,9 @@ import { getDefaultQRPageTemplate }
 import { createSlug }
     from "@/app/modules/qr-page/lib/createSlug";
 
+import { registerQRAddonUsage }
+    from "@/app/modules/addons/lib/registerQRAddonUsage";
+
 export async function POST(req) {
 
     const conn =
@@ -197,8 +200,8 @@ export async function POST(req) {
             );
 
         const [result] =
-    await conn.query(
-        `
+            await conn.query(
+                `
         INSERT INTO tags_qr_pages (
             business_id,
             qr_code_id,
@@ -224,32 +227,41 @@ export async function POST(req) {
         )
         VALUES (?, ?, 'qr_page', 'auto', ?, 1, ?, ?, 'draft', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
         `,
-        [
-            businessId,
-            qrCodeId,
-            cleanSlug,
+                [
+                    businessId,
+                    qrCodeId,
+                    cleanSlug,
 
-            template.page.title,
-            template.page.description,
+                    template.page.title,
+                    template.page.description,
 
-            template.page.logo_url,
-            template.page.cover_image_url,
+                    template.page.logo_url,
+                    template.page.cover_image_url,
 
-            template.page.whatsapp,
-            template.page.email,
-            template.page.phone,
+                    template.page.whatsapp,
+                    template.page.email,
+                    template.page.phone,
 
-            JSON.stringify(template.page.global_styles || {}),
-            JSON.stringify(template.page.header_config || {}),
-            JSON.stringify(template.page.footer_config || {}),
+                    JSON.stringify(template.page.global_styles || {}),
+                    JSON.stringify(template.page.header_config || {}),
+                    JSON.stringify(template.page.footer_config || {}),
 
-            template.page.title,
-            template.page.description
-        ]
-    );
+                    template.page.title,
+                    template.page.description
+                ]
+            );
 
         const pageId =
             result.insertId;
+
+        await registerQRAddonUsage({
+            conn,
+            qrCodeId,
+            businessId,
+            addonCode: "qr_page",
+            sourceTable: "tags_qr_pages",
+            sourceId: pageId
+        });
 
         for (const section of template.sections || []) {
 

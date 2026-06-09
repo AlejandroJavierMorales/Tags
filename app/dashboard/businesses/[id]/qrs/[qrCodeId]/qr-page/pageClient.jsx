@@ -124,7 +124,7 @@ export default function QRPageBuilderClient({
             if (!res.ok) {
                 throw new Error(
                     data.error ||
-                    "Error cargando themes"
+                    "Error cargando Temas de color"
                 );
             }
 
@@ -977,7 +977,7 @@ export default function QRPageBuilderClient({
             {activeTab === "themes" && (
                 <div className="qr_page_card">
 
-                    <h3>Themes visuales</h3>
+                    <h3>Temas de Color</h3>
 
                     <p className="qr_page_help">
                         Elegí un estilo visual para toda la QR-Page.

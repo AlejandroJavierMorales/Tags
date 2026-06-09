@@ -9,6 +9,7 @@ import { safeParseJSON }
 
 import QRPageRenderer
     from "@/app/modules/qr-page/renderers/QRPageRenderer";
+import ClientReviewsPublicRenderer from "@/app/modules/client-reviews/renderers/ClientReviewsPublicRenderer";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -443,6 +444,8 @@ function buildStructuredData({
 
             if (page.page_type === "tags_id") {
                 mainEntityType = "Person";
+            } else if (page.page_type === "client_reviews") {
+                mainEntityType = "LocalBusiness";
             }
     }
 
@@ -601,12 +604,24 @@ export default async function PublicQRPage({
         notFound();
     }
 
+    const {
+        page,
+        sections,
+        products
+    } = data;
+
+    if (page.page_type === "client_reviews") {
+        return (
+            <ClientReviewsPublicRenderer
+                slug={page.slug}
+            />
+        );
+    }
+
     const structuredData =
         buildStructuredData({
-            page:
-                data.page,
-            products:
-                data.products
+            page,
+            products
         });
 
     return (
@@ -622,9 +637,9 @@ export default async function PublicQRPage({
             />
 
             <QRPageRenderer
-                page={data.page}
-                sections={data.sections}
-                products={data.products}
+                page={page}
+                sections={sections}
+                products={products}
             />
         </>
     );

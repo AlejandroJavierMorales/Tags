@@ -45,6 +45,8 @@ export default function BusinessDetailClient({ session, isAdmin }) {
 
   const [subscriptionSummary, setSubscriptionSummary] =
     useState(null);
+  const [businessAddons, setBusinessAddons] =
+    useState([]);
 
 
   // =====================================
@@ -123,6 +125,7 @@ export default function BusinessDetailClient({ session, isAdmin }) {
     }
     setBusiness(data.business || null);
 
+    setBusinessAddons(data.addons || []);
 
   }
 
@@ -338,10 +341,8 @@ export default function BusinessDetailClient({ session, isAdmin }) {
 
 
 
-  function normalizePageType(value) {
-    return String(value || "")
-      .toLowerCase()
-      .replace(/[\s-]+/g, "_");
+  function isTagsIdQR(qr) {
+    return qr.qr_type_code === "tags_id";
   }
 
   function isTagsIdPage(qr) {
@@ -352,14 +353,74 @@ export default function BusinessDetailClient({ session, isAdmin }) {
     return Number(qr.has_qr_page) === 1 || !!qr.qr_page_id;
   }
 
+  const qrPagesAvailable =
+    Number(subscriptionSummary?.usage?.qr_pages_total || 0) -
+    Number(subscriptionSummary?.usage?.qr_pages_used || 0);
+
+  const tagsIdAvailable =
+    Number(subscriptionSummary?.usage?.tags_id_total || 0) -
+    Number(subscriptionSummary?.usage?.tags_id_used || 0);
+
   const hasTagsIdAlready =
-    qrs.some(isTagsIdPage) ||
-    Number(features?.tagsId?.used || 0) > 0;
+    qrs.some(isTagsIdPage);
+
+  const canActivateQrPage =
+    qrPagesAvailable > 0;
 
   const canActivateTagsId =
     !hasTagsIdAlready &&
-    Number(features?.tagsId?.available || 0) > 0;
+    tagsIdAvailable > 0;
 
+  function normalizeCode(value) {
+    return String(value || "")
+      .toLowerCase()
+      .replace(/[\s-]+/g, "_");
+  }
+
+  function isTagsIdQR(qr) {
+    return normalizeCode(qr.qr_type_code) === "tags_id";
+  }
+
+  function getQRFeatures(qr) {
+    return String(qr.addon_features || "")
+      .split(",")
+      .map(v => v.trim())
+      .filter(Boolean);
+  }
+
+  function qrHasFeature(qr, feature) {
+    return getQRFeatures(qr).includes(feature);
+  }
+
+  function hasClientReviewsAddon() {
+    return Number(
+      subscriptionSummary?.usage?.client_reviews_total || 0
+    ) > Number(
+      subscriptionSummary?.usage?.client_reviews_used || 0
+    );
+  }
+
+  function hasClientReviewsAddon() {
+    return !!features?.clientReviews?.enabled ||
+      !!features?.client_reviews?.enabled;
+  }
+
+  function businessHasAddon(code) {
+    return businessAddons.some(
+      addon => addon.addon_code === code
+    );
+  }
+
+  function getQRFeatures(qr) {
+    return String(qr.addon_features || "")
+      .split(",")
+      .map(v => v.trim())
+      .filter(Boolean);
+  }
+
+  function qrHasFeature(qr, feature) {
+    return getQRFeatures(qr).includes(feature);
+  }
 
   /*  UI  */
 
@@ -453,7 +514,7 @@ export default function BusinessDetailClient({ session, isAdmin }) {
         </div>
 
       </div>
-      
+
       {/* RESUMEN DE SUBCRIPCION */}
       {subscriptionSummary && (
         <div className=" mb-4 W-100 mt-3 mb-5">
@@ -735,290 +796,339 @@ export default function BusinessDetailClient({ session, isAdmin }) {
 
             <tbody>
 
-              {qrs.map((qr) => (
+              {qrs.map((qr) => {
 
-                <tr key={qr.id}>
+                /* console.log("QR BUTTON DEBUG", {
+                  code: qr.code,
+                  qr_type_code: qr.qr_type_code,
+                  qr_type_name: qr.qr_type_name,
+                  hasAnyPage: hasAnyPage(qr),
+                  isTagsIdQR: isTagsIdQR(qr),
+                  hasTagsIdAlready,
+                  canActivateTagsId,
+                  featuresTagsId: features?.tagsId,
+                  subscriptionUsage: subscriptionSummary?.usage
+                }); */
 
-                  {/* QR */}
+                return (
 
-                  <td>
 
-                    <div className="tags_dashboard_qr_cell">
+                  <tr key={qr.id}>
 
-                      <Image
-                        src={getQRUrl(qr.code)}
-                        width={82}
-                        height={82}
-                        alt={`qr-${qr.code}`}
-                        className="tags_dashboard_qr_image"
-                      />
+                    {/* QR */}
 
-                      <div className="tags_dashboard_qr_meta">
+                    <td>
 
-                        <small>
-                          {qr.code}
-                        </small>
+                      <div className="tags_dashboard_qr_cell">
 
-                        <button
-                          className=" mt-1"
-                          title="Descargar/Escanear QR"
-                          style={{
-                            fontSize: "12px",
-                            padding: "4px 8px",
-                            borderRadius: "5px",
-                            backgroundColor: "#787978",
-                            color: "#fff",
-                            border: "none",
-                            fontWeight: "500",
+                        <Image
+                          src={getQRUrl(qr.code)}
+                          width={82}
+                          height={82}
+                          alt={`qr-${qr.code}`}
+                          className="tags_dashboard_qr_image"
+                        />
 
-                          }}
-                          onClick={() => {
+                        <div className="tags_dashboard_qr_meta">
 
-                            setSelectedQR(qr);
-                            setOpenQRModal(true);
+                          <small>
+                            {qr.code}
+                          </small>
 
-                          }}
-                        >
-                          <FiDownload />
-                        </button>
+                          <button
+                            className=" mt-1"
+                            title="Descargar/Escanear QR"
+                            style={{
+                              fontSize: "12px",
+                              padding: "4px 8px",
+                              borderRadius: "5px",
+                              backgroundColor: "#787978",
+                              color: "#fff",
+                              border: "none",
+                              fontWeight: "500",
+
+                            }}
+                            onClick={() => {
+
+                              setSelectedQR(qr);
+                              setOpenQRModal(true);
+
+                            }}
+                          >
+                            <FiDownload />
+                          </button>
+
+                        </div>
 
                       </div>
 
-                    </div>
+                    </td>
 
-                  </td>
+                    {/* LABEL */}
 
-                  {/* LABEL */}
+                    <td>
 
-                  <td>
+                      <div className="tags_dashboard_label">
+                        {qr.label || "-"}
+                      </div>
 
-                    <div className="tags_dashboard_label">
-                      {qr.label || "-"}
-                    </div>
+                    </td>
 
-                  </td>
+                    {/* TYPE */}
 
-                  {/* TYPE */}
+                    <td>
 
-                  <td>
+                      <div className="tags_dashboard_type">
+                        {qr.qr_type_name || "-"}
+                      </div>
 
-                    <div className="tags_dashboard_type">
-                      {qr.qr_type_name || "-"}
-                    </div>
+                    </td>
 
-                  </td>
+                    {/* URL */}
 
-                  {/* URL */}
+                    <td>
 
-                  <td>
+                      <div className="tags_dashboard_url">
+                        {qr.final_url ||
+                          qr.destination_url ||
+                          "-"}
+                      </div>
 
-                    <div className="tags_dashboard_url">
-                      {qr.final_url ||
-                        qr.destination_url ||
-                        "-"}
-                    </div>
+                    </td>
 
-                  </td>
+                    {/* STATUS */}
 
-                  {/* STATUS */}
+                    <td>
 
-                  <td>
-
-                    <span
-                      className={`badge ${qr.status}`}
-                    >
-                      {mapStatus(qr.status)}
-                    </span>
-
-                  </td>
-
-                  {/* Stop_Message */}
-                  {/* TYPE */}
-
-                  <td>
-
-                    <div className="tags_dashboard_type">
-                      {qr.stop_message || "-"}
-                    </div>
-
-                  </td>
-
-                  {/* ACTIONS */}
-
-                  <td>
-
-                    <div className="tags_dashboard_actions">
-
-                      <button
-                        className="tags_dashboard_icon_btn"
-                        title="Editar"
-                        onClick={() => openEdit(qr)}
+                      <span
+                        className={`badge ${qr.status}`}
                       >
-                        ✏️
-                      </button>
+                        {mapStatus(qr.status)}
+                      </span>
 
+                    </td>
 
-                      {/* ========================= */}
-                      {/* QR-PAGE / TAGSID */}
-                      {/* ========================= */}
+                    {/* Stop_Message */}
+                    {/* TYPE */}
 
-                      {hasAnyPage(qr) && (
-                        <>
-                          <button
-                            style={{
-                              minWidth: "80px"
-                            }}
-                            type="button"
-                            className="tags_dashboard_icon_btn"
-                            title={
-                              qr.qr_page_status === "published"
-                                ? "Ver página pública"
-                                : "Página no publicada"
-                            }
-                            onClick={() => handleViewQRPage(qr)}
-                          >
-                            <div
-                              className="d-flex flex-column align-items-center justify-content-center"
-                              style={{
-                                lineHeight: 1.1
-                              }}
+                    <td>
+
+                      <div className="tags_dashboard_type">
+                        {qr.stop_message || "-"}
+                      </div>
+
+                    </td>
+
+                    {/* ACTIONS */}
+
+                    <td>
+
+                      <div className="tags_dashboard_actions">
+
+                        <button
+                          className="tags_dashboard_icon_btn"
+                          title="Editar"
+                          onClick={() => openEdit(qr)}
+                        >
+                          ✏️
+                        </button>
+
+                        {/* ========================= */}
+                        {/* CLIENT REVIEWS */}
+                        {/* ========================= */}
+                        {businessHasAddon("client_reviews") &&
+                          !hasAnyPage(qr) &&
+                          !isTagsIdQR(qr) &&
+                          !qrHasFeature(qr, "client_reviews") && (
+                            <button
+                              className="tags_dashboard_icon_btn"
+                              title="Activar ClientsReviews"
+                              onClick={() =>
+                                router.push(
+                                  `/dashboard/businesses/${id}/qrs/${qr.id}/client-reviews/activate`
+                                )
+                              }
                             >
-                              <span style={{ fontSize: "14px" }}>
-                                {
-                                  qr.qr_page_status === "published"
-                                    ? "🟢"
-                                    : "🟡"
-                                }
-                              </span>
+                              🌟
+                            </button>
+                          )}
 
-                              <span
-                                style={{
-                                  fontSize: "10px",
-                                  marginTop: 2
-                                }}
-                              >
-                                {
-                                  qr.qr_page_status === "published"
-                                    ? (
-                                      isTagsIdPage(qr)
-                                        ? "Ver TagsID"
-                                        : "Ver QR-Page"
-                                    )
-                                    : "Sin publicar"
-                                }
-                              </span>
-                            </div>
-                          </button>
-
+                        {qrHasFeature(qr, "client_reviews") && (
                           <button
                             className="tags_dashboard_icon_btn"
-                            title={
-                              isTagsIdPage(qr)
-                                ? "Editar TagsID"
-                                : "Editar QR-Page"
-                            }
+                            title="Administrar ClientsReviews"
                             onClick={() =>
                               router.push(
-                                `/dashboard/businesses/${id}/qrs/${qr.id}/qr-page`
+                                `/dashboard/businesses/${id}/qrs/${qr.id}/client-reviews`
                               )
                             }
                           >
-                            {isTagsIdPage(qr) ? "🪪" : "📄"}
+                            ⭐
                           </button>
-                        </>
-                      )}
+                        )}
 
-                      {!hasAnyPage(qr) && Number(features?.qrPages?.available || 0) > 0 && (
-                        <button
-                          className="tags_dashboard_icon_btn"
-                          title="Activar QR-Page"
-                          onClick={() =>
-                            router.push(
-                              `/dashboard/businesses/${id}/qrs/${qr.id}/qr-page/activate`
-                            )
-                          }
-                        >
-                          ➕📄
-                        </button>
-                      )}
+                        {/* ========================= */}
+                        {/* QR-PAGE / TAGSID */}
+                        {/* ========================= */}
 
-                      {!hasAnyPage(qr) && Number(features?.qrPages?.available || 0) <= 0 && (
-                        <button
-                          className="tags_dashboard_icon_btn"
-                          title="Sin cupo QR-Page"
-                          onClick={() =>
-                            showAlert({
-                              title: "Sin cupo QR-Page",
-                              text: "Este cliente no tiene QR-Pages disponibles.",
-                              icon: "info"
-                            })
-                          }
-                        >
-                          🚫📄
-                        </button>
-                      )}
-
-                      {!hasAnyPage(qr) && canActivateTagsId && (
-                        <button
-                          className="tags_dashboard_icon_btn"
-                          title="Activar TagsID"
-                          onClick={() =>
-                            router.push(
-                              `/dashboard/businesses/${id}/qrs/${qr.id}/tags-id`
-                            )
-                          }
-                        >
-                          🪪
-                        </button>
-                      )}
-
-                      {qr.status === "active" ? (
-
-                        <button
-                          className="tags_dashboard_icon_btn"
-                          title="Pausar"
-                          onClick={() =>
-                            updateStatus(
-                              qr.code,
-                              "stopped",
-                              qr.stop_message
-                            )
-                          }
-                        >
-                          ⏸️
-                        </button>
-
-                      ) : qr.status === "stopped" ? (
-
-                        <button
-                          className="tags_dashboard_icon_btn"
-                          title="Reactivar"
-                          onClick={() =>
-                            updateStatus(
-                              qr.code,
-                              "reactive",
-                              {
-                                email:
-                                  business.email,
-                                business_id:
-                                  business.id,
-                                label: qr.label,
+                        {hasAnyPage(qr) && (
+                          <>
+                            <button
+                              style={{
+                                minWidth: "80px"
+                              }}
+                              type="button"
+                              className="tags_dashboard_icon_btn"
+                              title={
+                                qr.qr_page_status === "published"
+                                  ? "Ver página pública"
+                                  : "Página no publicada"
                               }
-                            )
-                          }
-                        >
-                          ▶️
-                        </button>
+                              onClick={() => handleViewQRPage(qr)}
+                            >
+                              <div
+                                className="d-flex flex-column align-items-center justify-content-center"
+                                style={{
+                                  lineHeight: 1.1
+                                }}
+                              >
+                                <span style={{ fontSize: "14px" }}>
+                                  {
+                                    qr.qr_page_status === "published"
+                                      ? "🟢"
+                                      : "🟡"
+                                  }
+                                </span>
 
-                      ) : null}
+                                <span
+                                  style={{
+                                    fontSize: "10px",
+                                    marginTop: 2
+                                  }}
+                                >
+                                  {
+                                    qr.qr_page_status === "published"
+                                      ? (
+                                        isTagsIdPage(qr)
+                                          ? "Ver TagsID"
+                                          : "Ver QR-Page"
+                                      )
+                                      : "Sin publicar"
+                                  }
+                                </span>
+                              </div>
+                            </button>
 
-                    </div>
+                            <button
+                              className="tags_dashboard_icon_btn"
+                              title={
+                                isTagsIdPage(qr)
+                                  ? "Editar TagsID"
+                                  : "Editar QR-Page"
+                              }
+                              onClick={() =>
+                                router.push(
+                                  `/dashboard/businesses/${id}/qrs/${qr.id}/qr-page`
+                                )
+                              }
+                            >
+                              {isTagsIdPage(qr) ? "🪪" : "📄"}
+                            </button>
+                          </>
+                        )}
 
-                  </td>
+                        {!hasAnyPage(qr) && !isTagsIdQR(qr) && canActivateQrPage && (
+                          <button
+                            className="tags_dashboard_icon_btn"
+                            title="Activar QR-Page"
+                            onClick={() =>
+                              router.push(
+                                `/dashboard/businesses/${id}/qrs/${qr.id}/qr-page/activate`
+                              )
+                            }
+                          >
+                            ➕📄
+                          </button>
+                        )}
 
-                </tr>
+                        {!hasAnyPage(qr) && !isTagsIdQR(qr) && !canActivateQrPage && (
+                          <button
+                            className="tags_dashboard_icon_btn"
+                            title="Sin cupo QR-Page"
+                            onClick={() =>
+                              showAlert({
+                                title: "Sin cupo QR-Page",
+                                text: "Este cliente no tiene QR-Pages disponibles.",
+                                icon: "info"
+                              })
+                            }
+                          >
+                            🚫📄
+                          </button>
+                        )}
 
-              ))}
+                        {!hasAnyPage(qr) && isTagsIdQR(qr) && canActivateTagsId && (
+                          <button
+                            className="tags_dashboard_icon_btn"
+                            title="Activar TagsID"
+                            onClick={() =>
+                              router.push(
+                                `/dashboard/businesses/${id}/qrs/${qr.id}/tags-id`
+                              )
+                            }
+                          >
+                            🪪
+                          </button>
+                        )}
+
+                        {qr.status === "active" ? (
+
+                          <button
+                            className="tags_dashboard_icon_btn"
+                            title="Pausar"
+                            onClick={() =>
+                              updateStatus(
+                                qr.code,
+                                "stopped",
+                                qr.stop_message
+                              )
+                            }
+                          >
+                            ⏸️
+                          </button>
+
+                        ) : qr.status === "stopped" ? (
+
+                          <button
+                            className="tags_dashboard_icon_btn"
+                            title="Reactivar"
+                            onClick={() =>
+                              updateStatus(
+                                qr.code,
+                                "reactive",
+                                {
+                                  email:
+                                    business.email,
+                                  business_id:
+                                    business.id,
+                                  label: qr.label,
+                                }
+                              )
+                            }
+                          >
+                            ▶️
+                          </button>
+
+                        ) : null}
+
+                      </div>
+
+                    </td>
+
+                  </tr>
+
+                );
+              })}
 
             </tbody>
 

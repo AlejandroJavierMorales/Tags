@@ -65,6 +65,13 @@ export default function DashboardAdminClient({ session }) {
 
   const [openQRModal, setOpenQRModal] = useState(false);
 
+  const [addonFilter, setAddonFilter] = useState("");
+  const [addons, setAddons] =
+    useState([]);
+
+
+
+
   // -----------------------------
   // LOAD
   // -----------------------------
@@ -77,9 +84,13 @@ export default function DashboardAdminClient({ session }) {
   }, []);
 
   useEffect(() => {
+    loadAddons();
+  }, []);
+
+  useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, statusFilter, typeFilter, page]);
+  }, [search, statusFilter, typeFilter, addonFilter, page]);
 
   async function load() {
     const query = new URLSearchParams({
@@ -87,6 +98,7 @@ export default function DashboardAdminClient({ session }) {
       status: statusFilter,
       type: typeFilter,
       page,
+      addon: addonFilter,
       limit: 20
     });
 
@@ -105,14 +117,37 @@ export default function DashboardAdminClient({ session }) {
     setTotal(data.total || 0);
   }
 
+  async function loadAddons() {
+    try {
+      const res =
+        await fetch("/api/addons/list");
+
+      const data =
+        await res.json().catch(() => []);
+
+      setAddons(
+        Array.isArray(data)
+          ? data.filter(addon => Number(addon.is_active) === 1)
+          : []
+      );
+
+    } catch (err) {
+      console.error(
+        "LOAD ADDONS ERROR:",
+        err
+      );
+
+      setAddons([]);
+    }
+  }
   // -----------------------------
   // SEARCH
   // -----------------------------
-/*   async function handleSearch(e) {
-    const value = e.target.value;
-    setSearch(value);
-    load(value);
-  } */
+  /*   async function handleSearch(e) {
+      const value = e.target.value;
+      setSearch(value);
+      load(value);
+    } */
 
   // -----------------------------
   // SORT
@@ -281,6 +316,34 @@ export default function DashboardAdminClient({ session }) {
   /* DEACTIVATE QR */
   async function updateStatus(code, action, extra = {}) {
 
+
+    //Confirmación Reset Status a generated
+    ///////////////////////////////////////
+    if (action === "generated") {
+      const confirm = await showAlert({
+        title: "Pasar a generated",
+        text: "Esto sacará el QR del stock disponible. ¿Continuar?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Sí, continuar",
+        cancelButtonText: "Cancelar"
+      });
+
+      if (!confirm) return;
+    }
+
+    if (action === "reclaim") {
+      const confirm = await showAlert({
+        title: "Recuperar QR devuelto",
+        text: "Esto borrará la relación con el cliente y devolverá el QR al stock. Luego agregaremos limpieza completa de historial. ¿Continuar?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Sí, recuperar",
+        cancelButtonText: "Cancelar"
+      });
+
+      if (!confirm) return;
+    }
     // -----------------------------
     // CONFIRM STOCK RESET
     // -----------------------------
@@ -388,36 +451,51 @@ export default function DashboardAdminClient({ session }) {
     load();
   }
 
+
+  function getAddonLabel(code) {
+    const found =
+      addons.find(addon => addon.code === code);
+
+    return found?.name || code;
+  }
+
+  function getQRFeatures(qr) {
+    return String(qr.addon_features || "")
+      .split(",")
+      .map(v => v.trim())
+      .filter(Boolean);
+  }
+
   // -----------------------------
   // STATS
   // -----------------------------
-/*   async function loadStats(qr) {
-    const res = await fetch(`/api/stats?code=${qr.code}`);
-    const data = await res.json();
-
-    setSelectedQR(qr);
-    setStats({
-      ...data,
-      daily: data.daily.map(d => ({
-        ...d,
-        date: d.date.split("T")[0]
-      }))
-    });
-  } */
+  /*   async function loadStats(qr) {
+      const res = await fetch(`/api/stats?code=${qr.code}`);
+      const data = await res.json();
+  
+      setSelectedQR(qr);
+      setStats({
+        ...data,
+        daily: data.daily.map(d => ({
+          ...d,
+          date: d.date.split("T")[0]
+        }))
+      });
+    } */
 
   // -----------------------------
   // STATUS
   // -----------------------------
-/*   async function changeStatus(code) {
-    await fetch("/api/qr/deactivate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code })
-    });
-
-    load(search);
-  }
- */
+  /*   async function changeStatus(code) {
+      await fetch("/api/qr/deactivate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code })
+      });
+  
+      load(search);
+    }
+   */
 
   // -----------------------------
   // RENDER
@@ -486,8 +564,35 @@ export default function DashboardAdminClient({ session }) {
           </select>
         </div>
 
+        {/* Filtra por AddOns */}
+        <div className="filter_group d-flex flex-column col-6 col-md-3 mb-4">
+          <label>Addon / Feature</label>
+
+          <select
+            value={addonFilter}
+            onChange={(e) => {
+              setAddonFilter(e.target.value);
+              setPage(1);
+            }}
+            className="form-select tags_text_normal"
+          >
+            <option value="">
+              Todos
+            </option>
+
+            {addons.map(addon => (
+              <option
+                key={addon.code}
+                value={addon.code}
+              >
+                {addon.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
         {/* SEARCH */}
-        <div className="filter_group search_group col-12 col-md-6 mb-4">
+        <div className="filter_group search_group col-12 col-md-4 mb-4">
           <div className="row d-flex justify-content-start align-items-center">
             <div className="col-9 col-md-10">
               <input
@@ -524,6 +629,7 @@ export default function DashboardAdminClient({ session }) {
             <tr>
               <th onClick={() => handleSort("code")}>QR</th>
               <th onClick={() => handleSort("qr_type_code")}>Tipo</th>
+              <th onClick={() => handleSort("qr_type_code")}>QR-Page</th>
               <th onClick={() => handleSort("status")}>Estado</th>
               <th onClick={() => handleSort("status")}>Etiqueta Qr</th>
               <th>Acciones</th>
@@ -536,24 +642,31 @@ export default function DashboardAdminClient({ session }) {
           <tbody>
             {sortData(list)
               .filter(qr => !statusFilter || qr.status === statusFilter)
-              .map(qr => (
-                <tr key={qr.id}>
+              .map(qr => {
 
-                  <td>
-                    <div className="qr_cell">
+                const canResetQR =
+                  qr.status !== "generated";
 
-                      <Image
-                        src={getQRUrl(qr.code)}
-                        width={50}
-                        height={50}
-                        alt="qr"
-                      />
+                return (
 
-                      <div className="d-flex flex-column">
 
-                        <span>
-                          {qr.code}
-                        </span>
+                  <tr key={qr.id}>
+
+                    <td>
+                      <div className="qr_cell">
+
+                        <Image
+                          src={getQRUrl(qr.code)}
+                          width={50}
+                          height={50}
+                          alt="qr"
+                        />
+
+                        <div className="d-flex flex-column">
+
+                          <span>
+                            {qr.code}
+                          </span>
 
                           <button
                             className=" mt-1"
@@ -562,11 +675,11 @@ export default function DashboardAdminClient({ session }) {
                               fontSize: "12px",
                               padding: "4px 8px",
                               borderRadius: "5px",
-                              backgroundColor:"#787978",
-                              color:"#fff",
-                              border:"none",
-                              fontWeight:"500",
-                              
+                              backgroundColor: "#787978",
+                              color: "#fff",
+                              border: "none",
+                              fontWeight: "500",
+
                             }}
                             onClick={() => {
 
@@ -574,93 +687,182 @@ export default function DashboardAdminClient({ session }) {
                               setOpenQRModal(true);
 
                             }}
-                                                      >
-                            <FiDownload/>
+                          >
+                            <FiDownload />
                           </button>
 
+                        </div>
+
                       </div>
-
-                    </div>
-                  </td>
-                  <td >{qr.qr_type_name || "-"}</td>
-                  <td>
-                    <span className={`badge ${qr.status}`}>
-                      {mapStatus(qr.status)}
-                    </span>
-                  </td>
-                  <td>
-                    <span className={`badge label`}>
-                      {mapStatus(qr.label)}
-                    </span>
-                  </td>
-
-                  <td>
-                    <div className="actions d-flex align-items-center justify-content-center gap-2">
-
-                      <button className="icon_btn success" title="Modificar Qr" onClick={() => openEdit(qr)}>
-                        ✏️
-                      </button>
-
-                      <button className="icon_btn success" title="Borrar Qr" onClick={() => deleteQR(qr.code)}>
-                        🗑
-                      </button>
-
-                      {qr.status === "active" && (
-                        <button className="icon_btn success" title="DesActivar" onClick={() => updateStatus(qr.code, "deactivate")}>
-                          ⛔
-                        </button>
-                      )}
-
-                      {qr.status === "pending" && (
+                    </td>
+                    <td >{qr.qr_type_name || "-"}</td>
+                    {/* QR-Page flag */}
+                    {/* <td>
+                      {qr.qr_page_id ? (
                         <button
-                          className="icon_btn success"
-                          title="ReActivar"
-                          onClick={() =>
-                            updateStatus(qr.code, "active", {
-                              email: qr.email,
-                              business_id: qr.business_id
-                            })
-                          }
+                          type="button"
+                          className="badge active"
+                          style={{
+                            border: "none",
+                            cursor: "pointer"
+                          }}
+                          title={qr.final_url || ""}
+                          onClick={() => {
+
+                            if (qr.final_url) {
+
+                              window.open(
+                                qr.final_url,
+                                "_blank"
+                              );
+
+                              return;
+                            }
+
+                            showAlert({
+                              title: "Página no publicada",
+                              text: "Este QR todavía no tiene una URL pública activa.",
+                              icon: "info"
+                            });
+                          }}
                         >
-                          🔄
+                          {qr.qr_page_type === "tags_id"
+                            ? "TagsID"
+                            : "QR-Page"}
                         </button>
-                      )}
+                      ) : null}
+                    </td> */}
+                    <td>
+                      <div className="d-flex flex-column gap-1">
+                        {getQRFeatures(qr).map(feature => (
+                          <button
+                            key={feature}
+                            type="button"
+                            className="badge active"
+                            style={{
+                              border: "none",
+                              cursor: "pointer"
+                            }}
+                            title={getAddonLabel(feature)}
+                            onClick={() => {
 
-                      {qr.status === "available" && (
-                        <button className="icon_btn success" title="Asignar Venta" onClick={() => openAssign(qr)}>
-                          💰
-                        </button>
-                      )}
+                              if (qr.final_url) {
+                                window.open(
+                                  qr.final_url,
+                                  "_blank"
+                                );
 
-                      {/* VENTA + ACTIVACIÓN */}
-                      {qr.status !== "active" && (
-                        <button
-                          className="icon_btn primary"
-                          title="Activar"
-                          onClick={() => openAssign(qr, { forceActive: true })}
-                        >
-                          ⚡
-                        </button>
-                      )}
+                                return;
+                              }
 
-                      {qr.status === "disabled" && (
-                        <button className="icon_btn success" title="ReActivar" onClick={() => updateStatus(qr.code, "active")}>
-                          🔄
-                        </button>
-                      )}
-                      {qr.status !== "available" && (
-                        <button className="icon_btn success" title="Poner en Stock" onClick={() => updateStatus(qr.code, "available")}>
-                          📦
-                        </button>
-                      )}
+                              showAlert({
+                                title: "Sin URL pública",
+                                text: "Este QR todavía no tiene una URL final activa.",
+                                icon: "info"
+                              });
+                            }}
+                          >
+                            {getAddonLabel(feature)}
+                          </button>
+                        ))}
+                      </div>
+                    </td>
+                    <td>
+                      <span className={`badge ${qr.status}`}>
+                        {mapStatus(qr.status)}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`badge label`}>
+                        {qr.label || "-"}
+                      </span>
+                    </td>
 
-                    </div>
-                  </td>
-                  <td className="truncate">{qr.final_url || "-"}</td>
-                  <td>{qr.email || "-"}</td>
-                  <td>{qr.business_name || "-"}</td>
-                </tr>
-              ))}
+                    <td>
+                      <div className="actions d-flex align-items-center justify-content-center gap-2">
+
+                        <button className="icon_btn success" title="Modificar Qr" onClick={() => openEdit(qr)}>
+                          ✏️
+                        </button>
+
+                        <button className="icon_btn success" title="Borrar Qr" onClick={() => deleteQR(qr.code)}>
+                          🗑
+                        </button>
+
+                        {qr.status === "active" && (
+                          <button className="icon_btn success" title="DesActivar" onClick={() => updateStatus(qr.code, "deactivate")}>
+                            ⛔
+                          </button>
+                        )}
+
+                        {qr.status === "pending" && (
+                          <button
+                            className="icon_btn success"
+                            title="ReActivar"
+                            onClick={() =>
+                              updateStatus(qr.code, "active", {
+                                email: qr.email,
+                                business_id: qr.business_id
+                              })
+                            }
+                          >
+                            🔄
+                          </button>
+                        )}
+
+                        {qr.status === "available" && (
+                          <button className="icon_btn success" title="Asignar Venta" onClick={() => openAssign(qr)}>
+                            💰
+                          </button>
+                        )}
+
+                        {/* VENTA + ACTIVACIÓN */}
+                        {qr.status !== "active" && (
+                          <button
+                            className="icon_btn primary"
+                            title="Activar"
+                            onClick={() => openAssign(qr, { forceActive: true })}
+                          >
+                            ⚡
+                          </button>
+                        )}
+
+                        {qr.status === "disabled" && (
+                          <button className="icon_btn success" title="ReActivar" onClick={() => updateStatus(qr.code, "active")}>
+                            🔄
+                          </button>
+                        )}
+                        {qr.status !== "available" && (
+                          <button className="icon_btn success" title="Poner en Stock" onClick={() => updateStatus(qr.code, "available")}>
+                            📦
+                          </button>
+                        )}
+                        {qr.status === "available" && (
+                          <button
+                            className="icon_btn warning"
+                            title="Pasar a Generated"
+                            onClick={() => updateStatus(qr.code, "generated")}
+                          >
+                            🏭
+                          </button>
+                        )}
+                        {["assigned", "active", "stopped"].includes(qr.status) && (
+                          <button
+                            className="icon_btn danger"
+                            title="Recuperar QR devuelto"
+                            onClick={() => updateStatus(qr.code, "reclaim")}
+                          >
+                            ♻️
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                    <td className="truncate">{qr.final_url || "-"}</td>
+                    <td>{qr.email || "-"}</td>
+                    <td>{qr.business_name || "-"}</td>
+                  </tr>
+                );
+              })}
           </tbody>
 
         </table>
@@ -729,7 +931,7 @@ export default function DashboardAdminClient({ session }) {
             <div className="tags_modal_body">
 
               {/* QR LABEL */}
-              <div className="tags_modal_group">
+              <div className="tags_modal_group mt-2">
 
                 <label className="tags_modal_label">
                   Etiqueta del QR
@@ -913,7 +1115,7 @@ export default function DashboardAdminClient({ session }) {
               {/* LABEL */}
               <div className="tags_modal_group">
 
-                <label className="tags_modal_label">
+                <label className="tags_modal_label mt-2">
                   Etiqueta del QR
                 </label>
 
@@ -927,7 +1129,7 @@ export default function DashboardAdminClient({ session }) {
               </div>
 
               {/* TYPE */}
-              <div className="tags_modal_badge_container">
+              <div className="tags_modal_badge_container mt-2">
 
                 <span className="tags_modal_badge">
                   {editQR?.qr_type_code

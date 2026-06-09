@@ -54,14 +54,19 @@ export async function canActivateQRPage({
     const [qrRows] = await db.query(
         `
         SELECT
-            id,
-            business_id,
-            has_qr_page
+            q.id,
+            q.business_id,
+            q.has_qr_page,
+            t.code AS qr_type_code
         FROM
-            tags_qr_codes
-        WHERE
-            id = ?
-            AND business_id = ?
+            tags_qr_codes q
+        LEFT JOIN tags_products p
+            ON p.id = q.product_id
+        LEFT JOIN tags_qr_types t
+            ON t.id = p.qr_type_id
+                WHERE
+            q.id = ?
+            AND q.business_id = ?
         LIMIT 1
         `,
         [
@@ -71,6 +76,14 @@ export async function canActivateQRPage({
     );
 
     const qr = qrRows[0];
+
+    if (qr.qr_type_code === "tags_id") {
+        return {
+            ok: false,
+            status: 400,
+            error: "Un QR tipo TagsID no puede activar QR-Page"
+        };
+    }
 
     if (!qr) {
         return {
@@ -129,15 +142,16 @@ export async function canActivateQRPage({
 
     const [usedRows] = await db.query(
         `
-        SELECT
-            COUNT(*) AS total_used
-        FROM
-            tags_qr_pages
-        WHERE
-            business_id = ?
-            AND qr_code_id IS NOT NULL
-            AND status IN ('draft', 'published')
-        `,
+            SELECT
+                COUNT(*) AS total_used
+            FROM
+                tags_qr_pages
+            WHERE
+                business_id = ?
+                AND qr_code_id IS NOT NULL
+                AND page_type = 'qr_page'
+                AND status IN ('draft', 'published')
+    `,
         [businessId]
     );
 

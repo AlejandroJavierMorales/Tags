@@ -1,8 +1,43 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
+
+const steps = [
+    {
+        number: "01",
+        title: "Creá tu experiencia digital",
+        text:
+            "Configurá un QR inteligente, una QR-Page, una tarjeta Tags Id, una interfaz de reseñas o un evento digital según el objetivo de tu negocio.",
+        image:
+            "/assets/images/tags/tags_qr_setup.webp",
+        alt:
+            "Configuración de experiencias digitales Tags",
+    },
+    {
+        number: "02",
+        title: "Conectala con QR, NFC o links",
+        text:
+            "Publicá tu experiencia en carteles físicos, tarjetas NFC, stickers, invitaciones, redes sociales, packaging o cualquier punto de contacto.",
+        image:
+            "/assets/images/tags/tags_qr_whatsapp.webp",
+        alt:
+            "QR y NFC conectados a experiencias digitales",
+    },
+    {
+        number: "03",
+        title: "Medí resultados reales",
+        text:
+            "Visualizá escaneos, horarios, ciudades, dispositivos, interacciones, conversiones y comportamiento desde tu panel de administración.",
+        image:
+            "/assets/images/tags/tags_qr_stats.webp",
+        alt:
+            "Analytics y estadísticas Tags",
+    },
+];
 
 export default function Services() {
+
     return (
         <section className="tags_services_section">
 
@@ -12,166 +47,85 @@ export default function Services() {
                 <div className="tags_services_header">
 
                     <div className="tags_services_badge">
-                        Cómo funciona
+                        Cómo funciona Tags
                     </div>
 
                     <h2 className="tags_services_title">
-                        Activá tus QR en minutos
-                        y empezá a medir resultados reales
+                        Diseñá, publicá y medí experiencias digitales inteligentes
                     </h2>
 
                     <p className="tags_services_subtitle">
-                        Un proceso simple, rápido y pensado para negocios
-                        que necesitan más clientes, reseñas y métricas.
+                        Tags conecta el mundo físico con experiencias digitales
+                        optimizadas para conversión, medición, reputación online,
+                        identidad digital y eventos.
                     </p>
 
                 </div>
 
-                {/* STEP 1 */}
-                <div className="row align-items-center g-5 tags_service_row">
+                {steps.map((step, index) => (
 
-                    <div className="col-12 col-lg-6">
+                    <div
+                        key={step.number}
+                        className="row align-items-center g-5 tags_service_row"
+                    >
 
-                        <div className="tags_service_image_wrapper">
+                        <div
+                            className={`col-12 col-lg-6 ${index % 2 === 1 ? "order-lg-2" : ""}`}
+                        >
 
-                            <Image
-                                src="/assets/images/tags/tags_qr_whatsapp.webp"
-                                alt="QR Whatsapp"
-                                width={900}
-                                height={672}
-                                className="img-fluid tags_service_image"
-                            />
+                            <div className="tags_service_image_wrapper">
 
-                        </div>
+                                <Image
+                                    src={step.image}
+                                    alt={step.alt}
+                                    width={900}
+                                    height={672}
+                                    className="img-fluid tags_service_image"
+                                />
 
-                    </div>
-
-                    <div className="col-12 col-lg-6">
-
-                        <div className="tags_service_content">
-
-                            <div className="tags_service_number">
-                                01
                             </div>
 
-                            <h3>
-                                Seleccioná tu QR
-                            </h3>
-
-                            <p>
-                                Elegí el tipo de QR y configurá
-                                el destino: WhatsApp, Google,
-                                Instagram, Web o cualquier link personalizado.
-                            </p>
-
                         </div>
 
-                    </div>
+                        <div
+                            className={`col-12 col-lg-6 ${index % 2 === 1 ? "order-lg-1" : ""}`}
+                        >
 
-                </div>
+                            <div className="tags_service_content">
 
-                {/* STEP 2 */}
-                <div className="row align-items-center g-5 tags_service_row">
+                                <div className="tags_service_number">
+                                    {step.number}
+                                </div>
 
-                    <div className="col-12 col-lg-6 order-lg-2">
+                                <h3>
+                                    {step.title}
+                                </h3>
 
-                        <div className="tags_service_image_wrapper">
+                                <p>
+                                    {step.text}
+                                </p>
 
-                            <Image
-                                src="/assets/images/tags/tags_qr_setup.webp"
-                                alt="Configuración QR"
-                                width={900}
-                                height={672}
-                                className="img-fluid tags_service_image"
-                            />
-
-                        </div>
-
-                    </div>
-
-                    <div className="col-12 col-lg-6 order-lg-1">
-
-                        <div className="tags_service_content">
-
-                            <div className="tags_service_number">
-                                02
                             </div>
 
-                            <h3>
-                                Activación instantánea
-                            </h3>
-
-                            <p>
-                                Recibís tu QR y lo activás
-                                en el primer escaneo, en sólo segundos.
-                                Con tu email tenés el control permanente.
-                                Todo es dinámico, editable
-                                y reutilizable.
-                            </p>
-
                         </div>
 
                     </div>
 
-                </div>
-
-                {/* STEP 3 */}
-                <div className="row align-items-center g-5 tags_service_row">
-
-                    <div className="col-12 col-lg-6">
-
-                        <div className="tags_service_image_wrapper">
-
-                            <Image
-                                src="/assets/images/tags/tags_qr_stats.webp"
-                                alt="Analytics QR"
-                                width={900}
-                                height={672}
-                                className="img-fluid tags_service_image"
-                            />
-
-                        </div>
-
-                    </div>
-
-                    <div className="col-12 col-lg-6">
-
-                        <div className="tags_service_content">
-
-                            <div className="tags_service_number">
-                                03
-                            </div>
-
-                            <h3>
-                                Medí resultados reales
-                            </h3>
-
-                            <p>
-                                Visualizá estadísticas,
-                                horarios, ciudades,
-                                dispositivos y comportamiento
-                                de tus escaneos en tiempo real.
-                            </p>
-
-                        </div>
-
-                    </div>
-
-                </div>
+                ))}
 
                 {/* CTA */}
                 <div className="tags_services_cta">
 
                     <p>
-                        Probalo en vivo y descubrí cómo funciona
+                        Probá la plataforma en vivo y mirá cómo un QR genera datos reales.
                     </p>
 
-                    <a
+                    <Link
                         href="/demo"
                         className="tags_services_button"
                     >
                         Probar Demo
-                    </a>
+                    </Link>
 
                 </div>
 

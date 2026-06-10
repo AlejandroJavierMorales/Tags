@@ -1,7 +1,8 @@
 // app/tags/demo/page.jsx
 
 import { tagsSiteConfig } from "../config/configSite";
-import TagsDemoPage from "./pageCliient";
+import TagsDemoPage from "./pageClient";
+
 
 export const metadata = {
 
@@ -63,7 +64,7 @@ export const metadata = {
 
             {
                 url:
-                    `${tagsSiteConfig.site.url}/assets/images/tags/qr-estadisticas.webp`,
+                    `${tagsSiteConfig.site.url}/assets/images/og/tags-demo-en-vivo-og.webp`,
 
                 width: 1200,
                 height: 630,
@@ -86,7 +87,7 @@ export const metadata = {
             "Probá estadísticas QR reales en tiempo real.",
 
         images: [
-            `${tagsSiteConfig.site.url}/assets/images/tags/qr-estadisticas.webp`
+            `${tagsSiteConfig.site.url}/assets/images/og/tags-demo-en-vivo-og.webp`
         ],
     },
 

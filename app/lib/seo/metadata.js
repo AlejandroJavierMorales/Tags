@@ -9,7 +9,7 @@ export function buildMetadata({
     path = "",
 
     image =
-        "/assets/images/tags/qr-estadisticas.webp"
+        "/assets/images/og/tags-qr-og.webp"
 }) {
 
     const url =

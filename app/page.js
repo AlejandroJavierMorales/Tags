@@ -29,7 +29,7 @@ export const metadata = {
         "Tags - Gestión y Reporting de Códigos QR",
 
     description:
-        "Plataforma QR dinámica con estadísticas, reportes, NFC y cartelería inteligente personalizada para negocios.",
+        "Plataforma de soluciones digitales con códigos QR dinámicos y tecnología NFC para negocios, eventos, páginas web, reseñas Google y tarjetas digitales inteligentes.",
 
     keywords:
         tagsSiteConfig.seo.keywords,
@@ -41,10 +41,10 @@ export const metadata = {
     openGraph: {
 
         title:
-            "Tags - Gestión y Reporting de Códigos QR",
+            "Tags - Gestión y Reporting Experiencias Digitales con Códigos QR",
 
         description:
-            "Plataforma QR dinámica con estadísticas, reportes y cartelería inteligente.",
+            "Transformá la experiencia de tus clientes con QR dinámicos, NFC, landing pages, eventos inteligentes, reseñas Google y tarjetas digitales modernas.",
 
         url:
             tagsSiteConfig.site.url,
@@ -61,7 +61,7 @@ export const metadata = {
         images: [
             {
                 url:
-                    "/assets/images/tags/qr-estadisticas.webp",
+                    "/assets/images/og/tags-qr-og.webp",
 
                 width: 1200,
 
@@ -85,7 +85,7 @@ export const metadata = {
             "Plataforma QR dinámica con estadísticas y cartelería inteligente.",
 
         images: [
-            "/assets/images/tags/qr-estadisticas.webp"
+            "/assets/images/og/tags-qr-og.webp",
         ]
     }
 };
@@ -310,7 +310,7 @@ export default function Page() {
                 }}
             />
 
-            <main>
+            <main className="landing_container">
 
                 <Header />
 

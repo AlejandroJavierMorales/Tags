@@ -15,7 +15,7 @@ export default function TagsFooter() {
           <div className="col-md-4 mb-4 text-center">
             <div style={{ width: "200px", margin: "0 auto" }}>
               <Image
-                src="/logo_tags_transparente.webp"
+                src="/logo_tags_qr.webp"
                 alt="Tags"
                 width={280}
                 height={66}
@@ -25,7 +25,7 @@ export default function TagsFooter() {
             </div>
 
             <p className="mt-3 tags_subtitle" >
-              {contact.name}
+              {`${contact.name} - el QR y todo lo que pasa detrás...`}
             </p>
           </div>
 

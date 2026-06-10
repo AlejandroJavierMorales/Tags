@@ -13,13 +13,38 @@ const routes = [
         changeFrequency: "weekly",
     },
     {
+        path: "/qr-inteligente",
+        priority: 0.95,
+        changeFrequency: "weekly",
+    },
+    {
+        path: "/qr-page",
+        priority: 0.95,
+        changeFrequency: "weekly",
+    },
+    {
+        path: "/tags-id",
+        priority: 0.95,
+        changeFrequency: "weekly",
+    },
+    {
+        path: "/tags-reviews",
+        priority: 0.95,
+        changeFrequency: "weekly",
+    },
+    {
+        path: "/e-events",
+        priority: 0.95,
+        changeFrequency: "weekly",
+    },
+    {
         path: "/store-products",
         priority: 0.9,
         changeFrequency: "weekly",
     },
     {
         path: "/demo",
-        priority: 0.9,
+        priority: 0.85,
         changeFrequency: "weekly",
     },
     {
@@ -65,7 +90,7 @@ export default async function sitemap() {
                 updated_at DESC
         `);
 
-    const qrPageRoutes =
+    const publicPageRoutes =
         qrPages.map(page => ({
             url:
                 `${BASE_URL}/p/${page.slug}`,
@@ -76,11 +101,11 @@ export default async function sitemap() {
             changeFrequency:
                 "weekly",
             priority:
-                0.8,
+                0.75,
         }));
 
     return [
         ...staticRoutes,
-        ...qrPageRoutes,
+        ...publicPageRoutes,
     ];
 }

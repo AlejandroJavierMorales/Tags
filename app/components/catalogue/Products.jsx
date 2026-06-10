@@ -2,29 +2,42 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import { catalogue } from "../../config/catalogue";
+import Link from "next/link";
 
-import ImageCarousel from "../ImageCarousel";
+import { catalogue }
+    from "../../config/catalogue";
 
-import showAlert from "../../components/showAlert";
+import ImageCarousel
+    from "../ImageCarousel";
 
-const STORAGE_KEY = "qr_cart";
+import showAlert
+    from "../../components/showAlert";
 
-// =========================
+const STORAGE_KEY =
+    "qr_cart";
+
+// ========================================
 // COMPONENT
-// =========================
+// ========================================
 
 export default function Products() {
 
-    const [cart, setCart] = useState({});
+    const [cart, setCart] =
+        useState({});
 
-    // =========================
+    const [activeCategory, setActiveCategory] =
+        useState("all");
+
+    // ========================================
     // LOAD CART
-    // =========================
+    // ========================================
 
     useEffect(() => {
 
-        const saved = localStorage.getItem(STORAGE_KEY);
+        const saved =
+            localStorage.getItem(
+                STORAGE_KEY
+            );
 
         if (saved) {
             setCart(JSON.parse(saved));
@@ -32,9 +45,9 @@ export default function Products() {
 
     }, []);
 
-    // =========================
+    // ========================================
     // SAVE CART
-    // =========================
+    // ========================================
 
     useEffect(() => {
 
@@ -45,17 +58,23 @@ export default function Products() {
 
     }, [cart]);
 
-    // =========================
+    // ========================================
     // HELPERS
-    // =========================
+    // ========================================
 
     const hasVariants = (item) =>
-        item?.variants?.material?.length > 0 ||
+        item?.variants?.material?.length > 0
+        ||
         item?.variants?.support?.length > 0;
 
-    const isComplete = (item, selected) => {
+    const isComplete = (
+        item,
+        selected
+    ) => {
 
-        if (!hasVariants(item)) return true;
+        if (!hasVariants(item)) {
+            return true;
+        }
 
         const needMaterial =
             item?.variants?.material?.length > 0;
@@ -63,26 +82,39 @@ export default function Products() {
         const needSupport =
             item?.variants?.support?.length > 0;
 
-        if (needMaterial && !selected.material) {
+        if (
+            needMaterial
+            &&
+            !selected.material
+        ) {
             return false;
         }
 
-        if (needSupport && !selected.support) {
+        if (
+            needSupport
+            &&
+            !selected.support
+        ) {
             return false;
         }
 
         return true;
     };
 
-    // =========================
-    // CART ACTIONS
-    // =========================
+    // ========================================
+    // CART
+    // ========================================
 
-    const toggleItem = (key, item, base) => {
+    const toggleItem = (
+        key,
+        item,
+        base
+    ) => {
 
         setCart((prev) => {
 
-            const updated = { ...prev };
+            const updated =
+                { ...prev };
 
             if (updated[key]) {
 
@@ -92,8 +124,11 @@ export default function Products() {
             }
 
             updated[key] = {
+
                 ...base,
+
                 quantity: 1,
+
                 notes: "",
             };
 
@@ -101,96 +136,151 @@ export default function Products() {
         });
     };
 
-    const updateField = (key, field, value) => {
+    const updateField = (
+        key,
+        field,
+        value
+    ) => {
 
         setCart((prev) => ({
+
             ...prev,
 
             [key]: {
+
                 ...prev[key],
+
                 [field]: value,
             },
         }));
     };
 
-    const updateQty = (key, qty) => {
+    const updateQty = (
+        key,
+        qty
+    ) => {
 
         setCart((prev) => ({
+
             ...prev,
 
             [key]: {
+
                 ...prev[key],
-                quantity: Number(qty),
+
+                quantity:
+                    Number(qty),
             },
         }));
     };
 
-    const updateNotes = (key, value) => {
+    const updateNotes = (
+        key,
+        value
+    ) => {
 
         setCart((prev) => ({
+
             ...prev,
 
             [key]: {
+
                 ...prev[key],
+
                 notes: value,
             },
         }));
     };
 
-    // =========================
+    // ========================================
     // TOTAL
-    // =========================
+    // ========================================
 
-    const total = useMemo(() => {
+    const total =
+        useMemo(() => {
 
-        return Object.values(cart).reduce(
-            (acc, item) =>
-                acc + item.basePrice * item.quantity,
-            0
-        );
+            return Object.values(cart)
+                .reduce(
 
-    }, [cart]);
+                    (
+                        acc,
+                        item
+                    ) => (
+                        acc +
+                        (
+                            item.basePrice *
+                            item.quantity
+                        )
+                    ),
 
-    // =========================
-    // SEND WHATSAPP
-    // =========================
+                    0
+                );
+
+        }, [cart]);
+
+    // ========================================
+    // WHATSAPP
+    // ========================================
 
     const sendWhatsApp = () => {
 
-        const items = Object.values(cart);
+        const items =
+            Object.values(cart);
 
-        // EMPTY
         if (items.length === 0) {
 
             showAlert({
-                title: "No hay productos",
-                text: "Seleccioná al menos un producto.",
-                icon: "info",
+
+                title:
+                    "No hay productos",
+
+                text:
+                    "Seleccioná al menos un producto.",
+
+                icon:
+                    "info",
             });
 
             return;
         }
 
-        // VALIDATE VARIANTS
         for (const selected of items) {
 
-            const item = catalogue
-                .flatMap((c) => c.items)
-                .find((i) => i.id === selected.id);
+            const item =
+                catalogue
+                    .flatMap(
+                        (c) => c.items
+                    )
+                    .find(
+                        (i) =>
+                            i.id === selected.id
+                    );
 
-            if (item && !isComplete(item, selected)) {
+            if (
+                item
+                &&
+                !isComplete(
+                    item,
+                    selected
+                )
+            ) {
 
                 showAlert({
-                    title: "Producto incompleto",
-                    text: `Faltan opciones en ${selected.name}`,
-                    icon: "warning",
+
+                    title:
+                        "Producto incompleto",
+
+                    text:
+                        `Faltan opciones en ${selected.name}`,
+
+                    icon:
+                        "warning",
                 });
 
                 return;
             }
         }
 
-        // MESSAGE
         let msg =
             "Hola! 👋 Quiero consultar por:%0A%0A";
 
@@ -210,18 +300,24 @@ export default function Products() {
 
             msg += `  Cantidad: ${p.quantity}%0A`;
 
-            msg += `  Precio Unitario: $${p.basePrice}%0A`;
+            if (p.basePrice > 0) {
 
-            msg += `  Subtotal: $${p.basePrice * p.quantity}%0A`;
+                msg += `  Precio Unitario: $${p.basePrice}%0A`;
+
+                msg += `  Subtotal: $${p.basePrice * p.quantity}%0A`;
+            }
 
             if (p.notes) {
+
                 msg += `  Observaciones: ${p.notes}%0A`;
             }
 
             msg += `%0A`;
         });
 
-        msg += `TOTAL: $${total}`;
+        if (total > 0) {
+            msg += `TOTAL: $${total}`;
+        }
 
         window.open(
             `https://wa.me/5493546562855?text=${msg}`,
@@ -229,301 +325,454 @@ export default function Products() {
         );
     };
 
-    // =========================
+    // ========================================
+    // FILTERED
+    // ========================================
+
+    const filteredCatalogue =
+        activeCategory === "all"
+            ? catalogue
+            : catalogue.filter(
+                (c) =>
+                    c.type === activeCategory
+            );
+
+    // ========================================
     // RENDER
-    // =========================
+    // ========================================
 
     return (
 
-        <section className="tags_store">
+        <section className="tags_store_page">
 
-            <div className="container py-5">
+            {/* ======================================== */}
+            {/* HERO */}
+            {/* ======================================== */}
 
-                {/* ========================= */}
-                {/* HEADER */}
-                {/* ========================= */}
+            <section className="tags_store_hero">
 
-                <div className="text-center mb-5">
+                <div className="container">
 
-                    <span className="tags_store_badge">
-                        Catálogo QR
-                    </span>
+                    <div className="tags_store_hero_content">
 
-                    <h1 className="tags_store_title">
-                        Productos QR Inteligentes
-                    </h1>
+                        <div className="tags_store_badge">
 
-                    <p className="tags_store_subtitle">
-                        Carteles físicos, stickers, NFC y
-                        soluciones digitales diseñadas para
-                        potenciar tu negocio.
-                    </p>
-
-                </div>
-
-                {/* ========================= */}
-                {/* CATEGORIES */}
-                {/* ========================= */}
-
-                {catalogue.map((category) => (
-
-                    <div
-                        key={category.category}
-                        className="mb-5"
-                    >
-
-                        {/* CATEGORY HEADER */}
-
-                        <div className="tags_store_category_header">
-
-                            <h2 className="tags_store_category_title">
-                                {category.category}
-                            </h2>
+                            Marketplace Tags
 
                         </div>
 
-                        {/* GRID */}
+                        <h1 className="tags_store_title">
 
-                        <div className="row g-4">
+                            Soluciones QR inteligentes
+                            para negocios, eventos y marcas
 
-                            {category.items.map((item) => (
+                        </h1>
 
-                                <div
-                                    key={item.id}
-                                    className="col-12 col-md-6 col-xl-4"
-                                >
+                        <p className="tags_store_subtitle">
 
-                                    <div className="tags_store_card">
+                            Productos Físicos, Software para gestionarlos,
+                            páginas web, NFC,
+                            reseñas Google,
+                            identidad digital
+                            y experiencias conectadas
+                            en una sola plataforma.
 
-                                        {/* IMAGE */}
+                        </p>
 
-                                        <div className="tags_store_image">
+                        {/* CATEGORIES */}
 
-                                            <ImageCarousel
-                                                images={item.images}
-                                            />
+                        <div className="tags_store_categories">
 
-                                        </div>
+                            <button
+                                onClick={() =>
+                                    setActiveCategory("all")
+                                }
+                                className="tags_store_category"
+                            >
+                                Todos
+                            </button>
 
-                                        {/* CONTENT */}
+                            <button
+                                onClick={() =>
+                                    setActiveCategory("hardware")
+                                }
+                                className="tags_store_category"
+                            >
+                                Productos Físicos
+                            </button>
 
-                                        <div className="tags_store_content">
+                            <button
+                                onClick={() =>
+                                    setActiveCategory("software")
+                                }
+                                className="tags_store_category"
+                            >
+                                Software de Gestión
+                            </button>
 
-                                            <div className="d-flex justify-content-between align-items-start gap-3 mb-2">
-
-                                                <div>
-
-                                                    <h3 className="tags_store_product_title">
-                                                        {item.name}
-                                                    </h3>
-
-                                                    <p className="tags_store_product_desc">
-                                                        {item.description}
-                                                    </p>
-
-                                                </div>
-
-                                                <div className="tags_store_price">
-                                                    ${item.basePrice}
-                                                </div>
-
-                                            </div>
-
-                                            {/* TYPES */}
-
-                                            <div className="d-flex flex-column gap-3 mt-4">
-
-                                                {item.types.map((type) => {
-
-                                                    const key =
-                                                        `${item.id}_${type.code}`;
-
-                                                    const selected =
-                                                        cart[key];
-
-                                                    return (
-
-                                                        <div
-                                                            key={key}
-                                                            className={`tags_store_option ${selected ? "tags_store_option_active" : ""
-                                                                }`}
-                                                        >
-
-                                                            {/* CHECK */}
-
-                                                            <label className="tags_store_checkbox">
-
-                                                                <input
-                                                                    type="checkbox"
-                                                                    checked={!!selected}
-                                                                    onChange={() =>
-                                                                        toggleItem(
-                                                                            key,
-                                                                            item,
-                                                                            {
-                                                                                ...item,
-                                                                                type: type.code,
-                                                                                typeLabel:
-                                                                                    type.label,
-                                                                            }
-                                                                        )
-                                                                    }
-                                                                />
-
-                                                                <span>
-                                                                    {type.label}
-                                                                </span>
-
-                                                            </label>
-
-                                                            {/* CONFIG */}
-
-                                                            {selected && (
-
-                                                                <div className="tags_store_config">
-
-                                                                    {/* MATERIAL */}
-
-                                                                    {item.variants?.material && (
-
-                                                                        <select
-                                                                            className="form-select"
-                                                                            value={selected.material || ""}
-                                                                            onChange={(e) =>
-                                                                                updateField(
-                                                                                    key,
-                                                                                    "material",
-                                                                                    e.target.value
-                                                                                )
-                                                                            }
-                                                                        >
-
-                                                                            <option value="">
-                                                                                Material
-                                                                            </option>
-
-                                                                            {item.variants.material.map((m) => (
-
-                                                                                <option
-                                                                                    key={m.code}
-                                                                                    value={m.code}
-                                                                                >
-                                                                                    {m.label}
-                                                                                </option>
-
-                                                                            ))}
-
-                                                                        </select>
-
-                                                                    )}
-
-                                                                    {/* SUPPORT */}
-
-                                                                    {item.variants?.support && (
-
-                                                                        <select
-                                                                            className="form-select"
-                                                                            value={selected.support || ""}
-                                                                            onChange={(e) =>
-                                                                                updateField(
-                                                                                    key,
-                                                                                    "support",
-                                                                                    e.target.value
-                                                                                )
-                                                                            }
-                                                                        >
-
-                                                                            <option value="">
-                                                                                Soporte
-                                                                            </option>
-
-                                                                            {item.variants.support.map((s) => (
-
-                                                                                <option
-                                                                                    key={s.code}
-                                                                                    value={s.code}
-                                                                                >
-                                                                                    {s.label}
-                                                                                </option>
-
-                                                                            ))}
-
-                                                                        </select>
-
-                                                                    )}
-
-                                                                    {/* QTY */}
-
-                                                                    <input
-                                                                        type="number"
-                                                                        min="1"
-                                                                        className="form-control"
-                                                                        placeholder="Cantidad"
-                                                                        value={selected.quantity}
-                                                                        onChange={(e) =>
-                                                                            updateQty(
-                                                                                key,
-                                                                                e.target.value
-                                                                            )
-                                                                        }
-                                                                    />
-
-                                                                    {/* NOTES */}
-
-                                                                    <textarea
-                                                                        className="form-control"
-                                                                        rows="3"
-                                                                        placeholder="Observaciones..."
-                                                                        value={selected.notes}
-                                                                        onChange={(e) =>
-                                                                            updateNotes(
-                                                                                key,
-                                                                                e.target.value
-                                                                            )
-                                                                        }
-                                                                    />
-
-                                                                </div>
-
-                                                            )}
-
-                                                        </div>
-
-                                                    );
-                                                })}
-
-                                            </div>
-
-                                        </div>
-
-                                    </div>
-
-                                </div>
-
-                            ))}
+                            <button
+                                onClick={() =>
+                                    setActiveCategory("addon")
+                                }
+                                className="tags_store_category"
+                            >
+                                Funciones Adicionales
+                            </button>
 
                         </div>
 
                     </div>
 
-                ))}
+                </div>
 
-            </div>
+            </section>
 
-            {/* ========================= */}
+            {/* ======================================== */}
+            {/* PRODUCTS */}
+            {/* ======================================== */}
+
+            <section className="tags_store_products_section">
+
+                <div className="container">
+
+                    {filteredCatalogue.map((category) => (
+
+                        <section
+                            key={category.category}
+                            className="tags_products_category"
+                        >
+
+                            {/* CATEGORY HEADER */}
+
+                            <div className="tags_products_category_header">
+
+                                <h2 className="tags_products_category_title">
+
+                                    {category.category}
+
+                                </h2>
+
+                                <p className="tags_products_category_subtitle">
+
+                                    {category.description}
+
+                                </p>
+
+                            </div>
+
+                            {/* GRID */}
+
+                            <div className="row g-4">
+
+                                {category.items.map((item) => (
+
+                                    <div
+                                        key={item.id}
+                                        className="col-12 col-md-6 col-xl-4"
+                                    >
+
+                                        <article className="tags_product_card">
+
+                                            {/* IMAGE */}
+
+                                            <div className="tags_product_image_wrapper">
+
+                                                <ImageCarousel
+                                                    images={item.images}
+                                                />
+
+                                            </div>
+
+                                            {/* CONTENT */}
+
+                                            <div className="tags_product_content">
+
+                                                {/* TITLE */}
+
+                                                <h3 className="tags_product_title">
+
+                                                    {item.name}
+
+                                                </h3>
+
+                                                {/* DESCRIPTION */}
+
+                                                <p className="tags_product_description">
+
+                                                    {item.description}
+
+                                                </p>
+
+                                                {/* FEATURES */}
+
+                                                {
+                                                    item.features
+                                                    &&
+                                                    (
+                                                        <div className="tags_product_tags">
+
+                                                            {
+                                                                item.features.map(
+                                                                    (feature) => (
+
+                                                                        <span
+                                                                            key={feature}
+                                                                        >
+
+                                                                            {feature}
+
+                                                                        </span>
+                                                                    )
+                                                                )
+                                                            }
+
+                                                        </div>
+                                                    )
+                                                }
+
+                                                {/* TYPES */}
+
+                                                <div className="d-flex flex-column gap-3 mt-4">
+
+                                                    {item.types.map((type) => {
+
+                                                        const key =
+                                                            `${item.id}_${type.code}`;
+
+                                                        const selected =
+                                                            cart[key];
+
+                                                        return (
+
+                                                            <div
+                                                                key={key}
+                                                                className={`tags_store_option ${selected ? "tags_store_option_active" : ""}`}
+                                                            >
+
+                                                                {/* CHECK */}
+
+                                                                <label className="tags_store_checkbox">
+
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        checked={!!selected}
+                                                                        onChange={() =>
+                                                                            toggleItem(
+                                                                                key,
+                                                                                item,
+                                                                                {
+                                                                                    ...item,
+                                                                                    type: type.code,
+                                                                                    typeLabel: type.label,
+                                                                                }
+                                                                            )
+                                                                        }
+                                                                    />
+
+                                                                    <span>
+
+                                                                        {type.label}
+
+                                                                    </span>
+
+                                                                </label>
+
+                                                                {/* CONFIG */}
+
+                                                                {selected && (
+
+                                                                    <div className="tags_store_config">
+
+                                                                        {/* MATERIAL */}
+
+                                                                        {item.variants?.material && (
+
+                                                                            <select
+                                                                                className="form-select"
+                                                                                value={selected.material || ""}
+                                                                                onChange={(e) =>
+                                                                                    updateField(
+                                                                                        key,
+                                                                                        "material",
+                                                                                        e.target.value
+                                                                                    )
+                                                                                }
+                                                                            >
+
+                                                                                <option value="">
+                                                                                    Material
+                                                                                </option>
+
+                                                                                {
+                                                                                    item.variants.material.map((m) => (
+
+                                                                                        <option
+                                                                                            key={m.code}
+                                                                                            value={m.code}
+                                                                                        >
+
+                                                                                            {m.label}
+
+                                                                                        </option>
+                                                                                    ))
+                                                                                }
+
+                                                                            </select>
+
+                                                                        )}
+
+                                                                        {/* SUPPORT */}
+
+                                                                        {item.variants?.support && (
+
+                                                                            <select
+                                                                                className="form-select"
+                                                                                value={selected.support || ""}
+                                                                                onChange={(e) =>
+                                                                                    updateField(
+                                                                                        key,
+                                                                                        "support",
+                                                                                        e.target.value
+                                                                                    )
+                                                                                }
+                                                                            >
+
+                                                                                <option value="">
+                                                                                    Soporte
+                                                                                </option>
+
+                                                                                {
+                                                                                    item.variants.support.map((s) => (
+
+                                                                                        <option
+                                                                                            key={s.code}
+                                                                                            value={s.code}
+                                                                                        >
+
+                                                                                            {s.label}
+
+                                                                                        </option>
+                                                                                    ))
+                                                                                }
+
+                                                                            </select>
+
+                                                                        )}
+
+                                                                        {/* QTY */}
+
+                                                                        <input
+                                                                            type="number"
+                                                                            min="1"
+                                                                            className="form-control"
+                                                                            placeholder="Cantidad"
+                                                                            value={selected.quantity}
+                                                                            onChange={(e) =>
+                                                                                updateQty(
+                                                                                    key,
+                                                                                    e.target.value
+                                                                                )
+                                                                            }
+                                                                        />
+
+                                                                        {/* NOTES */}
+
+                                                                        <textarea
+                                                                            className="form-control"
+                                                                            rows="3"
+                                                                            placeholder="Observaciones..."
+                                                                            value={selected.notes}
+                                                                            onChange={(e) =>
+                                                                                updateNotes(
+                                                                                    key,
+                                                                                    e.target.value
+                                                                                )
+                                                                            }
+                                                                        />
+
+                                                                    </div>
+
+                                                                )}
+
+                                                            </div>
+
+                                                        );
+                                                    })}
+
+                                                </div>
+
+                                                {/* FOOTER */}
+
+                                                <div className="tags_product_footer mt-4">
+
+                                                    <div className="tags_product_price">
+
+                                                        {
+                                                            item.priceLabel
+                                                            ||
+                                                            `$${item.basePrice}`
+                                                        }
+
+                                                    </div>
+
+                                                    {
+                                                        item.href
+                                                            ? (
+                                                                <Link
+                                                                    href={item.href}
+                                                                    className="tags_product_button"
+                                                                >
+                                                                    Ver más
+                                                                </Link>
+                                                            )
+                                                            : (
+                                                                <button
+                                                                    className="tags_product_button"
+                                                                    onClick={sendWhatsApp}
+                                                                >
+                                                                    Consultar
+                                                                </button>
+                                                            )
+                                                    }
+
+                                                </div>
+
+                                            </div>
+
+                                        </article>
+
+                                    </div>
+
+                                ))}
+
+                            </div>
+
+                        </section>
+
+                    ))}
+
+                </div>
+
+            </section>
+
+            {/* ======================================== */}
             {/* FLOAT CART */}
-            {/* ========================= */}
+            {/* ======================================== */}
 
             <div className="tags_store_cart">
 
                 <div>
 
                     <small className="d-block">
+
                         Total estimado
+
                     </small>
 
                     <strong className="tags_store_cart_total">
+
                         ${total}
+
                     </strong>
 
                 </div>
@@ -532,7 +781,9 @@ export default function Products() {
                     className="tags_store_cart_btn"
                     onClick={sendWhatsApp}
                 >
-                    🛒 Pedir por WhatsApp
+
+                    🛒 Consultar Pedido
+
                 </button>
 
             </div>

@@ -14,65 +14,75 @@ import ContactForm from "../components/contact/ContactForm";
 import { catalogue } from "../config/catalogue";
 import { tagsSiteConfig } from "../config/configSite";
 
-export const metadata = {
+import {
+    getOrganizationSchema,
+    getWebsiteSchema,
+    getLocalBusinessSchema,
+    getSoftwareSchema,
+    getFAQSchema,
+    getBreadcrumbSchema
+} from "@/app/lib/seo";
 
-    metadataBase: new URL(
-        tagsSiteConfig.site.url
-    ),
+const PAGE_PATH = "/contact";
+
+const PAGE_URL =
+    process.env.NEXT_PUBLIC_BASE_URL
+    || "http://localhost:3000";
+
+const IMAGE_URL =
+    `${tagsSiteConfig.site.url}/assets/images/og/tags-contacto-og.webp`;
+
+export const metadata = {
+    metadataBase:
+        new URL(tagsSiteConfig.site.url),
 
     title:
-        "Contacto | Tags - Plataforma QR y Carteles QR Personalizados",
+        "Contacto | Tags - Soluciones QR, NFC y Carteles Personalizados",
 
     description:
-        "Contactate con Tags para solicitar carteles QR personalizados, QR dinámicos, Google Reviews, NFC, stickers QR y plataforma de estadísticas de escaneo.",
+        "Contactate con Tags para solicitar carteles QR personalizados, QR dinámicos, Google Reviews, NFC, stickers QR, menú digital y plataforma de estadísticas.",
 
     keywords: [
-
         ...tagsSiteConfig.seo.keywords,
-
         "Contacto Tags",
-        "Soporte QR",
         "Carteles QR personalizados",
-        "Google Reviews QR",
         "QR dinámicos",
+        "Google Reviews QR",
         "QR NFC",
         "WhatsApp QR",
         "Menú digital",
         "Stickers QR",
-
+        "Plataforma QR",
     ],
 
     alternates: {
-
         canonical:
-            `${tagsSiteConfig.site.url}/contact`,
+            PAGE_PATH,
     },
 
     openGraph: {
-
         title:
-            "Contacto | Tags",
+            "Contacto | Tags - Soluciones QR para negocios",
 
         description:
-            "Solicitá información sobre soluciones QR físicas y digitales para negocios.",
+            "Consultá por productos QR físicos, NFC, Google Reviews, menú digital, WhatsApp QR y plataforma de estadísticas.",
 
         url:
-            `${tagsSiteConfig.site.url}/contact`,
+            PAGE_URL,
 
         siteName:
-            tagsSiteConfig.site.name,
+            tagsSiteConfig.site.shortName,
 
         locale:
-            "es_AR",
+            tagsSiteConfig.site.locale,
 
         type:
             "website",
 
         images: [
-
             {
                 url:
-                    tagsSiteConfig.site.image,
+                    IMAGE_URL,
 
                 width:
                     1200,
@@ -81,13 +91,12 @@ export const metadata = {
                     630,
 
                 alt:
-                    "Contacto Tags",
+                    "Contacto Tags soluciones QR y NFC",
             }
-        ]
+        ],
     },
 
     twitter: {
-
         card:
             "summary_large_image",
 
@@ -95,29 +104,27 @@ export const metadata = {
             "Contacto | Tags",
 
         description:
-            "Contactanos para implementar soluciones QR y NFC para tu negocio.",
+            "Solicitá soluciones QR, NFC y cartelería personalizada para tu negocio.",
 
         images: [
-            tagsSiteConfig.site.image
+            IMAGE_URL,
         ],
     },
 
     robots: {
-
         index: true,
         follow: true,
-
         googleBot: {
-
             index: true,
             follow: true,
-
             "max-video-preview": -1,
             "max-image-preview": "large",
             "max-snippet": -1,
-        }
-    }
+        },
+    },
 };
+
+
 
 export default function ContactPage() {
 
@@ -127,6 +134,8 @@ export default function ContactPage() {
         catalogue[1].items[0].images[0],
         catalogue[2].items[0].images[0],
     ];
+
+
 
     const whatsappMessage = encodeURIComponent(
         "Hola! Quiero consultar por productos QR y la plataforma Tags."
@@ -139,439 +148,109 @@ export default function ContactPage() {
     // SCHEMAS
     // =========================
 
-    const schemas = [
-
-        // =====================================================
-        // ORGANIZATION
-        // =====================================================
-
+    const faqItems = [
         {
-            "@context": "https://schema.org",
-
-            "@type": "Organization",
-
-            "@id":
-                `${tagsSiteConfig.site.url}/#organization`,
-
-            name:
-                tagsSiteConfig.organization.name,
-
-            url:
-                tagsSiteConfig.organization.url,
-
-            logo:
-                tagsSiteConfig.organization.logo,
-
-            image:
-                tagsSiteConfig.organization.logo,
-
-            email:
-                tagsSiteConfig.contact.email,
-
-            telephone:
-                tagsSiteConfig.contact.phone,
-
-            sameAs:
-                Object.values(tagsSiteConfig.social),
-
-            description:
-                tagsSiteConfig.site.description,
-
-            contactPoint: [
-
-                {
-                    "@type": "ContactPoint",
-
-                    telephone:
-                        tagsSiteConfig.contact.phone,
-
-                    contactType:
-                        "customer support",
-
-                    areaServed:
-                        "AR",
-
-                    availableLanguage: [
-                        "Spanish"
-                    ]
-                }
-            ],
-
-            parentOrganization: {
-
-                "@type": "Organization",
-
-                name:
-                    tagsSiteConfig.organization.parentOrganization.name,
-
-                url:
-                    tagsSiteConfig.organization.parentOrganization.url,
-            }
+            question: "¿Cómo puedo solicitar un presupuesto?",
+            answer: "Podés solicitar un presupuesto completando el formulario de contacto o escribiéndonos por WhatsApp.",
         },
-
-        // =====================================================
-        // LOCAL BUSINESS
-        // =====================================================
-
         {
-            "@context": "https://schema.org",
-
-            "@type": "LocalBusiness",
-
-            "@id":
-                `${tagsSiteConfig.site.url}/#localbusiness`,
-
-            name:
-                tagsSiteConfig.contact.name,
-
-            description:
-                tagsSiteConfig.site.description,
-
-            image:
-                tagsSiteConfig.organization.logo,
-
-            logo:
-                tagsSiteConfig.organization.logo,
-
-            url:
-                tagsSiteConfig.site.url,
-
-            telephone:
-                tagsSiteConfig.contact.phone,
-
-            email:
-                tagsSiteConfig.contact.email,
-
-            sameAs:
-                Object.values(tagsSiteConfig.social),
-
-            priceRange:
-                "$$",
-
-            currenciesAccepted:
-                "ARS",
-
-            paymentAccepted: [
-                "Cash",
-                "Credit Card",
-                "Debit Card",
-                "Mercado Pago",
-                "Bank Transfer"
-            ],
-
-            openingHours: [
-                "Mo-Fr 09:00-18:00"
-            ],
-
-            address: {
-
-                "@type": "PostalAddress",
-
-                streetAddress:
-                    tagsSiteConfig.contact.streetAddress,
-
-                addressLocality:
-                    tagsSiteConfig.contact.city,
-
-                addressRegion:
-                    tagsSiteConfig.contact.region,
-
-                postalCode:
-                    tagsSiteConfig.contact.postalCode,
-
-                addressCountry:
-                    tagsSiteConfig.contact.country,
-            },
-
-            geo: {
-
-                "@type": "GeoCoordinates",
-
-                latitude:
-                    -31.905003992017754,
-
-                longitude:
-                    -64.5758572,
-            },
-
-            hasMap:
-                "https://www.google.com/maps?q=-31.905003992017754,-64.5758572",
-
-            parentOrganization: {
-                "@id":
-                    `${tagsSiteConfig.site.url}/#organization`
-            },
-
-            knowsAbout: [
-
-                "Códigos QR",
-                "QR dinámicos",
-                "Google Reviews",
-                "QR para negocios",
-                "QR para restaurantes",
-                "QR para hoteles",
-                "QR para turismo",
-                "NFC",
-                "Menú digital",
-                "Cartelería QR",
-                "Estadísticas QR",
-                "Gestión QR",
-                "QR WhatsApp",
-                "QR Instagram"
-            ]
+            question: "¿Realizan envíos a toda Argentina?",
+            answer: "Sí. Realizamos envíos de productos QR y cartelería personalizada a todo el país.",
         },
-
-        // =====================================================
-        // WEBPAGE
-        // =====================================================
-
         {
-            "@context": "https://schema.org",
-
-            "@type": "WebPage",
-
-            "@id":
-                `${tagsSiteConfig.site.url}/contact#webpage`,
-
-            url:
-                `${tagsSiteConfig.site.url}/contact`,
-
-            name:
-                "Contacto | Tags",
-
-            description:
-                "Página de contacto de Tags para consultas comerciales y soporte sobre soluciones QR.",
-
-            inLanguage:
-                "es-AR",
-
-            isPartOf: {
-                "@id":
-                    `${tagsSiteConfig.site.url}/#website`
-            },
-
-            about: {
-                "@id":
-                    `${tagsSiteConfig.site.url}/#organization`
-            },
-
-            primaryImageOfPage: {
-
-                "@type": "ImageObject",
-
-                url:
-                    featuredImages[0]
-            },
-
-            speakable: {
-
-                "@type":
-                    "SpeakableSpecification",
-
-                cssSelector: [
-                    ".tags_hero_title",
-                    ".tags_hero_subtitle"
-                ]
-            }
+            question: "¿Los códigos QR son editables?",
+            answer: "Sí. Los códigos QR dinámicos permiten modificar el destino sin necesidad de reimprimir el producto.",
         },
-
-        // =====================================================
-        // CONTACT PAGE
-        // =====================================================
-
         {
-            "@context": "https://schema.org",
-
-            "@type": "ContactPage",
-
-            "@id":
-                `${tagsSiteConfig.site.url}/contact#contactpage`,
-
-            name:
-                "Contacto | Tags",
-
-            description:
-                "Página de contacto de Tags para consultas comerciales y soporte sobre soluciones QR.",
-
-            url:
-                `${tagsSiteConfig.site.url}/contact`,
-
-            isPartOf: {
-                "@id":
-                    `${tagsSiteConfig.site.url}/#website`
-            },
-
-            mainEntity: {
-                "@id":
-                    `${tagsSiteConfig.site.url}/#localbusiness`
-            }
+            question: "¿Puedo solicitar diseños personalizados?",
+            answer: "Sí. Diseñamos carteles QR personalizados adaptados a la identidad visual de cada negocio.",
         },
-
-        // =====================================================
-        // IMAGE OBJECT
-        // =====================================================
-
         {
-            "@context": "https://schema.org",
+            question: "¿Los productos incluyen NFC?",
+            answer: "Sí. Muchos de nuestros productos pueden incorporar tecnología NFC.",
+        },
+        {
+            question: "¿Qué estadísticas ofrece la plataforma?",
+            answer: "La plataforma permite visualizar escaneos, dispositivos, ubicación geográfica y comportamiento de usuarios.",
+        },
+    ];
 
+    const webPageSchema = {
+        "@context": "https://schema.org",
+        "@type": "ContactPage",
+        "@id": `${PAGE_URL}/#webpage`,
+        url: PAGE_URL,
+        name: "Contacto | Tags",
+        description:
+            "Página de contacto de Tags para consultas comerciales y soporte sobre soluciones QR, NFC y cartelería personalizada.",
+        inLanguage: "es-AR",
+        isPartOf: {
+            "@id": `${tagsSiteConfig.site.url}/#website`
+        },
+        about: {
+            "@id": `${tagsSiteConfig.site.url}/#organization`
+        },
+        mainEntity: {
+            "@id": `${tagsSiteConfig.site.url}/#localbusiness`
+        },
+        primaryImageOfPage: {
             "@type": "ImageObject",
-
-            "@id":
-                `${tagsSiteConfig.site.url}/contact#heroimage`,
-
-            contentUrl:
-                featuredImages[0],
-
-            url:
-                featuredImages[0],
-
-            caption:
-                "Carteles QR personalizados Tags"
-        },
-
-        // =====================================================
-        // FAQ PAGE
-        // =====================================================
-
-        {
-            "@context": "https://schema.org",
-
-            "@type": "FAQPage",
-
-            "@id":
-                `${tagsSiteConfig.site.url}/contact#faq`,
-
-            mainEntity: [
-
-                {
-                    "@type": "Question",
-
-                    name:
-                        "¿Cómo puedo solicitar un presupuesto?",
-
-                    acceptedAnswer: {
-
-                        "@type": "Answer",
-
-                        text:
-                            "Podés solicitar un presupuesto completando el formulario de contacto o escribiéndonos por WhatsApp."
-                    }
-                },
-
-                {
-                    "@type": "Question",
-
-                    name:
-                        "¿Realizan envíos a toda Argentina?",
-
-                    acceptedAnswer: {
-
-                        "@type": "Answer",
-
-                        text:
-                            "Sí. Realizamos envíos de productos QR y cartelería personalizada a todo el país."
-                    }
-                },
-
-                {
-                    "@type": "Question",
-
-                    name:
-                        "¿Los códigos QR son editables?",
-
-                    acceptedAnswer: {
-
-                        "@type": "Answer",
-
-                        text:
-                            "Sí. Los códigos QR dinámicos permiten modificar el destino sin necesidad de reimprimir el producto."
-                    }
-                },
-
-                {
-                    "@type": "Question",
-
-                    name:
-                        "¿Puedo solicitar diseños personalizados?",
-
-                    acceptedAnswer: {
-
-                        "@type": "Answer",
-
-                        text:
-                            "Sí. Diseñamos carteles QR personalizados adaptados a la identidad visual de cada negocio."
-                    }
-                },
-
-                {
-                    "@type": "Question",
-
-                    name:
-                        "¿Los productos incluyen NFC?",
-
-                    acceptedAnswer: {
-
-                        "@type": "Answer",
-
-                        text:
-                            "Sí. Muchos de nuestros productos pueden incorporar tecnología NFC."
-                    }
-                },
-
-                {
-                    "@type": "Question",
-
-                    name:
-                        "¿Qué estadísticas ofrece la plataforma?",
-
-                    acceptedAnswer: {
-
-                        "@type": "Answer",
-
-                        text:
-                            "La plataforma permite visualizar escaneos, dispositivos, ubicación geográfica y comportamiento de usuarios."
-                    }
-                }
-            ]
-        },
-
-        // =====================================================
-        // BREADCRUMB
-        // =====================================================
-
-        {
-            "@context": "https://schema.org",
-
-            "@type": "BreadcrumbList",
-
-            "@id":
-                `${tagsSiteConfig.site.url}/contact#breadcrumb`,
-
-            itemListElement: [
-
-                {
-                    "@type": "ListItem",
-
-                    position: 1,
-
-                    name: "Inicio",
-
-                    item:
-                        tagsSiteConfig.site.url,
-                },
-
-                {
-                    "@type": "ListItem",
-
-                    position: 2,
-
-                    name: "Contacto",
-
-                    item:
-                        `${tagsSiteConfig.site.url}/contact`,
-                }
-            ]
+            "@id": `${PAGE_URL}/#primaryimage`,
+            url: IMAGE_URL,
+            contentUrl: IMAGE_URL,
+            width: 1200,
+            height: 630,
+            caption: "Contacto Tags soluciones QR y NFC"
         }
+    };
+
+    const serviceSchema = {
+        "@context": "https://schema.org",
+        "@type": "Service",
+        "@id": `${PAGE_URL}/#service`,
+        name: "Asesoramiento comercial Tags",
+        serviceType: [
+            "Soluciones QR",
+            "Carteles QR personalizados",
+            "QR dinámicos",
+            "NFC para negocios",
+            "Google Reviews QR",
+            "Menú digital"
+        ],
+        description:
+            "Servicio de asesoramiento para implementar soluciones QR físicas, digitales, NFC y plataforma de estadísticas para negocios.",
+        provider: {
+            "@id": `${tagsSiteConfig.site.url}/#organization`
+        },
+        areaServed: {
+            "@type": "Country",
+            name: "Argentina"
+        }
+    };
+
+    const breadcrumbs = [
+        ...tagsSiteConfig.breadcrumbsBase,
+        {
+            name: "Contacto",
+            url: PAGE_URL,
+        }
+    ];
+
+    const schemas = [
+        getOrganizationSchema(),
+        getWebsiteSchema(),
+        getLocalBusinessSchema(),
+        getSoftwareSchema(),
+        webPageSchema,
+        serviceSchema,
+        getFAQSchema(
+            faqItems,
+            `${PAGE_URL}/#faq`
+        ),
+        getBreadcrumbSchema(
+            breadcrumbs,
+            `${PAGE_URL}/#breadcrumb`
+        )
     ];
 
     return (

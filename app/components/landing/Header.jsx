@@ -1,56 +1,145 @@
 "use client";
 
 import "../../styles/tags_landing.css";
+
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+
+const mainLinks = [
+    {
+        href: "/",
+        label: "Inicio",
+        icon: "🏠",
+    },
+    {
+        href: "/qr-inteligente",
+        label: "QR Inteligente",
+        icon: "⌗",
+    },
+    {
+        href: "/qr-page",
+        label: "QR-Page",
+        icon: "🌐",
+    },
+    {
+        href: "/tags-id",
+        label: "Tags Id",
+        icon: "🪪",
+    },
+    {
+        href: "/tags-reviews",
+        label: "Reviews",
+        icon: "⭐",
+    },
+    {
+        href: "/e-events",
+        label: "eEvents",
+        icon: "🎟️",
+    },
+    {
+        href: "/store-products",
+        label: "Tienda",
+        icon: "🛒",
+    },
+    {
+        href: "/demo",
+        label: "Demo",
+        icon: "🚀",
+    },
+    {
+        href: "/contact",
+        label: "Contacto",
+        icon: "📲",
+    },
+];
 
 export default function Header() {
 
-    const router = useRouter();
+    const router =
+        useRouter();
 
-    const [scrolled, setScrolled] = useState(false);
-    const [open, setOpen] = useState(false);
-    const [clientOpen, setClientOpen] = useState(false);
+    const [scrolled, setScrolled] =
+        useState(false);
 
-    const desktopDropdownRef = useRef(null);
-    const mobileDropdownRef = useRef(null);
+    const [open, setOpen] =
+        useState(false);
 
-    // SCROLL
+    const [clientOpen, setClientOpen] =
+        useState(false);
+
+    const desktopDropdownRef =
+        useRef(null);
+
+    const mobileDropdownRef =
+        useRef(null);
+
     useEffect(() => {
-        const onScroll = () => setScrolled(window.scrollY > 20);
 
-        window.addEventListener("scroll", onScroll);
+        const onScroll = () => {
+            setScrolled(
+                window.scrollY > 20
+            );
+        };
 
-        return () => window.removeEventListener("scroll", onScroll);
+        window.addEventListener(
+            "scroll",
+            onScroll
+        );
+
+        return () => {
+            window.removeEventListener(
+                "scroll",
+                onScroll
+            );
+        };
+
     }, []);
 
-    // CLOSE OUTSIDE
     useEffect(() => {
 
         const handleClick = (e) => {
 
             const desktopInside =
                 desktopDropdownRef.current &&
-                desktopDropdownRef.current.contains(e.target);
+                desktopDropdownRef.current.contains(
+                    e.target
+                );
 
             const mobileInside =
                 mobileDropdownRef.current &&
-                mobileDropdownRef.current.contains(e.target);
+                mobileDropdownRef.current.contains(
+                    e.target
+                );
 
-            if (!desktopInside && !mobileInside) {
+            if (
+                !desktopInside &&
+                !mobileInside
+            ) {
                 setClientOpen(false);
             }
         };
 
-        document.addEventListener("click", handleClick);
+        document.addEventListener(
+            "click",
+            handleClick
+        );
 
         return () => {
-            document.removeEventListener("click", handleClick);
+            document.removeEventListener(
+                "click",
+                handleClick
+            );
         };
 
     }, []);
+
+    const closeMenus = () => {
+        setOpen(false);
+        setClientOpen(false);
+    };
 
     const ClientMenu = ({ onClose }) => (
         <div className="tags_clients_menu">
@@ -79,38 +168,33 @@ export default function Header() {
 
             <div className="container tags_landing_nav_inner">
 
-                {/* LOGO */}
-                <Link href="/">
+                <Link
+                    href="/"
+                    aria-label="Ir al inicio de Tags"
+                    onClick={closeMenus}
+                >
                     <Image
                         src="/logo_tags_transparente.webp"
-                        alt="Logo"
+                        alt="Tags"
                         width={90}
                         height={75}
+                        priority
                     />
                 </Link>
 
                 {/* DESKTOP */}
-                <ul className="d-none d-lg-flex list-unstyled m-0 gap-3 align-items-center">
+                <ul className="d-none d-xl-flex list-unstyled m-0 gap-3 align-items-center">
 
-                    <li>
-                        <a href="/">Inicio</a>
-                    </li>
+                    {mainLinks.map((item) => (
 
-                    <li>
-                        <a href="/store-products">Productos</a>
-                    </li>
+                        <li key={item.href}>
+                            <Link href={item.href}>
+                                {item.label}
+                            </Link>
+                        </li>
 
-                    <li>
-                        <a href="/demo">Demo</a>
-                    </li>
-                    <li>
-                        <a href="/qr-dinamico">QR Dinámico vs.Tradicional</a>
-                    </li>
-                    <li>
-                        <a href="/contact">Contacto</a>
-                    </li>
+                    ))}
 
-                    {/* CLIENTES DESKTOP */}
                     <li
                         ref={desktopDropdownRef}
                         className="position-relative"
@@ -119,23 +203,18 @@ export default function Header() {
                         <button
                             type="button"
                             className="tags_clients_btn"
-                            onClick={() => setClientOpen((v) => !v)}
+                            onClick={() =>
+                                setClientOpen((v) => !v)
+                            }
                         >
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="18"
-                                height="18"
-                                fill="currentColor"
-                                viewBox="0 0 16 16"
-                            >
-                                <path d="M8 1a2 2 0 0 0-2 2v3H5a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2H10V3a2 2 0 0 0-2-2zm1 5H7V3a1 1 0 1 1 2 0z" />
-                            </svg>
-                            Acceso Clientes ▾
+                            🔐 Acceso Clientes ▾
                         </button>
 
                         {clientOpen && (
                             <ClientMenu
-                                onClose={() => setClientOpen(false)}
+                                onClose={() =>
+                                    setClientOpen(false)
+                                }
                             />
                         )}
 
@@ -145,8 +224,12 @@ export default function Header() {
 
                 {/* MOBILE BUTTON */}
                 <button
-                    className="tags_landing_menu_btn d-lg-none"
-                    onClick={() => setOpen(!open)}
+                    type="button"
+                    className="tags_landing_menu_btn d-xl-none"
+                    onClick={() =>
+                        setOpen(!open)
+                    }
+                    aria-label="Abrir menú"
                 >
                     ☰
                 </button>
@@ -158,49 +241,28 @@ export default function Header() {
 
                 <div
                     className="tags_landing_overlay"
-                    onClick={() => setOpen(false)}
+                    onClick={closeMenus}
                 >
 
                     <div
                         className="tags_landing_mobile_modal"
-                        onClick={(e) => e.stopPropagation()}
+                        onClick={(e) =>
+                            e.stopPropagation()
+                        }
                     >
 
-                        <Link
-                            href="/"
-                            onClick={() => setOpen(false)}
-                        >
-                            🏠 Inicio
-                        </Link>
+                        {mainLinks.map((item) => (
 
-                        <Link
-                            href="/store-products"
-                            onClick={() => setOpen(false)}
-                        >
-                            🛒 Productos
-                        </Link>
+                            <Link
+                                key={item.href}
+                                href={item.href}
+                                onClick={closeMenus}
+                            >
+                                {item.icon} {item.label}
+                            </Link>
 
-                        <a
-                            href="/demo"
-                            onClick={() => setOpen(false)}
-                        >
-                            🚀 Demo
-                        </a>
-                        <a
-                            href="/contact"
-                            onClick={() => setOpen(false)}
-                        >
-                            📲 Contacto
-                        </a>
-                        <a
-                            href="/qr-dinamico"
-                            onClick={() => setOpen(false)}
-                        >
-                            ⌗ QR Dinámico vs.Tradicional
-                        </a>
+                        ))}
 
-
-                        {/* CLIENTES MOBILE */}
                         <div
                             className="tags_mobile_clients"
                             ref={mobileDropdownRef}
@@ -209,18 +271,11 @@ export default function Header() {
                             <button
                                 type="button"
                                 className="tags_mobile_clients_btn tags_mobile_clients_btn_access"
-                                onClick={() => setClientOpen((v) => !v)}
+                                onClick={() =>
+                                    setClientOpen((v) => !v)
+                                }
                             >
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    width="18"
-                                    height="18"
-                                    fill="currentColor"
-                                    viewBox="0 0 16 16"
-                                >
-                                    <path d="M8 1a2 2 0 0 0-2 2v3H5a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2H10V3a2 2 0 0 0-2-2zm1 5H7V3a1 1 0 1 1 2 0z" />
-                                </svg>
-                                Acceso Clientes ▾
+                                🔐 Acceso Clientes ▾
                             </button>
 
                             {clientOpen && (
@@ -230,8 +285,7 @@ export default function Header() {
                                     <button
                                         type="button"
                                         onClick={() => {
-                                            setOpen(false);
-                                            setClientOpen(false);
+                                            closeMenus();
                                             router.push("/login");
                                         }}
                                     >
@@ -241,8 +295,7 @@ export default function Header() {
                                     <button
                                         type="button"
                                         onClick={() => {
-                                            setOpen(false);
-                                            setClientOpen(false);
+                                            closeMenus();
                                             router.push("/logout");
                                         }}
                                     >

@@ -1,25 +1,29 @@
+// app/config/configSite.js
+
+// app/config/configSite.js
+
+const BASE_URL =
+  process.env.NEXT_PUBLIC_BASE_URL
+  || "http://localhost:3000";
+
 export const tagsSiteConfig = {
 
-  // =========================================================
-  // 🌐 SITE
-  // =========================================================
+
+
+  // =====================================================
+  // SITE
+  // =====================================================
 
   site: {
 
     name:
-      "Tags - Gestión y Reporting de Códigos QR",
+      "Tags",
 
     shortName:
       "Tags",
 
     url:
-      "https://www.tags.com.ar",
-
-    domain:
-      "www.tags.com.ar",
-
-    description:
-      "Plataforma de gestión, estadísticas y reporting de códigos QR dinámicos. Soluciones QR físicas, digitales y NFC para negocios, restaurantes, hoteles y turismo.",
+      BASE_URL,
 
     language:
       "es-AR",
@@ -27,78 +31,62 @@ export const tagsSiteConfig = {
     locale:
       "es_AR",
 
-    themeColor:
-      "#000000",
+    description:
+      "Plataforma de experiencias digitales inteligentes con QR dinámicos, landing pages, tarjetas digitales, reseñas Google y gestión de eventos.",
 
-    logo:
-      "https://www.tags.com.ar/logo.png",
-
-    favicon:
-      "https://www.tags.com.ar/favicon.ico",
-
-    image:
-      "https://www.tags.com.ar/assets/images/tags/qr-google.webp",
-    defaultImage:
-      "https://www.tags.com.ar/assets/images/tags/qr-estadisticas.webp",
   },
 
-  // =========================================================
-  // 🏢 ORGANIZATION
-  // =========================================================
+  // =====================================================
+  // ORGANIZATION
+  // =====================================================
 
   organization: {
 
     name:
       "Tags",
 
-    legalName:
-      "Tags",
-
     url:
-      "https://www.tags.com.ar",
+      BASE_URL,
 
     logo:
-      "https://www.tags.com.ar/logo.png",
-
-    email:
-      "info@tags.com.ar",
-
-    phone:
-      "+54 3546 562855",
-
-    foundingLocation:
-      "Los Reartes, Córdoba, Argentina",
+      `${BASE_URL}/logo_tags_transparente.webp`,
 
     parentOrganization: {
 
       name:
-        "CalamuchitAr",
+        "CalamuchitaR",
 
       url:
-        "https://calamuchita.ar",
-    },
-    brand: {
-      name: "Tags"
+        "https://www.calamuchitar.com",
     },
   },
 
-  // =========================================================
-  // 📍 CONTACT
-  // =========================================================
+  // =====================================================
+  // CONTACT
+  // =====================================================
 
   contact: {
 
     name:
       "Tags",
 
+    email:
+      "info@tags.com.ar",
+
+    phone:
+      "+543546562855",
+
+    web:
+      "https://www.tags.com.ar",
+
     address:
-      "Alberdi 1506 - Los Reartes, Córdoba, Argentina",
+      "Los Reartes, Valle de Calamuchita, Córdoba, Argentina",
 
     streetAddress:
-      "Alberdi 1506",
+      "Villa General Belgrano",
 
     city:
-      "Los Reartes",
+      "Villa General Belgrano",
 
     region:
       "Córdoba",
@@ -109,94 +97,88 @@ export const tagsSiteConfig = {
     country:
       "AR",
 
-    phone:
-      "+54 3546 562855",
+    latitude:
+      "-31.9754",
 
-    email:
-      "info@tags.com.ar",
-
-    web:
-      "https://www.tags.com.ar",
-
-    latitude: -31.905003992017754,
-
-    longitude: -64.5758572,
+    longitude:
+      "-64.5554",
   },
 
-  // =========================================================
-  // 📱 SOCIAL
-  // =========================================================
+  // =====================================================
+  // SOCIAL
+  // =====================================================
 
   social: {
 
     instagram:
-      "https://instagram.com/calamuchitar",
+      "https://instagram.com/tags.com.ar",
 
     facebook:
-      "https://facebook.com/calamuchitar",
+      "https://facebook.com/tags.com.ar",
   },
 
-  // =========================================================
-  // 🔍 SEO
-  // =========================================================
+  // =====================================================
+  // SEO
+  // =====================================================
 
   seo: {
 
-    title:
-      "Tags | Plataforma QR y Cartelería Inteligente",
-
-    description:
-      "Gestión de códigos QR dinámicos con estadísticas, analíticas y cartelería física personalizada para negocios.",
-
     keywords: [
 
-      "QR",
-      "Códigos QR",
+      // CORE
       "QR dinámico",
-      "Carteles QR",
+      "QR inteligente",
+      "códigos QR",
+      "QR editable",
+      "QR con estadísticas",
+      "QR con analytics",
+
+      // QR PAGE
+      "QR Page",
+      "landing page QR",
+      "micrositio QR",
+      "catálogo QR",
+      "menú QR",
+
+      // TAGS ID
+      "tarjeta digital",
+      "tarjeta NFC",
+      "business card digital",
+      "perfil digital",
+
+      // REVIEWS
+      "Google Reviews",
+      "QR reseñas Google",
+      "captar reseñas",
+      "aumentar reviews Google",
+
+      // EVENTS
+      "invitaciones digitales",
+      "checkin QR",
+      "gestión de eventos",
+      "eventos inteligentes",
+
+      // BUSINESS
       "QR para negocios",
       "QR para restaurantes",
       "QR para hoteles",
       "QR para turismo",
-      "Google Reviews",
-      "QR WhatsApp",
-      "QR Instagram",
-      "QR Facebook",
-      "QR NFC",
+
+      // NFC
       "NFC",
-      "Menú digital",
-      "Stickers QR",
-      "Tarjetas QR",
-      "Carteles NFC",
-      "Plataforma QR",
-      "Gestión QR",
-      "Estadísticas QR",
-      "Analíticas QR",
-      "QR personalizados",
-      "QR Argentina",
+      "tarjetas NFC",
+      "cartelería inteligente",
     ],
-
-    author:
-      "Tags",
-
-    robots:
-      "index, follow",
-
-    twitter:
-      "@calamuchitar",
   },
 
-  // =========================================================
-  // 💻 PLATFORM
-  // =========================================================
+  // =====================================================
+  // PLATFORM
+  // =====================================================
 
   platform: {
 
     name:
-      "Tags",
-
-    description:
-      "Plataforma de gestión de códigos QR dinámicos con estadísticas, reportes en tiempo real y administración centralizada.",
+      "Tags Platform",
 
     applicationCategory:
       "BusinessApplication",
@@ -204,18 +186,25 @@ export const tagsSiteConfig = {
     operatingSystem:
       "Web",
 
+    description:
+      "Plataforma SaaS para gestión de QR inteligentes, landing pages, tarjetas digitales, captación de reseñas y eventos inteligentes.",
+
     features: [
 
-      "Gestión de códigos QR dinámicos",
-      "Estadísticas de escaneo en tiempo real",
-      "Reportes detallados",
-      "Diseño personalizado de QR",
-      "Panel de administración centralizado",
-      "Edición sin reimpresión",
-      "QR para Google Reviews",
-      "QR para WhatsApp",
-      "QR para Instagram",
-      "Compatibilidad NFC",
+      "QR dinámicos editables",
+      "Analytics QR",
+      "Landing Pages QR",
+      "Tags Id",
+      "Google Reviews",
+      "Invitaciones digitales",
+      "Checkin QR",
+      "Eventos inteligentes",
+      "NFC",
+      "Catálogo digital",
+      "QR WhatsApp",
+      "QR Instagram",
+      "QR Google Maps",
+      "QR personalizados",
     ],
 
     offers: {
@@ -225,74 +214,27 @@ export const tagsSiteConfig = {
 
       priceCurrency:
         "ARS",
-    }
+    },
   },
 
-  // =========================================================
-  // 🛠️ SERVICES
-  // =========================================================
-
-  services: [
-
-    {
-      name:
-        "Gestión de códigos QR",
-
-      description:
-        "Administración centralizada de códigos QR dinámicos con edición sin reimpresión.",
-    },
-
-    {
-      name:
-        "Reportes y estadísticas",
-
-      description:
-        "Análisis de escaneos con métricas de ubicación, dispositivos y comportamiento.",
-    },
-
-    {
-      name:
-        "Diseño de códigos QR",
-
-      description:
-        "Personalización visual de códigos QR adaptados a la identidad de marca.",
-    },
-
-    {
-      name:
-        "Cartelería QR física",
-
-      description:
-        "Fabricación de carteles QR personalizados en acrílico, PVC y materiales premium.",
-    },
-
-    {
-      name:
-        "Tecnología NFC",
-
-      description:
-        "Integración de tecnología NFC para interacciones rápidas desde celulares compatibles.",
-    }
-  ],
-
-  // =========================================================
-  // 🛍️ PRODUCTS
-  // =========================================================
+  // =====================================================
+  // PRODUCTS
+  // =====================================================
 
   products: [
 
     {
       id:
-        "qr-cartel-fisico",
+        "qr-dinamicos",
 
       name:
-        "Cartel QR físico",
+        "QR Inteligentes",
 
       description:
-        "Carteles impresos con códigos QR personalizados para negocios, turismo y eventos.",
+        "QR dinámicos editables con estadísticas, analytics y gestión en tiempo real.",
 
       price:
-        "10000",
+        "0",
 
       currency:
         "ARS",
@@ -300,183 +242,241 @@ export const tagsSiteConfig = {
 
     {
       id:
-        "qr-digital",
+        "qr-page",
 
       name:
-        "QR digital personalizado",
+        "QR-Page",
 
       description:
-        "Diseños digitales de códigos QR personalizados para redes sociales, reviews y sitios web.",
+        "Landing pages inteligentes optimizadas para QR, productos, servicios y negocios.",
 
       price:
-        "5000",
+        "0",
 
       currency:
         "ARS",
-    }
+    },
+
+    {
+      id:
+        "tags-id",
+
+      name:
+        "Tags Id",
+
+      description:
+        "Tarjetas digitales inteligentes con QR y NFC para profesionales y negocios.",
+
+      price:
+        "0",
+
+      currency:
+        "ARS",
+    },
+
+    {
+      id:
+        "tags-reviews",
+
+      name:
+        "Tags Reviews",
+
+      description:
+        "Sistema inteligente para captar, gestionar e inducir reseñas Google.",
+
+      price:
+        "0",
+
+      currency:
+        "ARS",
+    },
+
+    {
+      id:
+        "e-events",
+
+      name:
+        "Tags eEvents",
+
+      description:
+        "Plataforma para eventos inteligentes con invitados, QR, checkin y cronogramas.",
+
+      price:
+        "0",
+
+      currency:
+        "ARS",
+    },
   ],
 
-  // =========================================================
-  // ❓ FAQ
-  // =========================================================
+  // =====================================================
+  // SERVICES
+  // =====================================================
+
+  services: [
+
+    {
+      name:
+        "QR Inteligentes",
+
+      description:
+        "Códigos QR dinámicos editables con estadísticas y seguimiento en tiempo real.",
+    },
+
+    {
+      name:
+        "QR Landing Pages",
+
+      description:
+        "Páginas públicas optimizadas para campañas, negocios, catálogos y productos.",
+    },
+
+    {
+      name:
+        "Tags Id",
+
+      description:
+        "Tarjetas digitales inteligentes con QR, NFC y perfil profesional.",
+    },
+
+    {
+      name:
+        "Google Reviews",
+
+      description:
+        "Captación inteligente de reseñas y reputación online.",
+    },
+
+    {
+      name:
+        "Eventos Inteligentes",
+
+      description:
+        "Gestión de invitados, checkin, menú, cronograma y experiencia digital del evento.",
+    },
+  ],
+
+  // =====================================================
+  // FAQS
+  // =====================================================
 
   faqs: {
-
-    // =====================================================
-    // TAGS / PLATFORM
-    // =====================================================
 
     tags: [
 
       {
         question:
-          "¿Qué es un código QR dinámico?",
+          "¿Qué es Tags?",
 
         answer:
-          "Un código QR dinámico permite modificar el contenido al que apunta sin necesidad de reemplazar el código impreso."
+          "Tags es una plataforma de experiencias digitales inteligentes basada en QR dinámicos, landing pages, tarjetas digitales, reseñas Google y eventos inteligentes.",
       },
 
       {
         question:
-          "¿Qué estadísticas ofrece la plataforma?",
+          "¿Los QR son editables?",
 
         answer:
-          "La plataforma permite visualizar cantidad de escaneos, ubicación geográfica, dispositivos utilizados y comportamiento de usuarios."
+          "Sí. Todos los QR dinámicos pueden editarse, pausarse, reactivarse y reutilizarse en tiempo real.",
       },
 
       {
         question:
-          "¿Puedo editar un QR sin volver a imprimirlo?",
+          "¿Puedo ver estadísticas de escaneo?",
 
         answer:
-          "Sí. Los códigos QR dinámicos permiten cambiar enlaces o contenido sin necesidad de reimprimir."
+          "Sí. Podés visualizar horarios, ciudades, dispositivos, navegadores y comportamiento de los usuarios.",
       },
 
       {
         question:
-          "¿Los QR funcionan con cualquier celular?",
+          "¿Qué es QR-Page?",
 
         answer:
-          "Sí. Funcionan con Android y iPhone sin instalar aplicaciones adicionales."
+          "QR-Page permite crear landing pages inteligentes optimizadas para productos, negocios, servicios o campañas.",
       },
 
       {
         question:
-          "¿Qué tipos de QR puedo crear?",
+          "¿Qué es Tags Id?",
 
         answer:
-          "Podés crear QR para Google Reviews, WhatsApp, Instagram, Facebook, sitios web y menús digitales."
+          "Tags Id es una tarjeta digital inteligente con QR y NFC para compartir información personal y profesional.",
       },
 
       {
         question:
-          "¿La plataforma incluye panel de administración?",
+          "¿Qué es Tags Reviews?",
 
         answer:
-          "Sí. Tags incluye un panel para administrar códigos QR y visualizar estadísticas."
+          "Es una interfaz optimizada para captar reseñas Google y mejorar la reputación online de negocios.",
       },
 
       {
         question:
-          "¿Puedo usar QR para cartelería física?",
+          "¿Qué es eEvents?",
 
         answer:
-          "Sí. Fabricamos carteles QR personalizados para negocios, hoteles, restaurantes y turismo."
+          "Es una plataforma de eventos inteligentes con invitados, QR, checkin, confirmaciones y herramientas interactivas.",
       },
-
-      {
-        question:
-          "¿Los QR incluyen tecnología NFC?",
-
-        answer:
-          "Sí. Los productos pueden incorporar NFC para acceso rápido desde celulares compatibles."
-      }
     ],
-
-    // =====================================================
-    // PRODUCTS
-    // =====================================================
-
     products: [
-
       {
         question:
-          "¿Los carteles QR incluyen NFC?",
+          "¿Qué puedo comprar en la tienda Tags?",
 
         answer:
-          "Sí. Todos nuestros carteles pueden incluir tecnología NFC."
+          "Podés consultar productos físicos como carteles QR, stickers, tarjetas y soluciones NFC, además de productos digitales, adicionales y software como QR-Page, Tags Id, Tags Reviews, eEvents y dominios personalizados.",
       },
-
       {
         question:
-          "¿Puedo personalizar el diseño del cartel?",
+          "¿Los productos físicos incluyen QR dinámico?",
 
         answer:
-          "Sí. Podés personalizar colores, logos, textos y diseño general."
+          "Sí. Los productos físicos pueden vincularse a QR dinámicos editables desde la plataforma Tags.",
       },
-
       {
         question:
-          "¿Qué materiales utilizan?",
+          "¿Puedo contratar software o funciones adicionales desde la tienda?",
 
         answer:
-          "Trabajamos con acrílico, PVC y vinilos premium resistentes."
+          "Sí. La tienda está preparada para consultar soluciones digitales como QR-Page, Tags Id, Tags Reviews, eEvents, Custom Domain y Custom Subdomain.",
       },
-
       {
         question:
-          "¿Los stickers resisten agua y sol?",
+          "¿Los QR se pueden modificar después de impresos?",
 
         answer:
-          "Sí. Utilizamos vinilos laminados resistentes a rayos UV y humedad."
+          "Sí. Al trabajar con QR dinámicos, podés modificar destinos, pausar o reutilizar códigos sin volver a imprimir.",
       },
-
       {
         question:
-          "¿Hacen envíos a todo el país?",
+          "¿Hacen productos personalizados?",
 
         answer:
-          "Sí. Realizamos envíos a toda Argentina."
+          "Sí. Los productos pueden adaptarse a la identidad visual de cada negocio, marca o evento.",
       },
-
       {
         question:
-          "¿Qué medios de pago aceptan?",
+          "¿La tienda tendrá carrito y pagos online?",
 
         answer:
-          "Aceptamos transferencias bancarias y medios de pago digitales."
+          "Sí. La estructura está preparada para incorporar carrito avanzado, checkout, pagos online, suscripciones y funcionalidades adicionales.",
       },
-
-      {
-        question:
-          "¿Cuánto demora la fabricación?",
-
-        answer:
-          "Los tiempos dependen del producto y nivel de personalización."
-      },
-
-      {
-        question:
-          "¿Los productos sirven para Google Reviews?",
-
-        answer:
-          "Sí. Muchos productos están diseñados específicamente para Google Reviews."
-      }
-    ]
+    ],
   },
 
-  // =========================================================
-  // 🧭 BREADCRUMBS
-  // =========================================================
+  // =====================================================
+  // BREADCRUMBS
+  // =====================================================
 
   breadcrumbsBase: [
-
     {
       name:
         "Inicio",
 
       url:
-        "https://www.tags.com.ar",
-    }
-  ]
+        BASE_URL,
+    },
+  ],
 };

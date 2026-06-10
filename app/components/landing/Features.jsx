@@ -1,12 +1,34 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
+
+const featureCards = [
+    {
+        icon: "📊",
+        title: "Analytics reales",
+        text:
+            "Cada escaneo puede transformarse en datos útiles: horarios, ciudades, dispositivos, navegadores e interacciones.",
+    },
+    {
+        icon: "🌐",
+        title: "Páginas indexables",
+        text:
+            "QR-Page, Tags Id y Tags Reviews pueden publicarse como páginas públicas optimizadas para buscadores.",
+    },
+    {
+        icon: "🔁",
+        title: "QR reutilizables",
+        text:
+            "Editá destinos, pausá campañas, cambiá enlaces y reutilizá códigos sin volver a imprimir.",
+    },
+];
 
 export default function Features() {
+
     return (
         <section className="tags_features_section">
 
-            {/* glow */}
             <div className="tags_features_glow"></div>
 
             <div className="container">
@@ -15,17 +37,17 @@ export default function Features() {
                 <div className="tags_features_header">
 
                     <div className="tags_features_badge">
-                        Inteligencia para negocios
+                        Diferenciales
                     </div>
 
                     <h2 className="tags_features_title">
-                        Convertí escaneos en decisiones inteligentes
+                        Mucho más que códigos QR
                     </h2>
 
                     <p className="tags_features_subtitle">
-                        No se trata solamente de QR.
-                        Se trata de entender cómo interactúan
-                        las personas con tu negocio.
+                        Tags combina QR dinámicos, NFC, páginas públicas,
+                        SEO, analytics y herramientas de gestión para crear
+                        experiencias digitales medibles.
                     </p>
 
                 </div>
@@ -33,68 +55,32 @@ export default function Features() {
                 {/* TOP CARDS */}
                 <div className="row g-4 mb-5">
 
-                    <div className="col-12 col-md-4">
+                    {featureCards.map((item) => (
 
-                        <div className="tags_feature_card">
+                        <div
+                            key={item.title}
+                            className="col-12 col-md-4"
+                        >
 
-                            <div className="tags_feature_icon">
-                                📊
+                            <div className="tags_feature_card">
+
+                                <div className="tags_feature_icon">
+                                    {item.icon}
+                                </div>
+
+                                <h3>
+                                    {item.title}
+                                </h3>
+
+                                <p>
+                                    {item.text}
+                                </p>
+
                             </div>
-
-                            <h3>
-                                Datos accionables
-                            </h3>
-
-                            <p>
-                                Entendé qué está pasando
-                                en tu negocio en tiempo real.
-                            </p>
 
                         </div>
 
-                    </div>
-
-                    <div className="col-12 col-md-4">
-
-                        <div className="tags_feature_card">
-
-                            <div className="tags_feature_icon">
-                                ⚡
-                            </div>
-
-                            <h3>
-                                Optimización
-                            </h3>
-
-                            <p>
-                                Detectá oportunidades
-                                y mejorá procesos automáticamente.
-                            </p>
-
-                        </div>
-
-                    </div>
-
-                    <div className="col-12 col-md-4">
-
-                        <div className="tags_feature_card">
-
-                            <div className="tags_feature_icon">
-                                🎯
-                            </div>
-
-                            <h3>
-                                Más conversiones
-                            </h3>
-
-                            <p>
-                                Transformá visitas
-                                en ventas con métricas reales.
-                            </p>
-
-                        </div>
-
-                    </div>
+                    ))}
 
                 </div>
 
@@ -108,14 +94,14 @@ export default function Features() {
 
                             <Image
                                 src="/assets/images/tags/tags_qr_data-analisis.webp"
-                                alt="Analytics QR"
+                                alt="Plataforma Tags con analytics, SEO y QR dinámicos"
                                 width={900}
                                 height={672}
                                 className="img-fluid tags_features_image"
                             />
 
                             <div className="tags_features_image_badge">
-                                Analytics en tiempo real
+                                Plataforma medible e indexable
                             </div>
 
                         </div>
@@ -130,19 +116,20 @@ export default function Features() {
                             <div className="tags_features_content_box">
 
                                 <h3>
-                                    Mucho más que carteles QR
+                                    Una plataforma preparada para crecer
                                 </h3>
 
                                 <p>
-                                    Ponemos a disposición una plataforma
-                                    completa de gestión y análisis
-                                    para que cada escaneo genere información útil.
+                                    Tags permite crear puntos de contacto
+                                    digitales para negocios, profesionales,
+                                    productos, reseñas, eventos y campañas
+                                    físicas o digitales.
                                 </p>
 
                                 <p>
-                                    Descubrí cómo interactúan las personas
-                                    con tus campañas, productos
-                                    y puntos de contacto.
+                                    Cada experiencia puede conectarse a QR,
+                                    NFC, links públicos, cartelería,
+                                    tarjetas, stickers o invitaciones.
                                 </p>
 
                             </div>
@@ -150,20 +137,20 @@ export default function Features() {
                             <div className="tags_features_content_box">
 
                                 <h3>
-                                    Tomá mejores decisiones
+                                    SEO, datos y conversión en el mismo flujo
                                 </h3>
 
                                 <p>
-                                    Analizá horarios, ubicaciones,
-                                    dispositivos y comportamiento
-                                    de usuarios para optimizar
-                                    campañas y recursos.
+                                    Las páginas públicas pueden optimizarse
+                                    con metadata, OpenGraph, datos estructurados
+                                    y contenido específico para cada negocio
+                                    o producto.
                                 </p>
 
                                 <p>
-                                    Desde un local físico hasta publicidad
-                                    en vía pública o eventos,
-                                    todo puede medirse.
+                                    Esto permite que cada QR no sea solamente
+                                    un acceso rápido, sino también una pieza
+                                    medible, editable y potencialmente indexable.
                                 </p>
 
                             </div>
@@ -176,13 +163,16 @@ export default function Features() {
 
                                 <div className="tags_features_tags">
 
-                                    <span>Google Reviews</span>
-                                    <span>WhatsApp</span>
-                                    <span>Instagram</span>
+                                    <span>Negocios</span>
+                                    <span>Restaurantes</span>
+                                    <span>Hoteles</span>
+                                    <span>Turismo</span>
+                                    <span>Profesionales</span>
                                     <span>Eventos</span>
-                                    <span>Publicidad</span>
-                                    <span>Merchandising</span>
+                                    <span>Google Reviews</span>
                                     <span>NFC</span>
+                                    <span>Landing Pages</span>
+                                    <span>Catálogos</span>
 
                                 </div>
 
@@ -192,16 +182,15 @@ export default function Features() {
                             <div className="tags_features_cta">
 
                                 <p>
-                                    ¿Querés ver cómo funciona en vivo?
+                                    Conocé las soluciones disponibles para tu negocio.
                                 </p>
 
-                                <a
-                                    href="https://wa.me/543546562855"
-                                    target="_blank"
+                                <Link
+                                    href="/store-products"
                                     className="tags_features_button"
                                 >
-                                    Hablar por WhatsApp
-                                </a>
+                                    Ver tienda Online
+                                </Link>
 
                             </div>
 

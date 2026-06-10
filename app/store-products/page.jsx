@@ -65,7 +65,7 @@ export const metadata = {
         images: [
             {
                 url:
-                    "/assets/images/tags/productos/qr-acrilico-12x12-google-transparente-base.webp",
+                    "/assets/images/og/tags-tienda-online-og.webp",
 
                 width: 1200,
 
@@ -89,7 +89,7 @@ export const metadata = {
             "Carteles QR personalizados y soluciones NFC.",
 
         images: [
-            "/assets/images/tags/productos/qr-acrilico-12x12-google-transparente-base.webp"
+            "/assets/images/og/tags-tienda-online-og.webp",
         ]
     }
 };

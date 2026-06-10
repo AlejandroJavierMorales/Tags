@@ -1,6 +1,11 @@
 // app/robots.js
 
+import { tagsSiteConfig } from "./config/configSite";
+
 export default function robots() {
+
+    const BASE_URL =
+        tagsSiteConfig.site.url;
 
     return {
 
@@ -15,40 +20,43 @@ export default function robots() {
                     "/contact",
                     "/store-products",
                     "/demo",
+
+                    "/qr-inteligente",
+                    "/qr-page",
+                    "/tags-id",
+                    "/tags-reviews",
+                    "/e-events",
+
                     "/p/",
                 ],
 
                 disallow: [
 
-                    // privadas
                     "/login",
+                    "/logout",
                     "/setup",
                     "/activate",
                     "/supports",
                     "/qr-stopped",
-                    "/setup",
-                    "/activate",
+                    "/private",
+                    "/dashboard",
 
-                    // qr internos
                     "/t/",
+                    "/e/",
 
-                    // admin
                     "/dashboard/",
                     "/admin/",
 
-                    // api
                     "/api/",
-
-                    // next internals
                     "/_next/",
                 ],
             },
         ],
 
         sitemap:
-            "https://www.tags.com.ar/sitemap.xml",
+            `${BASE_URL}/sitemap.xml`,
 
         host:
-            "https://www.tags.com.ar",
+            BASE_URL,
     };
 }

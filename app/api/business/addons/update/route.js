@@ -9,6 +9,9 @@ export const dynamic = "force-dynamic";
 import { db }
     from "@/app/lib/tags-db";
 
+import { syncBusinessQRPageEnabled }
+    from "@/app/modules/addons/lib/syncBusinessQRPageEnabled";
+
 const VALID_STATUS = [
     "active",
     "inactive",
@@ -61,12 +64,17 @@ export async function POST(req) {
         const [addonRows] =
             await db.query(
                 `
-                SELECT id
+                SELECT
+                    id,
+                    business_id,
+                    addon_code
                 FROM tags_business_addons
                 WHERE id = ?
                 LIMIT 1
                 `,
-                [id]
+                [
+                    id
+                ]
             );
 
         if (!addonRows.length) {
@@ -75,6 +83,9 @@ export async function POST(req) {
                 { status: 404 }
             );
         }
+
+        const addon =
+            addonRows[0];
 
         await db.query(
             `
@@ -97,11 +108,15 @@ export async function POST(req) {
                 status || "active",
                 started_at || null,
                 expires_at || null,
-                amount || 0,
+                amount ?? 0,
                 currency || "ARS",
                 notes || null,
                 id
             ]
+        );
+
+        await syncBusinessQRPageEnabled(
+            addon.business_id
         );
 
         return Response.json({

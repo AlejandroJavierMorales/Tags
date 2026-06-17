@@ -25,6 +25,7 @@ import SocialActionsBlock from "./blocks/SocialActionsBlock";
 import ShareProfileBlock from "./blocks/ShareProfileBlock";
 import ProfileQRBlock from "./blocks/ProfileQRBlock";
 import CustomLinksBlock from "./blocks/CustomLinksBlock";
+import BulletListBlock from "./blocks/BulletListBlock";
 
 
 
@@ -55,7 +56,19 @@ export default function QRBlockRenderer({
             styles.backgroundColor || "transparent",
 
         padding:
-            styles.padding || undefined
+            styles.padding || undefined,
+
+        marginTop:
+            styles.marginTop || undefined,
+
+        marginBottom:
+            styles.marginBottom || undefined,
+
+        marginLeft:
+            styles.marginLeft || undefined,
+
+        marginRight:
+            styles.marginRight || undefined
     };
 
     return (
@@ -154,6 +167,17 @@ export default function QRBlockRenderer({
                         content={content}
                         styles={styles}
                     />
+                )
+            }
+
+            {
+                block.type === "bullet_list" && (
+
+                    <BulletListBlock
+                        content={content}
+                        styles={styles}
+                    />
+
                 )
             }
 

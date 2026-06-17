@@ -7,7 +7,17 @@ import { db }
 import { requireQRPageAccess }
     from "@/app/modules/qr-page/lib/requireQRPageAccess";
 
+import {
+    normalizeArgentinaWhatsapp,
+    normalizeWebsite,
+    normalizeSocialUser
+} from "@/app/modules/qr-page/lib/normalizeContactFields";
+
+
+
 export async function POST(req) {
+
+
 
     try {
 
@@ -154,6 +164,29 @@ export async function POST(req) {
             );
         }
 
+
+        /* NORMALIZACION DE LINKS */
+        const normalizedWhatsapp =
+            normalizeArgentinaWhatsapp(whatsapp);
+
+        const normalizedWebsite =
+            normalizeWebsite(website_url);
+
+        const normalizedInstagram =
+            normalizeSocialUser("instagram", instagram_url);
+
+        const normalizedFacebook =
+            normalizeSocialUser("facebook", facebook_url);
+
+        const normalizedTiktok =
+            normalizeSocialUser("tiktok", tiktok_url);
+
+        const normalizedYoutube =
+            normalizeSocialUser("youtube", youtube_url);
+
+        const normalizedLinkedin =
+            normalizeSocialUser("linkedin", linkedin_url);
+
         if (slug) {
 
             const [existing] =
@@ -242,17 +275,16 @@ export async function POST(req) {
                 logo_url || null,
                 cover_image_url || null,
 
-                whatsapp || null,
+                normalizedWhatsapp,
                 email || null,
                 phone || null,
                 address || null,
-
-                instagram_url || null,
-                facebook_url || null,
-                tiktok_url || null,
-                youtube_url || null,
-                linkedin_url || null,
-                website_url || null,
+                normalizedInstagram,
+                normalizedFacebook,
+                normalizedTiktok,
+                normalizedYoutube,
+                normalizedLinkedin,
+                normalizedWebsite,
 
                 JSON.stringify(
                     global_styles || {}

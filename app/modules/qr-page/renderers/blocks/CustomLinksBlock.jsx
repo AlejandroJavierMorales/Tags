@@ -5,9 +5,15 @@ import {
     FaXTwitter,
     FaTelegram
 }
-from "react-icons/fa6";
+    from "react-icons/fa6";
 
 import getTypographyStyle from "../../lib/getTypographyStyle";
+
+import {
+    buildSocialUrl,
+    normalizeWebsite
+}
+    from "../../lib/normalizeContactFields";
 
 function getIcon(icon) {
 
@@ -30,8 +36,50 @@ function getIcon(icon) {
     return <FaLink />;
 }
 
+function normalizeCustomUrl(item) {
+    const value =
+        String(item.url || "").trim();
+
+    if (!value) {
+        return "";
+    }
+
+    if (
+        value.startsWith("http://") ||
+        value.startsWith("https://") ||
+        value.startsWith("mailto:") ||
+        value.startsWith("tel:")
+    ) {
+        return value;
+    }
+
+    if (item.icon === "youtube") {
+        return buildSocialUrl(
+            "youtube",
+            value
+        );
+    }
+
+    if (item.icon === "tiktok") {
+        return buildSocialUrl(
+            "tiktok",
+            value
+        );
+    }
+
+    if (item.icon === "telegram") {
+        return `https://t.me/${value.replace(/^@/, "")}`;
+    }
+
+    if (item.icon === "x") {
+        return `https://x.com/${value.replace(/^@/, "")}`;
+    }
+
+    return normalizeWebsite(value);
+}
+
 export default function CustomLinksBlock({
-    content,
+    content = {},
     styles = {}
 }) {
 
@@ -48,8 +96,8 @@ export default function CustomLinksBlock({
         );
 
     const items =
-        Array.isArray(content.items)
-            ? content.items
+        Array.isArray(content?.items)
+            ? content?.items
             : [];
 
     if (!items.length) {
@@ -60,9 +108,9 @@ export default function CustomLinksBlock({
         <div className="qr_public_custom_links">
 
             {
-                content.title && (
+                content?.title && (
                     <h3 style={titleStyle}>
-                        {content.title}
+                        {content?.title}
                     </h3>
                 )
             }
@@ -72,16 +120,19 @@ export default function CustomLinksBlock({
                 {
                     items.map((item, index) => {
 
-                        const hasUrl =
-                            !!item.url;
+                        const href =
+                            normalizeCustomUrl(item);
 
-                        if (hasUrl) {
-
+                        if (href) {
                             return (
                                 <a
                                     key={index}
-                                    href={item.url}
-                                    target="_blank"
+                                    href={href}
+                                    target={
+                                        href.startsWith("http")
+                                            ? "_blank"
+                                            : undefined
+                                    }
                                     rel="noreferrer"
                                     className="qr_public_custom_link"
                                     style={buttonStyle}
@@ -91,7 +142,6 @@ export default function CustomLinksBlock({
                                     <span>
                                         {item.label}
                                     </span>
-
                                 </a>
                             );
                         }
@@ -110,7 +160,6 @@ export default function CustomLinksBlock({
                                 <span>
                                     {item.label}
                                 </span>
-
                             </button>
                         );
                     })

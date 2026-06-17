@@ -1,7 +1,7 @@
 import getTypographyStyle from "../../lib/getTypographyStyle";
 
 export default function CardsBlock({
-    content,
+    content = {},
     styles = {}
 }) {
 
@@ -24,8 +24,8 @@ export default function CardsBlock({
         );
 
     const items =
-        Array.isArray(content.items)
-            ? content.items
+        Array.isArray( content?.items)
+            ?  content?.items
             : [];
 
     if (!items.length) {

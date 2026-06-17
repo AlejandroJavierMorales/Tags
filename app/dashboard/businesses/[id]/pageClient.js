@@ -21,7 +21,7 @@ function getQRUrl(code) {
   const base =
     process.env.NODE_ENV === "development"
       ? "http://localhost:3000"
-      : process.env.NEXT_PUBLIC_BASE_URL;
+      : process.env.NEXT_PUBLIC_BASE_URL_PROD;
 
   return `https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${base}/t/${code}`;
 }
@@ -420,6 +420,13 @@ export default function BusinessDetailClient({ session, isAdmin }) {
 
   function qrHasFeature(qr, feature) {
     return getQRFeatures(qr).includes(feature);
+  }
+
+  function isClientReviewsPage(qr) {
+    return (
+      qr.qr_page_type === "client_reviews" ||
+      qrHasFeature(qr, "client_reviews")
+    );
   }
 
   /*  UI  */
@@ -936,42 +943,35 @@ export default function BusinessDetailClient({ session, isAdmin }) {
                         {/* ========================= */}
                         {/* CLIENT REVIEWS */}
                         {/* ========================= */}
-                        {businessHasAddon("client_reviews") &&
-                          !hasAnyPage(qr) &&
-                          !isTagsIdQR(qr) &&
-                          !qrHasFeature(qr, "client_reviews") && (
+                        {isClientReviewsPage(qr) && (
+                          <>
                             <button
                               className="tags_dashboard_icon_btn"
-                              title="Activar ClientsReviews"
+                              title="Ver formulario público"
+                              onClick={() => handleViewQRPage(qr)}
+                            >
+                              🌐
+                            </button>
+
+                            <button
+                              className="tags_dashboard_icon_btn"
+                              title="Gestionar Tags Reviews"
                               onClick={() =>
                                 router.push(
-                                  `/dashboard/businesses/${id}/qrs/${qr.id}/client-reviews/activate`
+                                  `/dashboard/businesses/${id}/qrs/${qr.id}/client-reviews`
                                 )
                               }
                             >
-                              🌟
+                              ⭐
                             </button>
-                          )}
-
-                        {qrHasFeature(qr, "client_reviews") && (
-                          <button
-                            className="tags_dashboard_icon_btn"
-                            title="Administrar ClientsReviews"
-                            onClick={() =>
-                              router.push(
-                                `/dashboard/businesses/${id}/qrs/${qr.id}/client-reviews`
-                              )
-                            }
-                          >
-                            ⭐
-                          </button>
+                          </>
                         )}
 
                         {/* ========================= */}
                         {/* QR-PAGE / TAGSID */}
                         {/* ========================= */}
 
-                        {hasAnyPage(qr) && (
+                        {hasAnyPage(qr) && !isClientReviewsPage(qr) && (
                           <>
                             <button
                               style={{

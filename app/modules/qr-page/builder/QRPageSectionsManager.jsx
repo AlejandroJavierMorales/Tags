@@ -285,24 +285,33 @@ export default function QRPageSectionsManager({
 
     function getDefaultBlockContent(type) {
 
-        /* if (type === "vcard") {
-            return {
-                firstName: "",
-                lastName: "",
-                fullName: "Nombre Apellido",
-                company: "",
-                jobTitle: "",
-                phone: "",
-                email: "",
-                website: "",
-                address: "",
-                note: "",
-                buttonLabel: "Guardar contacto"
-            };
-        } */
         if (type === "vcard") {
             return {
                 buttonLabel: "Guardar contacto"
+            };
+        }
+
+        if (type === "bullet_list") {
+
+            return {
+
+                title: "Nuestros beneficios",
+
+                icon: "✓",
+
+                iconColor: "#2563eb",
+
+                items: [
+
+                    "Atención personalizada",
+
+                    "Respuesta rápida",
+
+                    "Experiencia comprobable",
+
+                    "Contacto directo"
+
+                ]
             };
         }
 

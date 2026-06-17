@@ -1,23 +1,22 @@
 import { FaWhatsapp }
     from "react-icons/fa";
 
-import getTypographyStyle from "../../lib/getTypographyStyle";
+import getTypographyStyle
+    from "../../lib/getTypographyStyle";
 
-function cleanPhone(phone = "") {
-
-    return phone
-        .toString()
-        .replace(/\D/g, "");
+import {
+    normalizeArgentinaWhatsapp
 }
+    from "../../lib/normalizeContactFields";
 
 export default function WhatsAppBlock({
-    content,
-    page,
+    content = {},
+    page = {},
     styles = {}
 }) {
 
     const phone =
-        cleanPhone(
+        normalizeArgentinaWhatsapp(
             content.phone ||
             page?.whatsapp ||
             page?.phone ||

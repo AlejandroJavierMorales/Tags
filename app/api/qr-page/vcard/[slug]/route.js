@@ -3,7 +3,8 @@ export const dynamic = "force-dynamic";
 
 import { db } from "@/app/lib/tags-db";
 
-import { safeParseJSON } from "@/app/modules/qr-page/lib/safeParseJSON";
+import { safeParseJSON }
+    from "@/app/modules/qr-page/lib/safeParseJSON";
 
 function clean(value) {
     return String(value || "")
@@ -12,11 +13,64 @@ function clean(value) {
         .trim();
 }
 
+function escapeVCard(value) {
+    return clean(value)
+        .replace(/\\/g, "\\\\")
+        .replace(/;/g, "\\;")
+        .replace(/,/g, "\\,");
+}
+
 function fileName(value) {
     return clean(value)
         .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/(^-|-$)/g, "") || "contacto";
+}
+
+function normalizePhone(value) {
+    const raw =
+        clean(value);
+
+    if (!raw) {
+        return "";
+    }
+
+    const digits =
+        raw.replace(/\D/g, "");
+
+    if (!digits) {
+        return "";
+    }
+
+    if (digits.startsWith("54")) {
+        return `+${digits}`;
+    }
+
+    return `+54${digits}`;
+}
+
+function getDevice(req) {
+
+    const userAgent =
+        req.headers.get("user-agent") || "";
+
+    const isIOS =
+        /iPhone|iPad|iPod/i.test(userAgent);
+
+    const isAndroid =
+        /Android/i.test(userAgent);
+
+    const isMobile =
+        isIOS || isAndroid;
+
+    return {
+        userAgent,
+        isIOS,
+        isAndroid,
+        isMobile
+    };
 }
 
 export async function GET(req, { params }) {
@@ -133,7 +187,7 @@ export async function GET(req, { params }) {
             );
 
         const phone =
-            clean(
+            normalizePhone(
                 page.phone ||
                 page.whatsapp ||
                 ""
@@ -168,27 +222,78 @@ export async function GET(req, { params }) {
             [
                 "BEGIN:VCARD",
                 "VERSION:3.0",
-                `FN:${fullName}`,
-                company ? `ORG:${company}` : "",
-                jobTitle ? `TITLE:${jobTitle}` : "",
-                phone ? `TEL;TYPE=CELL:${phone}` : "",
-                email ? `EMAIL:${email}` : "",
-                website ? `URL:${website}` : "",
-                address ? `ADR;TYPE=WORK:;;${address};;;;` : "",
-                note ? `NOTE:${note}` : "",
+                `FN:${escapeVCard(fullName)}`,
+                company
+                    ? `ORG:${escapeVCard(company)}`
+                    : "",
+                jobTitle
+                    ? `TITLE:${escapeVCard(jobTitle)}`
+                    : "",
+                phone
+                    ? `TEL;TYPE=CELL,VOICE:${phone}`
+                    : "",
+                email
+                    ? `EMAIL;TYPE=INTERNET:${escapeVCard(email)}`
+                    : "",
+                website
+                    ? `URL:${escapeVCard(website)}`
+                    : "",
+                address
+                    ? `ADR;TYPE=WORK:;;${escapeVCard(address)};;;;`
+                    : "",
+                note
+                    ? `NOTE:${escapeVCard(note)}`
+                    : "",
                 "END:VCARD"
             ]
                 .filter(Boolean)
                 .join("\r\n");
 
+        const device =
+            getDevice(req);
+
+        /*
+            CASOS:
+
+            iPhone / iPad:
+            - Usamos text/vcard.
+            - Usamos inline para intentar que iOS abra la vista de contacto
+              en vez de tratarlo solamente como descarga.
+
+            Android:
+            - Usamos text/x-vcard porque muchos Android/Chrome/contact apps
+              lo interpretan mejor que text/vcard.
+            - Usamos inline para intentar abrir/importar contacto.
+
+            Desktop:
+            - Usamos attachment porque en escritorio lo más esperable es
+              descargar el .vcf para abrirlo con Contactos, Outlook, etc.
+
+            Importante:
+            - Aun así, cada celular puede comportarse distinto según navegador,
+              app de contactos y permisos. Por eso conviene mostrar en el botón
+              un texto de ayuda/fallback.
+        */
+
+        const contentType =
+            device.isAndroid
+                ? "text/x-vcard; charset=utf-8"
+                : "text/vcard; charset=utf-8";
+
+        const disposition =
+            device.isMobile
+                ? "inline"
+                : "attachment";
+
         return new Response(
-            vcard,
+            `${vcard}\r\n`,
             {
                 status: 200,
                 headers: {
-                    "Content-Type": "text/vcard; charset=utf-8",
+                    "Content-Type": contentType,
                     "Content-Disposition":
-                        `attachment; filename="${fileName(fullName)}.vcf"`
+                        `${disposition}; filename="${fileName(fullName)}.vcf"`,
+                    "Cache-Control": "no-store"
                 }
             }
         );

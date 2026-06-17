@@ -5,6 +5,7 @@ import { useEffect, useState }
 
 import showAlert
     from "@/app/components/showAlert";
+import TagsSpinner from "@/app/components/TagsSpinner";
 
 export default function QRPageTemplatesManager({
     businessId,
@@ -143,9 +144,7 @@ export default function QRPageTemplatesManager({
 
     if (loading) {
         return (
-            <div className="qr_page_card">
-                Cargando templates...
-            </div>
+            <TagsSpinner/>
         );
     }
 
@@ -155,11 +154,11 @@ export default function QRPageTemplatesManager({
             <div className="qr_page_builder_panel_header">
                 <div>
                     <h2>
-                        Templates
+                        Plantillas Prediseñadas
                     </h2>
 
                     <p>
-                        Elegí una estructura inicial para tu QR-Page o TagsID-Page.
+                        Elegí una estructura inicial para tu Página QR-Page o TagsID.
                     </p>
                 </div>
             </div>
@@ -167,7 +166,7 @@ export default function QRPageTemplatesManager({
             {
                 !templates.length && (
                     <div className="qr_page_empty">
-                        No hay templates disponibles.
+                        No hay plantillas disponibles.
                     </div>
                 )
             }

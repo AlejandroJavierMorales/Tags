@@ -462,13 +462,13 @@ export default function TagsReviewsLanding() {
                             {
                                 number: "02",
                                 title: "Comparte su experiencia",
-                                text: "Puede responder preguntas, calificar distintos aspectos y compartir comentarios o imágenes.",
+                                text: "Puede responder preguntas, calificar distintos aspectos y compartir comentarios o imágenes. Vos personalizás las preguntas.",
                                 image: "/assets/images/tags-reviews/tags-reviews-vidriera.webp",
                             },
                             {
                                 number: "03",
                                 title: "El sistema actúa inteligentemente",
-                                text: "Las experiencias excelentes pueden derivarse automáticamente a Google y las demás gestionarse de manera privada.",
+                                text: "Las experiencias muy buenas o excelentes pueden derivarse automáticamente a Google y las demás gestionarse de manera privada. Vos definís el umbral de calificación",
                                 image: "/assets/images/tags-reviews/tags-reviews-dashboard.webp",
                             },
                         ].map((step, index) => (
@@ -558,7 +558,7 @@ export default function TagsReviewsLanding() {
                                 <div className="tags_features_image_wrapper">
 
                                     <Image
-                                        src="/assets/images/tags-reviews/tegs-reviews-software.webp"
+                                        src="/assets/images/tags-reviews/tags-reviews-software.webp"
                                         alt="Dashboard Tags Reviews"
                                         width={900}
                                         height={672}

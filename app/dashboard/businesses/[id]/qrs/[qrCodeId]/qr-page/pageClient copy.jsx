@@ -48,81 +48,8 @@ export default function QRPageBuilderClient({
     const [activeTab, setActiveTab] =
         useState("general");
 
-    const [mobileGroup, setMobileGroup] =
-        useState(0);
-
     const [themes, setThemes] =
         useState([]);
-
-    const tabGroups = [
-
-        {
-            title: "⚙️ Configuración",
-
-            items: [
-
-                ["general", "Información"],
-
-                ["contact", "Contacto y redes"]
-            ]
-        },
-
-        {
-            title: "🎨 Diseño",
-
-            items: [
-
-                ["styles", "Apariencia"],
-
-                ["design", "Fuentes y textos"],
-
-                ["templates", "Plantillas Prediseñadas"],
-
-                ["themes", "Paletas de Colores"]
-            ]
-        },
-
-        {
-            title: "🧩 Página",
-
-            items: [
-
-                ["header", "Encabezado"],
-
-                ["builder", "Contenido"],
-
-                ["footer", "Pie de página"]
-            ]
-        },
-
-        {
-            title: "🛍️ Catálogo",
-
-            items: [
-
-                ["products", "Productos y servicios"]
-            ]
-        },
-
-        {
-            title: "👀 Revisar",
-
-            items: [
-
-                ["preview", "Vista previa"]
-            ]
-        },
-
-        {
-            title: "🔎 Google",
-
-            items: [
-
-                ["seo", "Google y buscadores"]
-            ]
-        }
-
-    ];
 
     async function loadQRPage() {
 
@@ -148,6 +75,15 @@ export default function QRPageBuilderClient({
             setQrPage(
                 data.qrPage
             );
+            console.log(
+                "PAGE THEME:",
+                data.qrPage?.page?.theme
+            );
+
+            console.log(
+                "PAGE THEME ID:",
+                data.qrPage?.page?.theme_id
+            );
 
         } catch (err) {
 
@@ -172,32 +108,6 @@ export default function QRPageBuilderClient({
         loadQRPage();
         loadThemes();
     }, []);
-
-    useEffect(() => {
-
-        const index =
-
-            tabGroups.findIndex(
-
-                group =>
-
-                    group.items.some(
-
-                        ([key]) =>
-
-                            key === activeTab
-
-                    )
-
-            );
-
-        if (index >= 0) {
-
-            setMobileGroup(index);
-
-        }
-
-    }, [activeTab]);
 
 
     async function loadThemes() {
@@ -718,125 +628,6 @@ export default function QRPageBuilderClient({
         return fonts[font] || "var(--font-inter)";
     }
 
-    const activeGroup =
-
-        tabGroups.find(group =>
-
-            group.items.some(
-
-                ([key]) => key === activeTab
-
-            )
-
-        );
-
-    function renderMobileTabs() {
-
-        const group =
-            tabGroups[mobileGroup];
-
-        if (!group) return null;
-
-        return (
-
-            <div className="qr_page_mobile_tabs">
-
-                <label>
-
-                    📂 Sección
-
-                </label>
-
-                <select
-
-                    className="qr_page_select mb-2"
-
-                    value={mobileGroup}
-
-                    onChange={(e) =>
-
-                        changeMobileGroup(
-
-                            Number(
-
-                                e.target.value
-
-                            )
-
-                        )
-
-                    }
-
-                >
-
-                    {
-
-                        tabGroups.map(
-
-                            (group, index) => (
-
-                                <option
-
-                                    key={group.title}
-
-                                    value={index}
-
-                                >
-
-                                    {group.title}
-
-                                </option>
-
-                            )
-
-                        )
-
-                    }
-
-                </select>
-
-                <div className="qr_page_mobile_buttons">
-
-                    {
-
-                        group.items.map(
-
-                            ([key, label]) =>
-
-                                renderTabButton(
-
-                                    key,
-
-                                    label
-
-                                )
-
-                        )
-
-                    }
-
-                </div>
-
-            </div>
-
-        );
-
-    }
-    function changeMobileGroup(index) {
-
-        setMobileGroup(index);
-
-        const firstTab =
-            tabGroups[index]?.items?.[0]?.[0];
-
-        if (firstTab) {
-
-            setActiveTab(firstTab);
-
-        }
-
-    }
-
     /*  UI  */
 
     return (
@@ -918,49 +709,103 @@ export default function QRPageBuilderClient({
                 </strong>
             </div>
 
-            <div className="qr_page_navigation">
+            <div className="qr_page_tabs">
 
-                <div className="qr_page_tabs_desktop mb-3">
+                <div className="qr_page_tab_group">
 
-                    {
+                    <div className="qr_page_tab_group_title">
+                        ⚙️ Configuración
+                    </div>
 
-                        tabGroups.map(group => (
+                    {renderTabButton("general", "Información")}
 
-                            <div
-                                key={group.title}
-                                className="qr_page_tab_group"
-                            >
-
-                                <div className="qr_page_tab_group_title">
-
-                                    {group.title}
-
-                                </div>
-
-                                {
-
-                                    group.items.map(
-
-                                        ([key, label]) =>
-
-                                            renderTabButton(
-                                                key,
-                                                label
-                                            )
-
-                                    )
-
-                                }
-
-                            </div>
-
-                        ))
-
-                    }
+                    {renderTabButton("contact", "Contacto y redes")}
 
                 </div>
 
-                {renderMobileTabs()}
+                <div className="qr_page_tab_group">
+
+                    <div className="qr_page_tab_group_title">
+                        🎨 Diseño
+                    </div>
+
+                    {renderTabButton("styles", "Apariencia")}
+
+                    {renderTabButton("design", "Fuentes y textos")}
+
+                    {renderTabButton(
+                        "templates",
+                        "Plantillas prediseñadas"
+                    )}
+
+                    {renderTabButton(
+                        "themes",
+                        "Paletas de colores"
+                    )}
+
+                </div>
+
+                <div className="qr_page_tab_group">
+
+                    <div className="qr_page_tab_group_title">
+                        🧩 Página
+                    </div>
+
+                    {renderTabButton(
+                        "header",
+                        "Encabezado"
+                    )}
+
+                    {renderTabButton(
+                        "builder",
+                        "Contenido"
+                    )}
+
+                    {renderTabButton(
+                        "footer",
+                        "Pie de página"
+                    )}
+
+                </div>
+
+                <div className="qr_page_tab_group">
+
+                    <div className="qr_page_tab_group_title">
+                        🛍️ Catálogo
+                    </div>
+
+                    {renderTabButton(
+                        "products",
+                        "Productos y servicios"
+                    )}
+
+                </div>
+
+                <div className="qr_page_tab_group">
+
+                    <div className="qr_page_tab_group_title">
+                        👀 Revisar
+                    </div>
+
+                    {renderTabButton(
+                        "preview",
+                        "Vista previa"
+                    )}
+
+                </div>
+
+                <div className="qr_page_tab_group">
+
+                    <div className="qr_page_tab_group_title">
+                        🔎 Google
+                    </div>
+
+                    {renderTabButton(
+                        "seo",
+                        "Google y buscadores"
+                    )}
+
+                </div>
 
             </div>
 
@@ -2612,6 +2457,8 @@ export default function QRPageBuilderClient({
                                     accept="image/*"
                                     label="Subir imagen SEO"
                                     onChange={(media) => {
+
+                                        console.log("SEO MEDIA:", media);
 
                                         updatePageField(
                                             "seo_image_url",

@@ -2,14 +2,23 @@ import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
+function getBaseUrl(req) {
+    return process.env.NODE_ENV === "production"
+        ? process.env.NEXT_PUBLIC_BASE_URL_PROD
+        : new URL(req.url).origin;
+}
 
 export async function GET(req) {
 
     try {
 
-        const response = NextResponse.redirect(
-            new URL("/login", req.url)
-        );
+        const baseUrl =
+            getBaseUrl(req);
+
+        const response =
+            NextResponse.redirect(
+                new URL("/login", baseUrl)
+            );
 
         response.cookies.set({
             name: "tags_session",
@@ -28,7 +37,10 @@ export async function GET(req) {
         console.error("LOGOUT ERROR:", err);
 
         return NextResponse.redirect(
-            new URL("/login", req.url)
+            new URL(
+                "/login",
+                process.env.NEXT_PUBLIC_BASE_URL_PROD || req.url
+            )
         );
     }
 }

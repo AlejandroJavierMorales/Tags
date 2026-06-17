@@ -31,19 +31,13 @@ function getBaseUrl() {
         : process.env.NEXT_PUBLIC_BASE_URL_PROD;
 }
 
-const TAGS_ID_INITIAL_THEME =
-    "dark";
-
-const TAGS_ID_INITIAL_GLOBAL_STYLES = {
-    fontFamily: "Arial",
-    borderRadius: "14px",
-    showFloatingWhatsapp: true,
-    showBackToTop: true
-};
-
 export async function POST(req) {
 
     try {
+
+        // =====================================
+        // PARAMS
+        // =====================================
 
         const {
             businessId,
@@ -82,6 +76,10 @@ export async function POST(req) {
             );
         }
 
+        // =====================================
+        // ACCESS
+        // =====================================
+
         const access =
             await requireQRPageAccess(
                 businessId
@@ -97,18 +95,22 @@ export async function POST(req) {
         const { business } =
             access;
 
+        // =====================================
+        // QR
+        // =====================================
+
         const [qrRows] =
             await db.query(
                 `
-                SELECT
-                    q.*
-                FROM
-                    tags_qr_codes q
-                WHERE
-                    q.id = ?
-                    AND q.business_id = ?
-                LIMIT 1
-                `,
+        SELECT
+            q.*
+        FROM
+            tags_qr_codes q
+        WHERE
+            q.id = ?
+            AND q.business_id = ?
+        LIMIT 1
+        `,
                 [
                     qrCodeId,
                     business.id
@@ -125,24 +127,29 @@ export async function POST(req) {
             );
         }
 
+        // =====================================
+        // VALIDAR QUE EL QR NO TENGA PAGE
+        // =====================================
+
         const [existingQrPage] =
             await db.query(
                 `
-                SELECT
-                    id,
-                    page_type
-                FROM
-                    tags_qr_pages
-                WHERE
-                    qr_code_id = ?
-                LIMIT 1
-                `,
+        SELECT
+            id,
+            page_type
+        FROM
+            tags_qr_pages
+        WHERE
+            qr_code_id = ?
+        LIMIT 1
+        `,
                 [
                     qr.id
                 ]
             );
 
         if (existingQrPage.length) {
+
             return Response.json(
                 {
                     error:
@@ -153,6 +160,10 @@ export async function POST(req) {
                 }
             );
         }
+
+
+
+
 
         const ownerEmail =
             qr.email ||
@@ -196,38 +207,33 @@ export async function POST(req) {
 
         const displayLinkedin =
             null;
+        // =====================================
+        // VALIDAR 1 TAGSID POR CLIENTE
+        // =====================================
 
         const [activeTagsIds] =
             await db.query(
                 `
-                SELECT
-                    id
-                FROM
-                    tags_qr_pages
-                WHERE
-                    business_id = ?
-                    AND page_type = 'tags_id'
-                    AND status IN ('draft', 'published')
-                    AND qr_code_id <> ?
-                LIMIT 1
-                `,
+        SELECT
+            id
+        FROM
+            tags_qr_pages
+        WHERE
+            business_id = ?
+            AND page_type = 'tags_id'
+            AND status IN ('draft', 'published')
+            AND qr_code_id <> ?
+        LIMIT 1
+        `,
                 [
                     business.id,
                     qr.id
                 ]
             );
 
-        if (activeTagsIds.length) {
-            return Response.json(
-                {
-                    error:
-                        "Este cliente ya tiene un Tags Id asociado"
-                },
-                {
-                    status: 409
-                }
-            );
-        }
+        // =====================================
+        // VALIDAR SLUG
+        // =====================================
 
         const [existingSlug] =
             await db.query(
@@ -256,6 +262,10 @@ export async function POST(req) {
                 { status: 409 }
             );
         }
+
+        // =====================================
+        // TEMPLATE TAGS ID
+        // =====================================
 
         const [templates] =
             await db.query(
@@ -303,6 +313,10 @@ export async function POST(req) {
             );
         }
 
+        // =====================================
+        // BUSCAR / CREAR PAGE
+        // =====================================
+
         const [existingPages] =
             await db.query(
                 `
@@ -349,8 +363,6 @@ export async function POST(req) {
                 SET
                     slug = ?,
                     page_type = 'tags_id',
-                    theme_id = ?,
-                    global_styles = ?,
                     slug_locked = 1,
                     status = 'published',
                     title = ?,
@@ -368,10 +380,6 @@ export async function POST(req) {
                 `,
                 [
                     cleanSlug,
-                    TAGS_ID_INITIAL_THEME,
-                    JSON.stringify(
-                        TAGS_ID_INITIAL_GLOBAL_STYLES
-                    ),
                     displayName,
                     displayDescription,
                     ownerEmail,
@@ -394,8 +402,6 @@ export async function POST(req) {
                         business_id,
                         qr_code_id,
                         page_type,
-                        theme_id,
-                        global_styles,
                         slug,
                         slug_locked,
                         title,
@@ -410,15 +416,11 @@ export async function POST(req) {
                         seo_title,
                         seo_description
                     )
-                    VALUES (?, ?, 'tags_id', ?, ?, ?, 1, ?, ?, 'published', ?, ?, ?, ?, ?, ?, ?, ?)
+                    VALUES (?, ?, 'tags_id', ?, 1, ?, ?, 'published', ?, ?, ?, ?, ?, ?, ?, ?)
                     `,
                     [
                         business.id,
                         qr.id,
-                        TAGS_ID_INITIAL_THEME,
-                        JSON.stringify(
-                            TAGS_ID_INITIAL_GLOBAL_STYLES
-                        ),
                         cleanSlug,
                         displayName,
                         displayDescription,
@@ -436,6 +438,10 @@ export async function POST(req) {
             pageId =
                 result.insertId;
         }
+
+        // =====================================
+        // REEMPLAZAR SECCIONES / BLOQUES
+        // =====================================
 
         const [oldSections] =
             await db.query(
@@ -628,6 +634,10 @@ export async function POST(req) {
             }
         }
 
+        // =====================================
+        // PRODUCTS DEL TEMPLATE
+        // =====================================
+
         for (let i = 0; i < templateProducts.length; i++) {
 
             const product =
@@ -672,6 +682,10 @@ export async function POST(req) {
             );
         }
 
+        // =====================================
+        // REGISTRAR USO DE ADDON TAGSID
+        // =====================================
+
         await registerQRAddonUsage({
             qrCodeId: qr.id,
             businessId: business.id,
@@ -679,6 +693,10 @@ export async function POST(req) {
             sourceTable: "tags_qr_pages",
             sourceId: pageId
         });
+
+        // =====================================
+        // ACTIVAR QR
+        // =====================================
 
         const finalUrl =
             `${getBaseUrl()}/p/${cleanSlug}`;

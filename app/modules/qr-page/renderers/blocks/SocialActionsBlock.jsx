@@ -6,23 +6,35 @@ import {
     FaInstagram,
     FaLinkedin
 }
-from "react-icons/fa6";
+    from "react-icons/fa6";
 
 import getTypographyStyle from "../../lib/getTypographyStyle";
 
+import {
+    buildSocialUrl,
+    normalizeArgentinaWhatsapp,
+    normalizeWebsite
+}
+    from "../../lib/normalizeContactFields";
+
 export default function SocialActionsBlock({
-    content,
-    page,
+    content = {},
+    page = {},
     styles = {}
 }) {
 
     const forceDemo =
-        content.forceDemo === true;
+         content?.forceDemo === true;
 
     const buttonStyle =
         getTypographyStyle(
             styles,
             "button"
+        );
+
+    const whatsappNumber =
+        normalizeArgentinaWhatsapp(
+            page.whatsapp
         );
 
     function renderAction({
@@ -37,12 +49,12 @@ export default function SocialActionsBlock({
             return null;
         }
 
-        if (value) {
+        if (value && href) {
             return (
                 <a
                     href={href}
                     target={
-                        href?.startsWith("http")
+                        href.startsWith("http")
                             ? "_blank"
                             : undefined
                     }
@@ -74,18 +86,18 @@ export default function SocialActionsBlock({
     }
 
     return (
-        <div className="qr_public_social_actions ">
+        <div className="qr_public_social_actions">
 
             {renderAction({
-                show: content.showWhatsapp,
-                value: page.whatsapp,
-                href: `https://wa.me/${page.whatsapp}`,
+                show:  content?.showWhatsapp,
+                value: whatsappNumber,
+                href: `https://wa.me/${whatsappNumber}`,
                 icon: <FaWhatsapp />,
                 label: "WhatsApp"
             })}
 
             {renderAction({
-                show: content.showPhone,
+                show:  content?.showPhone,
                 value: page.phone,
                 href: `tel:${page.phone}`,
                 icon: <FaPhone />,
@@ -93,7 +105,7 @@ export default function SocialActionsBlock({
             })}
 
             {renderAction({
-                show: content.showEmail,
+                show:  content?.showEmail,
                 value: page.email,
                 href: `mailto:${page.email}`,
                 icon: <FaEnvelope />,
@@ -101,25 +113,31 @@ export default function SocialActionsBlock({
             })}
 
             {renderAction({
-                show: content.showWebsite,
+                show:  content?.showWebsite,
                 value: page.website_url,
-                href: page.website_url,
+                href: normalizeWebsite(page.website_url),
                 icon: <FaGlobe />,
                 label: "Web"
             })}
 
             {renderAction({
-                show: content.showLinkedin,
+                show:  content?.showLinkedin,
                 value: page.linkedin_url,
-                href: page.linkedin_url,
+                href: buildSocialUrl(
+                    "linkedin",
+                    page.linkedin_url
+                ),
                 icon: <FaLinkedin />,
                 label: "LinkedIn"
             })}
 
             {renderAction({
-                show: content.showInstagram,
+                show:  content?.showInstagram,
                 value: page.instagram_url,
-                href: page.instagram_url,
+                href: buildSocialUrl(
+                    "instagram",
+                    page.instagram_url
+                ),
                 icon: <FaInstagram />,
                 label: "Instagram"
             })}

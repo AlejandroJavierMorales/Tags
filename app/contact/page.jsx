@@ -26,7 +26,7 @@ import {
 const PAGE_PATH = "/contact";
 
 const PAGE_URL =
-    process.env.NEXT_PUBLIC_BASE_URL
+    process.env.NEXT_PUBLIC_BASE_URL_PROD
     || "http://localhost:3000";
 
 const IMAGE_URL =

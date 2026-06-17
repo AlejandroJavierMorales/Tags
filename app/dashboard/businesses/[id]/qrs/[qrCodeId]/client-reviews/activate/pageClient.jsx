@@ -122,6 +122,10 @@ export default function ClientReviewsActivateClient({
         }
     }
 
+
+
+    /*  UI  */
+
     return (
         <div className="qr_page_builder">
 

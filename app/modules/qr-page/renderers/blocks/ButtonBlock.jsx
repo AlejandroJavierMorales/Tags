@@ -5,18 +5,18 @@ import getTypographyStyle from "../../lib/getTypographyStyle";
 
 
 export default function ButtonBlock({
-    content,
+    content = {},
     styles = {}
 }) {
 
-    if (!content.label) {
+    if (! content?.label) {
         return null;
     }
 
     return (
         <a
             className="qr_public_button"
-            href={content.url || "#"}
+            href={ content?.url || "#"}
             target="_blank"
             rel="noopener noreferrer"
             style={
@@ -26,7 +26,7 @@ export default function ButtonBlock({
                 )
             }
         >
-            {content.label}
+            { content?.label}
         </a>
     );
 }

@@ -159,15 +159,18 @@ export async function POST(req) {
                     business_id || null;
 
                 if (!finalBusinessId) {
-                    const [existingBusiness] = await db.execute(
-                        `
-                    SELECT id
-                    FROM tags_businesses
-                    WHERE email = ?
-                    LIMIT 1
-                    `,
-                        [email]
-                    );
+                    const [existingBusiness] =
+                        await db.execute(
+                            `
+                            SELECT id
+                            FROM tags_businesses
+                            WHERE email = ?
+                            LIMIT 1
+                            `,
+                            [
+                                email
+                            ]
+                        );
 
                     if (existingBusiness.length > 0) {
                         finalBusinessId =
@@ -176,53 +179,54 @@ export async function POST(req) {
                 }
 
                 if (!finalBusinessId) {
-                    const [insertBusiness] = await db.execute(
-                        `
-                    INSERT INTO tags_businesses
-                        (name, email, phone)
-                    VALUES
-                        (?, ?, ?)
-                    `,
-                        [
-                            name || email,
-                            email,
-                            phone || null
-                        ]
-                    );
+                    const [insertBusiness] =
+                        await db.execute(
+                            `
+                            INSERT INTO tags_businesses
+                                (name, email, phone)
+                            VALUES
+                                (?, ?, ?)
+                            `,
+                            [
+                                name || email,
+                                email,
+                                phone || null
+                            ]
+                        );
 
                     finalBusinessId =
                         insertBusiness.insertId;
                 }
 
                 if (!qr.is_digital) {
-                    const [stockRows] = await db.execute(
-                        `
-                    SELECT quantity
-                    FROM tags_stock
-                    WHERE product_id = ?
-                    LIMIT 1
-                   `,
-                        [qr.product_id]
-                    );
+                    const [stockRows] =
+                        await db.execute(
+                            `
+                            SELECT quantity
+                            FROM tags_stock
+                            WHERE product_id = ?
+                            LIMIT 1
+                            `,
+                            [
+                                qr.product_id
+                            ]
+                        );
 
                     const currentStock =
                         Number(stockRows[0]?.quantity || 0);
 
-                    if (currentStock <= 0) {
-                        return Response.json(
-                            { error: "No hay stock disponible" },
-                            { status: 400 }
+                    if (currentStock > 0) {
+                        await db.execute(
+                            `
+                                UPDATE tags_stock
+                                SET quantity = quantity - 1
+                                WHERE product_id = ?
+                                `,
+                            [
+                                qr.product_id
+                            ]
                         );
                     }
-
-                    await db.execute(
-                        `
-                    UPDATE tags_stock
-                    SET quantity = quantity - 1
-                    WHERE product_id = ?
-                    `,
-                        [qr.product_id]
-                    );
                 }
 
                 updateFields.status = "assigned";
@@ -437,7 +441,7 @@ export async function POST(req) {
                     `,
                     [qr.id]
                 );
-                
+
 
                 await db.execute(
                     `

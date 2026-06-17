@@ -9,6 +9,9 @@ export const dynamic = "force-dynamic";
 import { db }
     from "@/app/lib/tags-db";
 
+import { syncBusinessQRPageEnabled }
+    from "@/app/modules/addons/lib/syncBusinessQRPageEnabled";
+
 export async function DELETE(req) {
 
     try {
@@ -29,7 +32,9 @@ export async function DELETE(req) {
         const [rows] =
             await db.query(
                 `
-                SELECT id
+                SELECT
+                    id,
+                    business_id
                 FROM tags_business_addons
                 WHERE id = ?
                 LIMIT 1
@@ -44,6 +49,9 @@ export async function DELETE(req) {
             );
         }
 
+        const addon =
+            rows[0];
+
         await db.query(
             `
             DELETE FROM
@@ -52,6 +60,10 @@ export async function DELETE(req) {
                 id = ?
             `,
             [id]
+        );
+
+        await syncBusinessQRPageEnabled(
+            addon.business_id
         );
 
         return Response.json({

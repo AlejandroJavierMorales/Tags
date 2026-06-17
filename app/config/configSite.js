@@ -1,9 +1,7 @@
 // app/config/configSite.js
 
-// app/config/configSite.js
-
 const BASE_URL =
-  process.env.NEXT_PUBLIC_BASE_URL
+  process.env.NEXT_PUBLIC_BASE_URL_PROD
   || "http://localhost:3000";
 
 export const tagsSiteConfig = {
@@ -111,10 +109,10 @@ export const tagsSiteConfig = {
   social: {
 
     instagram:
-      "https://instagram.com/tags.com.ar",
+      "https://instagram.com/tags.qr",
 
-    facebook:
-      "https://facebook.com/tags.com.ar",
+    instagram_calamuchitar:
+      "https://instagram.com/calamuchitar",
   },
 
   // =====================================================

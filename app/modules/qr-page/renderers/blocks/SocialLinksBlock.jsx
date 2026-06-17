@@ -6,9 +6,15 @@ import {
     FaLinkedinIn,
     FaGlobe
 }
-from "react-icons/fa";
+    from "react-icons/fa";
 
 import getTypographyStyle from "../../lib/getTypographyStyle";
+
+import {
+    buildSocialUrl,
+    normalizeWebsite
+}
+    from "../../lib/normalizeContactFields";
 
 const ICONS = {
     instagram: <FaInstagram />,
@@ -19,9 +25,24 @@ const ICONS = {
     website: <FaGlobe />
 };
 
+function getUrl(key, value) {
+    if (!value) {
+        return "";
+    }
+
+    if (key === "website") {
+        return normalizeWebsite(value);
+    }
+
+    return buildSocialUrl(
+        key,
+        value
+    );
+}
+
 export default function SocialLinksBlock({
-    content,
-    page,
+    content = {},
+    page = {},
     styles = {}
 }) {
 
@@ -35,32 +56,50 @@ export default function SocialLinksBlock({
         {
             key: "instagram",
             label: "Instagram",
-            url: content.instagram || page?.instagram_url
+            url: getUrl(
+                "instagram",
+                 content?.instagram || page?.instagram_url
+            )
         },
         {
             key: "facebook",
             label: "Facebook",
-            url: content.facebook || page?.facebook_url
+            url: getUrl(
+                "facebook",
+                 content?.facebook || page?.facebook_url
+            )
         },
         {
             key: "tiktok",
             label: "TikTok",
-            url: content.tiktok || page?.tiktok_url
+            url: getUrl(
+                "tiktok",
+                 content?.tiktok || page?.tiktok_url
+            )
         },
         {
             key: "youtube",
             label: "YouTube",
-            url: content.youtube || page?.youtube_url
+            url: getUrl(
+                "youtube",
+                 content?.youtube || page?.youtube_url
+            )
         },
         {
             key: "linkedin",
             label: "LinkedIn",
-            url: content.linkedin || page?.linkedin_url
+            url: getUrl(
+                "linkedin",
+                 content?.linkedin || page?.linkedin_url
+            )
         },
         {
             key: "website",
             label: "Web",
-            url: content.website || page?.website_url
+            url: getUrl(
+                "website",
+                 content?.website || page?.website_url
+            )
         }
     ].filter((item) => item.url);
 
@@ -73,7 +112,6 @@ export default function SocialLinksBlock({
 
             {
                 links.map((item) => (
-
                     <a
                         key={item.key}
                         href={item.url}
@@ -85,7 +123,6 @@ export default function SocialLinksBlock({
                     >
                         {ICONS[item.key]}
                     </a>
-
                 ))
             }
 

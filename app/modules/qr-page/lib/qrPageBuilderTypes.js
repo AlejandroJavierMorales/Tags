@@ -125,6 +125,10 @@ export const QR_PAGE_BLOCK_TYPES = [
         label: "Beneficios"
     },
     {
+        value: "bullet_list",
+        label: "Lista con Viñetas"
+    },
+    {
         value: "cta",
         label: "Call To Action"
     }

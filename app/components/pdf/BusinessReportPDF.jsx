@@ -137,7 +137,7 @@ export default function BusinessReportPDF({ data }) {
 
     const baseUrl = process.env.NODE_ENV === "development"
             ? "http://localhost:3000"
-            : process.env.NEXT_PUBLIC_BASE_URL;
+            : process.env.NEXT_PUBLIC_BASE_URL_PROD;
 
     const {
         business,

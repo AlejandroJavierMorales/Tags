@@ -78,13 +78,13 @@ export default function TagsFooter() {
               </a>
 
               <a
-                href={social.facebook}
+                href={social.instagram_calamuchitar}
                 className="social-icon"
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label="Facebook"
+                aria-label="IG Calamuchitar"
               >
-                <FacebookIcon />
+                <InstagramIcon />
               </a>
 
             </div>

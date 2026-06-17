@@ -1059,6 +1059,85 @@
 }
 
 /* =========================
+   BULLET LIST
+========================= */
+.qr_bullet_list {
+
+    width: 100%;
+}
+
+.qr_bullet_list h3 {
+
+    margin-bottom: 16px;
+}
+
+.qr_bullet_list ul {
+
+    margin: 0;
+
+    padding-left: 24px;
+}
+
+.qr_bullet_list li {
+
+    margin-bottom: 10px;
+}
+
+.qr_bullet_list li:last-child {
+
+    margin-bottom: 0;
+}
+.qr_bullet_list_items {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 12px;
+
+}
+.qr_bullet_list_icon {
+    width: 22px;
+    min-width: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.qr_bullet_list_icon svg {
+    width: 13px;
+    height: 13px;
+    color: inherit;
+    fill: currentColor;
+}
+
+.qr_bullet_item {
+
+    display: flex;
+
+    align-items: flex-start;
+
+    gap: 12px;
+
+    width: 100%;
+
+}
+
+.qr_bullet_icon {
+
+    flex-shrink: 0;
+
+    line-height: 1.4;
+
+}
+
+.qr_bullet_text {
+
+    flex: 1;
+
+}
+
+/* =========================
    CONTACT / FAQ / CTA
 ========================= */
 

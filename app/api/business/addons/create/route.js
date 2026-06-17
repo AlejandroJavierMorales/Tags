@@ -9,6 +9,9 @@ export const dynamic = "force-dynamic";
 import { db }
     from "@/app/lib/tags-db";
 
+import { syncBusinessQRPageEnabled }
+    from "@/app/modules/addons/lib/syncBusinessQRPageEnabled";
+
 export async function POST(req) {
 
     try {
@@ -27,6 +30,8 @@ export async function POST(req) {
             notes
         } = body;
 
+
+
         if (!business_id) {
             return Response.json(
                 { error: "business_id requerido" },
@@ -41,8 +46,26 @@ export async function POST(req) {
             );
         }
 
+        const businessId =
+            Number(business_id);
+
+        if (!businessId) {
+            return Response.json(
+                { error: "business_id inválido" },
+                { status: 400 }
+            );
+        }
+
         const cleanAddonCode =
-            String(addon_code).trim();
+            String(addon_code)
+                .trim()
+                .toLowerCase();
+
+/*         console.log("CREATE ADDON:", {
+            business_id,
+            addon_code,
+            cleanAddonCode
+        }); */
 
         // =========================
         // VALIDAR ADDON DESDE DB
@@ -59,11 +82,13 @@ export async function POST(req) {
                     price,
                     currency
                 FROM tags_addons
-                WHERE code = ?
+                WHERE TRIM(LOWER(code)) = ?
                 AND is_active = 1
                 LIMIT 1
                 `,
-                [cleanAddonCode]
+                [
+                    cleanAddonCode
+                ]
             );
 
         const addon =
@@ -77,7 +102,11 @@ export async function POST(req) {
         }
 
         const finalQuantity =
-            Number(quantity || addon.default_quantity || 1);
+            Number(
+                quantity ||
+                addon.default_quantity ||
+                1
+            );
 
         if (finalQuantity < 1) {
             return Response.json(
@@ -93,12 +122,15 @@ export async function POST(req) {
         const [businessRows] =
             await db.query(
                 `
-                SELECT id
+                SELECT
+                    id
                 FROM tags_businesses
                 WHERE id = ?
                 LIMIT 1
                 `,
-                [business_id]
+                [
+                    businessId
+                ]
             );
 
         if (!businessRows.length) {
@@ -112,19 +144,29 @@ export async function POST(req) {
         // REGLA: TAGSID ÚNICO POR CLIENTE
         // =========================
 
-        if (cleanAddonCode === "tags_id") {
+        if (
+            cleanAddonCode === "tags_id" ||
+            cleanAddonCode === "tagsid"
+        ) {
 
             const [existingTagsId] =
                 await db.query(
                     `
-                    SELECT id
+                    SELECT
+                        id
                     FROM tags_business_addons
                     WHERE business_id = ?
-                    AND addon_code = 'tags_id'
+                    AND TRIM(LOWER(addon_code)) = 'tags_id'
                     AND status = 'active'
+                    AND (
+                        expires_at IS NULL
+                        OR expires_at >= CURDATE()
+                    )
                     LIMIT 1
                     `,
-                    [business_id]
+                    [
+                        businessId
+                    ]
                 );
 
             if (existingTagsId.length) {
@@ -157,7 +199,7 @@ export async function POST(req) {
             VALUES (?, ?, ?, 'active', ?, ?, ?, ?, ?, NOW(), NOW())
             `,
             [
-                business_id,
+                businessId,
                 cleanAddonCode,
                 finalQuantity,
                 started_at || null,
@@ -168,8 +210,14 @@ export async function POST(req) {
             ]
         );
 
+        const qrPageEnabled =
+            await syncBusinessQRPageEnabled(
+                businessId
+            );
+
         return Response.json({
-            ok: true
+            ok: true,
+            qr_page_enabled: qrPageEnabled
         });
 
     } catch (err) {

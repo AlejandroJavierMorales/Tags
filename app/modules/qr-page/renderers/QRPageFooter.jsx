@@ -8,10 +8,11 @@ import {
     FaEnvelope,
     FaPhone
 }
-from "react-icons/fa6";
+    from "react-icons/fa6";
 
 import getTypographyStyle
     from "../lib/getTypographyStyle";
+import { buildSocialUrl } from "../lib/normalizeContactFields";
 
 function safeFooterConfig(value) {
 
@@ -31,7 +32,7 @@ function safeFooterConfig(value) {
 }
 
 export default function QRPageFooter({
-    page
+    page={}
 }) {
 
     const footer =
@@ -144,7 +145,9 @@ export default function QRPageFooter({
                                 page.phone && (
                                     <div className="qr_public_footer_item">
                                         <FaPhone />
-                                        <span>{page.phone}</span>
+                                        <a href={`tel:${page.phone}`}>
+                                            {page.phone}
+                                        </a>
                                     </div>
                                 )
                             }
@@ -153,7 +156,9 @@ export default function QRPageFooter({
                                 page.email && (
                                     <div className="qr_public_footer_item">
                                         <FaEnvelope />
-                                        <span>{page.email}</span>
+                                        <a href={`mailto:${page.email}`}>
+                                            {page.email}
+                                        </a>
                                     </div>
                                 )
                             }
@@ -191,7 +196,10 @@ export default function QRPageFooter({
                             {
                                 page.instagram_url && (
                                     <a
-                                        href={page.instagram_url}
+                                        href={buildSocialUrl(
+                                            "instagram",
+                                            page?.instagram
+                                        )}
                                         target="_blank"
                                         rel="noreferrer"
                                         style={linkStyle}
@@ -205,7 +213,10 @@ export default function QRPageFooter({
                             {
                                 page.facebook_url && (
                                     <a
-                                        href={page.facebook_url}
+                                        href={buildSocialUrl(
+                                            "facebook",
+                                            page?.facebook
+                                        )}
                                         target="_blank"
                                         rel="noreferrer"
                                         style={linkStyle}
@@ -219,7 +230,10 @@ export default function QRPageFooter({
                             {
                                 page.tiktok_url && (
                                     <a
-                                        href={page.tiktok_url}
+                                        href={buildSocialUrl(
+                                            "tiktok",
+                                            page?.tiktok
+                                        )}
                                         target="_blank"
                                         rel="noreferrer"
                                         style={linkStyle}
@@ -233,7 +247,10 @@ export default function QRPageFooter({
                             {
                                 page.youtube_url && (
                                     <a
-                                        href={page.youtube_url}
+                                        href={buildSocialUrl(
+                                            "youtube",
+                                            page?.youtube
+                                        )}
                                         target="_blank"
                                         rel="noreferrer"
                                         style={linkStyle}
@@ -247,7 +264,10 @@ export default function QRPageFooter({
                             {
                                 page.linkedin_url && (
                                     <a
-                                        href={page.linkedin_url}
+                                        href={buildSocialUrl(
+                                            "linkedin",
+                                            page?.likedin
+                                        )}
                                         target="_blank"
                                         rel="noreferrer"
                                         style={linkStyle}

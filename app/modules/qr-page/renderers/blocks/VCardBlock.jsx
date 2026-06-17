@@ -21,25 +21,30 @@ export default function VCardBlock({
     }
 
     return (
-        <a
-            href={href}
-            className="qr_public_vcard_button"
-            style={
-                getTypographyStyle(
-                    styles,
-                    "button"
-                )
-            }
-        >
-            <FaAddressCard />
-
-            <span>
-                {
-                    content.buttonLabel ||
-                    "Guardar contacto"
+        <>
+            <a
+                href={href}
+                className="qr_public_vcard_button"
+                style={
+                    getTypographyStyle(
+                        styles,
+                        "button"
+                    )
                 }
-            </span>
+            >
+                <FaAddressCard />
 
-        </a>
+                <span>
+                    {
+                        content.buttonLabel ||
+                        "Guardar contacto"
+                    }
+                </span>
+
+            </a>
+            {/* <p className="qr_public_vcard_help">
+                Si se descarga un archivo, abrilo para importar el contacto.
+            </p> */}
+        </>
     );
 }

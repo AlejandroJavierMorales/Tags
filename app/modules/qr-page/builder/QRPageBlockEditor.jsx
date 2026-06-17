@@ -8,6 +8,8 @@ import showAlert
 
 import MediaUploader
     from "@/app/components/MediaUploader";
+import { themeValueLabel } from "../lib/editorLabels";
+
 
 export default function QRPageBlockEditor({
     businessId,
@@ -28,13 +30,31 @@ export default function QRPageBlockEditor({
         useState(false);
 
 
-    const fontSizes = [
+    /* const fontSizes = [
         "12px", "14px", "16px", "18px", "20px", "24px",
         "28px", "32px", "38px", "42px", "48px", "56px",
         "64px", "72px"
+    ]; */
+    const fontSizes = [
+        ["", "Por defecto: 16px"],
+        ["12px", "12px"],
+        ["14px", "14px"],
+        ["16px", "16px"],
+        ["18px", "18px"],
+        ["20px", "20px"],
+        ["24px", "24px"],
+        ["28px", "28px"],
+        ["32px", "32px"],
+        ["38px", "38px"],
+        ["42px", "42px"],
+        ["48px", "48px"],
+        ["56px", "56px"],
+        ["64px", "64px"],
+        ["72px", "72px"]
     ];
 
     const fontWeights = [
+        ["", "Por defecto: 400"],
         ["300", "Light"],
         ["400", "Regular"],
         ["500", "Medium"],
@@ -45,6 +65,7 @@ export default function QRPageBlockEditor({
     ];
 
     const lineHeights = [
+        ["", "Por defecto: 1.5"],
         ["1", "Compacto"],
         ["1.2", "Ajustado"],
         ["1.5", "Normal"],
@@ -53,6 +74,7 @@ export default function QRPageBlockEditor({
     ];
 
     const letterSpacings = [
+        ["", "Por defecto: 0px"],
         ["-2px", "Muy compacto"],
         ["-1px", "Compacto"],
         ["0px", "Normal"],
@@ -214,121 +236,133 @@ export default function QRPageBlockEditor({
     }
 
     function TypographyPartEditor({
-        part,
-        label
-    }) {
+    part,
+    label
+}) {
 
-        const value =
-            getTypographyPart(part);
+    const value =
+        getTypographyPart(part);
 
-        return (
-            <div className="qr_page_typography_part">
+    return (
+        <div className="qr_page_typography_part">
 
-                <h4>{label}</h4>
+            <h4>{label}</h4>
 
-                <div className="qr_page_grid_4">
+            <div className="qr_page_grid_4">
 
-                    <div className="">
-                        <label>Tamaño</label>
-                        <select
-                            className="qr_page_select"
-                            value={value.fontSize || ""}
-                            onChange={(e) =>
-                                updateTypographyPart(
-                                    part,
-                                    "fontSize",
-                                    e.target.value
-                                )
-                            }
-                        >
-                            <option value="">Default</option>
-                            {
-                                fontSizes.map((size) => (
-                                    <option key={size} value={size}>
-                                        {size}
-                                    </option>
-                                ))
-                            }
-                        </select>
-                    </div>
+                <div>
+                    <label>Tamaño</label>
 
-                    <div className="mt-2">
-                        <label>Peso</label>
-                        <select
-                            className="qr_page_select"
-                            value={value.fontWeight || ""}
-                            onChange={(e) =>
-                                updateTypographyPart(
-                                    part,
-                                    "fontWeight",
-                                    e.target.value
-                                )
-                            }
-                        >
-                            <option value="">Default</option>
-                            {
-                                fontWeights.map(([value, label]) => (
-                                    <option key={value} value={value}>
-                                        {label}
-                                    </option>
-                                ))
-                            }
-                        </select>
-                    </div>
+                    <select
+                        className="qr_page_select"
+                        value={value.fontSize || ""}
+                        onChange={(e) =>
+                            updateTypographyPart(
+                                part,
+                                "fontSize",
+                                e.target.value
+                            )
+                        }
+                    >
+                        {
+                            fontSizes.map(([value, label]) => (
+                                <option
+                                    key={value || "default-size"}
+                                    value={value}
+                                >
+                                    {label}
+                                </option>
+                            ))
+                        }
+                    </select>
+                </div>
 
-                    <div className="mt-2">
-                        <label>Interlineado</label>
-                        <select
-                            className="qr_page_select"
-                            value={value.lineHeight || ""}
-                            onChange={(e) =>
-                                updateTypographyPart(
-                                    part,
-                                    "lineHeight",
-                                    e.target.value
-                                )
-                            }
-                        >
-                            <option value="">Default</option>
-                            {
-                                lineHeights.map(([value, label]) => (
-                                    <option key={value} value={value}>
-                                        {label}
-                                    </option>
-                                ))
-                            }
-                        </select>
-                    </div>
+                <div className="mt-2">
+                    <label>Peso</label>
 
-                    <div className="mt-2">
-                        <label>Espaciado</label>
-                        <select
-                            className="qr_page_select"
-                            value={value.letterSpacing || ""}
-                            onChange={(e) =>
-                                updateTypographyPart(
-                                    part,
-                                    "letterSpacing",
-                                    e.target.value
-                                )
-                            }
-                        >
-                            <option value="">Default</option>
-                            {
-                                letterSpacings.map(([value, label]) => (
-                                    <option key={value} value={value}>
-                                        {label}
-                                    </option>
-                                ))
-                            }
-                        </select>
-                    </div>
+                    <select
+                        className="qr_page_select"
+                        value={value.fontWeight || ""}
+                        onChange={(e) =>
+                            updateTypographyPart(
+                                part,
+                                "fontWeight",
+                                e.target.value
+                            )
+                        }
+                    >
+                        {
+                            fontWeights.map(([value, label]) => (
+                                <option
+                                    key={value || "default-weight"}
+                                    value={value}
+                                >
+                                    {label}
+                                </option>
+                            ))
+                        }
+                    </select>
+                </div>
 
+                <div className="mt-2">
+                    <label>Interlineado</label>
+
+                    <select
+                        className="qr_page_select"
+                        value={value.lineHeight || ""}
+                        onChange={(e) =>
+                            updateTypographyPart(
+                                part,
+                                "lineHeight",
+                                e.target.value
+                            )
+                        }
+                    >
+                        {
+                            lineHeights.map(([value, label]) => (
+                                <option
+                                    key={value || "default-line"}
+                                    value={value}
+                                >
+                                    {label}
+                                </option>
+                            ))
+                        }
+                    </select>
+                </div>
+
+                <div className="mt-2">
+                    <label>Espaciado</label>
+
+                    <select
+                        className="qr_page_select"
+                        value={value.letterSpacing || ""}
+                        onChange={(e) =>
+                            updateTypographyPart(
+                                part,
+                                "letterSpacing",
+                                e.target.value
+                            )
+                        }
+                    >
+                        {
+                            letterSpacings.map(([value, label]) => (
+                                <option
+                                    key={value || "default-spacing"}
+                                    value={value}
+                                >
+                                    {label}
+                                </option>
+                            ))
+                        }
+                    </select>
                 </div>
 
             </div>
-        );
-    }
+
+        </div>
+    );
+}
 
     function renderContentFields() {
 
@@ -683,9 +717,11 @@ export default function QRPageBlockEditor({
                     </div>
 
                     <div className="qr_page_field">
-                        <label>Teléfono</label>
+                        <label>WhatsApp</label>
+
                         <input
                             className="qr_page_input"
+                            placeholder="3546520243"
                             value={content.phone || ""}
                             onChange={(e) =>
                                 updateContent(
@@ -694,6 +730,10 @@ export default function QRPageBlockEditor({
                                 )
                             }
                         />
+
+                        <small className="qr_page_help">
+                            Ingresá solo el número local. Nosotros agregamos automáticamente 549 para WhatsApp.
+                        </small>
                     </div>
 
                     <div className="qr_page_field full">
@@ -718,20 +758,57 @@ export default function QRPageBlockEditor({
                 <>
                     {
                         [
-                            ["instagram", "Instagram"],
-                            ["facebook", "Facebook"],
-                            ["tiktok", "TikTok"],
-                            ["youtube", "YouTube"],
-                            ["linkedin", "LinkedIn"],
-                            ["website", "Sitio web"]
-                        ].map(([field, label]) => (
+                            [
+                                "instagram",
+                                "Instagram",
+                                "ecos_del_valle",
+                                "Solo usuario, sin @ ni URL."
+                            ],
+
+                            [
+                                "facebook",
+                                "Facebook",
+                                "ecosdelvalle",
+                                "Solo nombre de página o usuario."
+                            ],
+
+                            [
+                                "tiktok",
+                                "TikTok",
+                                "ecosdelvalle",
+                                "Solo usuario, sin @."
+                            ],
+
+                            [
+                                "youtube",
+                                "YouTube",
+                                "ecosdelvalle",
+                                "Usuario o canal de YouTube."
+                            ],
+
+                            [
+                                "linkedin",
+                                "LinkedIn",
+                                "alejandro-morales",
+                                "Solo identificador del perfil."
+                            ],
+
+                            [
+                                "website",
+                                "Sitio web",
+                                "www.miweb.com.ar",
+                                "Podés ingresar dominio o URL completa."
+                            ]
+                        ].map(([field, label, placeholder, helper]) => (
                             <div
                                 key={field}
                                 className="qr_page_field"
                             >
                                 <label>{label}</label>
+
                                 <input
                                     className="qr_page_input"
+                                    placeholder={placeholder}
                                     value={content[field] || ""}
                                     onChange={(e) =>
                                         updateContent(
@@ -740,6 +817,11 @@ export default function QRPageBlockEditor({
                                         )
                                     }
                                 />
+
+                                <small className="qr_page_help">
+                                    {helper}
+                                </small>
+
                             </div>
                         ))
                     }
@@ -796,7 +878,17 @@ export default function QRPageBlockEditor({
 
                                 <input
                                     className="qr_page_input"
-                                    placeholder="URL"
+                                    placeholder={
+                                        item.icon === "tiktok"
+                                            ? "usuario TikTok sin @"
+                                            : item.icon === "youtube"
+                                                ? "usuario o canal YouTube"
+                                                : item.icon === "x"
+                                                    ? "usuario X / Twitter sin @"
+                                                    : item.icon === "telegram"
+                                                        ? "usuario Telegram sin @"
+                                                        : "www.miweb.com.ar o URL"
+                                    }
                                     value={item.url || ""}
                                     onChange={(e) =>
                                         updateItem(
@@ -806,6 +898,21 @@ export default function QRPageBlockEditor({
                                         )
                                     }
                                 />
+                                <small className="qr_page_help">
+
+                                    {
+                                        item.icon === "tiktok"
+                                            ? "Ej: ecosdelvalle → tiktok.com/@ecosdelvalle"
+                                            : item.icon === "youtube"
+                                                ? "Ej: ecosdelvalle → youtube.com/@ecosdelvalle"
+                                                : item.icon === "x"
+                                                    ? "Ej: ecosdelvalle → x.com/ecosdelvalle"
+                                                    : item.icon === "telegram"
+                                                        ? "Ej: ecosdelvalle → t.me/ecosdelvalle"
+                                                        : "Podés ingresar dominio o URL completa."
+                                    }
+
+                                </small>
 
                                 <select
                                     className="qr_page_select"
@@ -975,6 +1082,151 @@ export default function QRPageBlockEditor({
                         + Agregar beneficio
                     </button>
                 </div>
+            );
+        }
+
+        if (block.type === "bullet_list") {
+
+            const items =
+                Array.isArray(content.items)
+                    ? content.items
+                    : [];
+
+            return (
+
+                <div className="qr_page_field full">
+
+                    <label>Título</label>
+
+                    <input
+                        className="qr_page_input"
+                        value={content.title || ""}
+                        onChange={(e) =>
+                            updateContent(
+                                "title",
+                                e.target.value
+                            )
+                        }
+                    />
+
+                    <label style={{ marginTop: 16 }}>
+                        Icono
+                    </label>
+
+                    <select
+                        className="qr_page_select"
+                        value={content.icon || "check"}
+                        onChange={(e) =>
+                            updateContent(
+                                "icon",
+                                e.target.value
+                            )
+                        }
+                    >
+                        <option value="check">✓ Check</option>
+                        <option value="dot">● Punto</option>
+                        <option value="arrow">→ Flecha</option>
+                        <option value="star">★ Estrella</option>
+                        <option value="heart">♥ Corazón</option>
+                        <option value="bolt">⚡ Rayo</option>
+                    </select>
+
+                    <label style={{ marginTop: 16 }}>
+                        Color icono
+                    </label>
+
+                    <input
+                        type="color"
+                        className="qr_page_input qr_page_color"
+                        value={
+                            content.iconColor ||
+                            "#2563eb"
+                        }
+                        onChange={(e) =>
+                            updateContent(
+                                "iconColor",
+                                e.target.value
+                            )
+                        }
+                    />
+
+                    <label style={{ marginTop: 16 }}>
+                        Sangría izquierda
+                    </label>
+
+                    <select
+                        className="qr_page_select"
+                        value={styles.listIndent || "0px"}
+                        onChange={(e) =>
+                            updateStyle(
+                                "listIndent",
+                                e.target.value
+                            )
+                        }
+                    >
+                        <option value="0px">Sin sangría</option>
+                        <option value="24px">Suave</option>
+                        <option value="48px">Media</option>
+                        <option value="80px">Amplia</option>
+                        <option value="100px">100px</option>
+                        <option value="120px">120px</option>
+                        <option value="160px">160px</option>
+                        <option value="200px">200px</option>
+                        <option value="300px">300px</option>
+                    </select>
+
+                    <label style={{ marginTop: 16 }}>
+                        Viñetas
+                    </label>
+
+                    {
+                        items.map((item, index) => (
+
+                            <div
+                                key={index}
+                                className="qr_page_repeater_item"
+                            >
+
+                                <input
+                                    className="qr_page_input"
+                                    value={item || ""}
+                                    onChange={(e) =>
+                                        updateStringItem(
+                                            index,
+                                            e.target.value
+                                        )
+                                    }
+                                />
+
+                                <button
+                                    type="button"
+                                    className="qr_page_btn danger"
+                                    onClick={() =>
+                                        removeItem(index)
+                                    }
+                                >
+                                    Eliminar
+                                </button>
+
+                            </div>
+
+                        ))
+                    }
+
+                    <button
+                        type="button"
+                        className="qr_page_btn secondary"
+                        onClick={() =>
+                            addItem(
+                                "Nueva viñeta"
+                            )
+                        }
+                    >
+                        + Agregar viñeta
+                    </button>
+
+                </div>
+
             );
         }
 
@@ -1913,6 +2165,14 @@ export default function QRPageBlockEditor({
                 ["text", "Ítems"]
             ],
 
+            bullet_list: [
+
+                ["title", "Título"],
+
+                ["text", "Viñetas"]
+
+            ],
+
             stats: [
                 ["title", "Valor"],
                 ["text", "Etiqueta"]
@@ -1980,7 +2240,59 @@ export default function QRPageBlockEditor({
         ];
     }
 
+    function renderSpacingFields() {
 
+        const spacingOptions = [
+            "", "0px", "10px", "20px", "30px",
+            "40px", "60px", "80px", "100px",
+            "120px", "180px", "240px", "300px"
+        ];
+
+        return (
+            <>
+                {
+                    [
+                        ["marginTop", "Margen superior"],
+                        ["marginBottom", "Margen inferior"],
+                        ["marginLeft", "Margen izquierdo"],
+                        ["marginRight", "Margen derecho"],
+                        ["padding", "Padding interno"]
+                    ].map(([field, label]) => (
+                        <div
+                            key={field}
+                            className="qr_page_field"
+                        >
+                            <label>{label}</label>
+
+                            <select
+                                className="qr_page_select"
+                                value={styles[field] || ""}
+                                onChange={(e) =>
+                                    updateStyle(
+                                        field,
+                                        e.target.value
+                                    )
+                                }
+                            >
+                                {
+                                    spacingOptions.map((value) => (
+                                        <option
+                                            key={value || "default"}
+                                            value={value}
+                                        >
+                                            {
+                                                value || "Por defecto: 0px"
+                                            }
+                                        </option>
+                                    ))
+                                }
+                            </select>
+                        </div>
+                    ))
+                }
+            </>
+        );
+    }
 
 
     /*  UI  */
@@ -2086,20 +2398,56 @@ export default function QRPageBlockEditor({
                             )
                         }
 
-                        <div className="mt-2">
-                            <label>Padding</label>
-                            <input
-                                className="qr_page_input"
-                                value={styles.padding || ""}
-                                placeholder="Ej: 20px"
-                                onChange={(e) =>
-                                    updateStyle(
-                                        "padding",
-                                        e.target.value
-                                    )
-                                }
-                            />
+                        <div className="qr_page_field full">
+                            <h3>Espaciado</h3>
                         </div>
+
+                        {renderSpacingFields()}
+
+                        {
+                            block.type === "bullet_list" && (
+
+                                <div className="mt-2">
+
+                                    <label>Alineación</label>
+
+                                    <select
+
+                                        className="qr_page_select"
+
+                                        value={
+                                            styles.alignment || "left"
+                                        }
+
+                                        onChange={(e) =>
+
+                                            updateStyle(
+                                                "alignment",
+                                                e.target.value
+                                            )
+
+                                        }
+
+                                    >
+
+                                        <option value="left">
+                                            Izquierda
+                                        </option>
+
+                                        <option value="center">
+                                            Centro
+                                        </option>
+
+                                        <option value="right">
+                                            Derecha
+                                        </option>
+
+                                    </select>
+
+                                </div>
+
+                            )
+                        }
                         {
                             block.type === "faq" && (
                                 <>

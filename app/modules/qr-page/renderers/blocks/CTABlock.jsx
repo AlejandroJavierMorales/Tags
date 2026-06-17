@@ -1,8 +1,33 @@
 import getTypographyStyle from "../../lib/getTypographyStyle";
 
+import {
+    normalizeWebsite
+}
+from "../../lib/normalizeContactFields";
+
+function normalizeHref(value) {
+    const url =
+        String(value || "").trim();
+
+    if (!url) {
+        return "";
+    }
+
+    if (
+        url.startsWith("#") ||
+        url.startsWith("mailto:") ||
+        url.startsWith("tel:") ||
+        url.startsWith("https://") ||
+        url.startsWith("http://")
+    ) {
+        return url;
+    }
+
+    return normalizeWebsite(url);
+}
 
 export default function CTABlock({
-    content,
+    content = {},
     styles = {}
 }) {
 
@@ -24,39 +49,46 @@ export default function CTABlock({
             "button"
         );
 
+    const buttonHref =
+        normalizeHref(
+             content?.buttonUrl
+        );
+
     return (
         <div className="qr_public_cta">
 
             {
-                content.title && (
+                 content?.title && (
                     <h2 style={titleStyle}>
-                        {content.title}
+                        { content?.title}
                     </h2>
                 )
             }
 
             {
-                content.text && (
+                 content?.text && (
                     <p style={textStyle}>
-                        {content.text}
+                        { content?.text}
                     </p>
                 )
             }
 
             {
-                content.buttonLabel &&
-                content.buttonUrl && (
-
+                 content?.buttonLabel &&
+                buttonHref && (
                     <a
-                        href={content.buttonUrl}
-                        target="_blank"
+                        href={buttonHref}
+                        target={
+                            buttonHref.startsWith("http")
+                                ? "_blank"
+                                : undefined
+                        }
                         rel="noreferrer"
                         className="qr_public_cta_button"
                         style={buttonStyle}
                     >
-                        {content.buttonLabel}
+                        { content?.buttonLabel}
                     </a>
-
                 )
             }
 

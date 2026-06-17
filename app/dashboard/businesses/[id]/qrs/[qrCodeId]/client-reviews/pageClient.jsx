@@ -133,6 +133,8 @@ export default function ClientReviewsAdminClient({
             const data =
                 await res.json().catch(() => null);
 
+            console.log("SUMMARY API:", data.summary);
+
             if (!res.ok) {
                 throw new Error(
                     data?.error ||
@@ -233,6 +235,8 @@ export default function ClientReviewsAdminClient({
             );
 
             const data = await res.json().catch(() => null);
+
+            console.log("RESPONSES API:", data);
 
             if (!res.ok) {
                 throw new Error(
@@ -907,7 +911,35 @@ export default function ClientReviewsAdminClient({
             "_blank"
         );
     }
+    const ratingsSummary =
+        summary?.ratings || {
+            5: 0,
+            4: 0,
+            3: 0,
+            2: 0,
+            1: 0
+        };
 
+    const googleSummary =
+        summary?.google || {
+            prompt_shown: 0,
+            clicked: summary?.google_clicks || 0,
+            conversion_rate: 0
+        };
+
+    const latestResponses =
+        summary?.latest_responses || [];
+
+    const last30Days =
+        summary?.last_30_days || [];
+
+    const chartMax =
+        Math.max(
+            1,
+            ...last30Days.map(day =>
+                Number(day.total || 0)
+            )
+        );
 
     /*  UI  */
 
@@ -921,14 +953,14 @@ export default function ClientReviewsAdminClient({
                     <div className="d-flex align-items-center gap-2">
 
                         <Image
-    src="/assets/images/logos/logo_google_solo_g.webp"
-    alt="Google"
-    width={60}
-    height={60}
-    style={{
-        objectFit: "contain"
-    }}
-/>
+                            src="/assets/images/logos/logo_google_solo_g.webp"
+                            alt="Google"
+                            width={60}
+                            height={60}
+                            style={{
+                                objectFit: "contain"
+                            }}
+                        />
 
                         <div>
                             <h1 className="qr_page_title m-0">
@@ -1028,6 +1060,178 @@ export default function ClientReviewsAdminClient({
                     </div>
 
 
+                </div>
+
+                <div className="client_reviews_summary_grid mt-4">
+
+                    <div className="qr_page_card">
+                        <h3>Distribución por estrellas</h3>
+
+                        {[5, 4, 3, 2, 1].map(star => {
+                            const count =
+                                Number(ratingsSummary[star] || 0);
+
+                            const total =
+                                Number(summary?.total_responses || 0);
+
+                            const percent =
+                                total > 0
+                                    ? Math.round((count / total) * 100)
+                                    : 0;
+
+                            return (
+                                <div
+                                    key={star}
+                                    className="client_reviews_rating_row"
+                                >
+                                    <span>{star} ⭐</span>
+
+                                    <div className="client_reviews_rating_bar">
+                                        <div
+                                            className="client_reviews_rating_fill"
+                                            style={{
+                                                width: `${percent}%`
+                                            }}
+                                        />
+                                    </div>
+
+                                    <strong>{count}</strong>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    <div className="qr_page_card">
+                        <h3>Embudo Google</h3>
+
+                        <div className="client_reviews_funnel">
+                            <div>
+                                <strong>{summary?.total_responses || 0}</strong>
+                                <span>Respuestas</span>
+                            </div>
+
+                            <div>
+                                <strong>{googleSummary.prompt_shown || 0}</strong>
+                                <span>Invitados a Google</span>
+                            </div>
+
+                            <div>
+                                <strong>{googleSummary.clicked || 0}</strong>
+                                <span>Clicks a Google</span>
+                            </div>
+
+                            <div>
+                                <strong>{googleSummary.conversion_rate || 0}%</strong>
+                                <span>Conversión</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="qr_page_card mt-4">
+                        <h3>Evolución últimos 30 días</h3>
+
+                        <p className="qr_page_subtitle">
+                            Cantidad de reseñas recibidas por día.
+                        </p>
+
+                        <div className="client_reviews_timeline_chart">
+                            {last30Days.map(day => {
+                                const total =
+                                    Number(day.total || 0);
+
+                                const height =
+                                    chartMax > 0
+                                        ? Math.max(
+                                            8,
+                                            Math.round((total / chartMax) * 120)
+                                        )
+                                        : 8;
+
+                                return (
+                                    <div
+                                        key={day.date}
+                                        className="client_reviews_timeline_item"
+                                        title={`${day.date}: ${total} reseñas`}
+                                    >
+                                        <div className="client_reviews_timeline_value">
+                                            {total}
+                                        </div>
+
+                                        <div
+                                            className="client_reviews_timeline_bar"
+                                            style={{
+                                                height: `${height}px`
+                                            }}
+                                        />
+
+                                        <small>
+                                            {new Date(day.date)
+                                                .toLocaleDateString("es-AR", {
+                                                    day: "2-digit",
+                                                    month: "2-digit"
+                                                })}
+                                        </small>
+                                    </div>
+                                );
+                            })}
+
+                            {!last30Days.length && (
+                                <div className="qr_page_status">
+                                    Todavía no hay datos suficientes para mostrar evolución.
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                </div>
+
+                <div className="qr_page_card mt-4">
+                    <h3>Últimas reseñas</h3>
+
+                    <div className="tags_table_wrapper mt-3">
+                        <table className="tags_table tags_text_normal">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Cliente</th>
+                                    <th>Rating</th>
+                                    <th>Comentario</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                {latestResponses.map(response => (
+                                    <tr key={response.id}>
+                                        <td>
+                                            {response.created_at
+                                                ? new Date(response.created_at)
+                                                    .toLocaleDateString("es-AR")
+                                                : "-"}
+                                        </td>
+
+                                        <td>
+                                            {response.customer_name || "Cliente"}
+                                        </td>
+
+                                        <td>
+                                            ⭐ {Number(response.average_rating || 0).toFixed(1)}
+                                        </td>
+
+                                        <td>
+                                            {response.general_comment || "-"}
+                                        </td>
+                                    </tr>
+                                ))}
+
+                                {!latestResponses.length && (
+                                    <tr>
+                                        <td colSpan={4}>
+                                            Todavía no hay reseñas recientes.
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
             </div>

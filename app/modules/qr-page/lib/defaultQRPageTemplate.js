@@ -93,6 +93,37 @@ export function getDefaultQRPageTemplate(business) {
                             message: "Hola, quiero hacer una consulta."
                         },
                         styles_json: {}
+                    },
+                    {
+                        type: "bullet_list",
+                        sort_order: 3,
+                        content_json: {
+                            title: "Nuestros beneficios",
+                            icon: "check",
+                            iconColor: "#2563eb",
+                            items: [
+                                "Atención personalizada",
+                                "Respuesta rápida",
+                                "Experiencia comprobable",
+                                "Contacto directo"
+                            ]
+                        },
+                        styles_json: {
+                            alignment: "left",
+                            listIndent: "80px",
+                            typography: {
+                                title: {
+                                    fontSize: "28px",
+                                    fontWeight: "700",
+                                    lineHeight: "1.2"
+                                },
+                                text: {
+                                    fontSize: "16px",
+                                    fontWeight: "400",
+                                    lineHeight: "1.7"
+                                }
+                            }
+                        }
                     }
                 ]
             },

@@ -96,8 +96,7 @@ export default function QRPageHeader({
             !["header", "footer"].includes(section.type)
         );
 
-    const logoSize =
-        headerConfig.logoSize || 42;
+    const logoSize = headerConfig.logoSize || 140;
 
     function closeMenu() {
         setOpen(false);
@@ -139,17 +138,17 @@ export default function QRPageHeader({
                                         page.business_name ||
                                         "Logo"
                                     }
-                                    width={logoSize}
-                                    height={logoSize}
                                     loading="eager"
                                     decoding="async"
                                     style={{
-                                        width: logoSize,
-                                        height: logoSize,
+                                        maxWidth: `${logoSize}px`,
+                                        maxHeight: `${Math.round(logoSize * 0.55)}px`,
+                                        width: "auto",
+                                        height: "auto",
                                         borderRadius:
-                                            headerConfig.logoRadius || 12,
-                                        objectFit:
-                                            headerConfig.logoFit || "cover"
+                                            headerConfig.logoRadius || 0,
+                                        objectFit: "contain",
+                                        display: "block"
                                     }}
                                 />
                             )

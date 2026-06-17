@@ -15,7 +15,7 @@ import { requireQRPageAccess }
 function getBaseUrl() {
     return process.env.NODE_ENV === "development"
         ? "http://localhost:3000"
-        : process.env.NEXT_PUBLIC_BASE_URL;
+        : process.env.NEXT_PUBLIC_BASE_URL_PROD;
 }
 
 export async function POST(req) {
@@ -113,7 +113,7 @@ export async function POST(req) {
             return Response.json(
                 {
                     error:
-                        "NEXT_PUBLIC_BASE_URL no configurado"
+                        "NEXT_PUBLIC_BASE_URL_PROD no configurado"
                 },
                 {
                     status: 500

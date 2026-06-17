@@ -1,6 +1,6 @@
 export const catalogue = [
     {
-        category: "Pproductos Físicos",
+        category: "Productos Físicos",
         type: "hardware",
         description: "Carteles, stickers, tarjetas y soportes físicos con QR dinámico.",
         items: [

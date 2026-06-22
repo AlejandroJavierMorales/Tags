@@ -1,0 +1,54 @@
+Credenciales Zipnova
+
+APP_USR-4cafa08e-2979-4a26-b158-d966f09bacbf (public key)
+
+APP_USR-4713615205809189-032714-b276404726a326bfe9d63d5e03244dd9-2041452223 (Access token)
+
+/checkout_off/review/loaded props: {"last_four_digits_card_number":"","recommended":true,"checkout_flow_id":"1193e71b-4223-40ac-96c2-c95ab4c10104","payment_method_id":"account_money_black","payment_method_type":"account_money","review_context_flow":"express","time_spent":3774} {name: 'TrackBuilder'}
+
+Zipnova: account_id: 21378
+zipnova Key: a67e8fc1-0e51-4f4a-8906-c4674dd5c72e
+Zipnova secret: b44e7a7f-22f7-4168-9794-417f141404a0
+
+fetch("/api/store/admin/shipping/providers/save", {
+    method: "POST",
+    headers: {
+        "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+        businessId: 16,
+        provider: "zipnova",
+
+        account_id: "21378",
+        origin_id: "378221",
+
+        api_token: "a67e8fc1-0e51-4f4a-8906-c4674dd5c72e",
+        api_secret: "b44e7a7f-22f7-4168-9794-417f141404a0",
+
+        is_active: 1
+    })
+})
+.then(r => r.json())
+.then(console.log)
+.catch(console.error);
+
+
+Lo que ya tenemos:
+
+✅ Transportistas
+✅ Métodos de envío
+✅ Selección en checkout
+✅ Guardado en pedido
+✅ Tracking manual
+✅ Estado logístico
+
+Lo que falta para algo más parecido a MercadoLibre:
+
+1. Dirección de origen logística de la tienda
+2. Datos logísticos del producto: peso, alto, ancho, largo
+3. Dirección completa del comprador: provincia, localidad, CP, calle, número
+4. Zonas/tarifas por CP o provincia
+5. Cotización automática/manual según zona
+6. Etiqueta de envío
+7. Historial de estados del envío
+8. Página pública de seguimiento

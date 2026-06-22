@@ -1,0 +1,12 @@
+MercadoPago en Producción
+
+Y anotaría como QA obligatorio:
+
+□ Compra MP
+□ Auto Return
+□ Success
+□ Webhook
+□ payment_status = paid
+□ order_status = confirmed
+
+Porque eso fue exactamente lo que quedó pendiente cuando trabajábamos en localhost.

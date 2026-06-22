@@ -10,6 +10,7 @@ import { safeParseJSON }
 import QRPageRenderer
     from "@/app/modules/qr-page/renderers/QRPageRenderer";
 import ClientReviewsPublicRenderer from "@/app/modules/client-reviews/renderers/ClientReviewsPublicRenderer";
+import StorePublicRenderer from "@/app/modules/store/public/StorePublicRenderer";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -595,13 +596,29 @@ export default async function PublicQRPage({
     params
 }) {
 
-    const data =
+    let data =
         await getPublicQRPage(
             params.slug
         );
 
     if (!data) {
-        notFound();
+
+        const storeData =
+            await getPublicStore(
+                params.slug
+            );
+
+        if (!storeData) {
+            notFound();
+        }
+
+        return (
+            <StorePublicRenderer
+                store={storeData.store}
+                categories={storeData.categories}
+                products={storeData.products}
+            />
+        );
     }
 
     const {
@@ -609,6 +626,24 @@ export default async function PublicQRPage({
         sections,
         products
     } = data;
+
+
+    if (page.page_type === "store") {
+        const storeData =
+            await getPublicStore(page.slug);
+
+        if (!storeData) {
+            notFound();
+        }
+
+        return (
+            <StorePublicRenderer
+                store={storeData.store}
+                categories={storeData.categories}
+                products={storeData.products}
+            />
+        );
+    }
 
     if (page.page_type === "client_reviews") {
         return (
@@ -623,6 +658,111 @@ export default async function PublicQRPage({
             page,
             products
         });
+
+    /* Store Public */
+    async function getPublicStore(slug) {
+
+        const [stores] =
+            await db.query(
+                `
+            SELECT
+                s.*,
+                p.id AS page_id,
+                p.slug AS page_slug,
+                p.status AS page_status,
+                p.page_type
+            FROM tags_stores s
+
+            INNER JOIN tags_qr_pages p
+                ON p.id = s.page_id
+
+            WHERE p.slug = ?
+            AND p.status = 'published'
+            AND p.page_type = 'store'
+
+            LIMIT 1
+            `,
+                [
+                    slug
+                ]
+            );
+
+        const store =
+            stores[0];
+
+        if (!store) {
+            return null;
+        }
+
+        store.settings_json =
+            safeParseJSON(
+                store.settings_json
+            );
+
+        store.styles_json =
+            safeParseJSON(
+                store.styles_json
+            );
+
+        const [categories] =
+            await db.query(
+                `
+            SELECT *
+            FROM tags_store_categories
+            WHERE store_id = ?
+            AND is_visible = 1
+            ORDER BY sort_order ASC, name ASC
+            `,
+                [
+                    store.id
+                ]
+            );
+
+        const [products] =
+            await db.query(
+                `
+            SELECT
+                p.*,
+                c.name AS category_name,
+                img.image_url AS primary_image_url,
+                COUNT(DISTINCT v.id) AS variants_count
+            FROM tags_store_products p
+
+            LEFT JOIN tags_store_categories c
+                ON c.id = p.category_id
+
+            LEFT JOIN tags_store_product_images img
+                ON img.product_id = p.id
+                AND img.is_primary = 1
+
+            LEFT JOIN tags_store_variants v
+                ON v.product_id = p.id
+                AND v.is_visible = 1
+
+            WHERE p.store_id = ?
+            AND p.status = 'published'
+            AND p.is_visible = 1
+
+            GROUP BY
+                p.id,
+                c.name,
+                img.image_url
+
+            ORDER BY
+                p.is_featured DESC,
+                p.created_at DESC
+            `,
+                [
+                    store.id
+                ]
+            );
+
+        return {
+            store,
+            categories,
+            products
+        };
+    }
 
     return (
         <>

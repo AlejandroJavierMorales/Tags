@@ -1,0 +1,840 @@
+/* =====================================
+   Tags Tienda Admin Orders V2
+   Agregar al final de app/styles/tags_store_admin.css
+   ===================================== */
+
+.store_orders_v2,
+.store_order_detail_v2 {
+    color: #1f2937;
+}
+
+.store_orders_header_v2 {
+    background: #111827;
+    color: #ffffff;
+    border-radius: 24px;
+    padding: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.store_orders_header_v2 h1,
+.store_order_detail_header h1 {
+    margin: 0;
+    font-size: clamp(26px, 3vw, 36px);
+    font-weight: 900;
+    color: #ffffff;
+}
+
+.store_orders_header_v2 p,
+.store_order_detail_header p {
+    margin: 6px 0 0;
+    color: rgba(255,255,255,.82);
+}
+
+.store_orders_header_icon {
+    display: inline-flex;
+    width: 42px;
+    height: 42px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+    background: #ecfdf5;
+    color: #1f2937;
+    margin-bottom: 10px;
+}
+
+.store_orders_header_actions,
+.store_order_detail_actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.store_orders_btn {
+    border: none;
+    border-radius: 12px;
+    padding: 11px 16px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: transform .15s ease, opacity .15s ease;
+}
+
+.store_orders_btn:hover {
+    transform: translateY(-1px);
+}
+
+.store_orders_btn.secondary {
+    background: #ffffff;
+    color: #111827;
+}
+
+.store_orders_btn.primary {
+    background: #16a34a;
+    color: #ffffff;
+}
+
+.store_orders_btn.dark {
+    background: #111827;
+    color: #ffffff;
+}
+
+.store_orders_btn.full {
+    width: 100%;
+}
+
+.store_orders_kpis {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+    margin-bottom: 30px;
+}
+
+.store_orders_kpi {
+    padding: 16px;
+    border-radius: 18px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+}
+
+.store_orders_kpi.soft,
+.store_orders_kpi.revenue {
+    background: #ecfdf5;
+    border-color: #bbf7d0;
+}
+
+.store_orders_kpi small {
+    display: block;
+    color: #6b7280;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+.store_orders_kpi strong {
+    font-size: 24px;
+    color: #1f2937;
+}
+
+.store_orders_toolbar {
+    display: grid;
+    grid-template-columns: 1fr 220px 220px;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.store_orders_toolbar input,
+.store_orders_toolbar select,
+.store_order_management_panel input,
+.store_order_management_panel select {
+    width: 100%;
+    min-height: 44px;
+    border-radius: 12px;
+    border: 1px solid #d1d5db;
+    background: #ffffff;
+    color: #1f2937;
+    padding: 10px 12px;
+    font-weight: 650;
+}
+
+.store_orders_table_panel {
+    overflow: hidden;
+    border-radius: 18px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+}
+
+.store_orders_table_scroll {
+    overflow-x: auto;
+}
+
+.store_orders_table_v2 {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 980px;
+}
+
+.store_orders_table_v2 th {
+    text-align: left;
+    padding: 14px;
+    color: #374151;
+    background: #f9fafb;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+
+.store_orders_table_v2 td {
+    padding: 16px 14px;
+    border-bottom: 1px solid #edf0f3;
+    vertical-align: middle;
+}
+
+.store_orders_table_v2 tr:hover td {
+    background: #fafafa;
+}
+
+.store_order_link {
+    display: block;
+    border: none;
+    background: transparent;
+    color: #111827;
+    font-weight: 900;
+    padding: 0;
+    cursor: pointer;
+}
+
+.store_order_items_count,
+.store_orders_table_v2 small {
+    display: block;
+    margin-top: 4px;
+    color: #6b7280;
+    font-size: 12px;
+}
+
+.store_status_badge {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 7px 11px;
+    font-size: 12px;
+    font-weight: 900;
+    color: #1f2937;
+    background: #f3f4f6;
+}
+
+.store_status_badge.order_new,
+.store_status_badge.payment_pending {
+    background: #fef3c7;
+}
+
+.store_status_badge.order_confirmed,
+.store_status_badge.payment_paid,
+.store_status_badge.order_completed {
+    background: #dcfce7;
+}
+
+.store_status_badge.order_shipped {
+    background: #dbeafe;
+}
+
+.store_status_badge.order_cancelled,
+.store_status_badge.payment_cancelled,
+.store_status_badge.payment_refunded {
+    background: #fee2e2;
+}
+
+.store_orders_actions_cell {
+    text-align: right;
+}
+
+.store_orders_empty_state {
+    padding: 22px;
+    border-radius: 18px;
+    background: #ecfdf5;
+    border: 1px solid #bbf7d0;
+    color: #1f2937;
+    font-weight: 700;
+}
+
+.store_order_detail_eyebrow {
+    display: block;
+    color: rgba(255,255,255,.7);
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    font-weight: 900;
+    font-size: 12px;
+    margin-bottom: 4px;
+}
+
+.store_order_detail_total_box {
+    margin-left: auto;
+    padding: 14px 18px;
+    border-radius: 18px;
+    background: rgba(255,255,255,.1);
+    min-width: 180px;
+}
+
+.store_order_detail_total_box small {
+    display: block;
+    color: rgba(255,255,255,.75);
+    margin-bottom: 4px;
+}
+
+.store_order_detail_total_box strong {
+    font-size: 24px;
+    color: #ffffff;
+}
+
+.store_order_status_line {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 18px;
+}
+
+.store_order_status_line > div {
+    padding: 14px;
+    border-radius: 16px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+}
+
+.store_order_status_line small,
+.store_order_customer_panel small,
+.store_order_delivery_panel dt {
+    display: block;
+    color: #6b7280;
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    margin-bottom: 5px;
+}
+
+.store_order_status_line strong,
+.store_order_customer_panel strong,
+.store_order_delivery_panel dd {
+    color: #1f2937;
+    font-weight: 900;
+}
+
+.store_order_detail_layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    gap: 18px;
+    align-items: start;
+}
+
+.store_order_section_head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.store_order_section_head h2,
+.store_order_management_panel h2,
+.store_order_delivery_panel h3,
+.store_order_quote_panel h2 {
+    margin: 0;
+    color: #1f2937;
+    font-size: 20px;
+    font-weight: 900;
+}
+
+.store_order_section_head span {
+    color: #6b7280;
+    font-weight: 800;
+}
+
+.store_order_summary_grid {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 14px;
+}
+
+.store_order_totals_panel,
+.store_order_delivery_panel,
+.store_order_products_panel,
+.store_order_customer_panel,
+.store_order_management_panel,
+.store_order_quote_panel {
+    border-radius: 18px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+}
+
+.store_order_totals_panel {
+    padding: 16px;
+}
+
+.store_order_totals_panel > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 10px 0;
+    color: #374151;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.store_order_totals_panel > div:last-child {
+    border-bottom: none;
+}
+
+.store_order_total_final {
+    margin-top: 6px;
+    padding-top: 16px !important;
+    font-size: 20px;
+}
+
+.store_order_delivery_panel {
+    padding: 16px;
+    background: #ecfdf5;
+    border-color: #bbf7d0;
+}
+
+.store_order_delivery_panel dl {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 18px;
+    margin: 14px 0 0;
+}
+
+.store_order_delivery_panel dt,
+.store_order_delivery_panel dd {
+    margin: 0;
+}
+
+.store_order_products_panel {
+    overflow: hidden;
+}
+
+.store_order_product_row {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 18px;
+    align-items: center;
+    padding: 15px 16px;
+    border-bottom: 1px solid #edf0f3;
+}
+
+.store_order_product_row:last-child {
+    border-bottom: none;
+}
+
+.store_order_product_row strong {
+    color: #1f2937;
+}
+
+.store_order_product_row small {
+    display: block;
+    color: #6b7280;
+    margin-top: 4px;
+}
+
+.store_order_customer_panel {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0;
+    overflow: hidden;
+}
+
+.store_order_customer_panel > div {
+    padding: 14px 16px;
+    border-right: 1px solid #edf0f3;
+    border-bottom: 1px solid #edf0f3;
+}
+
+.store_order_customer_panel .wide {
+    grid-column: 1 / -1;
+}
+
+.store_order_customer_panel p {
+    margin: 0;
+    color: #1f2937;
+}
+
+.store_order_side_column {
+    display: grid;
+    gap: 14px;
+    position: sticky;
+    top: 14px;
+}
+
+.store_order_management_panel,
+.store_order_quote_panel {
+    padding: 16px;
+}
+
+.store_order_management_panel label {
+    display: grid;
+    gap: 7px;
+    margin-top: 12px;
+    color: #374151;
+    font-weight: 800;
+}
+
+.store_order_quote_panel {
+    background: #ecfdf5;
+    border-color: #bbf7d0;
+}
+
+.store_order_quote_panel p {
+    margin: 10px 0 4px;
+    color: #6b7280;
+}
+
+.store_order_quote_panel strong,
+.store_order_quote_panel small {
+    display: block;
+    color: #1f2937;
+}
+
+@media (max-width: 1100px) {
+    .store_order_status_line,
+    .store_order_summary_grid,
+    .store_order_detail_layout {
+        grid-template-columns: 1fr;
+    }
+
+    .store_order_side_column {
+        position: static;
+    }
+}
+
+@media (max-width: 760px) {
+    .store_orders_header_v2,
+    .store_order_detail_header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .store_orders_header_actions,
+    .store_order_detail_actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .store_orders_toolbar {
+        grid-template-columns: 1fr;
+    }
+
+    .store_order_customer_panel,
+    .store_order_delivery_panel dl,
+    .store_order_product_row {
+        grid-template-columns: 1fr;
+    }
+
+    .store_order_detail_total_box {
+        margin-left: 0;
+        width: 100%;
+    }
+}
+
+
+/* ================================
+   Orders V2 visual icon layer
+   ================================ */
+.store_orders_v2 svg,
+.store_order_detail_v2 svg {
+    flex: 0 0 auto;
+}
+
+.store_orders_header_icon svg {
+    width: 22px;
+    height: 22px;
+}
+
+.store_orders_kpi {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.store_orders_kpi_icon {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: #c5f4de;
+    color: #15803d;
+}
+
+.store_orders_kpi_icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+.store_orders_table_v2 th {
+    white-space: nowrap;
+}
+
+.store_orders_table_v2 th svg {
+    margin-right: 6px;
+    vertical-align: -2px;
+    color: #15803d;
+}
+
+.store_order_detail_header h1,
+.store_order_section_head h2,
+.store_order_delivery_panel h3,
+.store_order_management_panel h2,
+.store_order_quote_panel h2 {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.store_order_detail_header h1 svg,
+.store_order_section_head h2 svg,
+.store_order_delivery_panel h3 svg,
+.store_order_management_panel h2 svg,
+.store_order_quote_panel h2 svg {
+    color: #15803d;
+}
+
+.store_order_section_head h2 svg,
+.store_order_delivery_panel h3 svg {
+
+    width: 52px;
+    height: 52px;
+
+    min-width: 52px;
+
+    padding: 14px;
+
+    border-radius: 999px;
+
+    background: #c5f4de;
+    color: #15803d;
+
+    box-shadow:
+        0 10px 24px rgba(21, 128, 61, .14);
+}
+
+.store_order_section_head h2,
+.store_order_delivery_panel h3 {
+
+    display: flex;
+    align-items: center;
+    gap: 14px;
+
+    font-size: 22px;
+    font-weight: 800;
+
+    color: #111827;
+}
+
+.store_orders_kpi svg {
+    width: 48px;
+    height: 48px;
+    padding: 12px;
+    border-radius: 999px !important;
+    background: #c5f4de;
+    color: #15803d;
+}
+
+.store_order_detail_actions .store_orders_btn,
+.store_orders_btn.primary,
+.store_orders_btn.secondary,
+.store_orders_btn.dark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.store_order_delivery_panel dt {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.store_order_delivery_panel dt svg {
+    color: #15803d;
+}
+@media (max-width: 1024px) {
+
+    .store_orders_kpis {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+}
+
+@media (max-width: 768px) {
+
+    .store_orders_kpis {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+}
+
+@media (max-width: 576px) {
+
+    .store_orders_kpis {
+        grid-template-columns: 1fr;
+        
+    }
+
+}
+@media (max-width: 600px) {
+    .store_orders_header_v2 {
+        display: block;
+    }
+
+    .store_orders_header_v2 > div:first-child {
+        text-align: left;
+    }
+
+    .store_orders_header_v2 .d-flex.align-items-center {
+        justify-content: center;
+    }
+
+    .store_orders_header_v2 p {
+        text-align: left;
+    }
+
+    .store_orders_header_v2 > div:last-child {
+        display: grid !important;
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+}
+
+/* =====================================
+   FIX: Detalle pedido - encabezado y acciones
+===================================== */
+
+.store_order_detail_header {
+    color: #111827;
+    margin-bottom: 24px;
+}
+
+.store_order_detail_header h1,
+.store_order_detail_header p,
+.store_order_detail_header small,
+.store_order_detail_header span,
+.store_order_detail_header strong {
+    color: #111827;
+}
+
+.store_order_detail_eyebrow {
+    color: #6b7280 !important;
+}
+
+.store_order_detail_actions {
+    margin-top: 18px;
+    margin-bottom: 18px;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* =====================================
+   FIX: Notificaciones
+===================================== */
+
+.store_order_notification_actions {
+    display: grid;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+.store_order_notification_actions .store_orders_btn {
+    width: 100%;
+    justify-content: center;
+    font-weight: 700;
+    border: 1px solid #d1d5db;
+    background: #ffffff;
+    color: #111827;
+    border-radius: 12px;
+    padding: 12px 14px;
+    text-align: center;
+}
+
+.store_order_notification_actions .store_orders_btn:hover {
+    background: #f3f4f6;
+}
+.store_orders_kpi.clickable {
+    cursor: pointer;
+    transition: .2s;
+}
+
+.store_orders_kpi.clickable:hover {
+    transform: translateY(-2px);
+}
+
+.store_orders_kpi.warning {
+    border: 1px solid #f59e0b;
+}
+.store_orders_pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+.store_orders_pagination_info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: .95rem;
+    font-weight: 600;
+}
+
+.store_orders_pagination_info small {
+    opacity: .7;
+    font-weight: 400;
+}
+.store_orders_search_box {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+    min-width: 280px;
+    flex: 1;
+}
+
+.store_orders_search_box input {
+    flex: 1;
+}
+
+.store_orders_search_btn {
+    border: 1px solid #bbf7d0;
+    background: #dcfce7;
+    color: #166534;
+    border-radius: 12px;
+    padding: 0 16px;
+    min-width: 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: .2s;
+}
+
+.store_orders_search_btn:hover {
+    background: #bbf7d0;
+}
+.store_status_badge.stock_ok {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.store_status_badge.stock_low_stock {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.store_status_badge.stock_no_stock {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.store_orders_kpi.danger {
+    border: 1px solid #fecaca;
+}
+.store_orders_table_v2 input,
+.store_orders_table_v2 select {
+    width: 100%;
+    min-height: 40px;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    padding: 8px 10px;
+    background: #ffffff;
+    font-weight: 700;
+}
+
+.store_orders_table_v2 input:disabled {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+
+.store_orders_table_v2 td {
+    vertical-align: middle;
+}

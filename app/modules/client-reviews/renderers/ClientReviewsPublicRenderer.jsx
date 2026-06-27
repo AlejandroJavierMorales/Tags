@@ -51,7 +51,8 @@ function styleValue(value, fallback) {
 }
 
 export default function ClientReviewsPublicRenderer({
-    slug
+    slug,
+    reviewToken = null
 }) {
     const [loading, setLoading] =
         useState(true);
@@ -271,7 +272,8 @@ export default function ClientReviewsPublicRenderer({
                             customer_name: customerName || null,
                             customer_email: customerEmail || null,
                             general_comment: generalComment || null,
-                            answers: payloadAnswers
+                            answers: payloadAnswers,
+                            reviewToken
                         })
                     }
                 );

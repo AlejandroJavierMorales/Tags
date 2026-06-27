@@ -13,7 +13,7 @@ import {
     getReservedStockForProduct,
     getReservedStockForVariant
 }
-from "@/app/modules/store/lib/updateOrderStock";
+    from "@/app/modules/store/lib/updateOrderStock";
 
 function safe(value) {
     return value === undefined || value === ""
@@ -219,7 +219,36 @@ export async function POST(req) {
                 shippingQuote.carrier_name || "Zipnova";
 
             shippingQuoteJson =
-                JSON.stringify(shippingQuote);
+                JSON.stringify({
+
+                    provider:
+                        shippingQuote.provider,
+
+                    carrier_id:
+                        shippingQuote.carrier_id,
+
+                    carrier_name:
+                        shippingQuote.carrier_name,
+
+                    service_type_id:
+                        shippingQuote.service_type_id,
+
+                    service_code:
+                        shippingQuote.service_code,
+
+                    service_name:
+                        shippingQuote.service_name,
+
+                    logistic_type:
+                        shippingQuote.logistic_type,
+
+                    price:
+                        shippingQuote.price,
+
+                    estimated_delivery:
+                        shippingQuote.estimated_delivery
+
+                });
         }
 
         if (!shippingQuoteJson && shippingMethod?.id) {
@@ -531,9 +560,41 @@ export async function POST(req) {
                     1,
                     "store",
                     JSON.stringify({
+
                         source: "public_store",
+
                         checkout: finalPaymentMethod,
-                        whatsapp_checkout: finalPaymentMethod === "whatsapp"
+
+                        whatsapp_checkout:
+                            finalPaymentMethod === "whatsapp",
+
+                        shipping: {
+
+                            zip:
+                                safe(customer.zip),
+
+                            city:
+                                safe(customer.city),
+
+                            state:
+                                safe(customer.state),
+
+                            street:
+                                safe(customer.address),
+
+                            street_number:
+                                safe(customer.street_number),
+
+                            street_extras:
+                                safe(customer.street_extras),
+
+                            document:
+                                safe(customer.document)
+                        },
+
+                        quote:
+                            shippingQuote || null
+
                     })
                 ]
             );

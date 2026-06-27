@@ -369,9 +369,7 @@ export default function StoreCategoriesClient({
                         type="button"
                         className="qr_page_btn secondary"
                         onClick={() =>
-                            router.push(
-                                `/dashboard/businesses/${businessId}/store`
-                            )
+                            router.push(`/dashboard/businesses/${businessId}/store?tab=categories`)
                         }
                     >
                         Volver a tienda
@@ -415,7 +413,8 @@ export default function StoreCategoriesClient({
 
                 <div className="qr_page_grid">
 
-                    <div className="qr_page_field">
+                    <div className="mt-2"
+                    style={{fontWeight:"600"}}>
                         <label>Nombre</label>
 
                         <input
@@ -428,7 +427,8 @@ export default function StoreCategoriesClient({
                         />
                     </div>
 
-                    <div className="qr_page_field">
+                    <div className="mt-2" 
+                        style={{fontWeight:"600"}}>
                         <label>URL</label>
 
                         <input
@@ -443,12 +443,15 @@ export default function StoreCategoriesClient({
                             placeholder="remeras"
                         />
 
-                        <small className="qr_page_help">
+                        <small className="qr_page_help"
+                         style={{fontWeight:"400"}}
+                        >
                             URL interna de la categoría.
                         </small>
                     </div>
 
-                    <div className="qr_page_field">
+                    <div className="mt-2" 
+                    style={{fontWeight:"600"}}>
                         <label>Categoría padre</label>
 
                         <select
@@ -480,7 +483,8 @@ export default function StoreCategoriesClient({
                         </select>
                     </div>
 
-                    <div className="qr_page_field">
+                    <div className="mt-2"
+                    style={{fontWeight:"600"}}>
                         <label>Orden</label>
 
                         <input
@@ -496,7 +500,8 @@ export default function StoreCategoriesClient({
                         />
                     </div>
 
-                    <div className="qr_page_field full">
+                    <div className="mt-2"
+                    style={{fontWeight:"600"}}>
                         <label>Descripción</label>
 
                         <textarea
@@ -579,10 +584,10 @@ export default function StoreCategoriesClient({
 
             </div>
 
-            <div className="qr_page_card mt-4">
+            <div className="qr_page_card mt-4 mb-5">
 
                 <h2 className="qr_page_section_title">
-                    Categorías cargadas
+                    Categorías Creadas
                 </h2>
 
                 <div className="tags_table_wrapper mt-3">

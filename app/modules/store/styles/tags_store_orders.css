@@ -1,6 +1,6 @@
 /* =====================================
-   Tags Tienda Admin Orders V2
-   Agregar al final de app/styles/tags_store_admin.css
+   File: app/modules/store/styles/tags_store_orders.css
+   Descripción: Estilos saneados para listado y detalle de pedidos de Tags Tienda.
    ===================================== */
 
 .store_orders_v2,
@@ -8,7 +8,8 @@
     color: #1f2937;
 }
 
-.store_orders_header_v2 {
+.store_orders_header_v2,
+.store_order_detail_header {
     background: #111827;
     color: #ffffff;
     border-radius: 24px;
@@ -17,32 +18,53 @@
     align-items: center;
     justify-content: space-between;
     gap: 20px;
+    margin-bottom: 22px;
 }
 
 .store_orders_header_v2 h1,
 .store_order_detail_header h1 {
     margin: 0;
-    font-size: clamp(26px, 3vw, 36px);
+    font-size: clamp(24px, 3vw, 34px);
     font-weight: 900;
     color: #ffffff;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .store_orders_header_v2 p,
 .store_order_detail_header p {
     margin: 6px 0 0;
-    color: rgba(255,255,255,.82);
+    color: rgba(255, 255, 255, .82);
 }
 
-.store_orders_header_icon {
-    display: inline-flex;
-    width: 42px;
-    height: 42px;
-    align-items: center;
-    justify-content: center;
-    border-radius: 14px;
-    background: #ecfdf5;
-    color: #1f2937;
-    margin-bottom: 10px;
+.store_order_detail_eyebrow {
+    display: block;
+    color: rgba(255, 255, 255, .72);
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    font-weight: 900;
+    font-size: 12px;
+    margin-bottom: 4px;
+}
+
+.store_order_detail_total_box {
+    margin-left: auto;
+    padding: 14px 18px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, .1);
+    min-width: 180px;
+}
+
+.store_order_detail_total_box small {
+    display: block;
+    color: rgba(255, 255, 255, .75);
+    margin-bottom: 4px;
+}
+
+.store_order_detail_total_box strong {
+    font-size: 24px;
+    color: #ffffff;
 }
 
 .store_orders_header_actions,
@@ -53,25 +75,40 @@
     justify-content: flex-end;
 }
 
-.store_orders_btn {
+.store_orders_btn,
+.qr_page_btn.store_orders_btn {
     border: none;
     border-radius: 12px;
     padding: 11px 16px;
     font-weight: 800;
     cursor: pointer;
-    transition: transform .15s ease, opacity .15s ease;
+    transition: transform .15s ease, opacity .15s ease, background .15s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-decoration: none;
 }
 
 .store_orders_btn:hover {
     transform: translateY(-1px);
 }
 
+.store_orders_btn:disabled {
+    opacity: .55;
+    cursor: not-allowed;
+    transform: none;
+}
+
 .store_orders_btn.secondary {
     background: #ffffff;
     color: #111827;
+    border: 1px solid #e5e7eb;
 }
 
-.store_orders_btn.primary {
+.store_orders_btn.primary,
+.store_orders_btn.success,
+.qr_page_btn.success {
     background: #16a34a;
     color: #ffffff;
 }
@@ -97,12 +134,32 @@
     border-radius: 18px;
     background: #ffffff;
     border: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
 
 .store_orders_kpi.soft,
 .store_orders_kpi.revenue {
     background: #ecfdf5;
     border-color: #bbf7d0;
+}
+
+.store_orders_kpi.clickable {
+    cursor: pointer;
+    transition: .2s;
+}
+
+.store_orders_kpi.clickable:hover {
+    transform: translateY(-2px);
+}
+
+.store_orders_kpi.warning {
+    border: 1px solid #f59e0b;
+}
+
+.store_orders_kpi.danger {
+    border: 1px solid #fecaca;
 }
 
 .store_orders_kpi small {
@@ -117,11 +174,54 @@
     color: #1f2937;
 }
 
+.store_orders_kpi svg,
+.store_orders_kpi_icon {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: #c5f4de;
+    color: #15803d;
+    padding: 10px;
+}
+
 .store_orders_toolbar {
     display: grid;
     grid-template-columns: 1fr 220px 220px;
     gap: 10px;
     margin-bottom: 14px;
+}
+
+.store_orders_search_box {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+    min-width: 280px;
+    flex: 1;
+}
+
+.store_orders_search_box input {
+    flex: 1;
+}
+
+.store_orders_search_btn {
+    border: 1px solid #bbf7d0;
+    background: #dcfce7;
+    color: #166534;
+    border-radius: 12px;
+    padding: 0 16px;
+    min-width: 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: .2s;
+}
+
+.store_orders_search_btn:hover {
+    background: #bbf7d0;
 }
 
 .store_orders_toolbar input,
@@ -164,6 +264,7 @@
     font-size: 13px;
     text-transform: uppercase;
     letter-spacing: .04em;
+    white-space: nowrap;
 }
 
 .store_orders_table_v2 td {
@@ -174,6 +275,22 @@
 
 .store_orders_table_v2 tr:hover td {
     background: #fafafa;
+}
+
+.store_orders_table_v2 input,
+.store_orders_table_v2 select {
+    width: 100%;
+    min-height: 40px;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    padding: 8px 10px;
+    background: #ffffff;
+    font-weight: 700;
+}
+
+.store_orders_table_v2 input:disabled {
+    background: #f3f4f6;
+    color: #6b7280;
 }
 
 .store_order_link {
@@ -206,14 +323,18 @@
 }
 
 .store_status_badge.order_new,
-.store_status_badge.payment_pending {
+.store_status_badge.payment_pending,
+.store_status_badge.stock_low_stock {
     background: #fef3c7;
+    color: #92400e;
 }
 
 .store_status_badge.order_confirmed,
 .store_status_badge.payment_paid,
-.store_status_badge.order_completed {
+.store_status_badge.order_completed,
+.store_status_badge.stock_ok {
     background: #dcfce7;
+    color: #166534;
 }
 
 .store_status_badge.order_shipped {
@@ -222,8 +343,10 @@
 
 .store_status_badge.order_cancelled,
 .store_status_badge.payment_cancelled,
-.store_status_badge.payment_refunded {
+.store_status_badge.payment_refunded,
+.store_status_badge.stock_no_stock {
     background: #fee2e2;
+    color: #991b1b;
 }
 
 .store_orders_actions_cell {
@@ -239,40 +362,37 @@
     font-weight: 700;
 }
 
-.store_order_detail_eyebrow {
-    display: block;
-    color: rgba(255,255,255,.7);
-    text-transform: uppercase;
-    letter-spacing: .08em;
-    font-weight: 900;
-    font-size: 12px;
-    margin-bottom: 4px;
+.store_orders_pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+    flex-wrap: wrap;
 }
 
-.store_order_detail_total_box {
-    margin-left: auto;
-    padding: 14px 18px;
-    border-radius: 18px;
-    background: rgba(255,255,255,.1);
-    min-width: 180px;
+.store_orders_pagination_info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: .95rem;
+    font-weight: 600;
 }
 
-.store_order_detail_total_box small {
-    display: block;
-    color: rgba(255,255,255,.75);
-    margin-bottom: 4px;
+.store_orders_pagination_info small {
+    opacity: .7;
+    font-weight: 400;
 }
 
-.store_order_detail_total_box strong {
-    font-size: 24px;
-    color: #ffffff;
-}
+/* ================================
+   Detalle de pedido saneado
+   ================================ */
 
 .store_order_status_line {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 10px;
-    margin-bottom: 18px;
+    margin-bottom: 16px;
 }
 
 .store_order_status_line > div {
@@ -284,11 +404,12 @@
 
 .store_order_status_line small,
 .store_order_customer_panel small,
-.store_order_delivery_panel dt {
+.store_order_delivery_panel dt,
+.store_order_activity_col small {
     display: block;
     color: #6b7280;
-    font-size: 12px;
-    font-weight: 800;
+    font-size: 11px;
+    font-weight: 900;
     text-transform: uppercase;
     letter-spacing: .04em;
     margin-bottom: 5px;
@@ -301,18 +422,98 @@
     font-weight: 900;
 }
 
-.store_order_detail_layout {
+.store_order_tabs {
+    display: inline-flex;
+    gap: 8px;
+    padding: 6px;
+    margin-bottom: 18px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+}
+
+.store_order_tabs button {
+    border: none;
+    background: transparent;
+    color: #64748b;
+    border-radius: 12px;
+    padding: 11px 16px;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+.store_order_tabs button.active {
+    background: #16a34a;
+    color: #ffffff;
+}
+
+.store_order_tab_panel {
+    animation: storeOrderFade .12s ease-out;
+}
+
+@keyframes storeOrderFade {
+    from {
+        opacity: .7;
+        transform: translateY(4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.store_order_summary_layout,
+.store_order_ops_layout {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 360px;
+    grid-template-columns: minmax(0, 1.45fr) minmax(320px, .75fr);
     gap: 18px;
     align-items: start;
+}
+
+.store_order_ops_layout {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
+}
+
+.store_order_stack {
+    display: grid;
+    gap: 16px;
+}
+
+.store_order_panel,
+.store_order_totals_panel,
+.store_order_delivery_panel,
+.store_order_products_panel,
+.store_order_customer_panel,
+.store_order_management_panel,
+.store_order_quote_panel,
+.store_order_activity_box {
+    border-radius: 18px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+}
+
+.store_order_panel,
+.store_order_management_panel.clean,
+.store_order_quote_panel.clean,
+.store_order_activity_box {
+    padding: 16px;
+}
+
+.store_order_management_panel.featured {
+    border-color: #bbf7d0;
+    box-shadow: 0 16px 35px rgba(22, 163, 74, .08);
 }
 
 .store_order_section_head {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 10px;
+    margin-bottom: 14px;
+}
+
+.store_order_section_head.compact {
+    margin-bottom: 12px;
 }
 
 .store_order_section_head h2,
@@ -323,73 +524,50 @@
     color: #1f2937;
     font-size: 20px;
     font-weight: 900;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
 }
 
-.store_order_section_head span {
+.store_order_section_head h2 svg,
+.store_order_delivery_panel h3 svg,
+.store_order_management_panel h2 svg,
+.store_order_quote_panel h2 svg {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    padding: 10px;
+    border-radius: 999px;
+    background: #c5f4de;
+    color: #15803d;
+}
+
+.store_order_section_head > span {
     color: #6b7280;
     font-weight: 800;
 }
 
-.store_order_summary_grid {
-    display: grid;
-    grid-template-columns: 340px 1fr;
-    gap: 14px;
+.store_order_totals_panel.clean,
+.store_order_products_panel.clean {
+    overflow: hidden;
 }
 
-.store_order_totals_panel,
-.store_order_delivery_panel,
-.store_order_products_panel,
-.store_order_customer_panel,
-.store_order_management_panel,
-.store_order_quote_panel {
-    border-radius: 18px;
-    background: #ffffff;
-    border: 1px solid #e5e7eb;
-}
-
-.store_order_totals_panel {
-    padding: 16px;
-}
-
-.store_order_totals_panel > div {
+.store_order_totals_panel.clean > div {
     display: flex;
     justify-content: space-between;
     gap: 16px;
-    padding: 10px 0;
+    padding: 12px 16px;
     color: #374151;
     border-bottom: 1px solid #f1f5f9;
 }
 
-.store_order_totals_panel > div:last-child {
+.store_order_totals_panel.clean > div:last-child {
     border-bottom: none;
 }
 
 .store_order_total_final {
-    margin-top: 6px;
-    padding-top: 16px !important;
     font-size: 20px;
-}
-
-.store_order_delivery_panel {
-    padding: 16px;
-    background: #ecfdf5;
-    border-color: #bbf7d0;
-}
-
-.store_order_delivery_panel dl {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px 18px;
-    margin: 14px 0 0;
-}
-
-.store_order_delivery_panel dt,
-.store_order_delivery_panel dd {
-    margin: 0;
-}
-
-.store_order_products_panel {
-    overflow: hidden;
+    background: #f9fafb;
 }
 
 .store_order_product_row {
@@ -437,16 +615,36 @@
     color: #1f2937;
 }
 
-.store_order_side_column {
-    display: grid;
-    gap: 14px;
-    position: sticky;
-    top: 14px;
+.store_order_delivery_panel.clean {
+    padding: 16px;
+    background: #ecfdf5;
+    border-color: #bbf7d0;
 }
 
-.store_order_management_panel,
-.store_order_quote_panel {
-    padding: 16px;
+.store_order_delivery_panel dl {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 18px;
+    margin: 14px 0 0;
+}
+
+.store_order_delivery_panel dl .wide {
+    grid-column: 1 / -1;
+}
+
+.store_order_delivery_panel dt,
+.store_order_delivery_panel dd {
+    margin: 0;
+}
+
+.store_order_delivery_panel dt {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.store_order_delivery_panel dt svg {
+    color: #15803d;
 }
 
 .store_order_management_panel label {
@@ -457,7 +655,43 @@
     font-weight: 800;
 }
 
-.store_order_quote_panel {
+.store_order_panel_hint {
+    margin: 8px 0 14px;
+    color: #64748b;
+    font-weight: 650;
+    line-height: 1.45;
+}
+
+.store_order_form_grid.two {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.store_order_action_grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.store_order_notification_actions {
+    display: grid;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+.store_order_notification_actions .store_orders_btn {
+    border: 1px solid #d1d5db;
+    background: #ffffff;
+    color: #111827;
+}
+
+.store_order_notification_actions .store_orders_btn:hover {
+    background: #f3f4f6;
+}
+
+.store_order_quote_panel.clean {
     background: #ecfdf5;
     border-color: #bbf7d0;
 }
@@ -473,15 +707,111 @@
     color: #1f2937;
 }
 
+/* Actividad */
+
+.store_order_activity_list {
+    display: grid;
+    gap: 10px;
+}
+
+.store_order_activity_card {
+    display: grid;
+    grid-template-columns: 42px 145px 135px 145px 115px minmax(180px, 1fr);
+    gap: 12px;
+    align-items: center;
+    width: 100%;
+    padding: 12px 14px;
+    background: #ffffff;
+    border: 1px solid #dfe5ec;
+    border-radius: 14px;
+}
+
+.store_order_activity_badge {
+    width: 36px;
+    height: 36px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.store_order_activity_badge.success {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.store_order_activity_badge.warning {
+    background: #fef3c7;
+    color: #b45309;
+}
+
+.store_order_activity_badge.danger {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.store_order_activity_col {
+    min-width: 0;
+}
+
+.store_order_activity_col strong {
+    display: block;
+    font-size: 12px;
+    font-weight: 800;
+    color: #111827;
+    line-height: 1.25;
+    word-break: break-word;
+}
+
+.store_order_activity_pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px 9px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 900;
+    text-transform: uppercase;
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.store_order_activity_pill.success {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.store_order_activity_pill.warning {
+    background: #fef3c7;
+    color: #b45309;
+}
+
+.store_order_activity_pill.danger {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
 @media (max-width: 1100px) {
-    .store_order_status_line,
-    .store_order_summary_grid,
-    .store_order_detail_layout {
-        grid-template-columns: 1fr;
+    .store_orders_kpis {
+        grid-template-columns: repeat(3, 1fr);
     }
 
-    .store_order_side_column {
-        position: static;
+    .store_order_status_line,
+    .store_order_summary_layout,
+    .store_order_ops_layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 900px) {
+    .store_order_activity_card {
+        grid-template-columns: 36px 1fr;
+    }
+
+    .store_order_activity_col {
+        grid-column: 2;
     }
 }
 
@@ -498,10 +828,9 @@
         justify-content: flex-start;
     }
 
-    .store_orders_toolbar {
-        grid-template-columns: 1fr;
-    }
-
+    .store_orders_toolbar,
+    .store_order_form_grid.two,
+    .store_order_action_grid,
     .store_order_customer_panel,
     .store_order_delivery_panel dl,
     .store_order_product_row {
@@ -512,329 +841,109 @@
         margin-left: 0;
         width: 100%;
     }
-}
 
-
-/* ================================
-   Orders V2 visual icon layer
-   ================================ */
-.store_orders_v2 svg,
-.store_order_detail_v2 svg {
-    flex: 0 0 auto;
-}
-
-.store_orders_header_icon svg {
-    width: 22px;
-    height: 22px;
-}
-
-.store_orders_kpi {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.store_orders_kpi_icon {
-    width: 42px;
-    height: 42px;
-    min-width: 42px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 999px;
-    background: #c5f4de;
-    color: #15803d;
-}
-
-.store_orders_kpi_icon svg {
-    width: 18px;
-    height: 18px;
-}
-
-.store_orders_table_v2 th {
-    white-space: nowrap;
-}
-
-.store_orders_table_v2 th svg {
-    margin-right: 6px;
-    vertical-align: -2px;
-    color: #15803d;
-}
-
-.store_order_detail_header h1,
-.store_order_section_head h2,
-.store_order_delivery_panel h3,
-.store_order_management_panel h2,
-.store_order_quote_panel h2 {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.store_order_detail_header h1 svg,
-.store_order_section_head h2 svg,
-.store_order_delivery_panel h3 svg,
-.store_order_management_panel h2 svg,
-.store_order_quote_panel h2 svg {
-    color: #15803d;
-}
-
-.store_order_section_head h2 svg,
-.store_order_delivery_panel h3 svg {
-
-    width: 52px;
-    height: 52px;
-
-    min-width: 52px;
-
-    padding: 14px;
-
-    border-radius: 999px;
-
-    background: #c5f4de;
-    color: #15803d;
-
-    box-shadow:
-        0 10px 24px rgba(21, 128, 61, .14);
-}
-
-.store_order_section_head h2,
-.store_order_delivery_panel h3 {
-
-    display: flex;
-    align-items: center;
-    gap: 14px;
-
-    font-size: 22px;
-    font-weight: 800;
-
-    color: #111827;
-}
-
-.store_orders_kpi svg {
-    width: 48px;
-    height: 48px;
-    padding: 12px;
-    border-radius: 999px !important;
-    background: #c5f4de;
-    color: #15803d;
-}
-
-.store_order_detail_actions .store_orders_btn,
-.store_orders_btn.primary,
-.store_orders_btn.secondary,
-.store_orders_btn.dark {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-}
-
-.store_order_delivery_panel dt {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.store_order_delivery_panel dt svg {
-    color: #15803d;
-}
-@media (max-width: 1024px) {
-
-    .store_orders_kpis {
-        grid-template-columns: repeat(3, 1fr);
+    .store_order_tabs {
+        display: grid;
+        grid-template-columns: 1fr;
+        width: 100%;
     }
-
-}
-
-@media (max-width: 768px) {
-
-    .store_orders_kpis {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
 }
 
 @media (max-width: 576px) {
-
     .store_orders_kpis {
         grid-template-columns: 1fr;
-        
-    }
-
-}
-@media (max-width: 600px) {
-    .store_orders_header_v2 {
-        display: block;
-    }
-
-    .store_orders_header_v2 > div:first-child {
-        text-align: left;
-    }
-
-    .store_orders_header_v2 .d-flex.align-items-center {
-        justify-content: center;
-    }
-
-    .store_orders_header_v2 p {
-        text-align: left;
-    }
-
-    .store_orders_header_v2 > div:last-child {
-        display: grid !important;
-        grid-template-columns: 1fr;
-        gap: 10px;
     }
 }
 
-/* =====================================
-   FIX: Detalle pedido - encabezado y acciones
-===================================== */
-
-.store_order_detail_header {
-    color: #111827;
-    margin-bottom: 24px;
-}
-
-.store_order_detail_header h1,
-.store_order_detail_header p,
-.store_order_detail_header small,
-.store_order_detail_header span,
-.store_order_detail_header strong {
-    color: #111827;
-}
-
-.store_order_detail_eyebrow {
-    color: #6b7280 !important;
-}
-
-.store_order_detail_actions {
-    margin-top: 18px;
-    margin-bottom: 18px;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-
-/* =====================================
-   FIX: Notificaciones
-===================================== */
-
-.store_order_notification_actions {
+/* --------- Ajustes de Tabla y Badges ----------- */
+.store_orders_toolbar {
     display: grid;
+    grid-template-columns: minmax(260px, 1fr) 180px 180px 180px;
     gap: 10px;
-    margin-top: 14px;
 }
 
-.store_order_notification_actions .store_orders_btn {
+.store_orders_table_scroll {
+    overflow-x: auto;
+}
+
+.store_orders_table_v2 {
     width: 100%;
-    justify-content: center;
-    font-weight: 700;
-    border: 1px solid #d1d5db;
+    min-width: 1180px;
+    table-layout: auto;
+}
+
+.store_orders_table_v2 th,
+.store_orders_table_v2 td {
+    white-space: nowrap;
+}
+
+.store_orders_table_v2 td:nth-child(7),
+.store_orders_table_v2 th:nth-child(7) {
+    white-space: normal;
+    min-width: 260px;
+}
+
+.store_orders_actions_cell {
+    position: sticky;
+    right: 0;
     background: #ffffff;
-    color: #111827;
-    border-radius: 12px;
-    padding: 12px 14px;
-    text-align: center;
+    z-index: 2;
+    box-shadow: -8px 0 12px rgba(15, 23, 42, .05);
 }
 
-.store_order_notification_actions .store_orders_btn:hover {
-    background: #f3f4f6;
+.store_orders_table_v2 th:last-child {
+    position: sticky;
+    right: 0;
+    background: #f9fafb;
+    z-index: 3;
 }
-.store_orders_kpi.clickable {
-    cursor: pointer;
-    transition: .2s;
-}
-
-.store_orders_kpi.clickable:hover {
-    transform: translateY(-2px);
+.store_status_badge.shipping_pending {
+    background: #fef3c7;
 }
 
-.store_orders_kpi.warning {
-    border: 1px solid #f59e0b;
-}
-.store_orders_pagination {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 15px;
-    margin-top: 20px;
-    flex-wrap: wrap;
+.store_status_badge.shipping_ready {
+    background: #dbeafe;
 }
 
-.store_orders_pagination_info {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    font-size: .95rem;
-    font-weight: 600;
+.store_status_badge.shipping_shipped,
+.store_status_badge.shipping_in_transit {
+    background: #e0f2fe;
 }
 
-.store_orders_pagination_info small {
-    opacity: .7;
-    font-weight: 400;
-}
-.store_orders_search_box {
-    display: flex;
-    align-items: stretch;
-    gap: 8px;
-    min-width: 280px;
-    flex: 1;
-}
-
-.store_orders_search_box input {
-    flex: 1;
-}
-
-.store_orders_search_btn {
-    border: 1px solid #bbf7d0;
+.store_status_badge.shipping_delivered {
     background: #dcfce7;
-    color: #166534;
-    border-radius: 12px;
-    padding: 0 16px;
-    min-width: 48px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    transition: .2s;
 }
 
-.store_orders_search_btn:hover {
-    background: #bbf7d0;
+.store_status_badge.shipping_cancelled,
+.store_status_badge.shipping_returned {
+    background: #fee2e2;
 }
-.store_status_badge.stock_ok {
-    background: #dcfce7;
-    color: #166534;
-}
-
-.store_status_badge.stock_low_stock {
+.store_status_badge.order_new {
     background: #fef3c7;
     color: #92400e;
 }
 
-.store_status_badge.stock_no_stock {
+.store_status_badge.order_confirmed {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.store_status_badge.order_preparing {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.store_status_badge.order_shipped {
+    background: #e0f2fe;
+    color: #075985;
+}
+
+.store_status_badge.order_completed {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.store_status_badge.order_cancelled {
     background: #fee2e2;
     color: #991b1b;
-}
-
-.store_orders_kpi.danger {
-    border: 1px solid #fecaca;
-}
-.store_orders_table_v2 input,
-.store_orders_table_v2 select {
-    width: 100%;
-    min-height: 40px;
-    border: 1px solid #d1d5db;
-    border-radius: 10px;
-    padding: 8px 10px;
-    background: #ffffff;
-    font-weight: 700;
-}
-
-.store_orders_table_v2 input:disabled {
-    background: #f3f4f6;
-    color: #6b7280;
-}
-
-.store_orders_table_v2 td {
-    vertical-align: middle;
 }

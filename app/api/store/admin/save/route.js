@@ -6,8 +6,16 @@
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+import {
+    installStoreDemoContent
+}
+    from "@/app/modules/store/lib/installStoreDemoContent";
 
 import { db } from "@/app/lib/tags-db";
+import {
+    installStoreTemplate
+}
+    from "@/app/modules/store/lib/installStoreTemplate";
 
 function createSlug(value) {
     return String(value || "")
@@ -301,6 +309,19 @@ export async function POST(req) {
 
         const newStoreId =
             storeResult.insertId;
+
+        // =====================================
+        // INSTALAR TEMPLATE INICIAL
+        // =====================================
+
+        await installStoreTemplate(
+            newStoreId,
+            conn
+        );
+        await installStoreDemoContent(
+            newStoreId,
+            conn
+        );
 
         // =====================================
         // CREATE DEFAULT CATEGORY

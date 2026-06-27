@@ -7,13 +7,14 @@
 
 import "@/app/styles/tags_store_admin.css";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import showAlert from "@/app/components/showAlert";
 import TagsSpinner from "@/app/components/TagsSpinner";
 import MediaUploader from "@/app/components/MediaUploader";
 
-
+import StoreCouponsTab
+    from "@/app/modules/store/components/admin/StoreCouponsTab";
 
 import "@/app/styles/qr-page.css";
 import "@/app/styles/tags_dashboard.css";
@@ -61,6 +62,11 @@ export default function StoreAdminClient({
 
 
     const router = useRouter();
+    const searchParams =
+        useSearchParams();
+
+    const initialTab =
+        searchParams.get("tab");
 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -68,7 +74,8 @@ export default function StoreAdminClient({
     const [store, setStore] = useState(null);
     const [form, setForm] = useState(emptyStore);
 
-    const [activeTab, setActiveTab] = useState("general");
+    const [activeTab, setActiveTab] =
+        useState(initialTab || "general");
     const [mobileGroup, setMobileGroup] = useState(0);
 
     const [themes, setThemes] =
@@ -96,7 +103,7 @@ export default function StoreAdminClient({
             items: [
                 ["products", "Productos", "ready"],
                 ["categories", "Categorías", "ready"],
-                ["coupons", "Cupones", "soon"]
+                ["coupons", "Cupones", "ready"]
             ]
         },
         {
@@ -361,31 +368,33 @@ export default function StoreAdminClient({
     function getStoreRoute(key) {
         const routes = {
             products:
-                `/dashboard/businesses/${businessId}/store/products`,
+                `/dashboard/businesses/${businessId}/store/products?from=products`,
 
             categories:
-                `/dashboard/businesses/${businessId}/store/categories`,
+                `/dashboard/businesses/${businessId}/store/categories?from=categories`,
 
             stock:
-                `/dashboard/businesses/${businessId}/store/stock`,
+                `/dashboard/businesses/${businessId}/store/stock?from=stock`,
 
             inventory:
-                `/dashboard/businesses/${businessId}/store/inventory`,
+                `/dashboard/businesses/${businessId}/store/inventory?from=inventory`,
 
             retained:
-                `/dashboard/businesses/${businessId}/store/stock`,
+                `/dashboard/businesses/${businessId}/store/stock?from=retained`,
 
             orders:
-                `/dashboard/businesses/${businessId}/store/orders`,
+                `/dashboard/businesses/${businessId}/store/orders?from=orders`,
 
             abandonedOrders:
-                `/dashboard/businesses/${businessId}/store/stock`,
+                `/dashboard/businesses/${businessId}/store/stock?from=abandonedOrders`,
 
             shipping:
-                `/dashboard/businesses/${businessId}/store/shipping`,
+                `/dashboard/businesses/${businessId}/store/shipping?from=shipping`,
 
             payments:
-                `/dashboard/businesses/${businessId}/store/payments`
+                `/dashboard/businesses/${businessId}/store/payments?from=payments`,
+            coupons:
+                `/dashboard/businesses/${businessId}/store/coupons?from=coupons`,
         };
 
         if (key === "orderTracking") {
@@ -402,7 +411,8 @@ export default function StoreAdminClient({
             "general",
             "contact",
             "styles",
-            "seo"
+            "seo",
+
         ].includes(key);
     }
 
@@ -488,15 +498,24 @@ export default function StoreAdminClient({
         const firstItem =
             tabGroups[index]?.items?.[0];
 
-        const firstTab =
-            firstItem?.[0];
-
-        if (
-            firstTab &&
-            isInternalStoreTab(firstTab)
-        ) {
-            setActiveTab(firstTab);
+        if (!firstItem) {
+            return;
         }
+
+        const [key, label, status] =
+            firstItem;
+
+        if (status === "soon") {
+            setActiveTab("");
+            return;
+        }
+
+        if (isInternalStoreTab(key)) {
+            setActiveTab(key);
+            return;
+        }
+
+        setActiveTab("");
     }
 
     function renderMobileTabs() {
@@ -777,7 +796,7 @@ export default function StoreAdminClient({
                             )
                     }
 
-                    <button
+                    {/* <button
                         type="button"
                         className="qr_page_btn"
                         onClick={handleSave}
@@ -788,7 +807,7 @@ export default function StoreAdminClient({
                                 ? "Guardando..."
                                 : "Guardar"
                         }
-                    </button>
+                    </button> */}
 
                 </div>
 
@@ -829,6 +848,15 @@ export default function StoreAdminClient({
                 {renderMobileTabs()}
 
             </div>
+            {
+                !activeTab && (
+                    <div className="qr_page_card">
+                        <div className="qr_page_info_box">
+                            Elegí una opción de la sección seleccionada.
+                        </div>
+                    </div>
+                )
+            }
 
             {
                 activeTab === "general" && (
@@ -969,6 +997,64 @@ export default function StoreAdminClient({
                                     <option value="ARS">ARS</option>
                                     <option value="USD">USD</option>
                                 </select>
+                            </div>
+
+                            <div className="qr_page_field">
+                                <label>Ctalálogo: Productos por página</label>
+                                <select
+                                    className="qr_page_select"
+                                    value={form.settings_json?.productsPerPage || 12}
+                                    onChange={(e) =>
+                                        updateSettingField(
+                                            "productsPerPage",
+                                            Number(e.target.value)
+                                        )
+                                    }
+                                >
+                                    <option value={12}>12 productos</option>
+                                    <option value={24}>24 productos</option>
+                                    <option value={36}>36 productos</option>
+                                </select>
+                            </div>
+
+                            <div className="qr_page_field">
+                                <label>Inventario: Stock mínimo para alerta</label>
+                                <input
+                                    className="qr_page_input"
+                                    type="number"
+                                    min="0"
+                                    value={form.settings_json?.minStockAlert ?? 5}
+                                    onChange={(e) =>
+                                        updateSettingField(
+                                            "minStockAlert",
+                                            Number(e.target.value)
+                                        )
+                                    }
+                                />
+                            </div>
+
+                            <div className="qr_page_field">
+                                <label>Inventario: Horas para liberar stock retenido</label>
+                                <select
+                                    className="qr_page_select"
+                                    value={form.settings_json?.stockHoldHours || 72}
+                                    onChange={(e) =>
+                                        updateSettingField(
+                                            "stockHoldHours",
+                                            Number(e.target.value)
+                                        )
+                                    }
+                                >
+                                    <option value={24}>24 horas</option>
+                                    <option value={48}>48 horas</option>
+                                    <option value={72}>72 horas</option>
+                                    <option value={96}>96 horas</option>
+                                    <option value={168}>7 días</option>
+                                </select>
+
+                                <small className="qr_page_help">
+                                    Si un pedido queda pendiente de pago o confirmación, el stock retenido se libera automáticamente después de este tiempo.
+                                </small>
                             </div>
 
                             <div className="qr_page_field">
@@ -1267,6 +1353,13 @@ export default function StoreAdminClient({
                 )
             }
 
+            {
+                activeTab === "coupons" && (
+                    <StoreCouponsTab
+                        businessId={businessId}
+                    />
+                )
+            }
 
             <style jsx global>{`
                 .store_admin_feature_grid {

@@ -1,6 +1,7 @@
 // =====================================
 // API: /api/client-reviews/public/submit
 // Descripción: Guarda una respuesta pública de ClientsReviews y sus calificaciones.
+// Soporta reseñas comunes y reseñas verificadas desde Tags Tienda.
 // =====================================
 
 export const runtime = "nodejs";
@@ -18,6 +19,10 @@ function hashIP(ip) {
         .digest("hex");
 }
 
+function clean(value) {
+    return String(value || "").trim();
+}
+
 export async function POST(req) {
     const conn = await db.getConnection();
 
@@ -30,7 +35,8 @@ export async function POST(req) {
             customer_email = null,
             customer_phone = null,
             general_comment = null,
-            answers = []
+            answers = [],
+            reviewToken = null
         } = body;
 
         if (!formId) {
@@ -67,6 +73,69 @@ export async function POST(req) {
             );
         }
 
+        let verifiedPurchase = 0;
+        let storeId = null;
+        let orderId = null;
+        let reviewTokenId = null;
+
+        const cleanReviewToken =
+            clean(reviewToken);
+
+        if (cleanReviewToken) {
+            const [tokenRows] = await conn.query(
+                `
+                SELECT
+                    t.id,
+                    t.store_id,
+                    t.order_id,
+                    t.used_at,
+                    t.expires_at,
+                    s.business_id
+                FROM tags_store_review_tokens t
+
+                INNER JOIN tags_stores s
+                    ON s.id = t.store_id
+
+                WHERE t.token = ?
+                AND t.used_at IS NULL
+                AND t.expires_at > NOW()
+                LIMIT 1
+                `,
+                [cleanReviewToken]
+            );
+
+            const tokenRow =
+                tokenRows[0];
+
+            if (!tokenRow) {
+                return Response.json(
+                    {
+                        error:
+                            "El enlace de reseña verificada no es válido o ya fue usado."
+                    },
+                    { status: 403 }
+                );
+            }
+
+            if (
+                Number(tokenRow.business_id) !==
+                Number(form.business_id)
+            ) {
+                return Response.json(
+                    {
+                        error:
+                            "El enlace de reseña no pertenece a este negocio."
+                    },
+                    { status: 403 }
+                );
+            }
+
+            verifiedPurchase = 1;
+            storeId = tokenRow.store_id;
+            orderId = tokenRow.order_id;
+            reviewTokenId = tokenRow.id;
+        }
+
         const ratings = answers
             .map(a => Number(a.rating))
             .filter(v => v >= 1 && v <= 5);
@@ -97,6 +166,35 @@ export async function POST(req) {
         const userAgent =
             req.headers.get("user-agent") || null;
 
+        /* Existe ya una Reseña para este Pedido? */
+        const [existingReviewRows] =
+            await conn.query(
+                `
+        SELECT id
+        FROM tags_client_review_responses
+        WHERE store_id = ?
+        AND order_id = ?
+        AND verified_purchase = 1
+        LIMIT 1
+        `,
+                [
+                    tokenRow.store_id,
+                    tokenRow.order_id
+                ]
+            );
+
+        if (existingReviewRows.length > 0) {
+            return Response.json(
+                {
+                    error:
+                        "Esta compra ya fue calificada."
+                },
+                {
+                    status: 409
+                }
+            );
+        }
+
         await conn.beginTransaction();
 
         const [responseResult] = await conn.query(
@@ -117,9 +215,13 @@ export async function POST(req) {
                 source,
                 user_agent,
                 ip_hash,
-                status
+                status,
+                verified_purchase,
+                store_id,
+                order_id,
+                review_token_id
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'qr', ?, ?, 'new')
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'new', ?, ?, ?, ?)
             `,
             [
                 form.id,
@@ -134,8 +236,13 @@ export async function POST(req) {
                 minRating,
                 maxRating,
                 googlePromptShown,
+                verifiedPurchase ? "store_verified_purchase" : "qr",
                 userAgent,
-                hashIP(ip)
+                hashIP(ip),
+                verifiedPurchase,
+                storeId,
+                orderId,
+                reviewTokenId
             ]
         );
 
@@ -163,6 +270,19 @@ export async function POST(req) {
             );
         }
 
+        if (reviewTokenId) {
+            await conn.query(
+                `
+                UPDATE tags_store_review_tokens
+                SET used_at = NOW(),
+                    updated_at = NOW()
+                WHERE id = ?
+                AND used_at IS NULL
+                `,
+                [reviewTokenId]
+            );
+        }
+
         await conn.commit();
 
         return Response.json({
@@ -170,7 +290,8 @@ export async function POST(req) {
             responseId,
             averageRating: average,
             googlePromptShown: Boolean(googlePromptShown),
-            googleReviewUrl: form.google_review_url || null
+            googleReviewUrl: form.google_review_url || null,
+            verifiedPurchase: Boolean(verifiedPurchase)
         });
 
     } catch (err) {

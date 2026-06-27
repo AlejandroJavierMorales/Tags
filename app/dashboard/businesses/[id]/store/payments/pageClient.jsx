@@ -287,10 +287,10 @@ export default function StorePaymentsClient({
                         type="button"
                         className="qr_page_btn secondary"
                         onClick={() =>
-                            router.push(`/dashboard/businesses/${businessId}/store`)
+                            router.push(`/dashboard/businesses/${businessId}/store?tab=payments`)
                         }
                     >
-                        Volver a tienda
+                        Volver
                     </button>
                 </div>
             </div>

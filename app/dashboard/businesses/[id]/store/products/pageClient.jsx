@@ -333,14 +333,12 @@ export default function StoreProductsClient({
 
                     <button
                         type="button"
-                        className="store_admin_small_btn"
+                        className="qr_page_btn secondary"
                         onClick={() =>
-                            router.push(
-                                `/dashboard/businesses/${businessId}/store`
-                            )
+                            router.push(`/dashboard/businesses/${businessId}/store?tab=products`)
                         }
                     >
-                        Volver a tienda
+                        Volver
                     </button>
 
                     <button

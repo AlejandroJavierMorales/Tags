@@ -12,6 +12,15 @@ import QRPageRenderer
 import ClientReviewsPublicRenderer from "@/app/modules/client-reviews/renderers/ClientReviewsPublicRenderer";
 import StorePublicRenderer from "@/app/modules/store/public/StorePublicRenderer";
 
+
+import {
+    getStorePublicBuilderPage
+}
+    from "@/app/modules/store/lib/getStorePublicBuilderPage";
+
+import "@/app/modules/store/styles/store-public.css";
+import StoreRenderer from "@/app/modules/store/components/StoreRenderer";
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -263,10 +272,381 @@ function getSEOData(page) {
         image
     };
 }
+async function buildStoreStructuredData(slug) {
+    const [rows] =
+        await db.query(
+            `
+            SELECT
+                s.*,
+                p.slug AS page_slug
+            FROM tags_stores s
+            INNER JOIN tags_qr_pages p
+                ON p.id = s.page_id
+            WHERE p.slug = ?
+            AND p.status = 'published'
+            AND p.page_type = 'store'
+            AND s.status = 'published'
+            LIMIT 1
+            `,
+            [slug]
+        );
+
+    const store =
+        rows?.[0];
+
+    if (!store) {
+        return [];
+    }
+
+    const [products] =
+        await db.query(
+            `
+            SELECT
+                p.id,
+                p.title,
+                p.description,
+                p.price,
+                p.sale_price,
+                p.currency,
+                img.image_url
+            FROM tags_store_products p
+            LEFT JOIN tags_store_product_images img
+                ON img.product_id = p.id
+                AND img.is_primary = 1
+            WHERE p.store_id = ?
+            AND p.status = 'published'
+            AND p.is_visible = 1
+            ORDER BY p.is_featured DESC, p.created_at DESC
+            LIMIT 20
+            `,
+            [store.id]
+        );
+
+    const baseUrl =
+        getBaseUrl();
+
+    const storeUrl =
+        `${baseUrl}/p/${store.page_slug}`;
+
+    return [
+
+        cleanObject({
+            "@context": "https://schema.org",
+            "@type": "Store",
+            "@id":
+                `${storeUrl}#store`,
+            name:
+                store.name,
+            url:
+                storeUrl,
+            description:
+                store.seo_description ||
+                store.description,
+            email:
+                store.email,
+            telephone:
+                store.whatsapp,
+            address:
+                store.address
+                    ? {
+                        "@type": "PostalAddress",
+                        streetAddress:
+                            store.address
+                    }
+                    : undefined,
+            logo:
+                absoluteUrl(
+                    store.logo_url
+                ),
+            image:
+                absoluteUrl(
+                    store.cover_url ||
+                    store.logo_url
+                ),
+            priceRange:
+                "$$",
+            currenciesAccepted:
+                store.currency ||
+                "ARS",
+            paymentAccepted: [
+                "Mercado Pago",
+                "Transferencia Bancaria",
+                "WhatsApp"
+            ]
+        }),
+
+        cleanObject({
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            "@id":
+                `${storeUrl}#organization`,
+            name:
+                store.name,
+            url:
+                storeUrl,
+            logo:
+                absoluteUrl(
+                    store.logo_url
+                ),
+            image:
+                absoluteUrl(
+                    store.cover_url ||
+                    store.logo_url
+                ),
+            email:
+                store.email,
+            telephone:
+                store.whatsapp
+        }),
+
+        cleanObject({
+            "@context": "https://schema.org",
+            "@type": "WebPage",
+            "@id":
+                `${storeUrl}#webpage`,
+            name:
+                store.seo_title ||
+                `${store.name} | Tienda Online`,
+            description:
+                store.seo_description ||
+                store.description,
+            url:
+                storeUrl,
+            about: {
+                "@id":
+                    `${storeUrl}#store`
+            },
+            potentialAction: {
+                "@type":
+                    "SearchAction",
+                target:
+                    `${storeUrl}?q={search_term_string}`,
+                "query-input":
+                    "required name=search_term_string"
+            }
+        }),
+
+        {
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+                {
+                    "@type": "ListItem",
+                    position: 1,
+                    name: "Inicio",
+                    item: baseUrl
+                },
+                {
+                    "@type": "ListItem",
+                    position: 2,
+                    name: store.name,
+                    item: storeUrl
+                }
+            ]
+        },
+
+        {
+            "@context": "https://schema.org",
+            "@type": "ItemList",
+            name:
+                `Productos de ${store.name}`,
+            itemListElement:
+                products.map(
+                    (product, index) => ({
+                        "@type": "ListItem",
+                        position:
+                            index + 1,
+                        url:
+                            `${storeUrl}/products/${product.id}`,
+                        item:
+                            cleanObject({
+                                "@type": "Product",
+                                name:
+                                    product.title,
+                                description:
+                                    product.description,
+                                image:
+                                    absoluteUrl(
+                                        product.image_url
+                                    ),
+                                offers:
+                                    (
+                                        Number(product.price) > 0 ||
+                                        Number(product.sale_price) > 0
+                                    )
+                                        ? {
+                                            "@type": "Offer",
+                                            price: String(
+                                                product.sale_price ||
+                                                product.price
+                                            ),
+                                            priceCurrency:
+                                                product.currency ||
+                                                store.currency ||
+                                                "ARS",
+                                            availability:
+                                                "https://schema.org/InStock",
+                                            url:
+                                                `${storeUrl}/products/${product.id}`
+                                        }
+                                        : undefined
+                            })
+                    })
+                )
+        }
+
+    ];
+}
+
+async function getStoreSEOData(slug) {
+
+    const [rows] =
+        await db.query(
+            `
+            SELECT
+                s.*,
+                p.slug AS page_slug,
+                p.robots_index,
+                p.robots_follow,
+                p.page_type
+            FROM tags_stores s
+            INNER JOIN tags_qr_pages p
+                ON p.id = s.page_id
+            WHERE p.slug = ?
+            AND p.status = 'published'
+            AND p.page_type = 'store'
+            AND s.status = 'published'
+            LIMIT 1
+            `,
+            [
+                slug
+            ]
+        );
+
+    const store =
+        rows?.[0];
+
+    if (!store) {
+        return null;
+    }
+
+    const title =
+        store.seo_title ||
+        `${store.name} | Tienda Online`;
+
+    const description =
+        store.seo_description ||
+        store.description ||
+        `Comprá productos de ${store.name} de forma simple y segura.`;
+
+    const canonical =
+        absoluteUrl(
+            `/p/${store.page_slug}`
+        );
+
+    const image =
+        absoluteUrl(
+            store.cover_url ||
+            store.logo_url
+        );
+
+    return {
+        store,
+        seo: {
+            title,
+            description,
+            canonical,
+            image
+        }
+    };
+}
 
 export async function generateMetadata({
     params
 }) {
+
+
+    const storeSeoData =
+        await getStoreSEOData(
+            params.slug
+        );
+
+    if (storeSeoData) {
+
+        const {
+            store,
+            seo
+        } = storeSeoData;
+
+        return {
+            title:
+                seo.title,
+            description:
+                seo.description,
+            alternates: {
+                canonical:
+                    seo.canonical
+            },
+            robots: {
+                index:
+                    store.robots_index === 1,
+                follow:
+                    store.robots_follow === 1,
+                googleBot: {
+                    index:
+                        store.robots_index === 1,
+                    follow:
+                        store.robots_follow === 1,
+                    "max-image-preview": "large",
+                    "max-snippet": -1,
+                    "max-video-preview": -1
+                }
+            },
+            openGraph: {
+                type:
+                    "website",
+                title:
+                    seo.title,
+                description:
+                    seo.description,
+                url:
+                    seo.canonical,
+                siteName:
+                    store.name || "Tags Tienda",
+                images:
+                    seo.image
+                        ? [
+                            {
+                                url:
+                                    seo.image,
+                                width:
+                                    1200,
+                                height:
+                                    630,
+                                alt:
+                                    seo.title
+                            }
+                        ]
+                        : []
+            },
+            twitter: {
+                card:
+                    "summary_large_image",
+                title:
+                    seo.title,
+                description:
+                    seo.description,
+                images:
+                    seo.image
+                        ? [
+                            seo.image
+                        ]
+                        : []
+            }
+        };
+    }
+
+
 
     const data =
         await getPublicQRPage(
@@ -495,24 +875,27 @@ function buildStructuredData({
         cleanObject({
             "@context": "https://schema.org",
             "@type": "WebPage",
-            "@id": `${pageUrl}#webpage`,
+            "@id": `${storeUrl}#webpage`,
             name:
-                seo.title,
+                store.seo_title ||
+                `${store.name} | Tienda Online`,
             description:
-                seo.description,
+                store.seo_description ||
+                store.description,
             url:
-                pageUrl,
+                storeUrl,
             about: {
-                "@id": `${pageUrl}#main`
+                "@id": `${storeUrl}#store`
             },
-            primaryImageOfPage:
-                seo.image
-                    ? {
-                        "@type": "ImageObject",
-                        url: seo.image
-                    }
-                    : undefined
+            potentialAction: {
+                "@type": "SearchAction",
+                target:
+                    `${storeUrl}?q={search_term_string}`,
+                "query-input":
+                    "required name=search_term_string"
+            }
         });
+
 
     const faqBlocks =
         [];
@@ -592,9 +975,55 @@ function buildStructuredData({
     ];
 }
 
+
+
 export default async function PublicQRPage({
-    params
+    params,
+    searchParams
 }) {
+
+    const storeBuilderData =
+        await getStorePublicBuilderPage(
+            params.slug
+        );
+
+    console.log("STORE BUILDER DATA:", {
+        found: !!storeBuilderData,
+        storeId: storeBuilderData?.store?.id,
+        sections: storeBuilderData?.sections?.length,
+        blocks: storeBuilderData?.blocks?.length
+    });
+
+    if (
+        storeBuilderData &&
+        storeBuilderData.sections?.length > 0 &&
+        storeBuilderData.blocks?.length > 0
+    ) {
+        const storeStructuredData =
+            await buildStoreStructuredData(
+                params.slug
+            );
+
+        return (
+            <>
+                <script
+                    type="application/ld+json"
+                    dangerouslySetInnerHTML={{
+                        __html:
+                            JSON.stringify(
+                                storeStructuredData
+                            )
+                    }}
+                />
+
+                <StoreRenderer
+                    store={storeBuilderData.store}
+                    sections={storeBuilderData.sections}
+                    blocks={storeBuilderData.blocks}
+                />
+            </>
+        );
+    }
 
     let data =
         await getPublicQRPage(
@@ -628,6 +1057,15 @@ export default async function PublicQRPage({
     } = data;
 
 
+    if (page.page_type === "client_reviews") {
+        return (
+            <ClientReviewsPublicRenderer
+                slug={page.slug}
+                reviewToken={searchParams?.token || null}
+            />
+        );
+    }
+
     if (page.page_type === "store") {
         const storeData =
             await getPublicStore(page.slug);
@@ -645,13 +1083,6 @@ export default async function PublicQRPage({
         );
     }
 
-    if (page.page_type === "client_reviews") {
-        return (
-            <ClientReviewsPublicRenderer
-                slug={page.slug}
-            />
-        );
-    }
 
     const structuredData =
         buildStructuredData({
@@ -763,6 +1194,11 @@ export default async function PublicQRPage({
             products
         };
     }
+
+
+
+
+    /*  UI */
 
     return (
         <>

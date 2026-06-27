@@ -28,6 +28,22 @@ function normalizeStatus(value) {
         : "";
 }
 
+function parseSettings(value) {
+    if (!value) {
+        return {};
+    }
+
+    if (typeof value === "object") {
+        return value;
+    }
+
+    try {
+        return JSON.parse(value);
+    } catch {
+        return {};
+    }
+}
+
 export async function GET(req) {
     try {
         const { searchParams } =
@@ -42,12 +58,6 @@ export async function GET(req) {
         const status =
             normalizeStatus(
                 searchParams.get("status")
-            );
-
-        const lowThreshold =
-            Math.max(
-                0,
-                Number(searchParams.get("lowThreshold") || 3)
             );
 
         const page =
@@ -83,7 +93,9 @@ export async function GET(req) {
         const [storeRows] =
             await db.query(
                 `
-                SELECT id
+                SELECT
+                    id,
+                    settings_json
                 FROM tags_stores
                 WHERE business_id = ?
                 LIMIT 1
@@ -100,7 +112,7 @@ export async function GET(req) {
             return Response.json({
                 ok: true,
                 storeMissing: true,
-                lowThreshold,
+                lowThreshold: 3,
                 stats: {
                     totalItems: 0,
                     totalStock: 0,
@@ -118,6 +130,21 @@ export async function GET(req) {
                 }
             });
         }
+
+        const storeSettings =
+            parseSettings(
+                store.settings_json
+            );
+
+        const lowThreshold =
+            Math.max(
+                0,
+                Number(
+                    searchParams.get("lowThreshold") ||
+                    storeSettings.minStockAlert ||
+                    3
+                )
+            );
 
         const baseSql =
             `
@@ -152,13 +179,16 @@ export async function GET(req) {
                         oi.variant_id,
                         SUM(oi.quantity) AS reserved_qty
                     FROM tags_store_order_items oi
+
                     INNER JOIN tags_store_orders o
                         ON o.id = oi.order_id
+
                     WHERE o.store_id = ?
                     AND o.stock_reserved = 1
                     AND o.order_status = 'new'
                     AND o.payment_status = 'pending'
                     AND oi.variant_id IS NOT NULL
+
                     GROUP BY oi.variant_id
                 ) r
                     ON r.variant_id = v.id
@@ -194,13 +224,16 @@ export async function GET(req) {
                         oi.product_id,
                         SUM(oi.quantity) AS reserved_qty
                     FROM tags_store_order_items oi
+
                     INNER JOIN tags_store_orders o
                         ON o.id = oi.order_id
+
                     WHERE o.store_id = ?
                     AND o.stock_reserved = 1
                     AND o.order_status = 'new'
                     AND o.payment_status = 'pending'
                     AND oi.variant_id IS NULL
+
                     GROUP BY oi.product_id
                 ) r
                     ON r.product_id = p.id
@@ -215,23 +248,20 @@ export async function GET(req) {
             ) stock_items
             `;
 
-        const baseParams =
-            [
-                lowThreshold,
-                store.id,
-                store.id,
-                lowThreshold,
-                store.id,
-                store.id
-            ];
+        const baseParams = [
+            lowThreshold,
+            store.id,
+            store.id,
+            lowThreshold,
+            store.id,
+            store.id
+        ];
 
-        const where =
-            [];
+        const where = [];
 
-        const params =
-            [
-                ...baseParams
-            ];
+        const params = [
+            ...baseParams
+        ];
 
         if (q) {
             where.push(

@@ -82,6 +82,17 @@ export default function StoreOrdersClient({
     const [page, setPage] = useState(1);
     const [query, setQuery] = useState("");
     const [submittedQuery, setSubmittedQuery] = useState("");
+    const [shippingFilter, setShippingFilter] = useState("");
+    const [stats, setStats] =
+        useState({
+            total_orders: 0,
+            pending_payments: 0,
+            paid_orders: 0,
+            shipped_orders: 0,
+            delivered_orders: 0,
+            cancelled_orders: 0,
+            total_revenue: 0
+        });
 
     const [pagination, setPagination] =
         useState({
@@ -90,6 +101,50 @@ export default function StoreOrdersClient({
             total: 0,
             totalPages: 0
         });
+
+    const shippingStatusLabels = {
+        pending: "Pendiente",
+        ready: "Listo para despacho",
+        shipped: "Despachado",
+        in_transit: "En tránsito",
+        delivered: "Entregado",
+        cancelled: "Cancelado",
+        returned: "Devuelto"
+    };
+
+    function getShippingStatusClass(value) {
+        return `store_status_badge shipping_${value || "pending"}`;
+    }
+
+    /* function getShippingStatusClass(status) {
+
+        switch (status) {
+
+            case "pending":
+                return "store_order_status pending";
+
+            case "ready":
+                return "store_order_status ready";
+
+            case "shipped":
+                return "store_order_status shipped";
+
+            case "in_transit":
+                return "store_order_status in_transit";
+
+            case "delivered":
+                return "store_order_status delivered";
+
+            case "cancelled":
+                return "store_order_status cancelled";
+
+            case "returned":
+                return "store_order_status returned";
+
+            default:
+                return "store_order_status";
+        }
+    } */
     const [expiredSummary, setExpiredSummary] =
         useState(null);
 
@@ -101,7 +156,8 @@ export default function StoreOrdersClient({
         page,
         submittedQuery,
         statusFilter,
-        paymentFilter
+        paymentFilter,
+        shippingFilter
     ]);
 
     async function loadOrders() {
@@ -119,7 +175,8 @@ export default function StoreOrdersClient({
                     limit: 20,
                     q: submittedQuery,
                     status: statusFilter,
-                    payment: paymentFilter
+                    payment: paymentFilter,
+                    shipping: shippingFilter,
                 });
 
             const res = await fetch(
@@ -137,6 +194,15 @@ export default function StoreOrdersClient({
 
             setStoreMissing(!!data.storeMissing);
             setOrders(data.orders || []);
+            setStats(data.stats || {
+                total_orders: 0,
+                pending_payments: 0,
+                paid_orders: 0,
+                shipped_orders: 0,
+                delivered_orders: 0,
+                cancelled_orders: 0,
+                total_revenue: 0
+            });
             setPagination(
                 data.pagination || {
                     page: 1,
@@ -380,7 +446,7 @@ export default function StoreOrdersClient({
 
 
 
-    const stats = useMemo(() => {
+    /* const stats = useMemo(() => {
         return {
             total: orders.length,
             pending: orders.filter(order => order.payment_status === "pending").length,
@@ -391,7 +457,7 @@ export default function StoreOrdersClient({
                 0
             )
         };
-    }, [orders]);
+    }, [orders]); */
 
     if (loading) {
         return (
@@ -457,17 +523,17 @@ export default function StoreOrdersClient({
                 <div className="d-flex gap-2 flex-wrap mt-3">
                     <button
                         type="button"
-                        className="store_orders_btn secondary flex-fill"
+                        className="qr_page_btn secondary flex-fill"
                         onClick={() =>
-                            router.push(`/dashboard/businesses/${businessId}/store`)
+                            router.push(`/dashboard/businesses/${businessId}/store?tab=orders`)
                         }
                     >
-                        Volver a tienda
+                        Volver
                     </button>
 
                     <button
                         type="button"
-                        className="store_orders_btn secondary flex-fill"
+                        className="qr_page_btn secondary flex-fill"
                         onClick={loadOrders}
                     >
                         Actualizar
@@ -477,69 +543,62 @@ export default function StoreOrdersClient({
 
             <section className="store_orders_kpis mt-4">
                 <article className="store_orders_kpi soft">
-                    <span className="store_orders_kpi_icon"><FaClipboardList /></span>
+                    <span className="store_orders_kpi_icon">
+                        <FaClipboardList />
+                    </span>
                     <div>
                         <small>Total pedidos</small>
-                        <strong>{stats.total}</strong>
+                        <strong>{stats.total_orders}</strong>
                     </div>
                 </article>
 
                 <article className="store_orders_kpi">
-                    <span className="store_orders_kpi_icon"><FaMoneyBillWave /></span>
+                    <span className="store_orders_kpi_icon">
+                        <FaClipboardList />
+                    </span>
                     <div>
-                        <small>Pagos pendientes</small>
-                        <strong>{stats.pending}</strong>
+                        <small>Nuevos</small>
+                        <strong>{stats.new_orders}</strong>
                     </div>
                 </article>
 
                 <article className="store_orders_kpi">
-                    <span className="store_orders_kpi_icon"><FaMoneyBillWave /></span>
+                    <span className="store_orders_kpi_icon">
+                        <FaClipboardList />
+                    </span>
                     <div>
-                        <small>Pagados</small>
-                        <strong>{stats.paid}</strong>
+                        <small>Confirmados</small>
+                        <strong>{stats.confirmed_orders}</strong>
                     </div>
                 </article>
 
-                <article className="store_orders_kpi">
-                    <span className="store_orders_kpi_icon"><FaTruck /></span>
+                <article className="store_orders_kpi soft">
+                    <span className="store_orders_kpi_icon">
+                        <FaTruck />
+                    </span>
                     <div>
-                        <small>Enviados</small>
-                        <strong>{stats.shipped}</strong>
+                        <small>Completados</small>
+                        <strong>{stats.completed_orders}</strong>
+                    </div>
+                </article>
+
+                <article className="store_orders_kpi danger">
+                    <span className="store_orders_kpi_icon">
+                        ⚠️
+                    </span>
+                    <div>
+                        <small>Cancelados</small>
+                        <strong>{stats.cancelled_orders}</strong>
                     </div>
                 </article>
 
                 <article className="store_orders_kpi revenue">
-                    <span className="store_orders_kpi_icon"><FaMoneyBillWave /></span>
+                    <span className="store_orders_kpi_icon">
+                        <FaMoneyBillWave />
+                    </span>
                     <div>
                         <small>Total vendido</small>
-                        <strong>{formatPrice(stats.revenue)}</strong>
-                    </div>
-                </article>
-
-                <article
-                    className="store_orders_kpi warning clickable"
-                    onClick={openExpiredReservations}
-                >
-                    <span className="store_orders_kpi_icon">
-                        ⚠️
-                    </span>
-
-                    <div>
-                        <small>
-                            Pedidos Abandonados
-                        </small>
-
-                        <strong>
-                            {
-                                expiredSummary?.totalOrders || 0
-                            }
-                        </strong>
-
-                        <small>
-                            {
-                                expiredSummary?.totalUnits || 0
-                            } productos retenidos
-                        </small>
+                        <strong>{formatPrice(stats.total_revenue)}</strong>
                     </div>
                 </article>
             </section>
@@ -581,8 +640,23 @@ export default function StoreOrdersClient({
                         setStatusFilter(e.target.value);
                     }}
                 >
-                    <option value="">Todos los estados</option>
+                    <option value="">Todos los pedidos</option>
                     {Object.entries(orderStatusLabels).map(([value, label]) => (
+                        <option key={value} value={value}>
+                            {label}
+                        </option>
+                    ))}
+                </select>
+
+                <select
+                    value={shippingFilter}
+                    onChange={(e) => {
+                        setPage(1);
+                        setShippingFilter(e.target.value);
+                    }}
+                >
+                    <option value="">Todos los envíos</option>
+                    {Object.entries(shippingStatusLabels).map(([value, label]) => (
                         <option key={value} value={value}>
                             {label}
                         </option>
@@ -616,13 +690,14 @@ export default function StoreOrdersClient({
                     <table className="store_orders_table_v2">
                         <thead>
                             <tr>
+                                <th>Creado</th>
                                 <th><FaClipboardList /> Pedido</th>
                                 <th><FaUser /> Cliente</th>
                                 <th><FaMoneyBillWave /> Total</th>
                                 <th>Pago</th>
+                                <th>Pedido</th>
+                                <th>Envío</th>
                                 <th><FaTruck /> Entrega</th>
-                                <th>Estado</th>
-                                <th>Fecha</th>
                                 <th></th>
                             </tr>
                         </thead>
@@ -630,6 +705,8 @@ export default function StoreOrdersClient({
                         <tbody>
                             {orders.map(order => (
                                 <tr key={order.id}>
+
+                                    <td>{formatDate(order.created_at)}</td>
                                     <td>
                                         <button
                                             type="button"
@@ -663,6 +740,19 @@ export default function StoreOrdersClient({
                                         <small>{order.payment_method || "-"}</small>
                                     </td>
 
+
+                                    {/* Estado del Pedido */}
+                                    <td>
+                                        <span className={getOrderStatusClass(order.order_status)}>
+                                            {orderStatusLabels[order.order_status] || order.order_status || "Nuevo"}
+                                        </span>
+                                    </td>
+                                    {/* Estado de Envío */}
+                                    <td>
+                                        <span className={getShippingStatusClass(order.shipping_status)}>
+                                            {shippingStatusLabels[order.shipping_status] || order.shipping_status || "Pendiente"}
+                                        </span>
+                                    </td>
                                     <td>
                                         <strong>
                                             {order.shipping_method_name || order.carrier_name || "A coordinar"}
@@ -674,18 +764,11 @@ export default function StoreOrdersClient({
                                         </small>
                                     </td>
 
-                                    <td>
-                                        <span className={getOrderStatusClass(order.order_status)}>
-                                            {orderStatusLabels[order.order_status] || order.order_status || "Nuevo"}
-                                        </span>
-                                    </td>
-
-                                    <td>{formatDate(order.created_at)}</td>
 
                                     <td className="store_orders_actions_cell">
                                         <button
                                             type="button"
-                                            className="store_orders_btn dark"
+                                            className="qr_page_btn"
                                             onClick={() =>
                                                 router.push(
                                                     `/dashboard/businesses/${businessId}/store/orders/${order.id}`
@@ -714,7 +797,7 @@ export default function StoreOrdersClient({
             {
                 pagination.totalPages > 1 && (
 
-                    <div className="store_orders_pagination">
+                    <div className="store_orders_pagination mb-5">
 
                         <button
                             type="button"

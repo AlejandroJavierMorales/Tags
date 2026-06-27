@@ -237,7 +237,7 @@ export default function StoreStockDashboardClient({
 
         const confirmed =
             await showAlert({
-                title: "Pedidos abandonados (+72 hs)",
+                title: "Pedidos abandonados ",
                 html: `
                 <div style="text-align:left">
                     <h4>Pedidos</h4>
@@ -349,19 +349,17 @@ export default function StoreStockDashboardClient({
                 <div className="d-flex gap-2 flex-wrap mt-3">
                     <button
                         type="button"
-                        className="store_orders_btn secondary flex-fill"
+                        className="qr_page_btn secondary flex-fill"
                         onClick={() =>
-                            router.push(
-                                `/dashboard/businesses/${businessId}/store`
-                            )
+                           router.push(`/dashboard/businesses/${businessId}/store?tab=stock`)
                         }
                     >
-                        Volver a tienda
+                        Volver
                     </button>
 
                     <button
                         type="button"
-                        className="store_orders_btn secondary flex-fill"
+                        className="qr_page_btn secondary flex-fill"
                         onClick={() =>
                             loadStock({
                                 initial: false

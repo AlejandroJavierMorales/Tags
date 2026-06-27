@@ -10,3 +10,75 @@ Y anotaría como QA obligatorio:
 □ order_status = confirmed
 
 Porque eso fue exactamente lo que quedó pendiente cuando trabajábamos en localhost.
+
+
+
+tracking_url = https://www.correoargentino.com.ar/formularios/e-commerce?id=TEST123456
+
+PROBAR:
+-------------------------------store_orders_btn
+-PAGO
+-REDIRECCION A SUCCESS
+-ENVIO DE EMAIL DESDE EL WEBHOOK
+
+FALTA
+-------------------------------
+-CREAR ENVIOS AUTOMATICOS DE ZIPNOVA
+-DASHBOARD DE STOCK (ya esta- falta definir en configuración Stock Minimo + Dejar configurable tiempo para recuperar productos abandonados a stock, ahora esta fijo en 72hs)
+-SEO PARA CADA TIENDA  --->>> Ya esta! hay que probar json en Producción que no aparezca localhost:3000//
+-BUILDER PARA TIENDA en el admin
+-INTEGRAR TIENDA DESDE DASHBOARD DE CLIENTE (REDISEÑO COMPLETO)
+- Calificación de Productos
+-Conectar Tags Reviews: sI EL CLIENTE TIENE ASIGNADO QUE PERMITA MOSTRAR "Calificanos +++++" que lo mande a Tags Reviews
+-Bloque QUE DICEN NUESTROS CLIENTES - Con slider de Reseñas
+- En Cards de Productos (algo como 3 cuotas sin interés) o directamente 3 cuotas de $23500
+-Agregar en la Nevegacion de Admin el email de quien esta logueado
+-Agregar circulito de Compartir producto en cada card de catálogo
+
+----->> Sanear css de Store
+
+
+
+------------>>>>> actualizar Dashboard Cliente para Asignar Tags-Tienda tags_store como addons
+------------>>> Actualizar apis para que las pueda ejecutar solo ciente de la plataforma y admin
+
+*************************************
+********** HERO tienda publica ******
+*************************************
+Sí: para una tienda profesional, el cover_url del Hero conviene tratarlo como imagen de fondo, no como imagen lateral.
+
+Formato recomendado para el usuario:
+
+Imagen horizontal / panorámica
+Relación ideal: 16:9 o 21:9
+Tamaño recomendado: 1920x800 px
+Mínimo aceptable: 1400x700 px
+Evitar texto importante dentro de la imagen
+El foco visual debe estar al centro
+
+Comportamiento:
+
+Desktop:
+imagen ocupa todo el ancho del hero como fondo.
+
+Tablet:
+se mantiene como fondo, recortando un poco los laterales.
+
+Mobile:
+se recorta más, siempre centrada.
+El texto queda encima con overlay oscuro para legibilidad.
+
+**********************************************************
+
+
+FLUJO DE STOCK
+---------------------------
+new + pending + stock_reserved=1
+↓ confirmed o paid
+descuenta stock real y stock_reserved=0
+
+new → cancelled
+no toca stock real, stock_reserved=0
+
+confirmed/preparing/shipped/completed → cancelled
+devuelve stock real

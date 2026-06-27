@@ -43,14 +43,26 @@
     cursor: pointer;
 }
 
+.qr_page_btn:hover {
+    background: #323438;
+}
+
 .qr_page_btn.secondary {
     background: white;
     color: #111827;
     border: 1px solid #e5e7eb;
 }
 
+.qr_page_btn.secondary:hover {
+    background: rgb(241, 238, 238);
+}
+
 .qr_page_btn.success {
     background: #22c55e;
+}
+
+.qr_page_btn.success:hover {
+    background: #29b05a;
 }
 
 .qr_page_status {
@@ -1049,11 +1061,9 @@
     width: 28px;
     min-height: 8px;
     border-radius: 999px 999px 6px 6px;
-    background: linear-gradient(
-        180deg,
-        #22c55e,
-        #15803d
-    );
+    background: linear-gradient(180deg,
+            #22c55e,
+            #15803d);
     box-shadow: 0 8px 18px rgba(21, 128, 61, 0.22);
 }
 
@@ -1598,6 +1608,13 @@
 }
 
 @media (max-width:600px) {
+
+    .qr_page_btn,
+    .qr_page_btn.secondary,
+    .qr_page_btn.success {
+        padding: 6px 10px;
+        font-weight: 600;
+    }
 
     .qr_page_tabs_desktop {
 

@@ -34,7 +34,9 @@ export async function GET(req) {
         const [storeRows] =
             await db.query(
                 `
-                SELECT id
+                SELECT
+                    id,
+                    settings_json
                 FROM tags_stores
                 WHERE business_id = ?
                 LIMIT 1
@@ -44,6 +46,14 @@ export async function GET(req) {
 
         const store =
             storeRows[0];
+
+        const settings =
+            typeof store.settings_json === "string"
+                ? JSON.parse(store.settings_json || "{}")
+                : store.settings_json || {};
+
+        const stockHoldHours =
+            Number(settings.stockHoldHours || 72);
 
         if (!store) {
             return Response.json(
@@ -73,12 +83,13 @@ export async function GET(req) {
                 AND created_at <
                     DATE_SUB(
                         NOW(),
-                        INTERVAL 72 HOUR
+                        INTERVAL ? HOUR
                     )
                 ORDER BY created_at ASC
                 `,
                 [
-                    store.id
+                    store.id,
+                    stockHoldHours
                 ]
             );
 
@@ -112,7 +123,7 @@ export async function GET(req) {
                 AND o.created_at <
                     DATE_SUB(
                         NOW(),
-                        INTERVAL 72 HOUR
+                        INTERVAL ? HOUR
                     )
 
                 GROUP BY
@@ -123,7 +134,8 @@ export async function GET(req) {
                     quantity DESC
                 `,
                 [
-                    store.id
+                    store.id,
+                    stockHoldHours
                 ]
             );
 

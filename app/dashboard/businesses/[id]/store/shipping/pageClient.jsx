@@ -107,6 +107,12 @@ export default function StoreShippingClient({
     const [form, setForm] =
         useState(defaultCarrierForm);
 
+    const [showCarrierForm, setShowCarrierForm] =
+        useState(false);
+
+    const [showMethodForm, setShowMethodForm] =
+        useState(false);
+
     useEffect(() => {
 
         loadCarriers();
@@ -197,8 +203,8 @@ export default function StoreShippingClient({
 
     function resetMethodForm() {
         setMethodForm(defaultMethodForm);
+        setShowMethodForm(false);
     }
-
     function editMethod(method) {
         setMethodForm({
             methodId: method.id,
@@ -218,6 +224,7 @@ export default function StoreShippingClient({
             is_active: Number(method.is_active) === 0 ? 0 : 1,
             sort_order: method.sort_order || 0
         });
+        setShowMethodForm(true);
     }
 
     async function saveMethod() {
@@ -331,9 +338,8 @@ export default function StoreShippingClient({
     }
 
     function resetForm() {
-        setForm(
-            defaultCarrierForm
-        );
+        setForm(defaultCarrierForm);
+        setShowCarrierForm(false);
     }
 
     function editCarrier(carrier) {
@@ -349,6 +355,7 @@ export default function StoreShippingClient({
             is_active: Number(carrier.is_active) === 0 ? 0 : 1,
             sort_order: carrier.sort_order || 0
         });
+        setShowCarrierForm(true);
     }
 
     async function saveCarrier() {
@@ -542,12 +549,10 @@ export default function StoreShippingClient({
                         type="button"
                         className="qr_page_btn secondary"
                         onClick={() =>
-                            router.push(
-                                `/dashboard/businesses/${businessId}/store`
-                            )
+                            router.push(`/dashboard/businesses/${businessId}/store?tab=shipping`)
                         }
                     >
-                        Volver a tienda
+                        Volver
                     </button>
 
                     <button
@@ -579,191 +584,36 @@ export default function StoreShippingClient({
                 </button>
             </div>
             {activeTab === "carriers" && (
-                <div className="store_admin_split">
+                <div className="d-flex flex-column gap-4">
 
                     <section className="qr_page_card">
 
-                        <h2 className="qr_page_section_title">
-                            {form.carrierId
-                                ? "Editar transportista"
-                                : "Nuevo transportista"}
-                        </h2>
+                        <div className="d-flex justify-content-between align-items-start gap-3 flex-wrap">
 
-                        <div className="qr_page_grid">
+                            <div>
+                                <h2 className="qr_page_section_title">
+                                    Transportistas
+                                </h2>
 
-                            <div className="qr_page_field">
-                                <label>Nombre</label>
-
-                                <input
-                                    className="qr_page_input"
-                                    value={form.name}
-                                    onChange={(e) =>
-                                        updateField(
-                                            "name",
-                                            e.target.value
-                                        )
-                                    }
-                                    placeholder="Ej: Correo Argentino"
-                                />
+                                <p className="qr_page_subtitle mb-0">
+                                    Empresas o servicios usados para entregar pedidos.
+                                </p>
                             </div>
-
-                            <div className="qr_page_field">
-                                <label>Código interno</label>
-
-                                <input
-                                    className="qr_page_input"
-                                    value={form.code}
-                                    onChange={(e) =>
-                                        updateField(
-                                            "code",
-                                            e.target.value
-                                        )
-                                    }
-                                    placeholder="correo_argentino"
-                                />
-                            </div>
-
-                            <div className="qr_page_field">
-                                <label>Tipo</label>
-
-                                <select
-                                    className="qr_page_select"
-                                    value={form.type}
-                                    onChange={(e) =>
-                                        updateField(
-                                            "type",
-                                            e.target.value
-                                        )
-                                    }
-                                >
-                                    {Object.entries(carrierTypeLabels).map(([value, label]) => (
-                                        <option
-                                            key={value}
-                                            value={value}
-                                        >
-                                            {label}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div className="qr_page_field">
-                                <label>Orden</label>
-
-                                <input
-                                    className="qr_page_input"
-                                    type="number"
-                                    value={form.sort_order}
-                                    onChange={(e) =>
-                                        updateField(
-                                            "sort_order",
-                                            e.target.value
-                                        )
-                                    }
-                                />
-                            </div>
-
-                            <div className="qr_page_field full">
-                                <label>Logo URL</label>
-
-                                <input
-                                    className="qr_page_input"
-                                    value={form.logo_url}
-                                    onChange={(e) =>
-                                        updateField(
-                                            "logo_url",
-                                            e.target.value
-                                        )
-                                    }
-                                    placeholder="https://..."
-                                />
-                            </div>
-
-                            <div className="qr_page_field full">
-                                <label>URL tracking</label>
-
-                                <input
-                                    className="qr_page_input"
-                                    value={form.tracking_url_template}
-                                    onChange={(e) =>
-                                        updateField(
-                                            "tracking_url_template",
-                                            e.target.value
-                                        )
-                                    }
-                                    placeholder="https://tracking.com/{code}"
-                                />
-                            </div>
-
-                            <div className="qr_page_field">
-                                <label>Proveedor API</label>
-
-                                <input
-                                    className="qr_page_input"
-                                    value={form.api_provider}
-                                    onChange={(e) =>
-                                        updateField(
-                                            "api_provider",
-                                            e.target.value
-                                        )
-                                    }
-                                    placeholder="enviopack / andreani / oca"
-                                />
-                            </div>
-
-                            <div className="qr_page_field">
-                                <label className="qr_page_checkbox">
-                                    <input
-                                        type="checkbox"
-                                        checked={Number(form.is_active) === 1}
-                                        onChange={(e) =>
-                                            updateField(
-                                                "is_active",
-                                                e.target.checked ? 1 : 0
-                                            )
-                                        }
-                                    />
-
-                                    Activo
-                                </label>
-                            </div>
-
-                        </div>
-
-                        <div className="qr_page_actions mt-4">
 
                             <button
                                 type="button"
                                 className="qr_page_btn success"
-                                disabled={saving}
-                                onClick={saveCarrier}
+                                onClick={() => {
+                                    setForm(defaultCarrierForm);
+                                    setShowCarrierForm(true);
+                                }}
                             >
-                                {saving
-                                    ? "Guardando..."
-                                    : "Guardar transportista"}
+                                Nuevo transportista
                             </button>
-
-                            {form.carrierId && (
-                                <button
-                                    type="button"
-                                    className="qr_page_btn secondary"
-                                    onClick={resetForm}
-                                >
-                                    Nuevo
-                                </button>
-                            )}
 
                         </div>
 
-                    </section>
-
-                    <section className="qr_page_card">
-
-                        <h2 className="qr_page_section_title">
-                            Transportistas
-                        </h2>
-
-                        <div className="store_shipping_list">
+                        <div className="store_shipping_list mt-4">
 
                             {carriers.map(carrier => (
                                 <article
@@ -784,9 +634,7 @@ export default function StoreShippingClient({
                                         )}
 
                                         <div>
-                                            <h3>
-                                                {carrier.name}
-                                            </h3>
+                                            <h3>{carrier.name}</h3>
 
                                             <p>
                                                 {carrierTypeLabels[carrier.type] || carrier.type}
@@ -796,14 +644,8 @@ export default function StoreShippingClient({
                                     </div>
 
                                     <div className="store_shipping_meta">
-                                        <span>
-                                            Código: {carrier.code || "-"}
-                                        </span>
-
-                                        <span>
-                                            Orden: {carrier.sort_order || 0}
-                                        </span>
-
+                                        <span>Código: {carrier.code || "-"}</span>
+                                        <span>Orden: {carrier.sort_order || 0}</span>
                                         <span>
                                             {Number(carrier.is_active) === 1
                                                 ? "Activo"
@@ -837,7 +679,7 @@ export default function StoreShippingClient({
 
                             {!carriers.length && (
                                 <div className="qr_page_info_box">
-                                    Todavía no cargaste transportistas.
+                                    Todavía no has creado transportistas.
                                 </div>
                             )}
 
@@ -845,287 +687,193 @@ export default function StoreShippingClient({
 
                     </section>
 
+                    {showCarrierForm && (
+                        <section className="qr_page_card">
+
+                            <h2 className="qr_page_section_title">
+                                {form.carrierId
+                                    ? "Editar transportista"
+                                    : "Nuevo transportista"}
+                            </h2>
+
+                            <div className="row g-3">
+
+                                <div className="col-12 col-md-6">
+                                    <label>Nombre</label>
+                                    <input
+                                        className="qr_page_input"
+                                        value={form.name}
+                                        onChange={(e) =>
+                                            updateField("name", e.target.value)
+                                        }
+                                        placeholder="Ej: Correo Argentino"
+                                    />
+                                </div>
+
+                                <div className="col-12 col-md-6">
+                                    <label>Código interno</label>
+                                    <input
+                                        className="qr_page_input"
+                                        value={form.code}
+                                        onChange={(e) =>
+                                            updateField("code", e.target.value)
+                                        }
+                                        placeholder="correo_argentino"
+                                    />
+                                </div>
+
+                                <div className="col-12 col-md-6">
+                                    <label>Tipo</label>
+                                    <select
+                                        className="qr_page_select"
+                                        value={form.type}
+                                        onChange={(e) =>
+                                            updateField("type", e.target.value)
+                                        }
+                                    >
+                                        {Object.entries(carrierTypeLabels).map(([value, label]) => (
+                                            <option key={value} value={value}>
+                                                {label}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div className="col-12 col-md-6">
+                                    <label>Orden</label>
+                                    <input
+                                        className="qr_page_input"
+                                        type="number"
+                                        value={form.sort_order}
+                                        onChange={(e) =>
+                                            updateField("sort_order", e.target.value)
+                                        }
+                                    />
+                                </div>
+
+                                <div className="col-12">
+                                    <label>Logo URL</label>
+                                    <input
+                                        className="qr_page_input"
+                                        value={form.logo_url}
+                                        onChange={(e) =>
+                                            updateField("logo_url", e.target.value)
+                                        }
+                                        placeholder="https://..."
+                                    />
+                                </div>
+
+                                <div className="col-12">
+                                    <label>URL tracking</label>
+                                    <input
+                                        className="qr_page_input"
+                                        value={form.tracking_url_template}
+                                        onChange={(e) =>
+                                            updateField("tracking_url_template", e.target.value)
+                                        }
+                                        placeholder="https://tracking.com/{code}"
+                                    />
+                                </div>
+
+                                <div className="col-12 col-md-6">
+                                    <label>Proveedor API</label>
+                                    <input
+                                        className="qr_page_input"
+                                        value={form.api_provider}
+                                        onChange={(e) =>
+                                            updateField("api_provider", e.target.value)
+                                        }
+                                        placeholder="enviopack / andreani / oca"
+                                    />
+                                </div>
+
+                                <div className="col-12 col-md-6 d-flex align-items-center">
+                                    <label className="qr_page_checkbox mb-0">
+                                        <input
+                                            type="checkbox"
+                                            checked={Number(form.is_active) === 1}
+                                            onChange={(e) =>
+                                                updateField(
+                                                    "is_active",
+                                                    e.target.checked ? 1 : 0
+                                                )
+                                            }
+                                        />
+                                        Activo
+                                    </label>
+                                </div>
+
+                            </div>
+
+                            <div className="qr_page_actions mt-4">
+
+                                <button
+                                    type="button"
+                                    className="qr_page_btn success"
+                                    disabled={saving}
+                                    onClick={saveCarrier}
+                                >
+                                    {saving
+                                        ? "Guardando..."
+                                        : "Guardar transportista"}
+                                </button>
+
+                                <button
+                                    type="button"
+                                    className="qr_page_btn secondary"
+                                    onClick={resetForm}
+                                >
+                                    Cancelar
+                                </button>
+
+                            </div>
+
+                        </section>
+                    )}
+
                 </div>
             )}
             {activeTab === "methods" && (
-                <div className="store_admin_split">
+                <div className="d-flex flex-column gap-4">
 
                     <section className="qr_page_card">
 
-                        <h2 className="qr_page_section_title">
-                            {methodForm.methodId
-                                ? "Editar método"
-                                : "Nuevo método"}
-                        </h2>
+                        <div className="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+                            <div>
+                                <h2 className="qr_page_section_title">
+                                    Métodos creados
+                                </h2>
 
-                        <div className="qr_page_grid">
-
-                            <div className="qr_page_field">
-                                <label>Nombre</label>
-
-                                <input
-                                    className="qr_page_input"
-                                    value={methodForm.name}
-                                    onChange={(e) =>
-                                        updateMethodField("name", e.target.value)
-                                    }
-                                    placeholder="Ej: Envío a domicilio"
-                                />
+                                <p className="qr_page_subtitle mb-0">
+                                    Formas de entrega visibles para el comprador.
+                                </p>
                             </div>
-
-                            <div className="qr_page_field">
-                                <label>Transportista</label>
-
-                                <select
-                                    className="qr_page_select"
-                                    value={methodForm.carrier_id}
-                                    onChange={(e) =>
-                                        updateMethodField("carrier_id", e.target.value)
-                                    }
-                                >
-                                    <option value="">
-                                        Sin transportista
-                                    </option>
-
-                                    {carriers.map(carrier => (
-                                        <option
-                                            key={carrier.id}
-                                            value={carrier.id}
-                                        >
-                                            {carrier.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div className="qr_page_field">
-                                <label>Tipo</label>
-
-                                <select
-                                    className="qr_page_select"
-                                    value={methodForm.type}
-                                    onChange={(e) =>
-                                        updateMethodField("type", e.target.value)
-                                    }
-                                >
-                                    {Object.entries(methodTypeLabels).map(([value, label]) => (
-                                        <option key={value} value={value}>
-                                            {label}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div className="qr_page_field">
-                                <label>Tipo de entrega</label>
-
-                                <select
-                                    className="qr_page_select"
-                                    value={methodForm.delivery_type}
-                                    onChange={(e) =>
-                                        updateMethodField("delivery_type", e.target.value)
-                                    }
-                                >
-                                    {Object.entries(deliveryTypeLabels).map(([value, label]) => (
-                                        <option key={value} value={value}>
-                                            {label}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div className="qr_page_field">
-                                <label>Precio</label>
-
-                                <input
-                                    className="qr_page_input"
-                                    type="number"
-                                    value={methodForm.price}
-                                    onChange={(e) =>
-                                        updateMethodField("price", e.target.value)
-                                    }
-                                />
-                            </div>
-
-                            <div className="qr_page_field">
-                                <label>Gratis desde</label>
-
-                                <input
-                                    className="qr_page_input"
-                                    type="number"
-                                    value={methodForm.free_from}
-                                    onChange={(e) =>
-                                        updateMethodField("free_from", e.target.value)
-                                    }
-                                    placeholder="Opcional"
-                                />
-                            </div>
-
-                            <div className="qr_page_field">
-                                <label>Días mínimo</label>
-
-                                <input
-                                    className="qr_page_input"
-                                    type="number"
-                                    value={methodForm.delivery_days_min}
-                                    onChange={(e) =>
-                                        updateMethodField("delivery_days_min", e.target.value)
-                                    }
-                                />
-                            </div>
-
-                            <div className="qr_page_field">
-                                <label>Días máximo</label>
-
-                                <input
-                                    className="qr_page_input"
-                                    type="number"
-                                    value={methodForm.delivery_days_max}
-                                    onChange={(e) =>
-                                        updateMethodField("delivery_days_max", e.target.value)
-                                    }
-                                />
-                            </div>
-
-                            <div className="qr_page_field full">
-                                <label>Descripción</label>
-
-                                <textarea
-                                    className="qr_page_textarea"
-                                    value={methodForm.description}
-                                    onChange={(e) =>
-                                        updateMethodField("description", e.target.value)
-                                    }
-                                    placeholder="Detalle visible para el comprador"
-                                />
-                            </div>
-
-                            <div className="qr_page_field">
-                                <label>Orden</label>
-
-                                <input
-                                    className="qr_page_input"
-                                    type="number"
-                                    value={methodForm.sort_order}
-                                    onChange={(e) =>
-                                        updateMethodField("sort_order", e.target.value)
-                                    }
-                                />
-                            </div>
-
-                            <div className="qr_page_field">
-                                <label className="qr_page_checkbox">
-                                    <input
-                                        type="checkbox"
-                                        checked={Number(methodForm.requires_address) === 1}
-                                        onChange={(e) =>
-                                            updateMethodField(
-                                                "requires_address",
-                                                e.target.checked ? 1 : 0
-                                            )
-                                        }
-                                    />
-                                    Requiere dirección
-                                </label>
-                            </div>
-
-                            <div className="qr_page_field">
-                                <label className="qr_page_checkbox">
-                                    <input
-                                        type="checkbox"
-                                        checked={Number(methodForm.requires_zip) === 1}
-                                        onChange={(e) =>
-                                            updateMethodField(
-                                                "requires_zip",
-                                                e.target.checked ? 1 : 0
-                                            )
-                                        }
-                                    />
-                                    Requiere código postal
-                                </label>
-                            </div>
-
-                            <div className="qr_page_field">
-                                <label className="qr_page_checkbox">
-                                    <input
-                                        type="checkbox"
-                                        checked={Number(methodForm.is_api_rate) === 1}
-                                        onChange={(e) =>
-                                            updateMethodField(
-                                                "is_api_rate",
-                                                e.target.checked ? 1 : 0
-                                            )
-                                        }
-                                    />
-                                    Cotización por API
-                                </label>
-                            </div>
-
-                            <div className="qr_page_field">
-                                <label className="qr_page_checkbox">
-                                    <input
-                                        type="checkbox"
-                                        checked={Number(methodForm.is_active) === 1}
-                                        onChange={(e) =>
-                                            updateMethodField(
-                                                "is_active",
-                                                e.target.checked ? 1 : 0
-                                            )
-                                        }
-                                    />
-                                    Activo
-                                </label>
-                            </div>
-
-                        </div>
-
-                        <div className="qr_page_actions mt-4">
 
                             <button
                                 type="button"
                                 className="qr_page_btn success"
-                                onClick={saveMethod}
+                                onClick={() => {
+                                    setMethodForm(defaultMethodForm);
+                                    setShowMethodForm(true);
+                                }}
                             >
-                                Guardar método
+                                Nuevo método
                             </button>
-
-                            {methodForm.methodId && (
-                                <button
-                                    type="button"
-                                    className="qr_page_btn secondary"
-                                    onClick={resetMethodForm}
-                                >
-                                    Nuevo
-                                </button>
-                            )}
-
                         </div>
 
-                    </section>
-
-                    <section className="qr_page_card">
-
-                        <h2 className="qr_page_section_title">
-                            Métodos creados
-                        </h2>
-
-                        <div className="store_shipping_list">
-
+                        <div className="store_shipping_list mt-4">
                             {methods.map(method => (
                                 <article
                                     key={method.id}
                                     className="store_shipping_card"
                                 >
-                                    <h3>
-                                        {method.name}
-                                    </h3>
+                                    <h3>{method.name}</h3>
 
                                     <p>
                                         {method.carrier_name || "Sin transportista"}
                                     </p>
 
                                     <div className="store_shipping_meta">
-
                                         <span>
                                             {deliveryTypeLabels[method.delivery_type] || method.delivery_type}
                                         </span>
@@ -1145,11 +893,9 @@ export default function StoreShippingClient({
                                                 ? "Activo"
                                                 : "Inactivo"}
                                         </span>
-
                                     </div>
 
                                     <div className="store_shipping_actions">
-
                                         <button
                                             type="button"
                                             className="store_admin_small_btn"
@@ -1169,20 +915,257 @@ export default function StoreShippingClient({
                                         >
                                             Eliminar
                                         </button>
-
                                     </div>
                                 </article>
                             ))}
 
                             {!methods.length && (
                                 <div className="qr_page_info_box">
-                                    Todavía no cargaste métodos de envío.
+                                    Todavía no has creado métodos de envío.
                                 </div>
                             )}
-
                         </div>
 
                     </section>
+
+                    {showMethodForm && (
+                        <section className="qr_page_card">
+
+                            <h2 className="qr_page_section_title">
+                                {methodForm.methodId
+                                    ? "Editar método"
+                                    : "Nuevo método"}
+                            </h2>
+
+                            <div className="row g-3">
+
+                                <div className="col-12 col-md-6">
+                                    <label>Nombre</label>
+                                    <input
+                                        className="qr_page_input"
+                                        value={methodForm.name}
+                                        onChange={(e) =>
+                                            updateMethodField("name", e.target.value)
+                                        }
+                                        placeholder="Ej: Envío a domicilio"
+                                    />
+                                </div>
+
+                                <div className="col-12 col-md-6">
+                                    <label>Transportista</label>
+                                    <select
+                                        className="qr_page_select"
+                                        value={methodForm.carrier_id}
+                                        onChange={(e) =>
+                                            updateMethodField("carrier_id", e.target.value)
+                                        }
+                                    >
+                                        <option value="">Sin transportista</option>
+
+                                        {carriers.map(carrier => (
+                                            <option
+                                                key={carrier.id}
+                                                value={carrier.id}
+                                            >
+                                                {carrier.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div className="col-12 col-md-6">
+                                    <label>Tipo</label>
+                                    <select
+                                        className="qr_page_select"
+                                        value={methodForm.type}
+                                        onChange={(e) =>
+                                            updateMethodField("type", e.target.value)
+                                        }
+                                    >
+                                        {Object.entries(methodTypeLabels).map(([value, label]) => (
+                                            <option key={value} value={value}>
+                                                {label}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div className="col-12 col-md-6">
+                                    <label>Tipo de entrega</label>
+                                    <select
+                                        className="qr_page_select"
+                                        value={methodForm.delivery_type}
+                                        onChange={(e) =>
+                                            updateMethodField("delivery_type", e.target.value)
+                                        }
+                                    >
+                                        {Object.entries(deliveryTypeLabels).map(([value, label]) => (
+                                            <option key={value} value={value}>
+                                                {label}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div className="col-12 col-md-6">
+                                    <label>Precio</label>
+                                    <input
+                                        className="qr_page_input"
+                                        type="number"
+                                        value={methodForm.price}
+                                        onChange={(e) =>
+                                            updateMethodField("price", e.target.value)
+                                        }
+                                    />
+                                </div>
+
+                                <div className="col-12 col-md-6">
+                                    <label>Gratis desde</label>
+                                    <input
+                                        className="qr_page_input"
+                                        type="number"
+                                        value={methodForm.free_from}
+                                        onChange={(e) =>
+                                            updateMethodField("free_from", e.target.value)
+                                        }
+                                        placeholder="Opcional"
+                                    />
+                                </div>
+
+                                <div className="col-12 col-md-6">
+                                    <label>Días mínimo</label>
+                                    <input
+                                        className="qr_page_input"
+                                        type="number"
+                                        value={methodForm.delivery_days_min}
+                                        onChange={(e) =>
+                                            updateMethodField("delivery_days_min", e.target.value)
+                                        }
+                                    />
+                                </div>
+
+                                <div className="col-12 col-md-6">
+                                    <label>Días máximo</label>
+                                    <input
+                                        className="qr_page_input"
+                                        type="number"
+                                        value={methodForm.delivery_days_max}
+                                        onChange={(e) =>
+                                            updateMethodField("delivery_days_max", e.target.value)
+                                        }
+                                    />
+                                </div>
+
+                                <div className="col-12">
+                                    <label>Descripción</label>
+                                    <textarea
+                                        className="qr_page_textarea"
+                                        value={methodForm.description}
+                                        onChange={(e) =>
+                                            updateMethodField("description", e.target.value)
+                                        }
+                                        placeholder="Detalle visible para el comprador"
+                                    />
+                                </div>
+
+                                <div className="col-12 col-md-6">
+                                    <label>Orden</label>
+                                    <input
+                                        className="qr_page_input"
+                                        type="number"
+                                        value={methodForm.sort_order}
+                                        onChange={(e) =>
+                                            updateMethodField("sort_order", e.target.value)
+                                        }
+                                    />
+                                </div>
+
+                                <div className="col-12 col-md-6 d-flex align-items-center">
+                                    <label className="qr_page_checkbox mb-0">
+                                        <input
+                                            type="checkbox"
+                                            checked={Number(methodForm.requires_address) === 1}
+                                            onChange={(e) =>
+                                                updateMethodField(
+                                                    "requires_address",
+                                                    e.target.checked ? 1 : 0
+                                                )
+                                            }
+                                        />
+                                        Requiere dirección
+                                    </label>
+                                </div>
+
+                                <div className="col-12 col-md-6 d-flex align-items-center">
+                                    <label className="qr_page_checkbox mb-0">
+                                        <input
+                                            type="checkbox"
+                                            checked={Number(methodForm.requires_zip) === 1}
+                                            onChange={(e) =>
+                                                updateMethodField(
+                                                    "requires_zip",
+                                                    e.target.checked ? 1 : 0
+                                                )
+                                            }
+                                        />
+                                        Requiere código postal
+                                    </label>
+                                </div>
+
+                                <div className="col-12 col-md-6 d-flex align-items-center">
+                                    <label className="qr_page_checkbox mb-0">
+                                        <input
+                                            type="checkbox"
+                                            checked={Number(methodForm.is_api_rate) === 1}
+                                            onChange={(e) =>
+                                                updateMethodField(
+                                                    "is_api_rate",
+                                                    e.target.checked ? 1 : 0
+                                                )
+                                            }
+                                        />
+                                        Cotización por API
+                                    </label>
+                                </div>
+
+                                <div className="col-12 col-md-6 d-flex align-items-center">
+                                    <label className="qr_page_checkbox mb-0">
+                                        <input
+                                            type="checkbox"
+                                            checked={Number(methodForm.is_active) === 1}
+                                            onChange={(e) =>
+                                                updateMethodField(
+                                                    "is_active",
+                                                    e.target.checked ? 1 : 0
+                                                )
+                                            }
+                                        />
+                                        Activo
+                                    </label>
+                                </div>
+
+                            </div>
+
+                            <div className="qr_page_actions mt-4">
+                                <button
+                                    type="button"
+                                    className="qr_page_btn success"
+                                    onClick={saveMethod}
+                                >
+                                    Guardar método
+                                </button>
+
+                                <button
+                                    type="button"
+                                    className="qr_page_btn secondary"
+                                    onClick={resetMethodForm}
+                                >
+                                    Cancelar
+                                </button>
+                            </div>
+
+                        </section>
+                    )}
 
                 </div>
             )}

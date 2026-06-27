@@ -1,220 +1,264 @@
 // =====================================
-// PAGE: /p/[slug]/products/[productId]
-// Descripción: Página pública de detalle de producto de Tags Tienda.
+// Archivo:
+// /app/p/[slug]/products/[productId]/page.jsx
+//
+// Descripción:
+// Página pública de detalle de producto
+// para Tags Store.
+//
+// Contexto:
+// store
 // =====================================
 
-import { notFound } from "next/navigation";
+import { notFound }
+    from "next/navigation";
 
-import { db } from "@/app/lib/tags-db";
-import StoreProductDetailRenderer from "@/app/modules/store/public/StoreProductDetailRenderer";
+import StoreProductDetailClient
+    from "@/app/modules/store/components/public/StoreProductDetailClient";
 
-
-
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-
-function parseJson(value, fallback = {}) {
-    if (!value) return fallback;
-    if (typeof value === "object") return value;
-
-    try {
-        return JSON.parse(value);
-    } catch {
-        return fallback;
-    }
+import {
+    getStorePublicProductDetail
 }
+    from "@/app/modules/store/lib/getStorePublicProductDetail";
 
-async function getStoreProduct({
-    slug,
-    productId
-}) {
-    const [rows] =
-        await db.query(
-            `
-            SELECT
-                s.*,
 
-                p.id AS product_id,
-                p.category_id,
-                p.sku,
-                p.slug AS product_slug,
-                p.title AS product_title,
-                p.description AS product_description,
-                p.price,
-                p.sale_price,
-                p.currency AS product_currency,
-                p.stock_enabled,
-                p.stock_qty,
-                p.is_featured,
-                p.seo_title AS product_seo_title,
-                p.seo_description AS product_seo_description,
 
-                c.name AS category_name
+import "@/app/modules/store/styles/store-public.css";
 
-            FROM tags_stores s
+export const dynamic =
+    "force-dynamic";
 
-            INNER JOIN tags_qr_pages qrp
-                ON qrp.id = s.page_id
 
-            INNER JOIN tags_store_products p
-                ON p.store_id = s.id
-
-            LEFT JOIN tags_store_categories c
-                ON c.id = p.category_id
-
-            WHERE s.slug = ?
-            AND s.status = 'published'
-            AND qrp.status = 'published'
-            AND qrp.page_type = 'store'
-            AND p.id = ?
-            AND p.status = 'published'
-            AND p.is_visible = 1
-
-            LIMIT 1
-            `,
-            [
-                slug,
-                productId
-            ]
-        );
-
-    const row =
-        rows[0];
-
-    if (!row) {
-        return null;
-    }
-
-    const store = {
-        id: row.id,
-        business_id: row.business_id,
-        page_id: row.page_id,
-        slug: row.slug,
-        name: row.name,
-        description: row.description,
-        logo_url: row.logo_url,
-        cover_url: row.cover_url,
-        whatsapp: row.whatsapp,
-        email: row.email,
-        address: row.address,
-        currency: row.currency || "ARS",
-        status: row.status,
-        seo_title: row.seo_title,
-        seo_description: row.seo_description,
-        settings_json: parseJson(row.settings_json, {}),
-        styles_json: parseJson(row.styles_json, {})
-    };
-
-    const product = {
-        id: row.product_id,
-        category_id: row.category_id,
-        category_name: row.category_name,
-        sku: row.sku,
-        slug: row.product_slug,
-        title: row.product_title,
-        description: row.product_description,
-        price: row.price,
-        sale_price: row.sale_price,
-        currency: row.product_currency || store.currency || "ARS",
-        stock_enabled: row.stock_enabled,
-        stock_qty: row.stock_qty,
-        is_featured: row.is_featured,
-        seo_title: row.product_seo_title,
-        seo_description: row.product_seo_description
-    };
-
-    const [images] =
-        await db.query(
-            `
-            SELECT *
-            FROM tags_store_product_images
-            WHERE product_id = ?
-            ORDER BY sort_order ASC, id ASC
-            `,
-            [
-                product.id
-            ]
-        );
-
-    const [variants] =
-        await db.query(
-            `
-            SELECT
-                v.*,
-
-                GROUP_CONCAT(
-                    CONCAT(o.name, ': ', ov.value)
-                    ORDER BY o.sort_order ASC
-                    SEPARATOR ' | '
-                ) AS options_label
-
-            FROM tags_store_variants v
-
-            LEFT JOIN tags_store_variant_values vv
-                ON vv.variant_id = v.id
-
-            LEFT JOIN tags_store_options o
-                ON o.id = vv.option_id
-
-            LEFT JOIN tags_store_option_values ov
-                ON ov.id = vv.option_value_id
-
-            WHERE v.product_id = ?
-            AND v.is_visible = 1
-
-            GROUP BY
-                v.id,
-                v.product_id,
-                v.sku,
-                v.title,
-                v.price,
-                v.sale_price,
-                v.stock_qty,
-                v.image_url,
-                v.is_visible,
-                v.created_at,
-                v.updated_at
-
-            ORDER BY v.id ASC
-            `,
-            [
-                product.id
-            ]
-        );
-
-    return {
-        store,
-        product,
-        images,
-        variants
-    };
-}
-
-export default async function StoreProductPage({
+export async function generateMetadata({
     params
 }) {
-    const {
-        slug,
-        productId
-    } = await params;
 
     const data =
-        await getStoreProduct({
-            slug,
-            productId
+        await getStorePublicProductDetail({
+            slug: params.slug,
+            productId: params.productId
+        });
+
+    if (!data) {
+        return {
+            title:
+                "Producto no encontrado"
+        };
+    }
+
+
+
+    const {
+        store,
+        product,
+        images
+    } = data;
+
+    const image =
+        images?.[0]?.image_url ||
+        product?.image_url ||
+        store?.logo_url;
+
+    const title =
+        `${product.title} | ${store.name}`;
+
+    const description =
+        product.description ||
+        store.description ||
+        title;
+
+    const canonical =
+        `${process.env.NEXT_PUBLIC_BASE_URL}/p/${params.slug}/products/${params.productId}`;
+
+    return {
+        title,
+        description,
+
+        alternates: {
+            canonical
+        },
+
+        openGraph: {
+            type: "website",
+            title,
+            description,
+            url: canonical,
+            images:
+                image
+                    ? [{
+                        url: image,
+                        width: 1200,
+                        height: 630,
+                        alt: title
+                    }]
+                    : []
+        },
+
+        twitter: {
+            card:
+                "summary_large_image",
+            title,
+            description,
+            images:
+                image
+                    ? [image]
+                    : []
+        }
+    };
+}
+
+
+
+
+
+export default async function Page({
+    params
+}) {
+    const data =
+        await getStorePublicProductDetail({
+            slug: params.slug,
+            productId: params.productId
         });
 
     if (!data) {
         notFound();
     }
 
+    const baseUrl =
+        process.env.NEXT_PUBLIC_BASE_URL_PROD
+        || process.env.NEXT_PUBLIC_BASE_URL
+        || "http://localhost:3000";
+
+    const storeUrl =
+        `${baseUrl}/p/${params.slug}`;
+
+    const productUrl =
+        `${storeUrl}/products/${params.productId}`;
+
     return (
-        <StoreProductDetailRenderer
-            store={data.store}
-            product={data.product}
-            images={data.images}
-            variants={data.variants}
-        />
+        <>
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify([
+                        {
+                            "@context":
+                                "https://schema.org",
+
+                            "@type":
+                                "Product",
+
+                            name:
+                                data.product.title,
+
+                            description:
+                                data.product.description,
+
+                            image:
+                                data.images?.map(
+                                    img =>
+                                        img.image_url
+                                ) || [],
+
+                            sku:
+                                data.product.sku,
+
+                            brand: {
+                                "@type":
+                                    "Brand",
+                                name:
+                                    data.store.name
+                            },
+
+                            ...((
+                                Number(data.product.price) > 0 ||
+                                Number(data.product.sale_price) > 0
+                            )
+                                ? {
+                                    offers: {
+                                        "@type":
+                                            "Offer",
+
+                                        price:
+                                            String(
+                                                data.product.sale_price ||
+                                                data.product.price
+                                            ),
+
+                                        priceCurrency:
+                                            data.product.currency ||
+                                            "ARS",
+
+                                        availability:
+                                            "https://schema.org/InStock",
+
+                                        url: productUrl
+                                    }
+                                }
+                                : {})
+                        },
+
+                        {
+                            "@context":
+                                "https://schema.org",
+
+                            "@type":
+                                "BreadcrumbList",
+
+                            itemListElement: [
+                                {
+                                    "@type":
+                                        "ListItem",
+
+                                    position:
+                                        1,
+
+                                    name:
+                                        "Inicio",
+
+                                    item:
+                                        process.env.NEXT_PUBLIC_BASE_URL
+                                },
+
+                                {
+                                    "@type":
+                                        "ListItem",
+
+                                    position:
+                                        2,
+
+                                    name:
+                                        data.store.name,
+
+                                    item:
+                                        `${process.env.NEXT_PUBLIC_BASE_URL_PROD}/p/${params.slug}`
+                                },
+
+                                {
+                                    "@type":
+                                        "ListItem",
+
+                                    position:
+                                        3,
+
+                                    name:
+                                        data.product.title,
+
+                                    item: productUrl
+                                }
+                            ]
+                        }
+                    ])
+                }}
+            />
+
+            <StoreProductDetailClient
+                store={data.store}
+                product={data.product}
+                images={data.images}
+                variants={data.variants}
+                variantOptions={data.variantOptions}
+            />
+        </>
     );
 }

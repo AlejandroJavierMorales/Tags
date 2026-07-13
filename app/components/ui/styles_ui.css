@@ -1,0 +1,80 @@
+/* =====================================
+   Archivo:
+   app/styles/tags-ui.css
+
+   Descripción:
+   Componentes UI genéricos de la plataforma Tags.
+   Consumen tokens --qr-* desde el theme activo.
+===================================== */
+
+.tags_select {
+    position: relative;
+    width: 100%;
+}
+
+.tags_select_trigger {
+    width: 100%;
+    min-height: 44px;
+    border: 1px solid var(--qr-border);
+    border-radius: calc(var(--qr-radius) - 6px);
+    background: var(--qr-surface);
+    color: var(--qr-text);
+    padding: .75rem .95rem;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    cursor: pointer;
+    transition:
+        background-color .18s ease,
+        border-color .18s ease,
+        box-shadow .18s ease,
+        transform .18s ease;
+}
+
+.tags_select_trigger:hover {
+    border-color: var(--qr-primary);
+    box-shadow: 0 8px 20px color-mix(in srgb, var(--qr-primary) 16%, transparent);
+}
+
+.tags_select_trigger:disabled {
+    opacity: .55;
+    cursor: not-allowed;
+}
+
+.tags_select_trigger svg {
+    font-size: 1.15rem;
+    flex-shrink: 0;
+}
+
+.tags_select_menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    z-index: 9000;
+    padding: .45rem;
+    background: var(--qr-surface);
+    border: 1px solid var(--qr-border);
+    border-radius: calc(var(--qr-radius) - 4px);
+    box-shadow: var(--qr-shadow);
+}
+
+.tags_select_menu button {
+    width: 100%;
+    border: none;
+    background: transparent;
+    color: var(--qr-text);
+    padding: .7rem .8rem;
+    border-radius: calc(var(--qr-radius) - 8px);
+    text-align: left;
+    font-weight: 750;
+    cursor: pointer;
+}
+
+.tags_select_menu button:hover,
+.tags_select_menu button.active {
+    background: color-mix(in srgb, var(--qr-primary) 12%, var(--qr-surface));
+    color: var(--qr-primary);
+}

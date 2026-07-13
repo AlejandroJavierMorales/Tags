@@ -1,6 +1,6 @@
 // =====================================
-// COMPONENT: StoreCartDrawer
-// Descripción: Drawer público del carrito de Tags Tienda.
+// COMPONENT: StoreCheckoutPageClient
+// Descripción: Checkout público de Tags Store tokenizado por theme QR-Page.
 // =====================================
 
 "use client";
@@ -11,7 +11,6 @@ import { FaWhatsapp } from "react-icons/fa";
 import { SiMercadopago } from "react-icons/si";
 import { BsBank } from "react-icons/bs";
 import { HiOutlineCash } from "react-icons/hi";
-import { MdPix } from "react-icons/md";
 import StoreHeaderBlock
     from "../blocks/StoreHeaderBlock";
 
@@ -20,7 +19,6 @@ import showAlert
 
 import {
     clearCart,
-    getCartCount,
     getCartItems,
     getCartTotal,
     setCartItems
@@ -29,7 +27,7 @@ import {
 
 
 
-import "@/app/styles/tags_store_public.css";
+import "@/app/modules/store/styles/store-public.css";
 import { formatStorePrice } from "../../lib/formatStorePrice";
 
 function normalizeWhatsappAR(phone) {
@@ -75,11 +73,12 @@ function normalizeWhatsappAR(phone) {
 
 
 
-
-
 export default function StoreCheckoutPageClient({
-    store
+    store,
+    settings = {}
 }) {
+
+    console.log("CHECKOUT SETTINGS", settings);
     const [items, setItems] =
         useState([]);
 
@@ -212,6 +211,135 @@ export default function StoreCheckoutPageClient({
             shippingTotal
         );
 
+    const typography =
+        settings.typography || {};
+
+    const pageStyle = {
+        background:
+            settings.styles?.backgroundColor || undefined,
+
+        color:
+            settings.styles?.textColor || undefined,
+
+        padding:
+            settings.styles?.padding || undefined,
+
+        textAlign:
+            settings.styles?.alignment || undefined
+    };
+
+    function createButtonStyle(prefix) {
+
+        return {
+            width:
+                settings.content?.[`${prefix}ButtonWidth`] || undefined,
+
+            maxWidth:
+                "100%",
+
+            background:
+                settings.content?.[`${prefix}ButtonBackgroundColor`] || undefined,
+
+            color:
+                settings.content?.[`${prefix}ButtonTextColor`] || undefined,
+
+            borderColor:
+                settings.content?.[`${prefix}ButtonBorderColor`] || undefined,
+
+            borderWidth:
+                settings.content?.[`${prefix}ButtonBorderWidth`] || undefined,
+
+            borderStyle:
+                settings.content?.[`${prefix}ButtonBorderWidth`]
+                    ? "solid"
+                    : undefined,
+
+            borderRadius:
+                settings.content?.[`${prefix}ButtonRadius`] || undefined,
+
+            padding:
+                settings.content?.[`${prefix}ButtonPaddingY`] ||
+                    settings.content?.[`${prefix}ButtonPaddingX`]
+                    ? `${settings.content?.[`${prefix}ButtonPaddingY`] || ""} ${settings.content?.[`${prefix}ButtonPaddingX`] || ""}`
+                    : undefined,
+
+            [`--store-checkout-${prefix}-hover-bg`]:
+                settings.content?.[`${prefix}ButtonHoverBackgroundColor`] || undefined,
+
+            [`--store-checkout-${prefix}-hover-color`]:
+                settings.content?.[`${prefix}ButtonHoverTextColor`] || undefined
+        };
+
+    }
+
+    function createButtonWrapperStyle(prefix) {
+
+        const align =
+            settings.content?.[`${prefix}ButtonAlign`];
+
+        return {
+            display:
+                "flex",
+
+            justifyContent:
+                align === "center"
+                    ? "center"
+                    : align === "right"
+                        ? "flex-end"
+                        : align === "left"
+                            ? "flex-start"
+                            : undefined
+        };
+
+    }
+
+    function getButtonHoverClass(prefix) {
+
+        const value =
+            settings.content?.[`${prefix}ButtonHoverScale`];
+
+        switch (value) {
+
+            case "soft":
+                return "store_product_btn_hover_soft";
+
+            case "normal":
+                return "store_product_btn_hover_normal";
+
+            case "none":
+                return "store_product_btn_hover_none";
+
+            default:
+                return "";
+
+        }
+
+    }
+
+    const quoteButtonStyle =
+        createButtonStyle("quote");
+
+    const couponButtonStyle =
+        createButtonStyle("coupon");
+
+    const confirmButtonStyle =
+        createButtonStyle("confirm");
+
+    const clearCartButtonStyle =
+        createButtonStyle("clearCart");
+
+    const quoteButtonWrapperStyle =
+        createButtonWrapperStyle("quote");
+
+    const couponButtonWrapperStyle =
+        createButtonWrapperStyle("coupon");
+
+    const confirmButtonWrapperStyle =
+        createButtonWrapperStyle("confirm");
+
+    const clearCartButtonWrapperStyle =
+        createButtonWrapperStyle("clearCart");
+
     useEffect(() => {
         if (items.length > 0) {
             return;
@@ -266,6 +394,49 @@ export default function StoreCheckoutPageClient({
         return daysText
             ? `${method.name} · ${priceText} · ${daysText}`
             : `${method.name} · ${priceText}`;
+    }
+
+    function updateCartItemQuantity(index, quantity) {
+        const nextItems =
+            items.map((item, itemIndex) => {
+                if (itemIndex !== index) {
+                    return item;
+                }
+
+                const nextQuantity =
+                    Number(quantity || 1);
+
+                return {
+                    ...item,
+                    quantity: nextQuantity,
+                    total_price:
+                        Number(item.unit_price || 0) *
+                        nextQuantity
+                };
+            });
+
+        setCartItems(nextItems);
+
+        window.dispatchEvent(
+            new Event("tags_store_cart_updated")
+        );
+
+        return nextItems;
+    }
+
+    function removeCartItem(index) {
+        const nextItems =
+            items.filter((_, itemIndex) =>
+                itemIndex !== index
+            );
+
+        setCartItems(nextItems);
+
+        window.dispatchEvent(
+            new Event("tags_store_cart_updated")
+        );
+
+        return nextItems;
     }
 
     function handleQuantity(index, quantity) {
@@ -1097,537 +1268,658 @@ export default function StoreCheckoutPageClient({
     /*  UI */
 
     return (
-        <main className="store_checkout_page">
+        <main
+            className="store_checkout_page"
+            style={pageStyle}
+        >
 
             <StoreHeaderBlock
                 entity={store}
             />
 
             <section className="store_checkout_shell">
-                <div className="container">
+                <div className="store_checkout_inner">
 
                     <div className="store_checkout_title">
-                        <h1>Finalizar compra</h1>
-                        <p>Completá los datos para confirmar tu pedido.</p>
+                        {
+                            settings.content?.showTitle !== false && (
+                                <h1 style={typography.title || {}}>
+                                    Finalizar compra
+                                </h1>
+                            )
+                        }
+
+                        {
+                            settings.content?.showDescription !== false && (
+                                <p style={typography.text || {}}>
+                                    Completá los datos para confirmar tu pedido.
+                                </p>
+                            )
+                        }
                     </div>
 
-                    <div className="row g-4 align-items-start">
+                    <div className="store_checkout_layout">
 
-                        <div className="col-12 col-lg-8">
+                        <div className="store_checkout_content">
 
-                            <div className="store_checkout_panel">
+                            {
+                                settings.content?.showProducts !== false && (
+                                    <div className="store_checkout_panel">
 
-                                <h2>Productos</h2>
+                                        <h2 style={typography.title || {}}>Productos</h2>
 
-                                {items.map((item, index) => (
-                                    <div
-                                        key={`${item.product_id}-${item.variant_id || "base"}-${index}`}
-                                        className="store_checkout_item"
-                                    >
-                                        <div>
-                                            <strong>{item.product_title}</strong>
+                                        {items.map((item, index) => (
+                                            <div
+                                                key={`${item.product_id}-${item.variant_id || "base"}-${index}`}
+                                                className="store_checkout_item"
+                                            >
+                                                <div>
+                                                    <strong style={typography.text || {}}>
+                                                        {item.product_title}
+                                                    </strong>
 
-                                            {item.variant_title && (
-                                                <small>{item.variant_title}</small>
-                                            )}
+                                                    {item.variant_title && (
+                                                        <small style={typography.meta || {}}>
+                                                            {item.variant_title}
+                                                        </small>
+                                                    )}
 
-                                            <span>
-                                                {item.quantity} x{" "}
-                                                {formatStorePrice(
-                                                    item.unit_price,
-                                                    item.currency || store.currency || "ARS"
-                                                )}
-                                            </span>
-                                        </div>
+                                                    <span style={typography.meta || {}}>
+                                                        {item.quantity} x{" "}
+                                                        {formatStorePrice(
+                                                            item.unit_price,
+                                                            item.currency || store.currency || "ARS"
+                                                        )}
+                                                    </span>
+                                                </div>
 
-                                        <strong>
-                                            {formatStorePrice(
-                                                item.total_price,
-                                                item.currency || store.currency || "ARS"
-                                            )}
-                                        </strong>
-                                    </div>
-                                ))}
+                                                <strong>
+                                                    {formatStorePrice(
+                                                        item.total_price,
+                                                        item.currency || store.currency || "ARS"
+                                                    )}
+                                                </strong>
+                                            </div>
+                                        ))}
 
-                                {!items.length && (
-                                    <div className="store_cart_empty">
-                                        El carrito está vacío.
+                                        {!items.length && (
+                                            <div className="store_cart_page_empty">
+                                                El carrito está vacío.
+                                            </div>
+                                        )}
+
                                     </div>
                                 )}
-
-                            </div>
+                            {/* hasta aca */}
 
                             {items.length > 0 && (
                                 <>
-                                    <div className="store_checkout_panel">
+                                    {
+                                        settings.content?.showDelivery !== false && (
+                                            <div className="store_checkout_panel">
 
-                                        <h2>Entrega</h2>
+                                                <h2 style={typography.title || {}}>
+                                                    Entrega
+                                                </h2>
 
-                                        <select
-                                            className="store_checkout_select"
-                                            value={selectedShipping?.id || ""}
-                                            onChange={(e) =>
-                                                handleShippingChange(e.target.value)
-                                            }
-                                        >
-                                            <option value="">
-                                                Seleccionar método
-                                            </option>
-
-                                            {shippingMethods.map(method => (
-                                                <option
-                                                    key={method.id}
-                                                    value={method.id}
+                                                <select
+                                                    className="store_checkout_select"
+                                                    value={selectedShipping?.id || ""}
+                                                    onChange={(e) =>
+                                                        handleShippingChange(e.target.value)
+                                                    }
                                                 >
-                                                    {getShippingLabel(method)}
-                                                </option>
-                                            ))}
-                                        </select>
+                                                    <option value="">
+                                                        Seleccionar método
+                                                    </option>
 
-                                        {selectedShipping && (
-                                            <div className="store_cart_shipping_info">
-                                                {selectedShipping.description}
-                                            </div>
-                                        )}
+                                                    {shippingMethods.map(method => (
+                                                        <option
+                                                            key={method.id}
+                                                            value={method.id}
+                                                        >
+                                                            {getShippingLabel(method)}
+                                                        </option>
+                                                    ))}
+                                                </select>
 
-                                        {selectedShipping?.provider === "zipnova" && (
-                                            <div className="store_cart_zipnova mt-3">
+                                                {selectedShipping && (
+                                                    <div className="store_cart_shipping_info">
+                                                        {selectedShipping.description}
+                                                    </div>
+                                                )}
 
-                                                <h4>Cotizar envío por código postal</h4>
+                                                {
+                                                    settings.content?.showZipQuote !== false &&
+                                                    selectedShipping?.provider === "zipnova" && (
+                                                        <div className="store_cart_zipnova">
 
-                                                <input
-                                                    value={customer.zip || ""}
-                                                    onChange={(e) => {
-                                                        updateCustomerField(
-                                                            "zip",
-                                                            e.target.value
-                                                        );
+                                                            <h4>Cotizar envío por código postal</h4>
 
-                                                        setPostalResults([]);
-                                                        setSelectedPostalCode(null);
-                                                        setShippingDestination(null);
-                                                        setShippingQuotes([]);
-                                                        setSelectedShippingQuote(null);
-                                                        setShippingTotal(0);
-                                                    }}
-                                                    placeholder="Código postal"
-                                                />
-
-                                                {postalResults.length > 1 && (
-                                                    <div className="store_cart_field mt-2">
-                                                        <label>
-                                                            Seleccioná tu localidad
-                                                        </label>
-
-                                                        <select
-                                                            className="qr_page_select"
-                                                            value={selectedPostalCode?.id || ""}
-                                                            onChange={(e) => {
-                                                                const selected =
-                                                                    postalResults.find(
-                                                                        item =>
-                                                                            Number(item.id) === Number(e.target.value)
+                                                            <input
+                                                                value={customer.zip || ""}
+                                                                onChange={(e) => {
+                                                                    updateCustomerField(
+                                                                        "zip",
+                                                                        e.target.value
                                                                     );
 
-                                                                setSelectedPostalCode(selected || null);
-
-                                                                if (selected) {
-                                                                    setCustomer(prev => ({
-                                                                        ...prev,
-                                                                        zip: selected.postal_code,
-                                                                        city: selected.city,
-                                                                        state: selected.state
-                                                                    }));
-
-                                                                    setShippingDestination({
-                                                                        city: selected.city,
-                                                                        state: selected.state,
-                                                                        zipcode: selected.postal_code
-                                                                    });
-
+                                                                    setPostalResults([]);
+                                                                    setSelectedPostalCode(null);
+                                                                    setShippingDestination(null);
                                                                     setShippingQuotes([]);
                                                                     setSelectedShippingQuote(null);
                                                                     setShippingTotal(0);
-                                                                }
-                                                            }}
-                                                        >
-                                                            <option value="">
-                                                                Seleccionar localidad
-                                                            </option>
+                                                                }}
+                                                                placeholder="Código postal"
+                                                            />
 
-                                                            {postalResults.map(item => (
-                                                                <option
-                                                                    key={item.id}
-                                                                    value={item.id}
+                                                            {postalResults.length > 1 && (
+                                                                <div className="store_cart_field">
+                                                                    <label style={typography.text || {}}>
+                                                                        Seleccioná tu localidad
+                                                                    </label>
+
+                                                                    <select
+                                                                        className="store_checkout_select"
+                                                                        value={selectedPostalCode?.id || ""}
+                                                                        onChange={(e) => {
+                                                                            const selected =
+                                                                                postalResults.find(
+                                                                                    item =>
+                                                                                        Number(item.id) === Number(e.target.value)
+                                                                                );
+
+                                                                            setSelectedPostalCode(selected || null);
+
+                                                                            if (selected) {
+                                                                                setCustomer(prev => ({
+                                                                                    ...prev,
+                                                                                    zip: selected.postal_code,
+                                                                                    city: selected.city,
+                                                                                    state: selected.state
+                                                                                }));
+
+                                                                                setShippingDestination({
+                                                                                    city: selected.city,
+                                                                                    state: selected.state,
+                                                                                    zipcode: selected.postal_code
+                                                                                });
+
+                                                                                setShippingQuotes([]);
+                                                                                setSelectedShippingQuote(null);
+                                                                                setShippingTotal(0);
+                                                                            }
+                                                                        }}
+                                                                    >
+                                                                        <option value="">
+                                                                            Seleccionar localidad
+                                                                        </option>
+
+                                                                        {postalResults.map(item => (
+                                                                            <option
+                                                                                key={item.id}
+                                                                                value={item.id}
+                                                                            >
+                                                                                {item.city}, {item.state} · CP {item.postal_code}
+                                                                            </option>
+                                                                        ))}
+                                                                    </select>
+                                                                </div>
+                                                            )}
+
+                                                            <div style={quoteButtonWrapperStyle}>
+                                                                <button
+                                                                    type="button"
+                                                                    className={[
+                                                                        "store_btn_primary",
+                                                                        "store_checkout_quote_button",
+                                                                        getButtonHoverClass("quote")
+                                                                    ].filter(Boolean).join(" ")}
+                                                                    style={{
+                                                                        ...quoteButtonStyle,
+                                                                        ...(typography.button || {})
+                                                                    }}
+                                                                    onClick={handleQuoteShipping}
+                                                                    disabled={shippingQuoteLoading || postalLoading}
                                                                 >
-                                                                    {item.city}, {item.state} · CP {item.postal_code}
-                                                                </option>
-                                                            ))}
-                                                        </select>
-                                                    </div>
-                                                )}
+                                                                    {
+                                                                        shippingQuoteLoading || postalLoading
+                                                                            ? "Cotizando..."
+                                                                            : "Cotizar envío"
+                                                                    }
+                                                                </button>
+                                                            </div>
 
-                                                <button
-                                                    type="button"
-                                                    className="store_btn_dark px-3 py-3"
-                                                    onClick={handleQuoteShipping}
-                                                    disabled={shippingQuoteLoading || postalLoading}
-                                                >
-                                                    {
-                                                        shippingQuoteLoading || postalLoading
-                                                            ? "Cotizando..."
-                                                            : "Cotizar envío"
-                                                    }
-                                                </button>
+                                                            {shippingDestination && (
+                                                                <div className="store_cart_shipping_info">
+                                                                    <strong>Destino detectado</strong>
 
-                                                {shippingDestination && (
-                                                    <div className="store_cart_destination">
-                                                        <strong>Destino detectado</strong>
+                                                                    <div>
+                                                                        {shippingDestination.city}
+                                                                        {shippingDestination.state
+                                                                            ? `, ${shippingDestination.state}`
+                                                                            : ""}
+                                                                    </div>
 
-                                                        <div>
-                                                            {shippingDestination.city}
-                                                            {shippingDestination.state
-                                                                ? `, ${shippingDestination.state}`
-                                                                : ""}
-                                                        </div>
-
-                                                        <small>
-                                                            CP {
-                                                                shippingDestination.zipcode ||
-                                                                shippingDestination.postal_code ||
-                                                                customer.zip
-                                                            }
-                                                        </small>
-                                                    </div>
-                                                )}
-
-                                                {shippingQuotes.length > 0 && (
-                                                    <div className="store_cart_quotes">
-                                                        {shippingQuotes.map(quote => (
-                                                            <button
-                                                                type="button"
-                                                                key={quote.id}
-                                                                className={
-                                                                    String(selectedShippingQuote?.id) === String(quote.id)
-                                                                        ? "store_cart_quote_option active"
-                                                                        : "store_cart_quote_option"
-                                                                }
-                                                                onClick={() =>
-                                                                    handleSelectShippingQuote(quote)
-                                                                }
-                                                            >
-                                                                <div>
-                                                                    <strong>{quote.carrier_name}</strong>
-                                                                    {" · "}
-                                                                    {quote.service_name}
-                                                                    <br />
                                                                     <small>
-                                                                        {quote.delivery_days_min}
-                                                                        {" - "}
-                                                                        {quote.delivery_days_max}
-                                                                        {" días"}
+                                                                        CP {
+                                                                            shippingDestination.zipcode ||
+                                                                            shippingDestination.postal_code ||
+                                                                            customer.zip
+                                                                        }
                                                                     </small>
                                                                 </div>
+                                                            )}
 
-                                                                <strong>
-                                                                    $
-                                                                    {Number(quote.price || 0).toLocaleString("es-AR")}
-                                                                </strong>
-                                                            </button>
-                                                        ))}
+                                                            {shippingQuotes.length > 0 && (
+                                                                <div className="store_cart_customer_grid">
+                                                                    {shippingQuotes.map(quote => (
+                                                                        <button
+                                                                            type="button"
+                                                                            key={quote.id}
+                                                                            className={
+                                                                                String(selectedShippingQuote?.id) === String(quote.id)
+                                                                                    ? "store_variant_chip active"
+                                                                                    : "store_variant_chip"
+                                                                            }
+                                                                            onClick={() =>
+                                                                                handleSelectShippingQuote(quote)
+                                                                            }
+                                                                        >
+                                                                            <div>
+                                                                                <strong>{quote.carrier_name}</strong>
+                                                                                {" · "}
+                                                                                {quote.service_name}
+                                                                                <br />
+                                                                                <small>
+                                                                                    {quote.delivery_days_min}
+                                                                                    {" - "}
+                                                                                    {quote.delivery_days_max}
+                                                                                    {" días"}
+                                                                                </small>
+                                                                            </div>
+
+                                                                            <strong>
+                                                                                $
+                                                                                {Number(quote.price || 0).toLocaleString("es-AR")}
+                                                                            </strong>
+                                                                        </button>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+
+                                                        </div>
+                                                    )}
+
+                                            </div>
+                                        )}
+                                    {
+                                        settings.content?.showCustomerData !== false && (
+                                            <div className="store_checkout_panel">
+
+                                                <h2 style={typography.title || {}}>
+                                                    Datos del comprador
+                                                </h2>
+
+                                                <div className="store_cart_customer_grid">
+
+                                                    <div className="store_cart_field">
+                                                        <label style={typography.text || {}}>Nombre *</label>
+                                                        <input
+                                                            value={customer.name}
+                                                            onChange={(e) =>
+                                                                updateCustomerField("name", e.target.value)
+                                                            }
+                                                            placeholder="Tu nombre"
+                                                        />
+                                                    </div>
+
+                                                    <div className="store_cart_field">
+                                                        <label style={typography.text || {}}>Teléfono *</label>
+                                                        <input
+                                                            value={customer.phone}
+                                                            onChange={(e) =>
+                                                                updateCustomerField("phone", e.target.value)
+                                                            }
+                                                            placeholder="Ej: 3546 520243"
+                                                        />
+                                                    </div>
+
+                                                    <div className="store_cart_field">
+                                                        <label style={typography.text || {}}>Email</label>
+                                                        <input
+                                                            value={customer.email}
+                                                            onChange={(e) =>
+                                                                updateCustomerField("email", e.target.value)
+                                                            }
+                                                            placeholder="tu@email.com"
+                                                        />
+                                                    </div>
+
+                                                    {selectedRequiresAddress && (
+                                                        <>
+                                                            <div className="store_cart_field">
+                                                                <label style={typography.text || {}}>Dirección *</label>
+                                                                <input
+                                                                    value={customer.address}
+                                                                    onChange={(e) =>
+                                                                        updateCustomerField("address", e.target.value)
+                                                                    }
+                                                                    placeholder="Dirección de entrega"
+                                                                />
+                                                            </div>
+                                                            <div className="store_cart_field">
+                                                                <label style={typography.text || {}}>Número</label>
+                                                                <input
+                                                                    value={customer.street_number}
+                                                                    onChange={(e) =>
+                                                                        updateCustomerField("street_number", e.target.value)
+                                                                    }
+                                                                    placeholder="Ej: 1234"
+                                                                />
+                                                            </div>
+
+                                                            <div className="store_cart_field">
+                                                                <label style={typography.text || {}}>DNI / CUIT *</label>
+                                                                <input
+                                                                    value={customer.document}
+                                                                    onChange={(e) =>
+                                                                        updateCustomerField("document", e.target.value)
+                                                                    }
+                                                                    placeholder="Ej: 20123456789"
+                                                                />
+                                                            </div>
+
+                                                            <div className="store_cart_field">
+                                                                <label style={typography.text || {}}>Complemento</label>
+                                                                <input
+                                                                    value={customer.street_extras}
+                                                                    onChange={(e) =>
+                                                                        updateCustomerField("street_extras", e.target.value)
+                                                                    }
+                                                                    placeholder="Piso, depto, referencias"
+                                                                />
+                                                            </div>
+                                                        </>
+
+
+                                                    )}
+
+                                                    {selectedRequiresZip && (
+                                                        <div className="store_cart_field">
+                                                            <label style={typography.text || {}}>Código postal *</label>
+                                                            <input
+                                                                value={customer.zip}
+                                                                onChange={(e) =>
+                                                                    updateCustomerField("zip", e.target.value)
+                                                                }
+                                                                placeholder="Ej: 5194"
+                                                            />
+                                                        </div>
+                                                    )}
+
+                                                    <div className="store_cart_field">
+                                                        <label style={typography.text || {}}>Observaciones</label>
+                                                        <textarea
+                                                            value={customer.notes}
+                                                            onChange={(e) =>
+                                                                updateCustomerField("notes", e.target.value)
+                                                            }
+                                                            placeholder="Comentarios sobre el pedido"
+                                                        />
+                                                    </div>
+
+                                                </div>
+
+                                            </div>
+                                        )}
+                                    {
+                                        settings.content?.showCoupon !== false && (
+                                            <div className="store_checkout_panel">
+
+                                                <h2>Cupón promocional</h2>
+
+                                                <div className="store_cart_coupon_row">
+                                                    <input
+                                                        value={couponCode}
+                                                        onChange={(e) =>
+                                                            setCouponCode(e.target.value)
+                                                        }
+                                                        placeholder="Ej: INVIERNO10"
+                                                    />
+
+                                                    <div style={couponButtonWrapperStyle}>
+                                                        <button
+                                                            className={[
+                                                                "store_btn_primary",
+                                                                "store_checkout_coupon_button",
+                                                                getButtonHoverClass("coupon")
+                                                            ].filter(Boolean).join(" ")}
+                                                            style={{
+                                                                ...couponButtonStyle,
+                                                                ...(typography.button || {})
+                                                            }}
+                                                            type="button"
+                                                            onClick={handleApplyCoupon}
+                                                        >
+                                                            Aplicar
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                {couponData && (
+                                                    <div className="store_cart_shipping_info">
+                                                        Cupón aplicado:{" "}
+                                                        <strong>{couponData.code}</strong>
                                                     </div>
                                                 )}
 
                                             </div>
                                         )}
-
-                                    </div>
-
-                                    <div className="store_checkout_panel">
-
-                                        <h2>Datos del comprador</h2>
-
-                                        <div className="store_cart_customer_grid">
-
-                                            <div className="store_cart_field">
-                                                <label>Nombre *</label>
-                                                <input
-                                                    value={customer.name}
-                                                    onChange={(e) =>
-                                                        updateCustomerField("name", e.target.value)
-                                                    }
-                                                    placeholder="Tu nombre"
-                                                />
-                                            </div>
-
-                                            <div className="store_cart_field">
-                                                <label>Teléfono *</label>
-                                                <input
-                                                    value={customer.phone}
-                                                    onChange={(e) =>
-                                                        updateCustomerField("phone", e.target.value)
-                                                    }
-                                                    placeholder="Ej: 3546 520243"
-                                                />
-                                            </div>
-
-                                            <div className="store_cart_field">
-                                                <label>Email</label>
-                                                <input
-                                                    value={customer.email}
-                                                    onChange={(e) =>
-                                                        updateCustomerField("email", e.target.value)
-                                                    }
-                                                    placeholder="tu@email.com"
-                                                />
-                                            </div>
-
-                                            {selectedRequiresAddress && (
-                                                <>
-                                                    <div className="store_cart_field">
-                                                        <label>Dirección *</label>
-                                                        <input
-                                                            value={customer.address}
-                                                            onChange={(e) =>
-                                                                updateCustomerField("address", e.target.value)
-                                                            }
-                                                            placeholder="Dirección de entrega"
-                                                        />
-                                                    </div>
-                                                    <div className="store_cart_field">
-                                                        <label>Número</label>
-                                                        <input
-                                                            value={customer.street_number}
-                                                            onChange={(e) =>
-                                                                updateCustomerField("street_number", e.target.value)
-                                                            }
-                                                            placeholder="Ej: 1234"
-                                                        />
-                                                    </div>
-
-                                                    <div className="store_cart_field">
-                                                        <label>DNI / CUIT *</label>
-                                                        <input
-                                                            value={customer.document}
-                                                            onChange={(e) =>
-                                                                updateCustomerField("document", e.target.value)
-                                                            }
-                                                            placeholder="Ej: 20123456789"
-                                                        />
-                                                    </div>
-
-                                                    <div className="store_cart_field full">
-                                                        <label>Complemento</label>
-                                                        <input
-                                                            value={customer.street_extras}
-                                                            onChange={(e) =>
-                                                                updateCustomerField("street_extras", e.target.value)
-                                                            }
-                                                            placeholder="Piso, depto, referencias"
-                                                        />
-                                                    </div>
-                                                </>
-
-
-                                            )}
-
-                                            {selectedRequiresZip && (
-                                                <div className="store_cart_field">
-                                                    <label>Código postal *</label>
-                                                    <input
-                                                        value={customer.zip}
-                                                        onChange={(e) =>
-                                                            updateCustomerField("zip", e.target.value)
-                                                        }
-                                                        placeholder="Ej: 5194"
-                                                    />
-                                                </div>
-                                            )}
-
-                                            <div className="store_cart_field full">
-                                                <label>Observaciones</label>
-                                                <textarea
-                                                    value={customer.notes}
-                                                    onChange={(e) =>
-                                                        updateCustomerField("notes", e.target.value)
-                                                    }
-                                                    placeholder="Comentarios sobre el pedido"
-                                                />
-                                            </div>
-
-                                        </div>
-
-                                    </div>
-
-                                    <div className="store_checkout_panel">
-
-                                        <h2>Cupón promocional</h2>
-
-                                        <div className="store_cart_coupon_row">
-                                            <input
-                                                value={couponCode}
-                                                onChange={(e) =>
-                                                    setCouponCode(e.target.value)
-                                                }
-                                                placeholder="Ej: INVIERNO10"
-                                            />
-
-                                            <button
-                                                className="store_btn_dark py-3 px-3"
-                                                type="button"
-                                                onClick={handleApplyCoupon}
-                                            >
-                                                Aplicar
-                                            </button>
-                                        </div>
-
-                                        {couponData && (
-                                            <div className="store_cart_coupon_success">
-                                                Cupón aplicado:{" "}
-                                                <strong>{couponData.code}</strong>
-                                            </div>
-                                        )}
-
-                                    </div>
                                 </>
                             )}
 
                         </div>
 
-                        <div className="col-12 col-lg-4">
+                        <div className="store_checkout_sidebar">
+                            {
+                                settings.content?.showSummary !== false && (
+                                    <aside className="store_checkout_summary">
 
-                            <aside className="store_checkout_summary">
+                                        <h2
+                                            style={typography.title || {}}
+                                        >
+                                            Resumen
+                                        </h2>
 
-                                <h2>Resumen</h2>
+                                        <div className="store_cart_summary">
 
-                                <div className="store_cart_summary">
+                                            {
+                                                settings.content?.showSubtotal !== false && (
+                                                    <div>
+                                                        <span style={typography.text || {}}>
+                                                            Subtotal
+                                                        </span>
 
-                                    <div>
-                                        <span>Subtotal</span>
-                                        <strong>
-                                            {formatStorePrice(subtotal, store.currency || "ARS")}
-                                        </strong>
-                                    </div>
+                                                        <strong style={typography.price || {}}>
+                                                            {formatStorePrice(subtotal, store.currency || "ARS")}
+                                                        </strong>
+                                                    </div>
+                                                )
+                                            }
 
-                                    {discountTotal > 0 && (
-                                        <div>
-                                            <span>Descuento</span>
-                                            <strong className="discount">
-                                                - {formatStorePrice(discountTotal, store.currency || "ARS")}
-                                            </strong>
+                                            {
+                                                settings.content?.showDiscount !== false &&
+                                                discountTotal > 0 && (
+                                                    <div>
+                                                        <span>Descuento</span>
+                                                        <strong className="discount" style={typography.price || {}}>
+                                                            - {formatStorePrice(discountTotal, store.currency || "ARS")}
+                                                        </strong>
+                                                    </div>
+                                                )}
+
+                                            {
+                                                settings.content?.showShipping !== false &&
+                                                selectedShipping && (
+                                                    <div>
+                                                        <span>Envío</span>
+                                                        <strong style={typography.price || {}}>
+                                                            {selectedShipping?.provider === "zipnova" && !selectedShippingQuote
+                                                                ? "Pendiente"
+                                                                : shippingTotal > 0
+                                                                    ? formatStorePrice(shippingTotal, store.currency || "ARS")
+                                                                    : "A coordinar"}
+                                                        </strong>
+                                                    </div>
+                                                )}
+                                            {
+                                                settings.content?.showTotal !== false && (
+                                                    <div className="total">
+                                                        <span style={typography.total || typography.text || {}}>
+                                                            Total
+                                                        </span>
+
+                                                        <strong style={typography.total || typography.price || {}}>
+                                                            {formatStorePrice(finalTotal, store.currency || "ARS")}
+                                                        </strong>
+                                                    </div>
+                                                )}
                                         </div>
-                                    )}
+                                        {
+                                            settings.content?.showPaymentMethod !== false && (
+                                                <div className="store_cart_payment">
 
-                                    {selectedShipping && (
-                                        <div>
-                                            <span>Envío</span>
-                                            <strong>
-                                                {selectedShipping?.provider === "zipnova" && !selectedShippingQuote
-                                                    ? "Pendiente"
-                                                    : shippingTotal > 0
-                                                        ? formatStorePrice(shippingTotal, store.currency || "ARS")
-                                                        : "A coordinar"}
-                                            </strong>
+                                                    <label style={typography.text || {}}>Medio de pago</label>
+
+                                                    <select
+                                                        className="store_cart_payment_select"
+                                                        value={paymentMethod}
+                                                        onChange={(e) =>
+                                                            setPaymentMethod(e.target.value)
+                                                        }
+                                                    >
+                                                        <option value="whatsapp">
+                                                            Coordinar por WhatsApp
+                                                        </option>
+
+                                                        <option value="mercado_pago">
+                                                            Mercado Pago
+                                                        </option>
+
+                                                        <option value="manual_transfer">
+                                                            Transferencia bancaria
+                                                        </option>
+
+                                                        <option value="cash">
+                                                            Efectivo / a convenir
+                                                        </option>
+                                                    </select>
+
+                                                </div>
+                                            )}
+                                        <div style={confirmButtonWrapperStyle}>
+                                            <button
+                                                type="button"
+                                                className={[
+                                                    "store_btn_primary",
+                                                    "store_cart_continue_btn",
+                                                    "store_checkout_confirm_button",
+                                                    !items.length ? "disabled" : "",
+                                                    getButtonHoverClass("confirm")
+                                                ].filter(Boolean).join(" ")}
+                                                style={{
+                                                    ...confirmButtonStyle,
+                                                    ...(typography.button || {})
+                                                }}
+                                                disabled={!items.length}
+                                                onClick={handleWhatsappCheckout}
+                                            >
+                                                {paymentMethod === "mercado_pago" && (
+                                                    <>
+                                                        <SiMercadopago />
+                                                        <span>Pagar con Mercado Pago</span>
+                                                    </>
+                                                )}
+
+                                                {paymentMethod === "manual_transfer" && (
+                                                    <>
+                                                        <BsBank />
+                                                        <span>Finalizar por transferencia</span>
+                                                    </>
+                                                )}
+
+                                                {paymentMethod === "cash" && (
+                                                    <>
+                                                        <HiOutlineCash />
+                                                        <span>Finalizar pedido</span>
+                                                    </>
+                                                )}
+
+                                                {paymentMethod === "whatsapp" && (
+                                                    <>
+                                                        <FaWhatsapp />
+                                                        <span>Finalizar por WhatsApp</span>
+                                                    </>
+                                                )}
+                                            </button>
                                         </div>
-                                    )}
 
-                                    <div className="total">
-                                        <span>Total</span>
-                                        <strong>
-                                            {formatStorePrice(finalTotal, store.currency || "ARS")}
-                                        </strong>
-                                    </div>
-
-                                </div>
-
-                                <div className="store_cart_payment mt-3">
-
-                                    <label>Medio de pago</label>
-
-                                    <select
-                                        className="store_cart_payment_select"
-                                        value={paymentMethod}
-                                        onChange={(e) =>
-                                            setPaymentMethod(e.target.value)
+                                        {
+                                            settings.content?.showClearCartButton !== false &&
+                                            items.length > 0 && (
+                                                <div style={clearCartButtonWrapperStyle}>
+                                                    <button
+                                                        type="button"
+                                                        className={[
+                                                            "store_btn_secondary",
+                                                            "store_cart_clear",
+                                                            "store_checkout_clear_button",
+                                                            getButtonHoverClass("clearCart")
+                                                        ].filter(Boolean).join(" ")}
+                                                        style={{
+                                                            ...clearCartButtonStyle,
+                                                            ...(typography.button || {})
+                                                        }}
+                                                        onClick={handleClear}
+                                                    >
+                                                        Vaciar carrito
+                                                    </button>
+                                                </div>
+                                            )
                                         }
-                                    >
-                                        <option value="whatsapp">
-                                            Coordinar por WhatsApp
-                                        </option>
 
-                                        <option value="mercado_pago">
-                                            Mercado Pago
-                                        </option>
-
-                                        <option value="manual_transfer">
-                                            Transferencia bancaria
-                                        </option>
-
-                                        <option value="cash">
-                                            Efectivo / a convenir
-                                        </option>
-                                    </select>
-
-                                </div>
-
-                                <button
-                                    type="button"
-                                    className={
-                                        items.length
-                                            ? "store_public_btn store_cart_checkout_btn"
-                                            : "store_public_btn store_cart_checkout_btn disabled"
-                                    }
-                                    disabled={!items.length}
-                                    onClick={handleWhatsappCheckout}
-                                >
-                                    {paymentMethod === "mercado_pago" && (
-                                        <>
-                                            <SiMercadopago />
-                                            <span>Pagar con Mercado Pago</span>
-                                        </>
-                                    )}
-
-                                    {paymentMethod === "manual_transfer" && (
-                                        <>
-                                            <BsBank />
-                                            <span>Finalizar por transferencia</span>
-                                        </>
-                                    )}
-
-                                    {paymentMethod === "cash" && (
-                                        <>
-                                            <HiOutlineCash />
-                                            <span>Finalizar pedido</span>
-                                        </>
-                                    )}
-
-                                    {paymentMethod === "whatsapp" && (
-                                        <>
-                                            <FaWhatsapp />
-                                            <span>Finalizar por WhatsApp</span>
-                                        </>
-                                    )}
-                                </button>
-
-                                {items.length > 0 && (
-                                    <button
-                                        type="button"
-                                        className="store_cart_clear mt-2"
-                                        onClick={handleClear}
-                                    >
-                                        Vaciar carrito
-                                    </button>
+                                    </aside>
                                 )}
-
-                            </aside>
-
                         </div>
 
                     </div>
 
                 </div>
             </section>
+            <style jsx>{`
+                        .store_checkout_quote_button:hover {
+                            background: var(--store-checkout-quote-hover-bg, var(--qr-primary)) !important;
+                            color: var(--store-checkout-quote-hover-color, var(--qr-primary-text)) !important;
+                        }
 
+                        .store_checkout_coupon_button:hover {
+                            background: var(--store-checkout-coupon-hover-bg, var(--qr-primary)) !important;
+                            color: var(--store-checkout-coupon-hover-color, var(--qr-primary-text)) !important;
+                        }
+
+                        .store_checkout_confirm_button:hover {
+                            background: var(--store-checkout-confirm-hover-bg, var(--qr-primary)) !important;
+                            color: var(--store-checkout-confirm-hover-color, var(--qr-primary-text)) !important;
+                        }
+
+                        .store_checkout_clear_button:hover {
+                            background: var(--store-checkout-clearCart-hover-bg, var(--qr-surface)) !important;
+                            color: var(--store-checkout-clearCart-hover-color, var(--qr-text)) !important;
+                        }
+                    `}
+            </style>
         </main>
     );
 }

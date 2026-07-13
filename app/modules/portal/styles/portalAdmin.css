@@ -1,0 +1,153 @@
+/* ==========================================
+   PORTAL ADMIN
+========================================== */
+
+.tags_portal_admin_logo_box {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 12px 14px;
+    border: 1px solid rgba(46,125,50,.14);
+    border-radius: 16px;
+    background: #f8fbf8;
+}
+
+.tags_portal_admin_logo_preview {
+    max-width: 200px;
+    max-height: 100px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    display: block;
+    flex-shrink: 0;
+}
+
+.tags_portal_admin_logo_empty {
+    width: 92px;
+    height: 58px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px dashed rgba(46,125,50,.28);
+    border-radius: 12px;
+    background: #fff;
+    color: #8a8f98;
+    font-size: 12px;
+    flex-shrink: 0;
+}
+
+.tags_portal_admin_logo_actions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.tags_portal_admin_logo_hint {
+    font-size: 12px;
+    color: #6b7280;
+    margin: 0;
+}
+
+
+.tags_portal_admin_card {
+    background: #ffffff;
+    border: 1px solid rgba(15, 157, 88, .12);
+    border-radius: 22px;
+    padding: 22px;
+    box-shadow: 0 12px 34px rgba(15, 23, 42, .06);
+}
+
+.tags_portal_admin_card_header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.tags_portal_admin_card_header h2 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 800;
+    color: #111827;
+}
+
+.tags_portal_admin_card_header p {
+    margin: 4px 0 0;
+    color: #6b7280;
+    font-size: 14px;
+}
+
+.tags_portal_admin_grid_2 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.tags_portal_admin_grid_2 .full {
+    grid-column: 1 / -1;
+}
+.tags_portal_admin_tabs {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.tags_portal_admin_tabs button {
+    border: 1px solid rgba(15, 157, 88, .18);
+    background: #fff;
+    color: #374151;
+    border-radius: 999px;
+    padding: 10px 18px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.tags_portal_admin_tabs button.active {
+    background: #0F9D58;
+    color: #fff;
+    border-color: #0F9D58;
+}
+.tags_portal_typography_grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+}
+
+
+@media (max-width: 768px) {
+    .tags_portal_admin_grid_2 {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 600px) {
+    .tags_portal_typography_grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ==========================================
+   HEADER BUILDER
+========================================== */
+
+/* próximamente */
+
+/* ==========================================
+   FOOTER BUILDER
+========================================== */
+
+/* próximamente */
+
+/* ==========================================
+   ROUTES
+========================================== */
+
+/* próximamente */
+
+/* ==========================================
+   PREVIEW
+========================================== */
+
+/* próximamente */
+

@@ -81,13 +81,18 @@ export default function ClientReviewsAdminClient({
     const [reviewerMediaLoading, setReviewerMediaLoading] =
         useState(false);
 
-    const [responseFilters, setResponseFilters] = useState({
-        q: "",
-        rating: "",
-        status: "",
-        from: "",
-        to: ""
-    });
+    const [responseFilters, setResponseFilters] =
+        useState({
+            q: "",
+            rating: "",
+            status: "",
+            verified: "",
+            isPublic: "",
+            from: "",
+            to: ""
+        });
+
+
 
     const [mediaItems, setMediaItems] = useState([]);
     const [mediaLoading, setMediaLoading] = useState(false);
@@ -118,7 +123,9 @@ export default function ClientReviewsAdminClient({
         responseFilters.rating,
         responseFilters.status,
         responseFilters.from,
-        responseFilters.to
+        responseFilters.to,
+        responseFilters.verified,
+        responseFilters.isPublic
     ]);
 
     async function load() {
@@ -227,7 +234,9 @@ export default function ClientReviewsAdminClient({
                 rating: responseFilters.rating || "",
                 status: responseFilters.status || "",
                 from: responseFilters.from || "",
-                to: responseFilters.to || ""
+                to: responseFilters.to || "",
+                verified: responseFilters.verified,
+                isPublic: responseFilters.isPublic,
             });
 
             const res = await fetch(
@@ -287,6 +296,79 @@ export default function ClientReviewsAdminClient({
         }
 
         loadResponses();
+    }
+
+    async function changeResponsePublic(
+        responseId,
+        isPublic
+    ) {
+
+        try {
+
+            const res =
+                await fetch(
+                    "/api/client-reviews/admin/responses/public",
+                    {
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type":
+                                "application/json"
+                        },
+
+                        body:
+                            JSON.stringify({
+
+                                id:
+                                    responseId,
+
+                                businessId,
+
+                                is_public:
+                                    isPublic ? 1 : 0
+                            })
+                    }
+                );
+
+            const data =
+                await res.json();
+
+            if (!res.ok) {
+
+                showAlert({
+                    icon: "error",
+                    title: "Error",
+                    text:
+                        data.error ||
+                        "No se pudo actualizar la publicación."
+                });
+
+                return;
+            }
+
+            setResponses(previous =>
+                previous.map(response =>
+                    Number(response.id) === Number(responseId)
+                        ? {
+                            ...response,
+                            is_public:
+                                isPublic ? 1 : 0
+                        }
+                        : response
+                )
+            );
+
+        } catch {
+
+            showAlert({
+                icon: "error",
+                title: "Error",
+                text:
+                    "No se pudo actualizar la publicación."
+            });
+
+        }
+
     }
 
     async function deleteResponse(id) {
@@ -1210,6 +1292,7 @@ export default function ClientReviewsAdminClient({
 
                                         <td>
                                             {response.customer_name || "Cliente"}
+                                        
                                         </td>
 
                                         <td>
@@ -1913,6 +1996,64 @@ export default function ClientReviewsAdminClient({
                                             </div>
 
                                             <div className="col-6 col-md-2 mb-2">
+
+                                                <select
+                                                    className="qr_page_input"
+                                                    value={responseFilters.verified}
+                                                    onChange={(e) =>
+                                                        updateResponseFilter(
+                                                            "verified",
+                                                            e.target.value
+                                                        )
+                                                    }
+                                                >
+
+                                                    <option value="">
+                                                        Compra
+                                                    </option>
+
+                                                    <option value="verified">
+                                                        Verificadas
+                                                    </option>
+
+                                                    <option value="unverified">
+                                                        No verificadas
+                                                    </option>
+
+                                                </select>
+
+                                            </div>
+
+                                            <div className="col-6 col-md-2 mb-2">
+
+                                                <select
+                                                    className="qr_page_input"
+                                                    value={responseFilters.isPublic}
+                                                    onChange={(e) =>
+                                                        updateResponseFilter(
+                                                            "isPublic",
+                                                            e.target.value
+                                                        )
+                                                    }
+                                                >
+
+                                                    <option value="">
+                                                        Publicación
+                                                    </option>
+
+                                                    <option value="public">
+                                                        Públicas
+                                                    </option>
+
+                                                    <option value="private">
+                                                        No públicas
+                                                    </option>
+
+                                                </select>
+
+                                            </div>
+
+                                            <div className="col-6 col-md-2 mb-2">
                                                 <input
                                                     type="date"
                                                     className="qr_page_input"
@@ -1951,7 +2092,9 @@ export default function ClientReviewsAdminClient({
                                                             <th>Cliente</th>
                                                             <th>Rating</th>
                                                             <th>Comentario</th>
+                                                            <th>Compra</th>
                                                             <th>Google</th>
+                                                            <th>Pública</th>
                                                             <th>Estado</th>
                                                             <th>Fotos</th>
                                                             <th>Acciones</th>
@@ -1971,6 +2114,11 @@ export default function ClientReviewsAdminClient({
                                                                     {response.customer_name ||
                                                                         response.customer_email ||
                                                                         "-"}
+                                                                    {Number(response.verified_purchase) === 1 && (
+                                                                        <span className="client_reviews_verified_badge">
+                                                                            ✓ Verificada
+                                                                        </span>
+                                                                    )}
                                                                 </td>
 
                                                                 <td>
@@ -1982,6 +2130,20 @@ export default function ClientReviewsAdminClient({
                                                                 </td>
 
                                                                 <td>
+                                                                    {Number(response.verified_purchase) === 1
+                                                                        ? (
+                                                                            <span className="badge success">
+                                                                                Compra verificada
+                                                                            </span>
+                                                                        )
+                                                                        : (
+                                                                            <span className="badge">
+                                                                                Pública
+                                                                            </span>
+                                                                        )}
+                                                                </td>
+
+                                                                <td>
                                                                     {response.google_clicked
                                                                         ? "✅"
                                                                         : response.google_prompt_shown
@@ -1990,15 +2152,34 @@ export default function ClientReviewsAdminClient({
                                                                 </td>
 
                                                                 <td>
+
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        checked={
+                                                                            Number(response.is_public) === 1
+                                                                        }
+                                                                        onChange={(e) =>
+                                                                            changeResponsePublic(
+                                                                                response.id,
+                                                                                e.target.checked
+                                                                            )
+                                                                        }
+                                                                    />
+
+                                                                </td>
+
+                                                                <td>
                                                                     <span className={`badge ${response.status}`}>
                                                                         {response.status}
                                                                     </span>
                                                                 </td>
+
                                                                 <td>
                                                                     {Number(response.media_count || 0) > 0
                                                                         ? `📷 ${response.media_count}`
                                                                         : "-"}
                                                                 </td>
+
                                                                 <td>
                                                                     <div className="client_reviews_actions">
 

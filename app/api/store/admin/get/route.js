@@ -1,7 +1,7 @@
 // =====================================
 // API: /api/store/admin/get
-// Descripción: Obtiene la tienda de un cliente por businessId.
-// Uso: Dashboard admin / cliente.
+// Descripción: Obtiene la tienda de un cliente por businessId,
+// incluyendo secciones y bloques del builder de Tags Store.
 // =====================================
 
 export const runtime = "nodejs";
@@ -44,7 +44,7 @@ export async function GET(req) {
             );
         }
 
-        const [rows] =
+        const [storeRows] =
             await db.query(
                 `
                 SELECT
@@ -53,10 +53,8 @@ export async function GET(req) {
                     p.status AS page_status,
                     p.page_type AS page_type
                 FROM tags_stores s
-
                 LEFT JOIN tags_qr_pages p
                     ON p.id = s.page_id
-
                 WHERE s.business_id = ?
                 LIMIT 1
                 `,
@@ -66,25 +64,98 @@ export async function GET(req) {
             );
 
         const store =
-            rows[0] || null;
+            storeRows[0] || null;
 
-        if (store) {
-            store.settings_json =
-                parseJson(
-                    store.settings_json,
-                    {}
+        if (!store) {
+            return Response.json({
+                ok: true,
+                store: null,
+                sections: [],
+                blocks: []
+            });
+        }
+
+        store.settings_json =
+            parseJson(
+                store.settings_json,
+                {}
+            );
+
+        store.styles_json =
+            parseJson(
+                store.styles_json,
+                {}
+            );
+
+        const [sectionRows] =
+            await db.query(
+                `
+                SELECT *
+                FROM tags_store_sections
+                WHERE store_id = ?
+                ORDER BY sort_order ASC, id ASC
+                `,
+                [
+                    store.id
+                ]
+            );
+
+        const sections =
+            sectionRows.map(section => ({
+                ...section,
+                settings_json:
+                    parseJson(
+                        section.settings_json,
+                        {}
+                    )
+            }));
+
+        const sectionIds =
+            sections.map(section => section.id);
+
+        let blocks = [];
+
+        if (sectionIds.length) {
+            const placeholders =
+                sectionIds.map(() => "?").join(",");
+
+            const [blockRows] =
+                await db.query(
+                    `
+                    SELECT *
+                    FROM tags_store_blocks
+                    WHERE section_id IN (${placeholders})
+                    ORDER BY sort_order ASC, id ASC
+                    `,
+                    sectionIds
                 );
 
-            store.styles_json =
-                parseJson(
-                    store.styles_json,
-                    {}
-                );
+            blocks =
+                blockRows.map(block => ({
+                    ...block,
+                    content_json:
+                        parseJson(
+                            block.content_json,
+                            {}
+                        ),
+                    styles_json:
+                        parseJson(
+                            block.styles_json,
+                            {}
+                        ),
+                    animation_json:
+                        parseJson(
+                            block.animation_json,
+                            {}
+                        )
+                }));
         }
 
         return Response.json({
             ok: true,
-            store
+            store,
+            sections,
+            blocks
         });
 
     } catch (err) {

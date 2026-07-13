@@ -27,7 +27,12 @@ import { db }
 import {
     defaultStoreTemplate
 }
-from "./defaultStoreTemplate";
+    from "./defaultStoreTemplate";
+
+import {
+    getStoreModule
+}
+    from "@/app/modules/store/lib/storeModuleRegistry";
 
 export async function installStoreTemplate(
     storeId,
@@ -42,6 +47,7 @@ export async function installStoreTemplate(
 
     const connection =
         conn || db;
+
 
     // -----------------------------
     // ELIMINAR BLOQUES
@@ -116,6 +122,26 @@ export async function installStoreTemplate(
         const blocks =
             sectionData.blocks || [];
 
+        const module =
+            getStoreModule(
+                blockData.block_type
+            );
+
+        const content =
+            blockData.content ||
+            module?.defaultContent ||
+            {};
+
+        const styles =
+            blockData.styles ||
+            module?.defaultStyles ||
+            {};
+
+        const animation =
+            blockData.animation ||
+            module?.defaultAnimation ||
+            {};
+
         for (
             const blockData
             of blocks
@@ -142,15 +168,9 @@ export async function installStoreTemplate(
                     sectionId,
                     blockData.block_type,
                     blockData.title || null,
-                    JSON.stringify(
-                        blockData.content || {}
-                    ),
-                    JSON.stringify(
-                        blockData.styles || {}
-                    ),
-                    JSON.stringify(
-                        blockData.animation || {}
-                    ),
+                    JSON.stringify(content),
+                    JSON.stringify(styles),
+                    JSON.stringify(animation),
                     1,
                     blockData.sort_order || 0
                 ]

@@ -4,6 +4,7 @@
 //
 // Descripción:
 // Menú público de categorías de Tags Store.
+// Sin Bootstrap y compatible con themes --qr-*.
 //
 // Contexto:
 // store
@@ -16,8 +17,10 @@ from "../../lib/getStorePublicCategories";
 
 export default async function StoreCategoryMenuBlock({
     entity,
-    content = {}
+    content = {},
+    styles = {}
 }) {
+
     const categories =
         await getStorePublicCategories(
             entity?.id
@@ -27,32 +30,72 @@ export default async function StoreCategoryMenuBlock({
         return null;
     }
 
-    return (
-        <section className="py-3 bg-white border-bottom">
-            <div className="container">
-                <div className="d-flex gap-2 overflow-auto pb-1">
-                    <a
-                        href="#store-products"
-                        className="btn btn-success btn-sm rounded-pill px-3 flex-shrink-0"
-                    >
-                        Todos
-                    </a>
+    function getTextStyle(part) {
+        return styles?.typography?.[part] || {};
+    }
 
-                    {
-                        categories.map(
-                            (category) => (
-                                <a
-                                    key={category.id}
-                                    href={`#category-${category.slug}`}
-                                    className="btn btn-outline-dark btn-sm rounded-pill px-3 flex-shrink-0"
-                                >
-                                    {category.name}
-                                </a>
-                            )
-                        )
-                    }
-                </div>
+    const sectionStyle = {
+        backgroundColor:
+            styles.backgroundColor || undefined,
+
+        color:
+            styles.textColor || undefined,
+
+        textAlign:
+            styles.alignment || undefined,
+
+        padding:
+            styles.padding || undefined,
+
+        marginTop:
+            styles.marginTop || undefined,
+
+        marginBottom:
+            styles.marginBottom || undefined
+    };
+
+    const allCategoriesText =
+        content.allCategoriesText ||
+        "Todos";
+
+    return (
+
+        <section
+            className="store_category_menu"
+            style={sectionStyle}
+        >
+
+            <div className="store_category_menu_inner">
+
+                <a
+                    href="#store-products"
+                    className="store_category_chip active"
+                    style={getTextStyle("button")}
+                >
+                    {allCategoriesText}
+                </a>
+
+                {
+
+                    categories.map(category => (
+
+                        <a
+                            key={category.id}
+                            href={`#category-${category.slug}`}
+                            className="store_category_chip"
+                            style={getTextStyle("button")}
+                        >
+                            {category.name}
+                        </a>
+
+                    ))
+
+                }
+
             </div>
+
         </section>
+
     );
+
 }

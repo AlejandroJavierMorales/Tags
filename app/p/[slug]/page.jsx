@@ -12,6 +12,17 @@ import QRPageRenderer
 import ClientReviewsPublicRenderer from "@/app/modules/client-reviews/renderers/ClientReviewsPublicRenderer";
 import StorePublicRenderer from "@/app/modules/store/public/StorePublicRenderer";
 
+import {
+    getPublicPortalContext
+}
+    from "@/app/modules/portal/lib/getPublicPortalContext";
+
+import PortalHeader
+    from "@/app/modules/portal/components/PortalHeader";
+
+import PortalFooter
+    from "@/app/modules/portal/components/PortalFooter";
+
 
 import {
     getStorePublicBuilderPage
@@ -875,24 +886,12 @@ function buildStructuredData({
         cleanObject({
             "@context": "https://schema.org",
             "@type": "WebPage",
-            "@id": `${storeUrl}#webpage`,
-            name:
-                store.seo_title ||
-                `${store.name} | Tienda Online`,
-            description:
-                store.seo_description ||
-                store.description,
-            url:
-                storeUrl,
+            "@id": `${pageUrl}#webpage`,
+            name: seo.title,
+            description: seo.description,
+            url: pageUrl,
             about: {
-                "@id": `${storeUrl}#store`
-            },
-            potentialAction: {
-                "@type": "SearchAction",
-                target:
-                    `${storeUrl}?q={search_term_string}`,
-                "query-input":
-                    "required name=search_term_string"
+                "@id": `${pageUrl}#main`
             }
         });
 
@@ -982,113 +981,6 @@ export default async function PublicQRPage({
     searchParams
 }) {
 
-    const storeBuilderData =
-        await getStorePublicBuilderPage(
-            params.slug
-        );
-
-    console.log("STORE BUILDER DATA:", {
-        found: !!storeBuilderData,
-        storeId: storeBuilderData?.store?.id,
-        sections: storeBuilderData?.sections?.length,
-        blocks: storeBuilderData?.blocks?.length
-    });
-
-    if (
-        storeBuilderData &&
-        storeBuilderData.sections?.length > 0 &&
-        storeBuilderData.blocks?.length > 0
-    ) {
-        const storeStructuredData =
-            await buildStoreStructuredData(
-                params.slug
-            );
-
-        return (
-            <>
-                <script
-                    type="application/ld+json"
-                    dangerouslySetInnerHTML={{
-                        __html:
-                            JSON.stringify(
-                                storeStructuredData
-                            )
-                    }}
-                />
-
-                <StoreRenderer
-                    store={storeBuilderData.store}
-                    sections={storeBuilderData.sections}
-                    blocks={storeBuilderData.blocks}
-                />
-            </>
-        );
-    }
-
-    let data =
-        await getPublicQRPage(
-            params.slug
-        );
-
-    if (!data) {
-
-        const storeData =
-            await getPublicStore(
-                params.slug
-            );
-
-        if (!storeData) {
-            notFound();
-        }
-
-        return (
-            <StorePublicRenderer
-                store={storeData.store}
-                categories={storeData.categories}
-                products={storeData.products}
-            />
-        );
-    }
-
-    const {
-        page,
-        sections,
-        products
-    } = data;
-
-
-    if (page.page_type === "client_reviews") {
-        return (
-            <ClientReviewsPublicRenderer
-                slug={page.slug}
-                reviewToken={searchParams?.token || null}
-            />
-        );
-    }
-
-    if (page.page_type === "store") {
-        const storeData =
-            await getPublicStore(page.slug);
-
-        if (!storeData) {
-            notFound();
-        }
-
-        return (
-            <StorePublicRenderer
-                store={storeData.store}
-                categories={storeData.categories}
-                products={storeData.products}
-            />
-        );
-    }
-
-
-    const structuredData =
-        buildStructuredData({
-            page,
-            products
-        });
 
     /* Store Public */
     async function getPublicStore(slug) {
@@ -1097,22 +989,31 @@ export default async function PublicQRPage({
             await db.query(
                 `
             SELECT
-                s.*,
-                p.id AS page_id,
-                p.slug AS page_slug,
-                p.status AS page_status,
-                p.page_type
-            FROM tags_stores s
+                    s.*,
+                    p.id AS page_id,
+                    p.slug AS page_slug,
+                    p.status AS page_status,
+                    p.page_type,
 
-            INNER JOIN tags_qr_pages p
-                ON p.id = s.page_id
+                    t.id AS theme_id,
+                    t.code AS theme_code,
+                    t.name AS theme_name,
+                    t.css_tokens AS theme_css_tokens
 
-            WHERE p.slug = ?
-            AND p.status = 'published'
-            AND p.page_type = 'store'
+                FROM tags_stores s
 
-            LIMIT 1
-            `,
+                INNER JOIN tags_qr_pages p
+                    ON p.id = s.page_id
+
+                LEFT JOIN tags_qr_page_themes t
+                    ON t.id = p.theme_id
+
+                WHERE p.slug = ?
+                AND p.status = 'published'
+                AND p.page_type = 'store'
+
+                LIMIT 1
+                `,
                 [
                     slug
                 ]
@@ -1134,6 +1035,18 @@ export default async function PublicQRPage({
             safeParseJSON(
                 store.styles_json
             );
+
+        store.theme =
+            store.theme_id
+                ? {
+                    id: store.theme_id,
+                    code: store.theme_code,
+                    name: store.theme_name,
+                    css_tokens: safeParseJSON(
+                        store.theme_css_tokens
+                    )
+                }
+                : null;
 
         const [categories] =
             await db.query(
@@ -1196,6 +1109,214 @@ export default async function PublicQRPage({
     }
 
 
+    const storeBuilderData =
+        await getStorePublicBuilderPage(
+            params.slug
+        );
+
+    /*     console.log("STORE BUILDER DATA:", {
+            found: !!storeBuilderData,
+            storeId: storeBuilderData?.store?.id,
+            sections: storeBuilderData?.sections?.length,
+            blocks: storeBuilderData?.blocks?.length
+        }); */
+
+    if (
+        storeBuilderData &&
+        storeBuilderData.sections?.length > 0 &&
+        storeBuilderData.blocks?.length > 0
+    ) {
+        const storeStructuredData =
+            await buildStoreStructuredData(
+                params.slug
+            );
+
+        const portalContext =
+            await getPublicPortalContext({
+                businessId: storeBuilderData.store.business_id,
+                pageId: storeBuilderData.store.page_id,
+                slug: storeBuilderData.store.page_slug || params.slug
+            });
+
+        return (
+            <>
+                <script
+                    type="application/ld+json"
+                    dangerouslySetInnerHTML={{
+                        __html:
+                            JSON.stringify(
+                                storeStructuredData
+                            )
+                    }}
+                />
+
+                {portalContext.hasPortal && (
+                    <PortalHeader
+                        portal={portalContext.portal}
+                        routes={portalContext.routes}
+                        currentRoute={portalContext.currentRoute}
+                    />
+                )}
+
+                <StoreRenderer
+                    store={storeBuilderData.store}
+                    sections={storeBuilderData.sections}
+                    blocks={storeBuilderData.blocks}
+                />
+
+                {portalContext.hasPortal && (
+                    <PortalFooter
+                        portal={portalContext.portal}
+                        routes={portalContext.routes}
+                        currentRoute={portalContext.currentRoute}
+                    />
+                )}
+            </>
+        );
+    }
+
+    let data =
+        await getPublicQRPage(
+            params.slug
+        );
+
+    if (!data) {
+
+        const storeData =
+            await getPublicStore(
+                params.slug
+            );
+
+        if (!storeData) {
+            notFound();
+        }
+
+        const portalContext =
+            await getPublicPortalContext({
+                businessId: storeData.store.business_id,
+                pageId: storeData.store.page_id,
+                slug: storeData.store.page_slug || params.slug
+            });
+
+        return (
+            <>
+                {portalContext.hasPortal && (
+                    <PortalHeader
+                        portal={portalContext.portal}
+                        routes={portalContext.routes}
+                        currentRoute={portalContext.currentRoute}
+                    />
+                )}
+
+                <StorePublicRenderer
+                    store={storeData.store}
+                    categories={storeData.categories}
+                    products={storeData.products}
+                />
+
+                {portalContext.hasPortal && (
+                    <PortalFooter
+                        portal={portalContext.portal}
+                        routes={portalContext.routes}
+                        currentRoute={portalContext.currentRoute}
+                    />
+                )}
+            </>
+        );
+    }
+
+    const {
+        page,
+        sections,
+        products
+    } = data;
+
+    const portalContext =
+        await getPublicPortalContext({
+            businessId: page.business_id,
+            pageId: page.id,
+            slug: page.slug
+        });
+
+    if (page.page_type === "client_reviews") {
+        return (
+            <>
+                {portalContext.hasPortal && (
+                    <PortalHeader
+                        portal={portalContext.portal}
+                        routes={portalContext.routes}
+                        currentRoute={portalContext.currentRoute}
+                    />
+                )}
+
+                <ClientReviewsPublicRenderer
+                    slug={page.slug}
+                    reviewToken={searchParams?.token || null}
+                />
+
+                {portalContext.hasPortal && (
+                    <PortalFooter
+                        portal={portalContext.portal}
+                        routes={portalContext.routes}
+                        currentRoute={portalContext.currentRoute}
+                    />
+                )}
+            </>
+        );
+    }
+
+    if (page.page_type === "store") {
+        const storeData =
+            await getPublicStore(page.slug);
+
+        if (!storeData) {
+            notFound();
+        }
+
+        const portalContext =
+            await getPublicPortalContext({
+                businessId: storeData.store.business_id,
+                pageId: storeData.store.page_id,
+                slug: storeData.store.page_slug || params.slug
+            });
+
+        return (
+            <>
+                {portalContext.hasPortal && (
+                    <PortalHeader
+                        portal={portalContext.portal}
+                        routes={portalContext.routes}
+                        currentRoute={portalContext.currentRoute}
+                    />
+                )}
+
+                <StorePublicRenderer
+                    store={storeData.store}
+                    categories={storeData.categories}
+                    products={storeData.products}
+                />
+
+                {portalContext.hasPortal && (
+                    <PortalFooter
+                        portal={portalContext.portal}
+                        routes={portalContext.routes}
+                        currentRoute={portalContext.currentRoute}
+                    />
+                )}
+            </>
+        );
+    }
+
+
+    const structuredData =
+        buildStructuredData({
+            page,
+            products
+        });
+
+
+
+
 
 
     /*  UI */
@@ -1205,18 +1326,33 @@ export default async function PublicQRPage({
             <script
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{
-                    __html:
-                        JSON.stringify(
-                            structuredData
-                        )
+                    __html: JSON.stringify(structuredData)
                 }}
             />
+
+            {portalContext.hasPortal && (
+                <PortalHeader
+                    portal={portalContext.portal}
+                    routes={portalContext.routes}
+                    currentRoute={portalContext.currentRoute}
+                />
+            )}
 
             <QRPageRenderer
                 page={page}
                 sections={sections}
                 products={products}
+                portal={portalContext.portal}
             />
+
+            {portalContext.hasPortal && (
+                <PortalFooter
+                    portal={portalContext.portal}
+                    routes={portalContext.routes}
+                    currentRoute={portalContext.currentRoute}
+                />
+            )}
+
         </>
     );
 }

@@ -26,6 +26,8 @@ function clean(value) {
 export async function POST(req) {
     const conn = await db.getConnection();
 
+    let transactionStarted = false;
+
     try {
         const body = await req.json();
 
@@ -137,26 +139,52 @@ export async function POST(req) {
         }
 
         const ratings = answers
-            .map(a => Number(a.rating))
-            .filter(v => v >= 1 && v <= 5);
+            .map(answer => Number(answer.rating))
+            .filter(value =>
+                value >= 1 &&
+                value <= 5
+            );
 
         if (ratings.length !== answers.length) {
             return Response.json(
-                { error: "Todas las calificaciones deben estar entre 1 y 5" },
+                {
+                    error:
+                        "Todas las calificaciones deben estar entre 1 y 5"
+                },
                 { status: 400 }
             );
         }
 
-        const total = ratings.reduce((acc, n) => acc + n, 0);
-        const average = Number((total / ratings.length).toFixed(2));
-        const minRating = Math.min(...ratings);
-        const maxRating = Math.max(...ratings);
+        const total =
+            ratings.reduce(
+                (accumulator, rating) =>
+                    accumulator + rating,
+                0
+            );
+
+        const average =
+            Number(
+                (
+                    total /
+                    ratings.length
+                ).toFixed(2)
+            );
+
+        const minRating =
+            Math.min(...ratings);
+
+        const maxRating =
+            Math.max(...ratings);
 
         const positiveThreshold =
-            Number(form.positive_threshold || 4);
+            Number(
+                form.positive_threshold || 4
+            );
 
         const googlePromptShown =
-            average >= positiveThreshold ? 1 : 0;
+            average >= positiveThreshold
+                ? 1
+                : 0;
 
         const ip =
             req.headers.get("x-forwarded-for") ||
@@ -164,38 +192,50 @@ export async function POST(req) {
             null;
 
         const userAgent =
-            req.headers.get("user-agent") || null;
+            req.headers.get("user-agent") ||
+            null;
 
-        /* Existe ya una Reseña para este Pedido? */
-        const [existingReviewRows] =
-            await conn.query(
-                `
-        SELECT id
-        FROM tags_client_review_responses
-        WHERE store_id = ?
-        AND order_id = ?
-        AND verified_purchase = 1
-        LIMIT 1
-        `,
-                [
-                    tokenRow.store_id,
-                    tokenRow.order_id
-                ]
-            );
+        /*
+         * Una compra verificada puede calificarse
+         * una sola vez en Tags Reviews.
+         */
+        if (
+            verifiedPurchase === 1 &&
+            storeId &&
+            orderId
+        ) {
+            const [existingReviewRows] =
+                await conn.query(
+                    `
+                    SELECT id
+                    FROM tags_client_review_responses
+                    WHERE store_id = ?
+                    AND order_id = ?
+                    AND verified_purchase = 1
+                    LIMIT 1
+                    `,
+                    [
+                        storeId,
+                        orderId
+                    ]
+                );
 
-        if (existingReviewRows.length > 0) {
-            return Response.json(
-                {
-                    error:
-                        "Esta compra ya fue calificada."
-                },
-                {
-                    status: 409
-                }
-            );
+            if (existingReviewRows.length > 0) {
+                return Response.json(
+                    {
+                        error:
+                            "Esta compra ya fue calificada."
+                    },
+                    {
+                        status: 409
+                    }
+                );
+            }
         }
 
         await conn.beginTransaction();
+
+        transactionStarted = true;
 
         const [responseResult] = await conn.query(
             `
@@ -236,7 +276,9 @@ export async function POST(req) {
                 minRating,
                 maxRating,
                 googlePromptShown,
-                verifiedPurchase ? "store_verified_purchase" : "qr",
+                verifiedPurchase
+                    ? "store_verified_purchase"
+                    : "qr",
                 userAgent,
                 hashIP(ip),
                 verifiedPurchase,
@@ -246,7 +288,8 @@ export async function POST(req) {
             ]
         );
 
-        const responseId = responseResult.insertId;
+        const responseId =
+            responseResult.insertId;
 
         for (const answer of answers) {
             await conn.query(
@@ -274,7 +317,8 @@ export async function POST(req) {
             await conn.query(
                 `
                 UPDATE tags_store_review_tokens
-                SET used_at = NOW(),
+                SET
+                    used_at = NOW(),
                     updated_at = NOW()
                 WHERE id = ?
                 AND used_at IS NULL
@@ -285,23 +329,38 @@ export async function POST(req) {
 
         await conn.commit();
 
+        transactionStarted = false;
+
         return Response.json({
             ok: true,
             responseId,
             averageRating: average,
-            googlePromptShown: Boolean(googlePromptShown),
-            googleReviewUrl: form.google_review_url || null,
-            verifiedPurchase: Boolean(verifiedPurchase)
+            googlePromptShown:
+                Boolean(googlePromptShown),
+            googleReviewUrl:
+                form.google_review_url || null,
+            verifiedPurchase:
+                Boolean(verifiedPurchase)
         });
 
     } catch (err) {
-        await conn.rollback();
+        if (transactionStarted) {
+            await conn.rollback();
+        }
 
-        console.error("CLIENT REVIEWS SUBMIT ERROR:", err);
+        console.error(
+            "CLIENT REVIEWS SUBMIT ERROR:",
+            err
+        );
 
         return Response.json(
-            { error: "Error enviando reseña" },
-            { status: 500 }
+            {
+                error:
+                    "Error enviando reseña"
+            },
+            {
+                status: 500
+            }
         );
 
     } finally {

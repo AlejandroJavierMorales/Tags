@@ -1,5 +1,6 @@
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./styles/tags_global.css";
+import "./components/ui/styles_ui.css"
 
 import {
     Inter,

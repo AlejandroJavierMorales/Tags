@@ -16,6 +16,19 @@ import "../../../styles/tags_dashboard.css";
 import showAlert from "@/app/components/showAlert";
 import { FiDownload } from "react-icons/fi";
 import QRDownloadModal from "@/app/components/QRDownloadModal";
+import QRPageSelectorModal from "@/app/components/businesses/QRPageSelectorModal";
+import QRPageActivateModal from "@/app/components/businesses/QRPageActivateModal";
+import PortalDashboard from "@/app/components/businesses/PortalDashboard";
+import {
+  buildPortalDashboard,
+  hasAnyPage,
+  isTagsIdQR,
+  isTagsIdPage,
+  isClientReviewsPage
+} from "@/app/lib/portal/buildPortalDashboard";
+import QRPageManagerModal from "@/app/components/businesses/QRPageManagerModal";
+import WorkspaceAppCreateModal from "@/app/components/businesses/WorkspaceAppCreateModal";
+import TagsSpinner from "@/app/components/TagsSpinner";
 
 function getQRUrl(code) {
   const base =
@@ -26,8 +39,19 @@ function getQRUrl(code) {
   return `https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${base}/t/${code}`;
 }
 
+
+/////////////////////////////////////////////////
+//Pagina Pricipal del cliente: Portal /QRs Admin
+////////////////////////////////////////////////
 export default function BusinessDetailClient({ session, isAdmin }) {
   const { id } = useParams();
+
+  const [loading, setLoading] = useState(true);
+
+  const [portal, setPortal] = useState(null);
+  const [portalRoutes, setPortalRoutes] = useState([]);
+  const [qrPageSelectorOpen, setQrPageSelectorOpen] = useState(false);
+  const [qrPageActivateOpen, setQrPageActivateOpen] = useState(false);
 
   const [qrs, setQrs] = useState([]);
   const [business, setBusiness] = useState(null);
@@ -38,6 +62,9 @@ export default function BusinessDetailClient({ session, isAdmin }) {
   const [editStopMessage, setEditStopMessage] = useState("");
 
   const router = useRouter();
+  const [store, setStore] = useState(null);
+  const [storeActivateOpen, setStoreActivateOpen] =
+    useState(false);
 
   const [openQRModal, setOpenQRModal] = useState(false);
   const [selectedQR, setSelectedQR] = useState(null);
@@ -47,6 +74,13 @@ export default function BusinessDetailClient({ session, isAdmin }) {
     useState(null);
   const [businessAddons, setBusinessAddons] =
     useState([]);
+  const [qrPageCreateOpen, setQrPageCreateOpen] = useState(false);
+  const [reviewsActivateOpen, setReviewsActivateOpen] =
+    useState(false);
+  const [tagsIdActivateOpen, setTagsIdActivateOpen] =
+    useState(false);
+  const [portalActivateOpen, setPortalActivateOpen] =
+    useState(false);
 
 
   // =====================================
@@ -87,6 +121,8 @@ export default function BusinessDetailClient({ session, isAdmin }) {
   useEffect(() => {
     load();
     loadSubscriptionSummary();
+    loadStore();
+    loadPortal();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
@@ -129,6 +165,28 @@ export default function BusinessDetailClient({ session, isAdmin }) {
 
   }
 
+  async function loadPortal() {
+    setLoading(true);
+    try {
+      const res =
+        await fetch(`/api/portal/admin/get?businessId=${id}`);
+
+      const data =
+        await res.json().catch(() => null);
+
+      if (res.ok && data?.ok) {
+        setPortal(data.portal || null);
+        setPortalRoutes(Array.isArray(data.routes) ? data.routes : []);
+      }
+
+    } catch (err) {
+      console.error("PORTAL LOAD ERROR:", err);
+    }
+    finally {
+      setLoading(false);
+    }
+  }
+
   async function loadSubscriptionSummary() {
 
     try {
@@ -151,6 +209,23 @@ export default function BusinessDetailClient({ session, isAdmin }) {
         "SUBSCRIPTION SUMMARY LOAD ERROR:",
         err
       );
+    }
+  }
+
+  async function loadStore() {
+    try {
+      const res =
+        await fetch(`/api/store/admin/get?businessId=${id}`);
+
+      const data =
+        await res.json().catch(() => null);
+
+      if (res.ok && data?.ok) {
+        setStore(data.store || null);
+      }
+
+    } catch (err) {
+      console.error("STORE LOAD ERROR:", err);
     }
   }
 
@@ -341,91 +416,39 @@ export default function BusinessDetailClient({ session, isAdmin }) {
 
 
 
-  function isTagsIdQR(qr) {
-    return qr.qr_type_code === "tags_id";
-  }
+  const {
+    qrPages,
+    qrsAvailableForQrPage,
+    canActivateQrPage,
+    canActivateTagsId,
+    activePortalFeatures,
+    inactivePortalFeatures
+  } = buildPortalDashboard({
+    qrs,
+    store,
+    portal,
+    subscriptionSummary,
+    businessAddons,
+    businessId: id,
+    router,
+    setQrPageSelectorOpen,
+    setQrPageActivateOpen: setQrPageCreateOpen,
+    setStoreActivateOpen,
+    setReviewsActivateOpen,
+    setTagsIdActivateOpen,
+    setPortalActivateOpen
+  });
 
-  function isTagsIdPage(qr) {
-    return qr.qr_page_type === "tags_id";
-  }
-
-  function hasAnyPage(qr) {
-    return Number(qr.has_qr_page) === 1 || !!qr.qr_page_id;
-  }
-
-  const qrPagesAvailable =
-    Number(subscriptionSummary?.usage?.qr_pages_total || 0) -
-    Number(subscriptionSummary?.usage?.qr_pages_used || 0);
-
-  const tagsIdAvailable =
-    Number(subscriptionSummary?.usage?.tags_id_total || 0) -
-    Number(subscriptionSummary?.usage?.tags_id_used || 0);
-
-  const hasTagsIdAlready =
-    qrs.some(isTagsIdPage);
-
-  const canActivateQrPage =
-    qrPagesAvailable > 0;
-
-  const canActivateTagsId =
-    !hasTagsIdAlready &&
-    tagsIdAvailable > 0;
-
-  function normalizeCode(value) {
-    return String(value || "")
-      .toLowerCase()
-      .replace(/[\s-]+/g, "_");
-  }
-
-  function isTagsIdQR(qr) {
-    return normalizeCode(qr.qr_type_code) === "tags_id";
-  }
-
-  function getQRFeatures(qr) {
-    return String(qr.addon_features || "")
-      .split(",")
-      .map(v => v.trim())
-      .filter(Boolean);
-  }
-
-  function qrHasFeature(qr, feature) {
-    return getQRFeatures(qr).includes(feature);
-  }
-
-  function hasClientReviewsAddon() {
-    return Number(
-      subscriptionSummary?.usage?.client_reviews_total || 0
-    ) > Number(
-      subscriptionSummary?.usage?.client_reviews_used || 0
-    );
-  }
-
-  function hasClientReviewsAddon() {
-    return !!features?.clientReviews?.enabled ||
-      !!features?.client_reviews?.enabled;
-  }
-
-  function businessHasAddon(code) {
-    return businessAddons.some(
-      addon => addon.addon_code === code
-    );
-  }
-
-  function getQRFeatures(qr) {
-    return String(qr.addon_features || "")
-      .split(",")
-      .map(v => v.trim())
-      .filter(Boolean);
-  }
-
-  function qrHasFeature(qr, feature) {
-    return getQRFeatures(qr).includes(feature);
-  }
-
-  function isClientReviewsPage(qr) {
+  if (loading) {
     return (
-      qr.qr_page_type === "client_reviews" ||
-      qrHasFeature(qr, "client_reviews")
+      <div className="tags_dashboard_page">
+        <div
+          className="d-flex align-items-center justify-content-center"
+          style={{ minHeight: "60vh" }}
+        >
+          <TagsSpinner />
+        </div>
+      </div>
     );
   }
 
@@ -455,11 +478,11 @@ export default function BusinessDetailClient({ session, isAdmin }) {
           <div>
 
             <h1 className="tags_dashboard_title">
-              Dashboard 👤
+              Portal Digital 👤
             </h1>
 
             <p className="tags_dashboard_subtitle">
-              Gestión y reporting de códigos QR
+              Panel de control del negocio, funcionalidades y accesos QR
             </p>
 
           </div>
@@ -640,34 +663,46 @@ export default function BusinessDetailClient({ session, isAdmin }) {
 
           <div className="row">
 
-            <div className="col-6 col-md-3 mb-3">
+            <div className="col-6 col-md-2 mb-3">
               <strong>QRs</strong>
               <div>
-                {subscriptionSummary.usage.qrs_used}
-                {" / "}
-                {subscriptionSummary.usage.qrs_total}
+                {subscriptionSummary.usage.qrs_used} / {subscriptionSummary.usage.qrs_total}
               </div>
             </div>
 
-            <div className="col-6 col-md-3 mb-3">
-              <strong>QR-Pages</strong>
+            <div className="col-6 col-md-2 mb-3">
+              <strong>QR-Page</strong>
               <div>
-                {subscriptionSummary.usage.qr_pages_used}
-                {" / "}
-                {subscriptionSummary.usage.qr_pages_total}
+                {subscriptionSummary.usage.qr_pages_used} / {subscriptionSummary.usage.qr_pages_total}
               </div>
             </div>
 
-            <div className="col-6 col-md-3 mb-3">
-              <strong>TagsID</strong>
+            <div className="col-6 col-md-2 mb-3">
+              <strong>Tags ID</strong>
               <div>
-                {subscriptionSummary.usage.tags_id_used}
-                {" / "}
-                {subscriptionSummary.usage.tags_id_total}
+                {subscriptionSummary.usage.tags_id_used} / {subscriptionSummary.usage.tags_id_total}
               </div>
             </div>
 
-            <div className="col-6 col-md-3 mb-3">
+            <div className="col-6 col-md-2 mb-3">
+              <strong>Tienda</strong>
+              <div>
+                {subscriptionSummary.usage.store_used}
+                {" / "}
+                {subscriptionSummary.usage.store_total}
+              </div>
+            </div>
+
+            <div className="col-6 col-md-2 mb-3">
+              <strong>Reviews</strong>
+              <div>
+                {subscriptionSummary.usage.reviews_used}
+                {" / "}
+                {subscriptionSummary.usage.reviews_total}
+              </div>
+            </div>
+
+            <div className="col-6 col-md-2 mb-3">
               <strong>Analytics</strong>
               <div>
                 {
@@ -770,6 +805,29 @@ export default function BusinessDetailClient({ session, isAdmin }) {
 
         </div>
       )}
+
+
+      {/* ===================================== */}
+      {/* PORTAL FEATURES */}
+      {/* ===================================== */}
+      <PortalDashboard
+        business={business}
+        portal={portal}
+        portalRoutes={portalRoutes}
+        activePortalFeatures={activePortalFeatures}
+        inactivePortalFeatures={inactivePortalFeatures}
+        onReload={loadPortal}
+      />
+
+      <div className="tags_portal_section_header">
+        <div>
+          <h2>QRs Inteligentes</h2>
+          <p>
+            Accesos físicos o digitales del negocio. Pueden apuntar al Portal,
+            a una funcionalidad o a un enlace externo.
+          </p>
+        </div>
+      </div>
 
       {/* TABLE */}
 
@@ -1141,6 +1199,112 @@ export default function BusinessDetailClient({ session, isAdmin }) {
       {/* ===================================== */}
       {/* EDIT MODAL */}
       {/* ===================================== */}
+
+      <WorkspaceAppCreateModal
+        open={portalActivateOpen}
+        businessId={id}
+        title="Portal Público"
+        description="Creá el Portal Público de tu negocio."
+        endpoint="/api/workspace/apps/portal-public/activate"
+        createButtonLabel="Crear Portal"
+        successTitle="Portal creado"
+        successMessage="El Portal Público fue creado correctamente."
+        onClose={() => setPortalActivateOpen(false)}
+        onCreated={async () => {
+          await loadPortal();
+          setPortalActivateOpen(false);
+        }}
+      />
+
+      <WorkspaceAppCreateModal
+        open={tagsIdActivateOpen}
+        businessId={id}
+        title="Tags ID"
+        description="Creá tu perfil profesional digital."
+        endpoint="/api/workspace/apps/tags-id/activate"
+        createButtonLabel="Crear Perfil"
+        successTitle="Perfil creado"
+        successMessage="Tu Tags ID fue creado correctamente."
+        onClose={() =>
+          setTagsIdActivateOpen(false)
+        }
+        onCreated={() => {
+          load();
+          loadPortal();
+          setTagsIdActivateOpen(false);
+
+        }}
+      />
+
+      <WorkspaceAppCreateModal
+        open={storeActivateOpen}
+        businessId={id}
+        title="Tags Tienda"
+        description="Creá tu tienda online."
+        endpoint="/api/workspace/apps/store/activate"
+        createButtonLabel="Crear Tienda"
+        successTitle="Tienda creada"
+        successMessage="La tienda fue creada correctamente."
+        onClose={() =>
+          setStoreActivateOpen(false)
+        }
+        onCreated={() => {
+          load();
+          loadStore();
+          loadPortal();
+          setStoreActivateOpen(false);
+        }}
+      />
+
+      <WorkspaceAppCreateModal
+        open={reviewsActivateOpen}
+        businessId={id}
+        title="Tags Reviews"
+        description="Creá el sistema de reseñas del negocio."
+        endpoint="/api/workspace/apps/client-reviews/activate"
+        createButtonLabel="Crear Reviews"
+        successTitle="Tags Reviews creado"
+        successMessage="El sistema de reseñas fue creado correctamente."
+        onClose={() =>
+          setReviewsActivateOpen(false)
+        }
+        onCreated={() => {
+          load();
+          loadPortal();
+          setReviewsActivateOpen(false);
+        }}
+      />
+
+      <QRPageManagerModal
+        qrPages={qrPages}
+        total={subscriptionSummary?.usage?.qr_pages_total || 0}
+        router={router}
+        open={qrPageCreateOpen}
+        businessId={id}
+        onClose={() => setQrPageCreateOpen(false)}
+        onCreated={() => {
+          load();
+          loadSubscriptionSummary();
+          loadPortal();
+        }}
+      />
+
+      <QRPageSelectorModal
+        open={qrPageSelectorOpen}
+        qrPages={qrPages}
+        businessId={id}
+        router={router}
+        onClose={() => setQrPageSelectorOpen(false)}
+      />
+
+      <QRPageActivateModal
+        open={qrPageActivateOpen}
+        qrsAvailableForQrPage={qrsAvailableForQrPage}
+        businessId={id}
+        router={router}
+        onClose={() => setQrPageActivateOpen(false)}
+      />
+
 
       {editQR && (
 

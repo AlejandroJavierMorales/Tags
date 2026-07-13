@@ -3,20 +3,29 @@
 // /app/modules/store/components/blocks/StoreHeroBlock.jsx
 //
 // Descripción:
-// Hero principal público de Tags Store.
-// Usa cover_url como imagen de fondo.
-//
-// Contexto:
-// store
+// Portada pública de Tags Store.
+// Renderiza contenido, diseño y textos
+// editables desde el Builder.
 // =====================================
 
 import Image
     from "next/image";
 
+import {
+    resolveStyle,
+    resolveTypography
+}
+from "@/app/modules/store/lib/storeStyleResolver";
+
 export default function StoreHeroBlock({
     entity,
-    content = {}
+    content = {},
+    styles = {}
 }) {
+
+    const theme =
+        entity?.theme_css_vars || {};
+
     const title =
         content.title ||
         entity?.name ||
@@ -31,14 +40,106 @@ export default function StoreHeroBlock({
         content.imageUrl ||
         entity?.cover_url;
 
+    const badgeText =
+        content.badgeText ||
+        "Tienda Online";
+
+    const primaryButtonText =
+        content.primaryButtonText ||
+        "Ver productos";
+
+    const secondaryButtonText =
+        content.secondaryButtonText ||
+        "Consultar";
+
+    const imageFit =
+        content.imageFit ||
+        "cover";
+
+    const heroHeight =
+        content.heroHeight ||
+        "medium";
+
+    const overlayOpacity =
+        Math.min(
+            100,
+            Math.max(
+                0,
+                Number(content.overlayOpacity ?? 40)
+            )
+        );
+
     const whatsapp =
         entity?.whatsapp;
 
+    const sectionStyle = {
+
+        backgroundColor:
+            resolveStyle({
+                styles,
+                theme,
+                key: "backgroundColor"
+            }),
+
+        color:
+            resolveStyle({
+                styles,
+                theme,
+                key: "textColor"
+            }),
+
+        textAlign:
+            styles.alignment,
+
+        padding:
+            styles.padding,
+
+        marginTop:
+            styles.marginTop,
+
+        marginBottom:
+            styles.marginBottom
+
+    };
+
+    const heightClass =
+        heroHeight === "small"
+            ? "store_hero_height_small"
+            : heroHeight === "large"
+                ? "store_hero_height_large"
+                : heroHeight === "full"
+                    ? "store_hero_height_full"
+                    : "store_hero_height_medium";
+
+    const imageStyle = {
+
+        objectFit:
+            imageFit === "contain"
+                ? "contain"
+                : "cover",
+
+        objectPosition:
+            `${content.imagePositionX || "center"} ${content.imagePositionY || "center"}`
+
+    };
+
     return (
-        <section className={`store_hero_block position-relative overflow-hidden ${cover ? "store_hero_with_cover" : "bg-light border-bottom"}`}>
+
+        <section
+            className={[
+                "store_hero_block",
+                cover
+                    ? "store_hero_with_cover"
+                    : "store_hero_without_cover",
+                heightClass
+            ].join(" ")}
+            style={sectionStyle}
+        >
 
             {
+
                 cover && (
+
                     <Image
                         src={cover}
                         alt={title}
@@ -46,62 +147,116 @@ export default function StoreHeroBlock({
                         priority
                         sizes="100vw"
                         className="store_hero_bg"
+                        style={imageStyle}
                     />
+
                 )
+
             }
 
             {
-                cover && (
-                    <div className="store_hero_overlay" />
+
+                cover &&
+                overlayOpacity > 0 && (
+
+                    <div
+                        className="store_hero_overlay"
+                        style={{
+                            backgroundColor:
+                                `rgba(0,0,0,${overlayOpacity / 100})`
+                        }}
+                    />
+
                 )
+
             }
 
-            <div className="container position-relative">
-                <div className="row">
-                    <div className="col-12 col-lg-7 col-xl-6">
+            <div className="store_hero_inner">
 
-                        <div className="store_hero_content">
+                <div className="store_hero_content">
 
-                            <span className={`badge rounded-pill mb-3 ${cover ? "text-bg-light" : "text-bg-success"}`}>
-                                Tienda Online
-                            </span>
+                    <span
+                        className="store_hero_badge"
+                        style={
+                            resolveTypography({
+                                styles,
+                                part: "meta"
+                            })
+                        }
+                    >
+                        {badgeText}
+                    </span>
 
-                            <h1 className={`display-5 fw-bold mb-3 ${cover ? "text-white" : ""}`}>
-                                {title}
-                            </h1>
+                    <h1
+                        className="store_hero_title"
+                        style={
+                            resolveTypography({
+                                styles,
+                                part: "title"
+                            })
+                        }
+                    >
+                        {title}
+                    </h1>
 
-                            <p className={`lead mb-4 ${cover ? "text-white-75" : "text-muted"}`}>
-                                {subtitle}
-                            </p>
+                    <p
+                        className="store_hero_subtitle"
+                        style={
+                            resolveTypography({
+                                styles,
+                                part: "subtitle"
+                            })
+                        }
+                    >
+                        {subtitle}
+                    </p>
 
-                            <div className="d-flex flex-wrap gap-2">
+                    <div className="store_hero_actions">
+
+                        <a
+                            href="#store-products"
+                            className="store_btn_primary"
+                            style={
+                                resolveTypography({
+                                    styles,
+                                    part: "button"
+                                })
+                            }
+                        >
+                            {primaryButtonText}
+                        </a>
+
+                        {
+
+                            whatsapp && (
+
                                 <a
-                                    href="#store-products"
-                                    className="btn btn-success rounded-pill px-4"
+                                    href={`https://wa.me/54${String(whatsapp).replace(/\D/g, "")}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="store_btn_secondary"
+                                    style={
+                                        resolveTypography({
+                                            styles,
+                                            part: "button"
+                                        })
+                                    }
                                 >
-                                    Ver productos
+                                    {secondaryButtonText}
                                 </a>
 
-                                {
-                                    whatsapp && (
-                                        <a
-                                            href={`https://wa.me/54${whatsapp}`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className={`btn rounded-pill px-4 ${cover ? "btn-light" : "btn-outline-dark"}`}
-                                        >
-                                            Consultar
-                                        </a>
-                                    )
-                                }
-                            </div>
+                            )
 
-                        </div>
+                        }
 
                     </div>
+
                 </div>
+
             </div>
 
         </section>
+
     );
+
 }

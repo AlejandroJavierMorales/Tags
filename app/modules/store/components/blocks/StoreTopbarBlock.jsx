@@ -4,41 +4,96 @@
 //
 // Descripción:
 // Barra superior pública de Tags Store.
-//
-// Contexto:
-// store
+// Renderiza contenido, diseño y textos
+// editables desde el Builder.
 // =====================================
+
+import {
+    FaWhatsapp
+}
+from "react-icons/fa6";
 
 export default function StoreTopbarBlock({
     entity,
-    content = {}
+    content = {},
+    styles = {}
 }) {
+
     const text =
         content.text ||
         "Comprá online fácil, rápido y seguro";
 
+    const whatsappText =
+        content.whatsappText ||
+        "WhatsApp";
+
+    const showWhatsapp =
+        content.showWhatsapp !== false;
+
     const whatsapp =
         entity?.whatsapp;
 
+    function getTextStyle(part) {
+        return styles?.typography?.[part] || {};
+    }
+
+    const sectionStyle = {
+        backgroundColor:
+            styles.backgroundColor || undefined,
+
+        color:
+            styles.textColor || undefined,
+
+        textAlign:
+            styles.alignment || undefined,
+
+        padding:
+            styles.padding || undefined,
+
+        marginTop:
+            styles.marginTop || undefined,
+
+        marginBottom:
+            styles.marginBottom || undefined
+    };
+
+    const cleanWhatsapp =
+        String(whatsapp || "").replace(/\D/g, "");
+
     return (
-        <div className="bg-dark text-white small">
-            <div className="container py-2 d-flex justify-content-between align-items-center gap-3">
-                <span className="text-truncate">
+        <div
+            className="store_topbar"
+            style={sectionStyle}
+        >
+
+            <div className="store_topbar_inner">
+
+                <span
+                    className="store_topbar_text"
+                    style={getTextStyle("text")}
+                >
                     {text}
                 </span>
 
-                {
-                    whatsapp && (
-                        <a
-                            href={`https://wa.me/54${whatsapp}`}
-                            target="_blank"
-                            className="text-white text-decoration-none fw-semibold"
-                        >
-                            WhatsApp
-                        </a>
-                    )
-                }
+                {showWhatsapp && cleanWhatsapp && (
+                    <a
+                        href={`https://wa.me/54${cleanWhatsapp}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="store_topbar_whatsapp"
+                        style={getTextStyle("button")}
+                    >
+                        <FaWhatsapp />
+
+                        <span>
+                            {whatsappText}
+                        </span>
+                    </a>
+                )}
+
             </div>
+
         </div>
     );
+
 }

@@ -1,7 +1,10 @@
 // =====================================
 // API: /api/qr-page/media/upload
-// Upload seguro QR-Page
-// Descripción: Sube imágenes/videos a Google Cloud Storage para QR-Page.
+//
+// Descripción:
+// Upload seguro y retrocompatible.
+// Mantiene formato legacy y soporta
+// nuevo sistema module / variant / entityId.
 // =====================================
 
 export const runtime = "nodejs";
@@ -12,11 +15,13 @@ import sharp from "sharp";
 import { uploadFile }
     from "@/app/modules/files/lib/uploadFile";
 
+import { deleteFile }
+    from "@/app/modules/files/lib/deleteFile";
+
 import { requireQRPageAccess }
     from "@/app/modules/qr-page/lib/requireQRPageAccess";
 
 function sanitizeFileName(name = "file") {
-
     return name
         .toString()
         .normalize("NFD")
@@ -27,15 +32,97 @@ function sanitizeFileName(name = "file") {
 }
 
 function removeExtension(name = "file") {
-
     return sanitizeFileName(name)
         .replace(/\.[^/.]+$/, "");
 }
 
+const IMAGE_PRESETS = {
+    hero: {
+        maxDimension: 1600,
+        quality: 78,
+        maxFinalSize: 2 * 900 * 1024,
+        generateOG: true,
+        defaultFileName: "hero"
+    },
+    banner: {
+        maxDimension: 1600,
+        quality: 78,
+        maxFinalSize: 2 * 900 * 1024,
+        generateOG: true,
+        defaultFileName: "banner"
+    },
+    product: {
+        maxDimension: 1200,
+        quality: 80,
+        maxFinalSize: 1200 * 1024,
+        generateOG: false,
+        defaultFileName: "product"
+    },
+    gallery: {
+        maxDimension: 1200,
+        quality: 80,
+        maxFinalSize: 2 * 1024 * 1024,
+        generateOG: false,
+        defaultFileName: "image"
+    },
+    logo: {
+        maxDimension: 500,
+        quality: 85,
+        maxFinalSize: 500 * 900,
+        generateOG: false,
+        defaultFileName: "logo"
+    },
+    avatar: {
+        maxDimension: 600,
+        quality: 85,
+        maxFinalSize: 600 * 900,
+        generateOG: false,
+        defaultFileName: "avatar"
+    },
+    default: {
+        maxDimension: 1200,
+        quality: 80,
+        maxFinalSize: 2 * 1024 * 1024,
+        generateOG: true,
+        defaultFileName: "image"
+    }
+};
+
+function getPreset(variant) {
+    return IMAGE_PRESETS[variant] || IMAGE_PRESETS.default;
+}
+
+function buildStorageBasePath({
+    module,
+    businessId,
+    variant,
+    entityId
+}) {
+    if (module === "store") {
+        if (entityId) {
+            return `store/${businessId}/blocks/${entityId}`;
+        }
+
+        return `store/${businessId}/${variant}`;
+    }
+
+    if (module === "qr-page") {
+        if (entityId) {
+            return `qr-pages/${businessId}/blocks/${entityId}`;
+        }
+
+        return `qr-pages/${businessId}/${variant}`;
+    }
+
+    if (module === "tags-id") {
+        return `tags-id/${businessId}/${variant}`;
+    }
+
+    return `${module}/${businessId}/${variant}`;
+}
+
 export async function POST(req) {
-
     try {
-
         const formData =
             await req.formData();
 
@@ -47,6 +134,30 @@ export async function POST(req) {
 
         const folder =
             formData.get("folder") || "media";
+
+        const module =
+            formData.get("module");
+
+        const variant =
+            formData.get("variant");
+
+        const entityId =
+            formData.get("entityId");
+
+        const fileName =
+            formData.get("fileName");
+
+        const replace =
+            String(formData.get("replace") || "0") === "1";
+
+        const previousStoragePath =
+            formData.get("previousStoragePath");
+
+        const previousOgStoragePath =
+            formData.get("previousOgStoragePath");
+
+        const hasNewFormat =
+            module && variant;
 
         if (!businessId) {
             return Response.json(
@@ -93,15 +204,12 @@ export async function POST(req) {
             allowedVideoTypes.includes(file.type);
 
         if (file.type === "image/gif") {
-
             return Response.json(
                 {
                     error:
-                        "Los GIF no están permitidos porque afectan negativamente la performance de la QR-Page. Recomendamos usar videos MP4 livianos."
+                        "Los GIF no están permitidos. Recomendamos usar videos MP4 livianos."
                 },
-                {
-                    status: 400
-                }
+                { status: 400 }
             );
         }
 
@@ -116,27 +224,21 @@ export async function POST(req) {
         }
 
         const maxImageSize =
-            6 * 1024 * 1024;
+            12 * 1024 * 1024;
 
         const maxVideoSize =
             15 * 1024 * 1024;
 
         if (isImage && file.size > maxImageSize) {
             return Response.json(
-                {
-                    error:
-                        "Imagen demasiado grande. Máximo permitido: 6MB. Si necesitás subir imágenes más grandes, contactanos en info@tags.com.ar."
-                },
+                { error: "Imagen demasiado grande. Máximo permitido: 12MB." },
                 { status: 400 }
             );
         }
 
         if (isVideo && file.size > maxVideoSize) {
             return Response.json(
-                {
-                    error:
-                        "Video demasiado grande. Máximo permitido: 15MB. Si necesitás subir videos más grandes, contactanos en info@tags.com.ar."
-                },
+                { error: "Video demasiado grande. Máximo permitido: 15MB." },
                 { status: 400 }
             );
         }
@@ -151,105 +253,118 @@ export async function POST(req) {
             Date.now();
 
         const baseName =
-            removeExtension(
-                file.name
-            );
+            removeExtension(file.name);
 
-        // =========================
+        const storageBasePath =
+            hasNewFormat
+                ? buildStorageBasePath({
+                    module,
+                    businessId,
+                    variant,
+                    entityId
+                })
+                : null;
+
+        // -----------------------------
         // VIDEO
-        // =========================
+        // -----------------------------
 
         if (isVideo) {
-
             const cleanName =
-                sanitizeFileName(
-                    file.name
-                );
+                sanitizeFileName(file.name);
+
+            const extension =
+                cleanName.split(".").pop();
+
+            const videoFileName =
+                hasNewFormat
+                    ? `${sanitizeFileName(fileName || variant)}-${timestamp}.${extension}`
+                    : `${timestamp}-${cleanName}`;
 
             const storagePath =
-                `qr-pages/${businessId}/${folder}/${timestamp}-${cleanName}`;
+                hasNewFormat
+                    ? `${storageBasePath}/${videoFileName}`
+                    : `qr-pages/${businessId}/${folder}/${videoFileName}`;
 
             const result =
                 await uploadFile({
-                    buffer:
-                        originalBuffer,
+                    buffer: originalBuffer,
                     storagePath,
-                    mimeType:
-                        file.type
+                    mimeType: file.type
                 });
+
+            if (
+                hasNewFormat &&
+                replace &&
+                previousStoragePath &&
+                previousStoragePath !== result.storagePath
+            ) {
+
+                await deleteFile(previousStoragePath);
+            }
 
             return Response.json({
                 ok: true,
                 media: {
-                    type:
-                        "video",
-                    url:
-                        result.url,
-                    storagePath:
-                        result.storagePath,
-                    filename:
-                        file.name,
-                    mimeType:
-                        file.type,
-                    originalSize:
-                        file.size,
-                    finalSize:
-                        originalBuffer.length
+                    type: "video",
+                    url: result.url,
+                    storagePath: result.storagePath,
+                    filename: file.name,
+                    mimeType: file.type,
+                    originalSize: file.size,
+                    finalSize: originalBuffer.length
                 }
             });
         }
 
-        // =========================
+        // -----------------------------
         // VALIDAR IMAGEN
-        // =========================
+        // -----------------------------
 
         let metadata;
 
         try {
-
             metadata =
                 await sharp(originalBuffer)
                     .metadata();
 
-        } catch (err) {
-
+        } catch {
             return Response.json(
-                {
-                    error:
-                        "Imagen inválida o corrupta."
-                },
+                { error: "Imagen inválida o corrupta." },
                 { status: 400 }
             );
         }
 
         if (!metadata.width || !metadata.height) {
             return Response.json(
-                {
-                    error:
-                        "No se pudieron leer las dimensiones de la imagen."
-                },
+                { error: "No se pudieron leer las dimensiones de la imagen." },
                 { status: 400 }
             );
         }
 
         if (
-            metadata.width > 6000 ||
-            metadata.height > 6000
+            metadata.width > 8000 ||
+            metadata.height > 8000
         ) {
             return Response.json(
                 {
                     error:
-                        "Imagen demasiado grande en dimensiones. Máximo recomendado: 6000px."
+                        "Imagen demasiado grande en dimensiones. Máximo permitido: 8000px."
                 },
                 { status: 400 }
             );
         }
 
-        // =========================
-        // WEBP PRINCIPAL
-        // =========================
+        // -----------------------------
+        // PRESET
+        // -----------------------------
 
-        const optimizedFolders = [
+        const preset =
+            hasNewFormat
+                ? getPreset(variant)
+                : null;
+
+        const legacyOptimizedFolders = [
             "products",
             "blocks/gallery",
             "blocks/cards",
@@ -257,171 +372,177 @@ export async function POST(req) {
             "blocks/testimonials"
         ];
 
-        const isCardLikeImage =
-            optimizedFolders.includes(folder);
+        const legacyIsCardLikeImage =
+            legacyOptimizedFolders.includes(folder);
 
         const maxImageDimension =
-            isCardLikeImage ? 900 : 1600;
+            hasNewFormat
+                ? preset.maxDimension
+                : legacyIsCardLikeImage
+                    ? 900
+                    : 1600;
+
+        const quality =
+            hasNewFormat
+                ? preset.quality
+                : legacyIsCardLikeImage
+                    ? 78
+                    : 82;
 
         let webpBuffer =
             await sharp(originalBuffer)
                 .rotate()
                 .resize({
-                    width:
-                        maxImageDimension,
-                    height:
-                        maxImageDimension,
-                    fit:
-                        "inside",
-                    withoutEnlargement:
-                        true
+                    width: maxImageDimension,
+                    height: maxImageDimension,
+                    fit: "inside",
+                    withoutEnlargement: true
                 })
                 .webp({
-                    quality:
-                        isCardLikeImage ? 78 : 82,
-                    effort:
-                        5
+                    quality,
+                    effort: 5
                 })
                 .toBuffer();
 
-        if (
-            isCardLikeImage &&
-            webpBuffer.length > 1024 * 1024
-        ) {
+        const maxFinalSize =
+            hasNewFormat
+                ? preset.maxFinalSize
+                : legacyIsCardLikeImage
+                    ? 1024 * 1024
+                    : 2 * 1024 * 1024;
+
+        if (webpBuffer.length > maxFinalSize) {
             webpBuffer =
                 await sharp(webpBuffer)
                     .webp({
-                        quality:
-                            68,
-                        effort:
-                            6
+                        quality: Math.max(60, quality - 12),
+                        effort: 6
                     })
                     .toBuffer();
         }
 
-        if (
-            isCardLikeImage &&
-            webpBuffer.length > 1024 * 1024
-        ) {
+        if (webpBuffer.length > maxFinalSize) {
             return Response.json(
                 {
                     error:
-                        "La imagen optimizada sigue superando 1MB. Usá una imagen más liviana para mejorar la performance mobile."
+                        "La imagen optimizada sigue siendo demasiado pesada. Probá con otra imagen."
                 },
-                {
-                    status: 400
-                }
+                { status: 400 }
             );
         }
 
+        const finalFileName =
+            hasNewFormat
+                ? sanitizeFileName(
+                    fileName ||
+                    preset.defaultFileName ||
+                    "image"
+                )
+                : `${timestamp}-${baseName}`;
+
         const webpStoragePath =
-            `qr-pages/${businessId}/${folder}/${timestamp}-${baseName}.webp`;
+            hasNewFormat
+                ? `${storageBasePath}/${finalFileName}-${timestamp}.webp`
+                : `qr-pages/${businessId}/${folder}/${timestamp}-${baseName}.webp`;
 
         const webpResult =
             await uploadFile({
-                buffer:
-                    webpBuffer,
-                storagePath:
-                    webpStoragePath,
-                mimeType:
-                    "image/webp"
+                buffer: webpBuffer,
+                storagePath: webpStoragePath,
+                mimeType: "image/webp"
             });
 
-        // =========================
-        // JPG OG 1200x630
-        // =========================
+        // -----------------------------
+        // OG OPCIONAL
+        // -----------------------------
 
-        const ogBuffer =
-            await sharp(originalBuffer)
-                .rotate()
-                .resize({
-                    width:
-                        1200,
-                    height:
-                        630,
-                    fit:
-                        "cover",
-                    position:
-                        "center"
-                })
-                .jpeg({
-                    quality:
-                        88,
-                    progressive:
-                        true
-                })
-                .toBuffer();
+        let ogResult = null;
+        let ogBuffer = null;
 
-        const ogStoragePath =
-            `qr-pages/${businessId}/${folder}/${timestamp}-${baseName}-og.jpg`;
+        const shouldGenerateOG =
+            hasNewFormat
+                ? preset.generateOG
+                : true;
 
-        const ogResult =
-            await uploadFile({
-                buffer:
-                    ogBuffer,
-                storagePath:
-                    ogStoragePath,
-                mimeType:
-                    "image/jpeg"
-            });
+        if (shouldGenerateOG) {
+            ogBuffer =
+                await sharp(originalBuffer)
+                    .rotate()
+                    .resize({
+                        width: 1200,
+                        height: 630,
+                        fit: "cover",
+                        position: "center"
+                    })
+                    .jpeg({
+                        quality: 88,
+                        progressive: true
+                    })
+                    .toBuffer();
 
-        /*         console.log({
-                    WEBP_URL:
-                        webpResult.url,
-        
-                    OG_URL:
-                        ogResult.url
+            const ogStoragePath =
+                hasNewFormat
+                    ? `${storageBasePath}/${finalFileName}-${timestamp}-og.jpg`
+                    : `qr-pages/${businessId}/${folder}/${timestamp}-${baseName}-og.jpg`;
+
+            ogResult =
+                await uploadFile({
+                    buffer: ogBuffer,
+                    storagePath: ogStoragePath,
+                    mimeType: "image/jpeg"
                 });
-         */
+        }
+
+        // -----------------------------
+        // LIMPIEZA DE REEMPLAZO
+        // -----------------------------
+        console.log("DELETE CHECK:", {
+            hasNewFormat,
+            replace,
+            previousStoragePath,
+            previousOgStoragePath,
+            newStoragePath: webpResult.storagePath,
+            newOgStoragePath: ogResult?.storagePath
+        });
+        if (
+            hasNewFormat &&
+            replace &&
+            previousStoragePath &&
+            previousStoragePath !== webpResult.storagePath
+        ) {
+            await deleteFile(previousStoragePath);
+        }
+
+        if (
+            hasNewFormat &&
+            replace &&
+            previousOgStoragePath &&
+            previousOgStoragePath !== ogResult?.storagePath
+        ) {
+            await deleteFile(previousOgStoragePath);
+        }
+
         return Response.json({
             ok: true,
             media: {
-                type:
-                    "image",
-
-                url:
-                    webpResult.url,
-
-                og_url:
-                    ogResult.url,
-
-                storagePath:
-                    webpResult.storagePath,
-
-                ogStoragePath:
-                    ogResult.storagePath,
-
-                filename:
-                    file.name,
-
-                mimeType:
-                    "image/webp",
-
-                ogMimeType:
-                    "image/jpeg",
-
-                originalMimeType:
-                    file.type,
-
-                originalSize:
-                    file.size,
-
-                finalSize:
-                    webpBuffer.length,
-
-                ogSize:
-                    ogBuffer.length,
-
-                originalWidth:
-                    metadata.width,
-
-                originalHeight:
-                    metadata.height
+                type: "image",
+                url: webpResult.url,
+                og_url: ogResult?.url || null,
+                storagePath: webpResult.storagePath,
+                ogStoragePath: ogResult?.storagePath || null,
+                filename: file.name,
+                mimeType: "image/webp",
+                ogMimeType: ogResult ? "image/jpeg" : null,
+                originalMimeType: file.type,
+                originalSize: file.size,
+                finalSize: webpBuffer.length,
+                ogSize: ogBuffer?.length || null,
+                originalWidth: metadata.width,
+                originalHeight: metadata.height
             }
         });
 
     } catch (err) {
-
         console.log(err);
 
         return Response.json(

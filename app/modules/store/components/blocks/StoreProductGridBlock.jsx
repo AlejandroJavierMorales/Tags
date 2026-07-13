@@ -4,32 +4,43 @@
 //
 // Descripción:
 // Grilla pública de productos de Tags Store.
+// Sin Bootstrap y compatible con themes --qr-*.
 //
 // Contexto:
 // store
 // =====================================
 
-
-
 import {
     getStorePublicProducts
 }
-    from "../../lib/getStorePublicProducts";
+from "../../lib/getStorePublicProducts";
 
 import StoreProductGridClient
     from "../public/StoreProductGridClient";
 
-
-
-
 export default async function StoreProductGridBlock({
     entity,
-    content = {}
+    content = {},
+    styles = {}
 }) {
 
     const title =
         content.title ||
         "Todos los productos";
+
+    const description =
+        content.description ||
+        "Elegí tus productos y consultá disponibilidad.";
+
+    const badgeText =
+        content.badgeText ||
+        "Catálogo";
+
+    const showBadge =
+        content.showBadge !== false;
+
+    const showDescription =
+        content.showDescription !== false;
 
     const limit =
         content.limit ||
@@ -41,27 +52,67 @@ export default async function StoreProductGridBlock({
             limit
         );
 
+    function getTextStyle(part) {
+        return styles?.typography?.[part] || {};
+    }
+
+    const sectionStyle = {
+        backgroundColor:
+            styles.backgroundColor || undefined,
+
+        color:
+            styles.textColor || undefined,
+
+        textAlign:
+            styles.alignment || undefined,
+
+        padding:
+            styles.padding || undefined,
+
+        marginTop:
+            styles.marginTop || undefined,
+
+        marginBottom:
+            styles.marginBottom || undefined
+    };
+
     return (
         <section
             id="store-products"
-            className="py-5 bg-white"
+            className="store_products_section"
+            style={sectionStyle}
         >
-            <div className="container">
+            <div className="store_products_inner">
 
-                <div className="d-flex align-items-end justify-content-between gap-3 mb-4">
+                <div className="store_products_header">
+
                     <div>
-                        <span className="badge rounded-pill text-bg-success mb-2">
-                            Catálogo
-                        </span>
+                        {showBadge && (
+                            <span
+                                className="store_badge"
+                                style={getTextStyle("meta")}
+                            >
+                                {badgeText}
+                            </span>
+                        )}
 
-                        <h2 className="fw-bold mb-1">
+                        <h2
+                            className="store_products_title"
+                            style={getTextStyle("title")}
+                        >
                             {title}
                         </h2>
 
-                        <p className="text-muted mb-0">
-                            Elegí tus productos y consultá disponibilidad.
-                        </p>
+                        {showDescription && (
+                            <p
+                                className="store_products_text"
+                                style={getTextStyle("text")}
+                            >
+                                {description}
+                            </p>
+                        )}
                     </div>
+
                 </div>
 
                 <StoreProductGridClient

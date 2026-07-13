@@ -4,161 +4,238 @@
 //
 // Descripción:
 // Footer público de Tags Store.
+// Sin Bootstrap y compatible con themes --qr-*.
 //
 // Contexto:
 // store
 // =====================================
 
-import Image from "next/image";
+import Image
+    from "next/image";
+
+import {
+    FaWhatsapp,
+    FaEnvelope,
+    FaMapMarkerAlt,
+    FaBoxOpen
+}
+from "react-icons/fa";
 
 export default function StoreFooterBlock({
     entity
 }) {
+
     const whatsapp =
         entity?.whatsapp;
 
+    const cleanWhatsapp =
+        String(
+            whatsapp || ""
+        ).replace(/\D/g, "");
+
     return (
-        <footer className="bg-dark text-white pt-5 pb-4 mt-5">
-            <div className="container">
 
-                <div className="row g-4 align-items-start text-center text-sm-start">
+        <footer className="store_footer">
 
-                    <div className="col-12 col-lg-6">
-                        <div
-                            className="
-                                    d-flex
-                                    flex-column
-                                    flex-lg-row
-                                    align-items-center
-                                    align-items-lg-center
-                                    gap-3
-                                    mb-3
-                                "
-                        >
-                            {
-                                entity?.logo_url && (
-                                    <Image
-                                        src={entity.logo_url}
-                                        alt={entity?.name || "Tienda"}
-                                        width={180}
-                                        height={60}
-                                        className="
-                                            tags_business_logo
-                                            store_footer_logo
-                                        "
-                                    />
-                                )
-                            }
+            <div className="store_footer_inner">
 
-                            <div className="d-flex flex-column justify-content-center align-items-center">
-                                <h3 className="h5 fw-bold mb-1">
-                                    {entity?.name || "Mi Tienda"}
-                                </h3>
+                <div className="store_footer_brand">
 
-                                {
-                                    entity?.description && (
-                                        <p className="text-white-50 mb-0">
-                                            {entity.description}
-                                        </p>
-                                    )
+                    {
+
+                        entity?.logo_url && (
+
+                            <Image
+                                src={entity.logo_url}
+                                alt={
+                                    entity?.name ||
+                                    "Tienda"
                                 }
-                            </div>
-                        </div>
-                    </div>
+                                width={180}
+                                height={60}
+                                className="store_footer_logo"
+                            />
 
-                    <div className="col-6 col-lg-3">
-                        <h4 className="h6 fw-bold mb-3">
-                            Contacto
-                        </h4>
+                        )
 
-                        <div className="d-flex flex-column gap-2 small text-white-50">
-                            {
-                                whatsapp && (
-                                    <a
-                                        href={`https://wa.me/54${whatsapp}`}
-                                        target="_blank"
-                                        className="text-white-50 text-decoration-none"
-                                    >
-                                        WhatsApp: {whatsapp}
-                                    </a>
-                                )
-                            }
+                    }
+
+                    <div>
+
+                        <h3 className="store_footer_title">
 
                             {
-                                entity?.email && (
-                                    <a
-                                        href={`mailto:${entity.email}`}
-                                        className="text-white-50 text-decoration-none"
-                                    >
-                                        {entity.email}
-                                    </a>
-                                )
+                                entity?.name ||
+                                "Mi Tienda"
                             }
 
-                            {
-                                entity?.address && (
-                                    <span>
-                                        {entity.address}
-                                    </span>
-                                )
-                            }
-                        </div>
-                    </div>
+                        </h3>
 
-                    <div className="col-6 col-lg-3">
-                        <h4 className="h6 fw-bold mb-3">
-                            Tienda
-                        </h4>
+                        {
 
-                        <div className="d-flex flex-column gap-2 small">
-                            <a
-                                href="#store-products"
-                                className="text-white-50 text-decoration-none"
-                            >
-                                Productos
-                            </a>
+                            entity?.description && (
 
-                            <a
-                                href="#"
-                                className="text-white-50 text-decoration-none"
-                            >
-                                Inicio
-                            </a>
-                        </div>
+                                <p className="store_footer_description">
+
+                                    {entity.description}
+
+                                </p>
+
+                            )
+
+                        }
+
                     </div>
 
                 </div>
 
-                <hr className="border-secondary my-4" />
+                <div className="store_footer_column">
 
-                <div className="small text-white-50 d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
-                    <span>
-                        © {new Date().getFullYear()} {entity?.name || "Tienda"}
-                    </span>
-                    <div>
+                    <h4>
+
+                        Contacto
+
+                    </h4>
+
+                    {
+
+                        whatsapp && (
+
+                            <a
+                                href={`https://wa.me/54${cleanWhatsapp}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+
+                                <FaWhatsapp />
+
+                                <span>
+
+                                    {whatsapp}
+
+                                </span>
+
+                            </a>
+
+                        )
+
+                    }
+
+                    {
+
+                        entity?.email && (
+
+                            <a
+                                href={`mailto:${entity.email}`}
+                            >
+
+                                <FaEnvelope />
+
+                                <span>
+
+                                    {entity.email}
+
+                                </span>
+
+                            </a>
+
+                        )
+
+                    }
+
+                    {
+
+                        entity?.address && (
+
+                            <div>
+
+                                <FaMapMarkerAlt />
+
+                                <span>
+
+                                    {entity.address}
+
+                                </span>
+
+                            </div>
+
+                        )
+
+                    }
+
+                </div>
+
+                <div className="store_footer_column">
+
+                    <h4>
+
+                        Tienda
+
+                    </h4>
+
+                    <a
+                        href="#store-products"
+                    >
+
+                        <FaBoxOpen />
+
                         <span>
-                            {`Tienda online creada con Tags `}
-                        </span>
-                        <a
-                            href="https://www.tags.com.ar"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="store_footer_tags_link"
-                        >
-                            <Image
-                                src="/logo_tags_qr.webp"
-                                alt="Tags"
-                                width={120}
-                                height={40}
-                                className="store_footer_tags_logo"
-                            />
-                        </a>
-                    </div>
 
+                            Productos
+
+                        </span>
+
+                    </a>
+
+                    <a
+                        href="#top"
+                    >
+
+                        Inicio
+
+                    </a>
 
                 </div>
 
             </div>
+
+            <div className="store_footer_bottom">
+
+                <span>
+
+                    © {new Date().getFullYear()}{" "}
+
+                    {entity?.name || "Mi Tienda"}
+
+                </span>
+
+                <a
+                    href="https://www.tags.com.ar"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="store_footer_tags"
+                >
+
+                    <span>
+
+                        Tienda creada con
+
+                    </span>
+
+                    <Image
+                        src="/logo_tags_qr.webp"
+                        alt="Tags"
+                        width={110}
+                        height={34}
+                        className="store_footer_tags_logo"
+                    />
+
+                </a>
+
+            </div>
+
         </footer>
+
     );
+
 }

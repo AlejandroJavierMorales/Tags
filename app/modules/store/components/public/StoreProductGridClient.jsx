@@ -3,7 +3,12 @@
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-
+import {
+    FiShoppingBag,
+    FiArrowRight,
+    FiShoppingCart,
+    FiEye
+} from "react-icons/fi";
 import {
     formatStorePrice
 } from "../../lib/formatStorePrice";
@@ -16,13 +21,26 @@ import {
     from "../../lib/storeSession";
 import StoreShareButton from "./StoreShareButton";
 
-
+import "../../styles/store-public.css";
+import TagsSelect from "@/app/components/ui/TagsSelect";
 
 export default function StoreProductGridClient({
     store,
     products = [],
     settings = {}
 }) {
+
+
+const imageStyle = {
+    objectFit:
+        settings.imageFit || undefined,
+
+    borderRadius:
+        settings.imageRadius || undefined,
+
+    padding:
+        settings.imagePadding || undefined
+};
 
     const [page, setPage] =
         useState(1);
@@ -55,7 +73,27 @@ export default function StoreProductGridClient({
             ? Number(settings.productsPerPage)
             : 12;
     /*  const pageSize = 1; */
+
+    const showInfoArea =
+        settings.showInfoArea !== false;
+
+    const showCategory =
+        settings.showCategory === true;
+
+    const showSku =
+        settings.showSku === true;
+
+    const showFavorite =
+        settings.showFavorite !== false;
+
+    const showShare =
+        settings.showShare !== false;
+
+    const showButton =
+        settings.showButton !== false;
     /* ---------------------------------------------- */
+
+
 
     useEffect(() => {
         setPage(1);
@@ -122,6 +160,32 @@ export default function StoreProductGridClient({
                 "tags_store_catalog_filter",
                 handleCatalogFilter
             );
+        };
+
+    }, []);
+
+    useEffect(() => {
+
+        function handleCatalogSearch(event) {
+
+            setQuery(
+                event.detail?.search || ""
+            );
+
+        }
+
+        window.addEventListener(
+            "tags_store_catalog_search",
+            handleCatalogSearch
+        );
+
+        return () => {
+
+            window.removeEventListener(
+                "tags_store_catalog_search",
+                handleCatalogSearch
+            );
+
         };
 
     }, []);
@@ -303,20 +367,175 @@ export default function StoreProductGridClient({
         );
     }
 
+    const cardStyle = {
+
+        border:
+            settings.cardBorder === false
+                ? "none"
+                : undefined,
+
+        borderRadius:
+            settings.cardRadius || undefined,
+
+        background:
+            settings.cardBackgroundColor || undefined
+
+    };
+
+    const infoStyle = {
+
+        background:
+            settings.infoBackgroundColor || undefined,
+        textAlign:
+            settings.priceAlignment || undefined
+
+    };
+
+    function getCardStyleClass() {
+
+        switch (settings.cardStyle) {
+
+            case "flat":
+                return "store_card_style_flat";
+
+            case "minimal":
+                return "store_card_style_minimal";
+
+            default:
+                return "";
+
+        }
+
+    }
+
+    function getCardShadowClass() {
+
+        switch (settings.cardShadow) {
+
+            case "none":
+                return "store_card_shadow_none";
+
+            case "medium":
+                return "store_card_shadow_medium";
+
+            case "strong":
+                return "store_card_shadow_strong";
+
+            default:
+                return "";
+        }
+    }
+
+    const imageWrapStyle = {};
+    if (settings.imageRatio === "4-3") {
+        imageWrapStyle.aspectRatio = "4 / 3";
+    }
+    else if (settings.imageRatio === "16-9") {
+        imageWrapStyle.aspectRatio = "16 / 9";
+    }
+    else if (settings.imageRatio === "4-5") {
+        imageWrapStyle.aspectRatio = "4 / 5";
+    }
+    else if (settings.imageRatio === "square") {
+        imageWrapStyle.aspectRatio = "1 / 1";
+    }
+
+    // Libre → no seteamos aspectRatio
+
+    function getImageHoverClass() {
+        switch (settings.imageHover) {
+            case "zoom":
+                return "store_product_image_hover_zoom";
+            default:
+                return "";
+        }
+    }
+
+    const showPrice =
+        settings.showPrice !== false;
+
+    const showOldPrice =
+        settings.showOldPrice !== false;
+
+    const showDiscount =
+        settings.showDiscount !== false;
+
+    const showOfferBadge =
+        settings.showOfferBadge === true;
+
+    const priceStyle = {
+        color: settings.priceColor || undefined,
+        fontSize: settings.priceSize || undefined
+    };
+
+    const oldPriceStyle = {
+        color: settings.oldPriceColor || undefined,
+        fontSize: settings.oldPriceSize || undefined
+    };
+
+    const discountStyle = {
+        color: settings.discountColor || undefined,
+        fontSize: settings.discountSize || undefined
+    };
+
+    const offerBadgeStyle = {
+        color: settings.offerBadgeColor || undefined,
+        background: settings.offerBadgeBackground || undefined
+    };
+
+    const buttonStyle = {
+        background: settings.buttonBackgroundColor || undefined,
+        color: settings.buttonTextColor || undefined,
+        borderColor: settings.buttonBorderColor || undefined,
+        borderRadius: settings.buttonRadius || undefined,
+        borderWidth: settings.buttonBorderWidth || undefined,
+        borderStyle: settings.buttonBorderWidth ? "solid" : undefined,
+        paddingTop: settings.buttonPaddingY || undefined,
+        paddingBottom: settings.buttonPaddingY || undefined,
+        paddingLeft: settings.buttonPaddingX || undefined,
+        paddingRight: settings.buttonPaddingX || undefined
+    };
+
+    const buttonText =
+        settings.buttonText || "Ver producto";
+    function renderButtonIcon() {
+
+        switch (settings.buttonIconType) {
+
+            case "cart":
+                return <FiShoppingCart />;
+
+            case "bag":
+                return <FiShoppingBag />
+
+            case "eye":
+                return <FiEye />;
+            default:
+                return <FiArrowRight />;
+        }
+    }
+
+    
 
     /*  UI */
     return (
         <>
             <div className="store_product_filters">
 
-                <input
-                    value={query}
-                    onChange={(e) =>
-                        setQuery(e.target.value)
-                    }
-                    placeholder="Buscar productos..."
-                    className="store_product_search"
-                />
+                {
+                    settings?.showSearch !== true && (
+
+                        <input
+                            value={query}
+                            onChange={(e) =>
+                                setQuery(e.target.value)
+                            }
+                            placeholder="Buscar productos..."
+                            className="store_product_search"
+                        />
+
+                    )
+                }
 
                 <div className="store_category_bar">
 
@@ -334,39 +553,20 @@ export default function StoreProductGridClient({
                         <span>Categorías</span>
                     </button>
 
-                    <select
+                    <TagsSelect
                         value={sortBy}
-                        onChange={(e) =>
-                            setSortBy(
-                                e.target.value
-                            )
-                        }
                         className="store_catalog_sort"
-                    >
-                        <option value="recent">
-                            Más recientes
-                        </option>
-
-                        <option value="price_asc">
-                            Menor precio
-                        </option>
-
-                        <option value="price_desc">
-                            Mayor precio
-                        </option>
-
-                        <option value="name_asc">
-                            A-Z
-                        </option>
-
-                        <option value="name_desc">
-                            Z-A
-                        </option>
-
-                        <option value="featured">
-                            Destacados
-                        </option>
-                    </select>
+                        onChange={setSortBy}
+                        options={[
+                            { value: "recent", label: "Más recientes" },
+                            { value: "price_asc", label: "Menor precio" },
+                            { value: "price_desc", label: "Mayor precio" },
+                            { value: "name_asc", label: "A-Z" },
+                            { value: "name_desc", label: "Z-A" },
+                            { value: "featured", label: "Destacados" }
+                        ]}
+                        maxWidth="180px"
+                    />
 
                 </div>
 
@@ -398,23 +598,7 @@ export default function StoreProductGridClient({
                             </div>
 
                             <nav className="store_mobile_drawer_nav">
-                                {/* <a
-                                    href="#store-products"
-                                    className={
-                                        category === "all"
-                                            ? "active"
-                                            : ""
-                                    }
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        setCategory("all");
-                                        setMobileMenuOpen(false);
-                                    }}
-                                >
-                                    <span>Todos los productos</span>
-                                    <strong>›</strong>
-                                </a>
- */}
+
                                 <nav className="store_mobile_drawer_nav">
 
                                     {categories.map(item => (
@@ -447,7 +631,7 @@ export default function StoreProductGridClient({
 
             {
                 filteredProducts.length === 0 ? (
-                    <div className="alert alert-light border rounded-4 mb-0">
+                    <div className="store_catalog_empty">
                         No encontramos productos con ese filtro.
                     </div>
                 ) : (
@@ -462,18 +646,36 @@ export default function StoreProductGridClient({
                                         href={`/p/${store.slug}/products/${product.id}`}
                                         className="store_product_card_link"
                                     >
-                                        <div className="card h-100 border-0 shadow-sm rounded-4 overflow-hidden">
-                                            <StoreFavoriteButton
-                                                storeId={store.id}
-                                                productId={product.id}
-                                            />
-                                            <StoreShareButton
-                                                store={store}
-                                                product={product}
-                                            />
+                                        <div
+                                            className={[
+                                                "store_product_card",
+                                                getCardStyleClass(),
+                                                getCardShadowClass()
+                                            ].filter(Boolean).join(" ")}
+                                            style={cardStyle}
+                                        >
+                                            {
+                                                showFavorite && (
+                                                    <StoreFavoriteButton
+                                                        storeId={store.id}
+                                                        productId={product.id}
+                                                    />
+                                                )
+                                            }
+                                            {
+                                                showShare && (
+                                                    <StoreShareButton
+                                                        store={store}
+                                                        product={product}
+                                                    />
+                                                )
+                                            }
                                             {
                                                 product.image_url ? (
-                                                    <div className="store_product_image_wrap">
+                                                    <div
+                                                        className="store_product_image_wrap"
+                                                        style={imageWrapStyle}
+                                                    >
                                                         <Image
                                                             src={product.image_url}
                                                             alt={product.title}
@@ -484,48 +686,191 @@ export default function StoreProductGridClient({
                                                                 (max-width: 991px) 33vw,
                                                                 25vw
                                                             "
-                                                            className="store_product_image"
+                                                            className={[
+                                                                "store_product_image",
+                                                                getImageHoverClass()
+                                                            ].filter(Boolean).join(" ")}
+                                                            style={imageStyle}
                                                         />
                                                     </div>
                                                 ) : (
-                                                    <div className="store_product_image_placeholder text-muted small">
+                                                    <div className="store_product_image_placeholder">
                                                         Sin imagen
                                                     </div>
                                                 )
                                             }
 
-                                            <div className="card-body d-flex flex-column">
+                                            {
+                                                showInfoArea && (
 
-                                                <h3 className="h6 fw-bold mb-2">
-                                                    {product.title}
-                                                </h3>
+                                                    <div
+                                                        className="store_product_card_body"
+                                                        style={infoStyle}
+                                                    >
 
-                                                <div className="mt-auto">
-                                                    {
-                                                        product.sale_price ? (
-                                                            <>
-                                                                <div className="fw-bold">
-                                                                    {formatStorePrice(product.sale_price, product.currency)}
+                                                        {
+                                                            showCategory &&
+                                                            product.category_name && (
+
+                                                                <div className="store_product_category">
+
+                                                                    {product.category_name}
+
                                                                 </div>
 
-                                                                <div className="small text-muted text-decoration-line-through">
-                                                                    {formatStorePrice(product.price, product.currency)}
+                                                            )
+                                                        }
+                                                        {
+                                                            showSku &&
+                                                            product.sku && (
+
+                                                                <div className="store_product_sku">
+
+                                                                    {product.sku}
+
                                                                 </div>
-                                                            </>
-                                                        ) : (
-                                                            <div className="fw-bold">
-                                                                {formatStorePrice(product.price, product.currency)}
+
+                                                            )
+                                                        }
+
+                                                        <h3 className="store_product_card_title">
+                                                            {product.title}
+                                                        </h3>
+
+                                                        <div className="store_product_card_footer">
+
+                                                            <div className="store_product_price_group">
+
+                                                                {
+                                                                    showOfferBadge &&
+                                                                    product.sale_price && (
+
+                                                                        <span
+                                                                            className="store_product_offer_badge"
+                                                                            style={offerBadgeStyle}
+                                                                        >
+                                                                            Oferta
+                                                                        </span>
+
+                                                                    )
+                                                                }
+
+                                                                {
+                                                                    showPrice &&
+                                                                    product.sale_price && (
+
+                                                                        <div className="store_product_price"
+                                                                            style={priceStyle}>
+                                                                            {formatStorePrice(
+                                                                                product.sale_price,
+                                                                                product.currency
+                                                                            )}
+
+                                                                        </div>
+
+                                                                    )
+                                                                }
+
+                                                                {
+                                                                    showPrice &&
+                                                                    !product.sale_price && (
+
+                                                                        <div className="fw-bold">
+                                                                            {formatStorePrice(
+                                                                                product.price,
+                                                                                product.currency
+                                                                            )}
+                                                                        </div>
+
+                                                                    )
+                                                                }
+
+                                                                {
+                                                                    showOldPrice &&
+                                                                    product.sale_price && (
+
+                                                                        <div className="store_product_old_price"
+                                                                            style={oldPriceStyle}>
+                                                                            {formatStorePrice(
+                                                                                product.price,
+                                                                                product.currency
+                                                                            )}
+
+                                                                        </div>
+
+                                                                    )
+                                                                }
+
+                                                                {
+                                                                    showDiscount &&
+                                                                    product.sale_price &&
+                                                                    Number(product.price) > 0 && (
+
+                                                                        <div
+                                                                            className="store_product_discount"
+                                                                            style={discountStyle}
+                                                                        >
+                                                                            -
+                                                                            {
+                                                                                Math.round(
+                                                                                    (
+                                                                                        (
+                                                                                            Number(product.price) -
+                                                                                            Number(product.sale_price)
+                                                                                        ) /
+                                                                                        Number(product.price)
+                                                                                    ) * 100
+                                                                                )
+                                                                            }
+                                                                            % OFF
+                                                                        </div>
+
+                                                                    )
+                                                                }
+
                                                             </div>
-                                                        )
-                                                    }
 
-                                                    <span className="btn btn-success w-100 rounded-pill mt-3">
-                                                        Ver producto
-                                                    </span>
-                                                </div>
+                                                            {
+                                                                showButton && (
 
-                                            </div>
+                                                                    <span
+                                                                        className={[
+                                                                            "store_product_card_btn",
+                                                                            settings.buttonFullWidth
+                                                                                ? "store_product_btn_full"
+                                                                                : ""
+                                                                        ].filter(Boolean).join(" ")}
+                                                                        style={buttonStyle}
+                                                                    >
 
+                                                                        {
+                                                                            settings.buttonIcon &&
+                                                                            settings.buttonIconPosition === "left" && (
+                                                                                <span className="store_product_card_btn_icon">
+                                                                                    {renderButtonIcon()}
+                                                                                </span>
+                                                                            )
+                                                                        }
+
+                                                                        {buttonText}
+
+                                                                        {
+                                                                            settings.buttonIcon &&
+                                                                            settings.buttonIconPosition !== "left" && (
+                                                                                <span className="store_product_card_btn_icon">
+                                                                                    {renderButtonIcon()}
+                                                                                </span>
+                                                                            )
+                                                                        }
+
+                                                                    </span>
+
+                                                                )
+                                                            }
+
+                                                        </div>
+                                                    </div>
+                                                )}
                                         </div>
                                     </Link>
                                 </div>

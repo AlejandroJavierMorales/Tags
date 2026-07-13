@@ -1,0 +1,399 @@
+/* =====================================
+   Archivo:
+   /app/modules/commerce-reviews/styles/commerce-reviews.css
+
+   Descripción:
+   Estilos públicos de Commerce Reviews.
+   Toda la identidad visual utiliza --qr-*.
+===================================== */
+
+.commerce_reviews_public_page {
+    min-height: 100vh;
+    padding: 32px 16px;
+    background: var(--qr-bg);
+    color: var(--qr-text);
+}
+
+.commerce_reviews_flow {
+    width: min(100%, 680px);
+    margin: 0 auto;
+}
+
+.commerce_reviews_welcome,
+.commerce_reviews_wizard,
+.commerce_reviews_thanks {
+    padding: 28px;
+    border: 1px solid var(--qr-border);
+    border-radius: var(--qr-radius);
+    background: var(--qr-surface);
+    box-shadow: var(--qr-shadow);
+}
+
+.commerce_reviews_welcome,
+.commerce_reviews_thanks {
+    text-align: center;
+}
+
+.commerce_reviews_store_logo {
+    display: block;
+    width: 84px;
+    height: 84px;
+    margin: 0 auto 14px;
+    object-fit: contain;
+    border-radius: var(--qr-radius);
+    background: var(--qr-surface-alt);
+}
+
+.commerce_reviews_store_name {
+    margin: 0 0 10px;
+    color: var(--qr-muted);
+    font-weight: 600;
+}
+
+.commerce_reviews_title,
+.commerce_reviews_thanks h1 {
+    margin: 0;
+    color: var(--qr-text);
+    font-size: clamp(1.8rem, 5vw, 2.5rem);
+    line-height: 1.15;
+}
+
+.commerce_reviews_description,
+.commerce_reviews_thanks p {
+    max-width: 520px;
+    margin: 16px auto;
+    color: var(--qr-muted);
+    line-height: 1.6;
+}
+
+.commerce_reviews_order {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 10px 0;
+    padding: 12px 20px;
+    border: 1px solid var(--qr-border);
+    border-radius: var(--qr-radius);
+    background: var(--qr-surface-alt);
+}
+
+.commerce_reviews_order span {
+    color: var(--qr-muted);
+    font-size: .78rem;
+    text-transform: uppercase;
+}
+
+.commerce_reviews_items_count {
+    margin: 14px 0;
+    color: var(--qr-text);
+    font-weight: 600;
+}
+
+.commerce_reviews_completed_note {
+    color: var(--qr-muted);
+    font-size: .9rem;
+}
+
+.commerce_reviews_primary_btn,
+.commerce_reviews_secondary_btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 46px;
+    padding: 11px 20px;
+    border-radius: var(--qr-radius);
+    font: inherit;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+    transition:
+        transform .18s ease,
+        opacity .18s ease;
+}
+
+.commerce_reviews_primary_btn {
+    border: 1px solid var(--qr-primary);
+    background: var(--qr-primary);
+    color: var(--qr-primary-text);
+}
+
+.commerce_reviews_secondary_btn {
+    border: 1px solid var(--qr-border);
+    background: var(--qr-surface-alt);
+    color: var(--qr-text);
+}
+
+.commerce_reviews_primary_btn:hover,
+.commerce_reviews_secondary_btn:hover {
+    transform: translateY(-1px);
+}
+
+.commerce_reviews_primary_btn:disabled,
+.commerce_reviews_secondary_btn:disabled {
+    cursor: not-allowed;
+    opacity: .6;
+    transform: none;
+}
+
+.commerce_reviews_progress {
+    margin-bottom: 24px;
+}
+
+.commerce_reviews_progress_head {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 8px;
+    color: var(--qr-muted);
+    font-size: .88rem;
+}
+
+.commerce_reviews_progress_track {
+    height: 8px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--qr-surface-alt);
+}
+
+.commerce_reviews_progress_value {
+    height: 100%;
+    border-radius: inherit;
+    background: var(--qr-primary);
+    transition: width .22s ease;
+}
+
+.commerce_reviews_step {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.commerce_reviews_product {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.commerce_reviews_product_image,
+.commerce_reviews_product_placeholder {
+    flex: 0 0 104px;
+    width: 104px;
+    height: 104px;
+    border-radius: var(--qr-radius);
+    background: var(--qr-surface-alt);
+}
+
+.commerce_reviews_product_image {
+    object-fit: cover;
+}
+
+.commerce_reviews_product_placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--qr-muted);
+    font-size: .8rem;
+}
+
+.commerce_reviews_product_info {
+    min-width: 0;
+}
+
+.commerce_reviews_product_info h2 {
+    margin: 0;
+    color: var(--qr-text);
+    font-size: 1.3rem;
+}
+
+.commerce_reviews_product_info p,
+.commerce_reviews_product_info small {
+    display: block;
+    margin: 6px 0 0;
+    color: var(--qr-muted);
+}
+
+.commerce_reviews_rating_section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 20px;
+    border-radius: var(--qr-radius);
+    background: var(--qr-surface-alt);
+    text-align: center;
+}
+
+.commerce_reviews_rating_section > label {
+    color: var(--qr-text);
+    font-weight: 700;
+}
+
+.commerce_reviews_rating {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+}
+
+.commerce_reviews_star {
+    padding: 2px;
+    border: 0;
+    background: transparent;
+    color: var(--qr-border);
+    font-size: clamp(2rem, 9vw, 3rem);
+    line-height: 1;
+    cursor: pointer;
+    transition:
+        color .15s ease,
+        transform .15s ease;
+}
+
+.commerce_reviews_star.active {
+    color: var(--qr-primary);
+}
+
+.commerce_reviews_star:hover {
+    transform: scale(1.08);
+}
+
+.commerce_reviews_rating_text {
+    color: var(--qr-muted);
+    font-size: .9rem;
+}
+
+.commerce_reviews_field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.commerce_reviews_field label {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    color: var(--qr-text);
+    font-weight: 700;
+}
+
+.commerce_reviews_field label small {
+    color: var(--qr-muted);
+    font-weight: 400;
+}
+
+.commerce_reviews_field input,
+.commerce_reviews_field textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid var(--qr-border);
+    border-radius: var(--qr-radius);
+    outline: none;
+    background: var(--qr-surface-alt);
+    color: var(--qr-text);
+    font: inherit;
+}
+
+.commerce_reviews_field input:focus,
+.commerce_reviews_field textarea:focus {
+    border-color: var(--qr-primary);
+}
+
+.commerce_reviews_field textarea {
+    resize: vertical;
+}
+
+.commerce_reviews_verified {
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-start;
+    gap: 8px;
+    color: var(--qr-muted);
+    font-size: .88rem;
+}
+
+.commerce_reviews_verified span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 999px;
+    background: var(--qr-primary);
+    color: var(--qr-primary-text);
+}
+
+.commerce_reviews_actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 28px;
+}
+
+.commerce_reviews_thanks_icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 20px;
+    border-radius: 999px;
+    background: var(--qr-primary);
+    color: var(--qr-primary-text);
+    font-size: 2rem;
+    font-weight: 900;
+}
+
+.commerce_reviews_google_cta {
+    margin-top: 28px;
+    padding-top: 24px;
+    border-top: 1px solid var(--qr-border);
+}
+
+.commerce_reviews_google_cta h2 {
+    margin: 0;
+    color: var(--qr-text);
+    font-size: 1.35rem;
+}
+
+.commerce_reviews_google_cta p {
+    margin: 12px auto 18px;
+    color: var(--qr-muted);
+    line-height: 1.55;
+}
+
+.commerce_reviews_thanks > .commerce_reviews_secondary_btn {
+    margin-top: 16px;
+}
+
+@media (max-width: 575px) {
+
+    .commerce_reviews_public_page {
+        padding: 16px 10px;
+    }
+
+    .commerce_reviews_welcome,
+    .commerce_reviews_wizard,
+    .commerce_reviews_thanks {
+        padding: 22px 16px;
+    }
+
+    .commerce_reviews_product {
+        align-items: flex-start;
+    }
+
+    .commerce_reviews_product_image,
+    .commerce_reviews_product_placeholder {
+        flex-basis: 84px;
+        width: 84px;
+        height: 84px;
+    }
+
+    .commerce_reviews_actions {
+        flex-direction: column-reverse;
+    }
+
+    .commerce_reviews_primary_btn,
+    .commerce_reviews_secondary_btn {
+        width: 100%;
+    }
+
+}
+

@@ -52,11 +52,11 @@ export const defaultStoreTemplate = [
     },
 
     {
-        section_type: "trust",
+        section_type: "reviews",
         sort_order: 5,
         blocks: [
             {
-                block_type: "store_trust_bar"
+                block_type: "store_reviews"
             }
         ]
     },
@@ -82,8 +82,28 @@ export const defaultStoreTemplate = [
     },
 
     {
-        section_type: "help",
+        section_type: "trust",
         sort_order: 8,
+        blocks: [
+            {
+                block_type: "store_trust_bar"
+            }
+        ]
+    },
+
+    {
+        section_type: "product_reviews_cta",
+        sort_order: 9,
+        blocks: [
+            {
+                block_type: "store_product_reviews_cta"
+            }
+        ]
+    },
+
+    {
+        section_type: "help",
+        sort_order: 10,
         blocks: [
             {
                 block_type: "store_help_bar"
@@ -93,7 +113,7 @@ export const defaultStoreTemplate = [
 
     {
         section_type: "footer",
-        sort_order: 9,
+        sort_order: 11,
         blocks: [
             {
                 block_type: "store_footer"

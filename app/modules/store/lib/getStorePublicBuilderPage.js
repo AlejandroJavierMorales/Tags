@@ -31,6 +31,11 @@ export async function getStorePublicBuilderPage(slug) {
             `
         SELECT
             s.*,
+            qrp.theme_id,
+
+            t.code AS theme_code,
+            t.name AS theme_name,
+            t.css_tokens AS theme_css_tokens,
 
             EXISTS (
                 SELECT 1
@@ -44,6 +49,9 @@ export async function getStorePublicBuilderPage(slug) {
 
         INNER JOIN tags_qr_pages qrp
             ON qrp.id = s.page_id
+
+        LEFT JOIN tags_qr_page_themes t
+            ON t.id = qrp.theme_id
 
         WHERE qrp.slug = ?
         AND qrp.page_type = 'store'
@@ -60,7 +68,6 @@ export async function getStorePublicBuilderPage(slug) {
     const store =
         storeRows?.[0];
 
-    console.log("STORE QUERY RESULT:", storeRows);
 
     if (!store) {
         return null;
@@ -71,6 +78,17 @@ export async function getStorePublicBuilderPage(slug) {
 
     store.styles_json =
         safeParse(store.styles_json);
+
+    const themeTokens =
+        safeParse(store.theme_css_tokens);
+
+    const customTokens =
+        safeParse(store.styles_json?.css_tokens);
+
+    store.theme_css_vars = {
+        ...themeTokens,
+        ...customTokens
+    };
 
     store.has_reviews =
         Number(store.has_reviews) === 1;
@@ -104,12 +122,6 @@ export async function getStorePublicBuilderPage(slug) {
             [store.id]
         );
 
-    console.log("STORE BUILDER:", {
-        slug,
-        storeId: store?.id,
-        pageId: store?.page_id,
-        pageSlug: store?.slug
-    });
 
     return {
         store,

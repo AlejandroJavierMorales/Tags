@@ -123,7 +123,7 @@ export default function StoreReviewsCTA({
 
                         <button
                             type="button"
-                            className="store_public_btn store_reviews_cta_btn"
+                            className="store_btn_primary store_reviews_cta_btn"
                             onClick={() => setOpen(true)}
                         >
                             Calificar mi compra
@@ -165,6 +165,7 @@ export default function StoreReviewsCTA({
 
                             <input
                                 value={form.orderNumber}
+                                className="store_review_modal_input"
                                 onChange={(e) =>
                                     updateField(
                                         "orderNumber",
@@ -181,6 +182,7 @@ export default function StoreReviewsCTA({
 
                             <input
                                 value={form.contact}
+                                className="store_review_modal_input"
                                 onChange={(e) =>
                                     updateField(
                                         "contact",
@@ -193,7 +195,7 @@ export default function StoreReviewsCTA({
 
                             <button
                                 type="submit"
-                                className="store_public_btn store_reviews_cta_btn"
+                                className="store_btn_primary store_reviews_cta_btn"
                                 disabled={loading}
                             >
                                 {

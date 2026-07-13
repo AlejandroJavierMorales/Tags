@@ -9,9 +9,7 @@ export const dynamic = "force-dynamic";
 import { db } from "@/app/lib/tags-db";
 
 export async function GET(req) {
-
     try {
-
         const { searchParams } =
             new URL(req.url);
 
@@ -20,13 +18,8 @@ export async function GET(req) {
 
         if (!id) {
             return Response.json(
-                {
-                    error:
-                        "id requerido"
-                },
-                {
-                    status: 400
-                }
+                { error: "id requerido" },
+                { status: 400 }
             );
         }
 
@@ -76,21 +69,15 @@ export async function GET(req) {
 
         if (!business) {
             return Response.json(
-                {
-                    error:
-                        "Cliente no encontrado"
-                },
-                {
-                    status: 404
-                }
+                { error: "Cliente no encontrado" },
+                { status: 404 }
             );
         }
 
         const [subscriptionRows] =
             await db.query(
                 `
-                SELECT
-                    *
+                SELECT *
                 FROM tags_subscriptions
                 WHERE business_id = ?
                 AND status IN ('active', 'trial', 'past_due')
@@ -106,8 +93,7 @@ export async function GET(req) {
         const [paymentRows] =
             await db.query(
                 `
-                SELECT
-                    *
+                SELECT *
                 FROM tags_subscription_payments
                 WHERE business_id = ?
                 AND status = 'approved'
@@ -123,8 +109,7 @@ export async function GET(req) {
         const [qrUsageRows] =
             await db.query(
                 `
-                SELECT
-                    COUNT(*) AS total_qrs
+                SELECT COUNT(*) AS total_qrs
                 FROM tags_qr_codes
                 WHERE business_id = ?
                 `,
@@ -136,8 +121,29 @@ export async function GET(req) {
                 `
                 SELECT
                     SUM(CASE WHEN page_type = 'qr_page' THEN 1 ELSE 0 END) AS qr_pages_used,
-                    SUM(CASE WHEN page_type = 'tags_id' THEN 1 ELSE 0 END) AS tags_id_used
+                    SUM(CASE WHEN page_type = 'tags_id' THEN 1 ELSE 0 END) AS tags_id_used,
+                    SUM(CASE WHEN page_type = 'client_reviews' THEN 1 ELSE 0 END) AS reviews_used
                 FROM tags_qr_pages
+                WHERE business_id = ?
+                `,
+                [id]
+            );
+
+        const [storeUsageRows] =
+            await db.query(
+                `
+                SELECT COUNT(*) AS store_used
+                FROM tags_stores
+                WHERE business_id = ?
+                `,
+                [id]
+            );
+
+        const [portalUsageRows] =
+            await db.query(
+                `
+                SELECT COUNT(*) AS portal_public_used
+                FROM tags_portals
                 WHERE business_id = ?
                 `,
                 [id]
@@ -154,27 +160,24 @@ export async function GET(req) {
                 FROM tags_business_addons
                 WHERE business_id = ?
                 AND status = 'active'
+                AND (
+                    expires_at IS NULL
+                    OR expires_at >= NOW()
+                )
                 `,
                 [id]
             );
 
-        const qrPageAddon =
-            addonRows.find(
-                addon => addon.addon_code === "qr_page"
-            );
+        const getAddonTotal = (code) => {
+            const addon =
+                addonRows.find(
+                    row => row.addon_code === code
+                );
 
-        const tagsIdAddon =
-            addonRows.find(
-                addon => addon.addon_code === "tagsid"
-            );
-
-        const qrPagesTotal =
-            Number(qrPageAddon?.quantity || 0);
-
-        const tagsIdTotal =
-            tagsIdAddon
-                ? Number(tagsIdAddon.quantity || 1)
+            return addon
+                ? Number(addon.quantity || 1)
                 : 0;
+        };
 
         const qrsUsed =
             Number(qrUsageRows[0]?.total_qrs || 0);
@@ -184,6 +187,15 @@ export async function GET(req) {
 
         const tagsIdUsed =
             Number(pageUsageRows[0]?.tags_id_used || 0);
+
+        const reviewsUsed =
+            Number(pageUsageRows[0]?.reviews_used || 0);
+
+        const storeUsed =
+            Number(storeUsageRows[0]?.store_used || 0);
+
+        const portalPublicUsed =
+            Number(portalUsageRows[0]?.portal_public_used || 0);
 
         return Response.json({
             ok: true,
@@ -236,11 +248,28 @@ export async function GET(req) {
                 qrs_total: Number(business.max_qr_codes || 0),
 
                 qr_pages_used: qrPagesUsed,
-                qr_pages_total: qrPagesTotal,
+                qr_pages_total: getAddonTotal("qr_page"),
 
                 tags_id_used: tagsIdUsed,
-                tags_id_total: tagsIdTotal
+                tags_id_total: getAddonTotal("tagsid"),
+
+                reviews_used: reviewsUsed,
+                reviews_total: getAddonTotal("client_reviews"),
+
+                store_used: storeUsed,
+                store_total: getAddonTotal("store"),
+
+                portal_public_used: portalPublicUsed,
+                portal_public_total: getAddonTotal("portal_public"),
+
+                restaurant_used: 0,
+                restaurant_total: getAddonTotal("restaurant"),
+
+                booking_used: 0,
+                booking_total: getAddonTotal("booking")
             },
+
+            addons: addonRows,
 
             features: {
                 dashboard_enabled:
@@ -273,20 +302,14 @@ export async function GET(req) {
         });
 
     } catch (err) {
-
         console.error(
             "BUSINESS SUBSCRIPTION SUMMARY ERROR:",
             err
         );
 
         return Response.json(
-            {
-                error:
-                    "Error obteniendo resumen de suscripción"
-            },
-            {
-                status: 500
-            }
+            { error: "Error obteniendo resumen de suscripción" },
+            { status: 500 }
         );
     }
 }

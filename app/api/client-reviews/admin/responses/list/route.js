@@ -25,6 +25,12 @@ export async function GET(req) {
         const rating =
             searchParams.get("rating") || "";
 
+        const verified =
+            searchParams.get("verified") || "";
+
+        const isPublic =
+            searchParams.get("isPublic") || "";
+
         const from =
             searchParams.get("from") || "";
 
@@ -71,6 +77,22 @@ export async function GET(req) {
         if (rating) {
             where.push("ROUND(r.average_rating) = ?");
             params.push(Number(rating));
+        }
+
+        if (verified === "verified") {
+            where.push("r.verified_purchase = 1");
+        }
+
+        if (verified === "unverified") {
+            where.push("r.verified_purchase = 0");
+        }
+
+        if (isPublic === "public") {
+            where.push("r.is_public = 1");
+        }
+
+        if (isPublic === "private") {
+            where.push("r.is_public = 0");
         }
 
         if (from) {
@@ -133,6 +155,10 @@ export async function GET(req) {
                     r.google_prompt_shown,
                     r.google_clicked,
                     r.status,
+                    r.verified_purchase,
+                    r.is_public,
+                    r.store_id,
+                    r.order_id,
                     r.created_at,
 
                     q.code AS qr_code,
@@ -157,32 +183,36 @@ export async function GET(req) {
 
                 ${whereSQL}
 
-            GROUP BY
-                r.id,
-                r.form_id,
-                r.business_id,
-                r.qr_code_id,
-                r.page_id,
-                r.customer_name,
-                r.customer_email,
-                r.customer_phone,
-                r.general_comment,
-                r.average_rating,
-                r.min_rating,
-                r.max_rating,
-                r.google_prompt_shown,
-                r.google_clicked,
-                r.status,
-                r.created_at,
-                q.code,
-                q.label,
-                p.slug
+                GROUP BY
+                    r.id,
+                    r.form_id,
+                    r.business_id,
+                    r.qr_code_id,
+                    r.page_id,
+                    r.customer_name,
+                    r.customer_email,
+                    r.customer_phone,
+                    r.general_comment,
+                    r.average_rating,
+                    r.min_rating,
+                    r.max_rating,
+                    r.google_prompt_shown,
+                    r.google_clicked,
+                    r.status,
+                    r.verified_purchase,
+                    r.is_public,
+                    r.store_id,
+                    r.order_id,
+                    r.created_at,
+                    q.code,
+                    q.label,
+                    p.slug
 
-            ORDER BY r.created_at DESC
+                ORDER BY r.created_at DESC
 
-            LIMIT ${limit}
-            OFFSET ${offset}
-            `,
+                LIMIT ${limit}
+                OFFSET ${offset}
+                `,
                 params
             );
 

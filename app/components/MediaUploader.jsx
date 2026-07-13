@@ -1,7 +1,6 @@
 "use client";
 
-import { useState }
-    from "react";
+import { useState } from "react";
 
 import showAlert
     from "@/app/components/showAlert";
@@ -10,16 +9,27 @@ export default function MediaUploader({
     businessId,
     value,
     onChange,
+
+    // Nuevo formato
+    module = null,
+    variant = "default",
+    entityId = null,
+    fileName = null,
+    replace = false,
+    previousUrl = "",
+    previousStoragePath = "",
+    previousOgStoragePath = "",
+
+    // Legacy
     folder = "media",
+
     accept = "image/*",
     label = "Subir archivo"
 }) {
-
     const [uploading, setUploading] =
         useState(false);
 
     async function handleFileChange(e) {
-
         const file =
             e.target.files?.[0];
 
@@ -30,24 +40,39 @@ export default function MediaUploader({
         setUploading(true);
 
         try {
-
             const formData =
                 new FormData();
 
-            formData.append(
-                "businessId",
-                businessId
-            );
+            formData.append("businessId", businessId);
+            formData.append("file", file);
 
-            formData.append(
-                "folder",
-                folder
-            );
+            if (module && variant) {
+                formData.append("module", module);
+                formData.append("variant", variant);
+                formData.append("replace", replace ? "1" : "0");
 
-            formData.append(
-                "file",
-                file
-            );
+                if (entityId) {
+                    formData.append("entityId", entityId);
+                }
+
+                if (fileName) {
+                    formData.append("fileName", fileName);
+                }
+
+                if (previousUrl) {
+                    formData.append("previousUrl", previousUrl);
+                }
+
+                if (previousStoragePath) {
+                    formData.append("previousStoragePath", previousStoragePath);
+                }
+
+                if (previousOgStoragePath) {
+                    formData.append("previousOgStoragePath", previousOgStoragePath);
+                }
+            } else {
+                formData.append("folder", folder);
+            }
 
             const res =
                 await fetch(
@@ -59,7 +84,7 @@ export default function MediaUploader({
                 );
 
             const data =
-                await res.json();
+                await res.json().catch(() => ({}));
 
             if (!res.ok) {
                 throw new Error(
@@ -71,21 +96,19 @@ export default function MediaUploader({
             onChange(data.media);
 
             showAlert({
-                type: "success",
                 title: "Archivo subido",
-                text: "El archivo se cargó correctamente"
+                text: "El archivo se cargó correctamente.",
+                icon: "success"
             });
 
         } catch (err) {
-
             showAlert({
-                type: "error",
                 title: "Error",
-                text: err.message
+                text: err.message,
+                icon: "error"
             });
 
         } finally {
-
             setUploading(false);
             e.target.value = "";
         }
@@ -94,34 +117,24 @@ export default function MediaUploader({
     return (
         <div className="qr_page_uploader">
 
-            {
-                value && (
-                    <div className="qr_page_uploader_preview">
-                        {
-                            value.match(/\.(mp4|webm)$/i)
-                                ? (
-                                    <video
-                                        src={value}
-                                        controls
-                                    />
-                                )
-                                : (
-                                    <img
-                                        src={value}
-                                        alt=""
-                                    />
-                                )
-                        }
-                    </div>
-                )
-            }
+            {value && (
+                <div className="qr_page_uploader_preview">
+                    {String(value).match(/\.(mp4|webm)$/i) ? (
+                        <video
+                            src={value}
+                            controls
+                        />
+                    ) : (
+                        <img
+                            src={value}
+                            alt=""
+                        />
+                    )}
+                </div>
+            )}
 
             <label className="qr_page_upload_btn">
-                {
-                    uploading
-                        ? "Subiendo..."
-                        : label
-                }
+                {uploading ? "Subiendo..." : label}
 
                 <input
                     type="file"
@@ -132,17 +145,15 @@ export default function MediaUploader({
                 />
             </label>
 
-            {
-                value && (
-                    <button
-                        type="button"
-                        className="qr_page_upload_remove"
-                        onClick={() => onChange(null)}
-                    >
-                        Quitar archivo
-                    </button>
-                )
-            }
+            {value && (
+                <button
+                    type="button"
+                    className="qr_page_upload_remove"
+                    onClick={() => onChange(null)}
+                >
+                    Quitar archivo
+                </button>
+            )}
 
         </div>
     );

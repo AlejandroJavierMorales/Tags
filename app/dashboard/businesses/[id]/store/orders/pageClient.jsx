@@ -797,7 +797,7 @@ export default function StoreOrdersClient({
             {
                 pagination.totalPages > 1 && (
 
-                    <div className="store_orders_pagination mb-5">
+                    <div className="store_orders_pagination mb-5    ">
 
                         <button
                             type="button"

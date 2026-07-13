@@ -293,6 +293,11 @@ export default function ClientReviewsPublicRenderer({
                 ...data
             });
 
+            console.log(
+                "CLIENT REVIEWS SUBMIT RESULT:",
+                data
+            );
+
         } catch (err) {
             alert(err.message);
 
@@ -545,6 +550,18 @@ export default function ClientReviewsPublicRenderer({
         const thankContent =
             thankYouBlock?.content_json || {};
 
+        console.log(
+            "CLIENT REVIEWS CTA CONDITION:",
+            {
+                showGoogleCTA:
+                    thankContent.showGoogleCTA,
+                googlePromptShown:
+                    result.googlePromptShown,
+                googleReviewUrl:
+                    result.googleReviewUrl
+            }
+        );
+        
         const thankStyles =
             thankYouBlock?.styles_json || {};
 

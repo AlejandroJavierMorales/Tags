@@ -20,6 +20,7 @@ import { createSlug }
 import { registerQRAddonUsage }
     from "@/app/modules/addons/lib/registerQRAddonUsage";
 
+
 export async function POST(req) {
 
     const conn =

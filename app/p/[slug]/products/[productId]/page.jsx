@@ -16,6 +16,9 @@ import { notFound }
 import StoreProductDetailClient
     from "@/app/modules/store/components/public/StoreProductDetailClient";
 
+import StoreFeaturedProductsBlock
+    from "@/app/modules/store/components/blocks/StoreFeaturedProductsBlock";
+
 import {
     getStorePublicProductDetail
 }
@@ -135,6 +138,10 @@ export default async function Page({
     const productUrl =
         `${storeUrl}/products/${params.productId}`;
 
+    console.log("PRODUCT DETAIL THEME:", data.store?.theme_css_vars);
+
+    /*  UI  */
+
     return (
         <>
             <script
@@ -252,13 +259,68 @@ export default async function Page({
                 }}
             />
 
-            <StoreProductDetailClient
-                store={data.store}
-                product={data.product}
-                images={data.images}
-                variants={data.variants}
-                variantOptions={data.variantOptions}
-            />
+            <div
+                className="store_public_page"
+                style={data.store?.theme_css_vars || {}}
+            >
+                <StoreProductDetailClient
+                    store={data.store}
+                    product={data.product}
+                    images={data.images}
+                    variants={data.variants}
+                    variantOptions={data.variantOptions}
+                    settings={
+                        data.store?.settings_json?.pageEditors?.product_detail || {}
+                    }
+                />
+
+                <StoreFeaturedProductsBlock
+                    entity={data.store}
+                    content={{
+                        mode: "related",
+                        productId: data.product.id,
+                        limit: 12,
+
+                        badgeText: "También puede interesarte",
+                        title: "Productos relacionados",
+                        description: "",
+
+                        showBadge: true,
+                        showTitle: true,
+                        showDescription: false,
+
+                        showInfoArea: true,
+                        showCategory: false,
+                        showSku: false,
+                        showFavorite: true,
+                        showShare: true,
+
+                        showPrice: true,
+                        showOldPrice: true,
+                        showDiscount: true,
+                        showOfferBadge: true,
+                        showButton: true,
+
+                        imageRatio: "square",
+                        imageFit: "cover",
+                        imagePadding: "0",
+                        imageRadius: "0",
+                        imageHover: "zoom",
+
+                        cardStyle: "elevated",
+                        cardBorder: true,
+                        cardRadius: "20px",
+                        cardShadow: "soft",
+
+                        infoAlignment: "left",
+                        infoPadding: "16px",
+
+                        buttonText: "Ver producto",
+                        buttonIcon: false,
+                        buttonFullWidth: false
+                    }}
+                />
+            </div>
         </>
     );
 }

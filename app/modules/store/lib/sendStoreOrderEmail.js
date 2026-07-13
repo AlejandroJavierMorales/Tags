@@ -66,24 +66,48 @@ function buildLayout({
     title,
     intro,
     badge,
-    primaryButton,
-    secondaryButton,
+    buttons = [],
     footerNote
 }) {
-    const base =
-        getBaseUrl();
-
     const currency =
         store.currency || "ARS";
 
     const brandColor =
         getBrandColor(store);
 
-    const orderTrackUrl =
-        `${base}/p/${store.slug}/orders/track?order=${order.order_number}`;
-
     const itemsHtml =
         buildItemsHtml(items, currency);
+
+    const buttonStyles = {
+        primary: `background:${brandColor};color:#ffffff;`,
+        secondary: "background:#111827;color:#ffffff;",
+        light: "background:#f3f4f6;color:#111827;"
+    };
+
+    const buttonsHtml =
+        Array.isArray(buttons)
+            ? buttons
+                .filter(button =>
+                    button?.label &&
+                    button?.href
+                )
+                .map(button => {
+                    const variant =
+                        buttonStyles[button.variant]
+                            ? button.variant
+                            : "primary";
+
+                    return `
+                        <a
+                            href="${button.href}"
+                            style="display:inline-block;padding:13px 18px;${buttonStyles[variant]}text-decoration:none;border-radius:10px;font-weight:bold;"
+                        >
+                            ${button.label}
+                        </a>
+                    `;
+                })
+                .join("")
+            : "";
 
     return `
         <div style="margin:0;padding:0;background:#f3f4f6;font-family:Arial,sans-serif;color:#111827;">
@@ -107,6 +131,7 @@ function buildLayout({
                             <h1 style="margin:0;font-size:22px;line-height:1.2;color:#111827;">
                                 ${store.name}
                             </h1>
+
                             <p style="margin:6px 0 0;color:#6b7280;font-size:14px;">
                                 ${typeTitle}
                             </p>
@@ -137,6 +162,7 @@ function buildLayout({
                             <p style="margin:0 0 8px;color:#6b7280;font-size:13px;">
                                 Pedido
                             </p>
+
                             <strong style="font-size:20px;color:#111827;">
                                 ${order.order_number}
                             </strong>
@@ -148,6 +174,7 @@ function buildLayout({
                                         ? `Transportista: <strong>${order.carrier_name}</strong><br>`
                                         : ""
                                     }
+
                                     ${order.tracking_code
                                         ? `Código tracking: <strong>${order.tracking_code}</strong>`
                                         : ""
@@ -165,11 +192,20 @@ function buildLayout({
                         <table style="width:100%;border-collapse:collapse;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;">
                             <thead>
                                 <tr style="background:#f9fafb;color:#6b7280;font-size:12px;text-transform:uppercase;">
-                                    <th style="padding:12px;text-align:left;">Producto</th>
-                                    <th style="padding:12px;text-align:center;">Cant.</th>
-                                    <th style="padding:12px;text-align:right;">Total</th>
+                                    <th style="padding:12px;text-align:left;">
+                                        Producto
+                                    </th>
+
+                                    <th style="padding:12px;text-align:center;">
+                                        Cant.
+                                    </th>
+
+                                    <th style="padding:12px;text-align:right;">
+                                        Total
+                                    </th>
                                 </tr>
                             </thead>
+
                             <tbody>
                                 ${itemsHtml}
                             </tbody>
@@ -180,32 +216,14 @@ function buildLayout({
                             <strong>${money(order.total, currency)}</strong>
                         </div>
 
-                        <div style="margin-top:26px;display:flex;gap:10px;flex-wrap:wrap;">
-                            ${primaryButton
-                                ? `
-                                <a href="${primaryButton.href}"
-                                    style="display:inline-block;padding:13px 18px;background:${brandColor};color:#ffffff;text-decoration:none;border-radius:10px;font-weight:bold;">
-                                    ${primaryButton.label}
-                                </a>
-                                `
-                                : ""
-                            }
-
-                            ${secondaryButton
-                                ? `
-                                <a href="${secondaryButton.href}"
-                                    style="display:inline-block;padding:13px 18px;background:#111827;color:#ffffff;text-decoration:none;border-radius:10px;font-weight:bold;">
-                                    ${secondaryButton.label}
-                                </a>
-                                `
-                                : ""
-                            }
-
-                            <a href="${orderTrackUrl}"
-                                style="display:inline-block;padding:13px 18px;background:#f3f4f6;color:#111827;text-decoration:none;border-radius:10px;font-weight:bold;">
-                                Ver pedido
-                            </a>
-                        </div>
+                        ${buttonsHtml
+                            ? `
+                            <div style="margin-top:26px;display:flex;gap:10px;flex-wrap:wrap;">
+                                ${buttonsHtml}
+                            </div>
+                            `
+                            : ""
+                        }
 
                         ${footerNote
                             ? `
@@ -218,9 +236,21 @@ function buildLayout({
                     </div>
 
                     <div style="padding:20px 24px;background:#f9fafb;border-top:1px solid #e5e7eb;color:#6b7280;font-size:13px;line-height:1.6;">
-                        <strong style="color:#111827;">${store.name}</strong><br>
-                        ${store.whatsapp ? `WhatsApp: ${store.whatsapp}<br>` : ""}
-                        ${store.email || store.store_email ? `Email: ${store.email || store.store_email}<br>` : ""}
+                        <strong style="color:#111827;">
+                            ${store.name}
+                        </strong>
+                        <br>
+
+                        ${store.whatsapp
+                            ? `WhatsApp: ${store.whatsapp}<br>`
+                            : ""
+                        }
+
+                        ${store.email || store.store_email
+                            ? `Email: ${store.email || store.store_email}<br>`
+                            : ""
+                        }
+
                         Este correo fue enviado automáticamente por ${store.name}.
                     </div>
 
@@ -234,7 +264,8 @@ export async function sendStoreOrderEmail({
     store,
     order,
     items = [],
-    type
+    type,
+    buttons = []
 }) {
     if (!order?.customer_email) {
         return null;
@@ -251,72 +282,168 @@ export async function sendStoreOrderEmail({
 
     const templates = {
         order_created: {
-            subject: `Pedido recibido ${order.order_number}`,
-            typeTitle: "Confirmación de pedido",
-            badge: "Pedido recibido",
-            title: "¡Recibimos tu pedido!",
-            intro: `Tu pedido <strong>${order.order_number}</strong> fue recibido correctamente.`,
-            primaryButton: {
-                label: "Ver mi pedido",
-                href: orderTrackUrl
-            },
-            footerNote: "Te avisaremos cuando el pedido avance de estado."
+            subject:
+                `Pedido recibido ${order.order_number}`,
+
+            typeTitle:
+                "Confirmación de pedido",
+
+            badge:
+                "Pedido recibido",
+
+            title:
+                "¡Recibimos tu pedido!",
+
+            intro:
+                `Tu pedido <strong>${order.order_number}</strong> fue recibido correctamente.`,
+
+            buttons: [
+                {
+                    label:
+                        "Ver mi pedido",
+
+                    href:
+                        orderTrackUrl,
+
+                    variant:
+                        "primary"
+                }
+            ],
+
+            footerNote:
+                "Te avisaremos cuando el pedido avance de estado."
         },
 
         payment_paid: {
-            subject: `Pago confirmado ${order.order_number}`,
-            typeTitle: "Confirmación de pago",
-            badge: "Pago confirmado",
-            title: "✅ Pago recibido",
-            intro: `Confirmamos la recepción del pago de tu pedido <strong>${order.order_number}</strong>. Ya estamos preparando tu compra.`,
-            primaryButton: {
-                label: "Ver mi pedido",
-                href: orderTrackUrl
-            },
-            footerNote: "Gracias por tu compra."
+            subject:
+                `Pago confirmado ${order.order_number}`,
+
+            typeTitle:
+                "Confirmación de pago",
+
+            badge:
+                "Pago confirmado",
+
+            title:
+                "✅ Pago recibido",
+
+            intro:
+                `Confirmamos la recepción del pago de tu pedido <strong>${order.order_number}</strong>. Ya estamos preparando tu compra.`,
+
+            buttons: [
+                {
+                    label:
+                        "Ver mi pedido",
+
+                    href:
+                        orderTrackUrl,
+
+                    variant:
+                        "primary"
+                }
+            ],
+
+            footerNote:
+                "Gracias por tu compra."
         },
 
         order_shipped: {
-            subject: `Pedido enviado ${order.order_number}`,
-            typeTitle: "Seguimiento de envío",
-            badge: "Pedido despachado",
-            title: "📦 Tu pedido fue despachado",
-            intro: `Tu pedido <strong>${order.order_number}</strong> ya fue despachado. Podés seguir el envío desde el botón correspondiente.`,
-            primaryButton: {
-                label: "Seguir envío",
-                href: trackingUrl
-            },
-            /* secondaryButton: {
-                label: "Ver pedido",
-                href: orderTrackUrl
-            }, */
-            footerNote: "Los tiempos de entrega dependen del transportista seleccionado."
+            subject:
+                `Pedido enviado ${order.order_number}`,
+
+            typeTitle:
+                "Seguimiento de envío",
+
+            badge:
+                "Pedido despachado",
+
+            title:
+                "📦 Tu pedido fue despachado",
+
+            intro:
+                `Tu pedido <strong>${order.order_number}</strong> ya fue despachado. Podés seguir el envío desde el botón correspondiente.`,
+
+            buttons: [
+                {
+                    label:
+                        "Seguir envío",
+
+                    href:
+                        trackingUrl,
+
+                    variant:
+                        "primary"
+                }
+            ],
+
+            footerNote:
+                "Los tiempos de entrega dependen del transportista seleccionado."
         },
 
         order_delivered: {
-            subject: `Pedido entregado ${order.order_number}`,
-            typeTitle: "Pedido entregado",
-            badge: "Entregado",
-            title: "✅ Tu pedido fue entregado",
-            intro: `Tu pedido <strong>${order.order_number}</strong> figura como entregado. Esperamos que disfrutes tu compra.`,
-            primaryButton: {
-                label: "Ver mi pedido",
-                href: orderTrackUrl
-            },
-            footerNote: "Si hubo algún problema con la entrega, respondé este correo o contactanos."
+            subject:
+                `Pedido entregado ${order.order_number}`,
+
+            typeTitle:
+                "Pedido entregado",
+
+            badge:
+                "Entregado",
+
+            title:
+                "✅ Tu pedido fue entregado",
+
+            intro:
+                `Tu pedido <strong>${order.order_number}</strong> figura como entregado. Esperamos que disfrutes tu compra.`,
+
+            buttons: [
+                {
+                    label:
+                        "Ver mi pedido",
+
+                    href:
+                        orderTrackUrl,
+
+                    variant:
+                        "primary"
+                }
+            ],
+
+            footerNote:
+                "Si hubo algún problema con la entrega, respondé este correo o contactanos."
         },
 
         order_cancelled: {
-            subject: `Pedido cancelado ${order.order_number}`,
-            typeTitle: "Pedido cancelado",
-            badge: "Cancelado",
-            title: "Pedido cancelado",
-            intro: `Tu pedido <strong>${order.order_number}</strong> fue cancelado. Si ya habías realizado un pago, te contactaremos por los pasos correspondientes.`,
-            primaryButton: {
-                label: "Ver pedido",
-                href: orderTrackUrl
-            },
-            footerNote: "Ante cualquier duda, podés comunicarte con la tienda."
+            subject:
+                `Pedido cancelado ${order.order_number}`,
+
+            typeTitle:
+                "Pedido cancelado",
+
+            badge:
+                "Cancelado",
+
+            title:
+                "Pedido cancelado",
+
+            intro:
+                `Tu pedido <strong>${order.order_number}</strong> fue cancelado. Si ya habías realizado un pago, te contactaremos por los pasos correspondientes.`,
+
+            buttons: [
+                {
+                    label:
+                        "Ver pedido",
+
+                    href:
+                        orderTrackUrl,
+
+                    variant:
+                        "primary"
+                }
+            ],
+
+            footerNote:
+                "Ante cualquier duda, podés comunicarte con la tienda."
         }
     };
 
@@ -327,17 +454,29 @@ export async function sendStoreOrderEmail({
         return null;
     }
 
+    const finalButtons =
+        Array.isArray(buttons) &&
+        buttons.length
+            ? buttons
+            : template.buttons || [];
+
     const html =
         buildLayout({
             store,
             order,
             items,
-            ...template
+            ...template,
+            buttons:
+                finalButtons
         });
 
     return sendMail({
-        to: order.customer_email,
-        subject: template.subject,
+        to:
+            order.customer_email,
+
+        subject:
+            template.subject,
+
         html
     });
 }

@@ -15,9 +15,12 @@ import MediaUploader from "@/app/components/MediaUploader";
 
 import StoreCouponsTab
     from "@/app/modules/store/components/admin/StoreCouponsTab";
+import StoreSectionsManager
+    from "@/app/modules/store/components/admin/builder/StoreSectionsManager";
 
 import "@/app/styles/qr-page.css";
 import "@/app/styles/tags_dashboard.css";
+
 
 const emptyStore = {
     id: null,
@@ -74,6 +77,12 @@ export default function StoreAdminClient({
     const [store, setStore] = useState(null);
     const [form, setForm] = useState(emptyStore);
 
+    const [sections, setSections] =
+        useState([]);
+
+    const [blocks, setBlocks] =
+        useState([]);
+
     const [activeTab, setActiveTab] =
         useState(initialTab || "general");
     const [mobileGroup, setMobileGroup] = useState(0);
@@ -95,7 +104,8 @@ export default function StoreAdminClient({
         {
             title: "🎨 Diseño",
             items: [
-                ["styles", "Apariencia", "ready"]
+                ["styles", "Apariencia", "ready"],
+                ["builder", "Constructor", "ready"]
             ]
         },
         {
@@ -119,6 +129,7 @@ export default function StoreAdminClient({
             title: "🧾 Pedidos",
             items: [
                 ["orders", "Pedidos", "ready"],
+                ["productReviews", "Reseñas de productos", "ready"],
                 ["orderTracking", "Seguimiento", "ready"],
                 ["abandonedOrders", "Pedidos abandonados", "ready"],
                 ["customers", "Clientes", "soon"]
@@ -193,6 +204,10 @@ export default function StoreAdminClient({
                 data.store || null;
 
             setStore(loadedStore);
+
+            setSections(data.sections || []);
+
+            setBlocks(data.blocks || []);
 
             if (loadedStore) {
                 setForm({
@@ -369,32 +384,26 @@ export default function StoreAdminClient({
         const routes = {
             products:
                 `/dashboard/businesses/${businessId}/store/products?from=products`,
-
             categories:
                 `/dashboard/businesses/${businessId}/store/categories?from=categories`,
-
             stock:
                 `/dashboard/businesses/${businessId}/store/stock?from=stock`,
-
             inventory:
                 `/dashboard/businesses/${businessId}/store/inventory?from=inventory`,
-
             retained:
                 `/dashboard/businesses/${businessId}/store/stock?from=retained`,
-
             orders:
                 `/dashboard/businesses/${businessId}/store/orders?from=orders`,
-
             abandonedOrders:
                 `/dashboard/businesses/${businessId}/store/stock?from=abandonedOrders`,
-
             shipping:
                 `/dashboard/businesses/${businessId}/store/shipping?from=shipping`,
-
             payments:
                 `/dashboard/businesses/${businessId}/store/payments?from=payments`,
             coupons:
                 `/dashboard/businesses/${businessId}/store/coupons?from=coupons`,
+            productReviews:
+                `/dashboard/businesses/${businessId}/store/product-reviews?from=productReviews`,
         };
 
         if (key === "orderTracking") {
@@ -411,8 +420,8 @@ export default function StoreAdminClient({
             "general",
             "contact",
             "styles",
-            "seo",
-
+            "builder",
+            "seo"
         ].includes(key);
     }
 
@@ -707,21 +716,93 @@ export default function StoreAdminClient({
         }
     }
 
-    function applyTheme(theme) {
-        setForm(prev => ({
-            ...prev,
+    async function applyTheme(theme) {
 
-            settings_json: {
-                ...(prev.settings_json || {}),
-                themeId: theme.id,
-                themeCode: theme.code
-            },
+        if (!form.page_id) {
+            showAlert({
+                title: "Primero guardá la tienda",
+                text: "Para aplicar un theme primero la tienda debe estar creada.",
+                icon: "info"
+            });
 
-            styles_json: {
-                ...(prev.styles_json || {}),
-                ...(theme.storeStyles || {})
+            return;
+        }
+
+        const confirm =
+            await showAlert({
+                title: "Aplicar theme",
+                text: "Se aplicará este theme visual a la tienda.",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonText: "Aplicar",
+                cancelButtonText: "Cancelar"
+            });
+
+        if (!confirm) {
+            return;
+        }
+
+        try {
+
+            const res =
+                await fetch(
+                    "/api/qr-page/themes/apply",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            businessId,
+                            pageId: form.page_id,
+                            themeId: theme.id
+                        })
+                    }
+                );
+
+            const data =
+                await res.json().catch(() => ({}));
+
+            if (!res.ok) {
+                throw new Error(
+                    data.error ||
+                    "No se pudo aplicar el theme"
+                );
             }
-        }));
+
+            setForm(prev => ({
+                ...prev,
+
+                settings_json: {
+                    ...(prev.settings_json || {}),
+                    themeId: theme.id,
+                    themeCode: theme.code
+                },
+
+                styles_json: {
+                    ...(prev.styles_json || {}),
+                    ...(theme.storeStyles || {})
+                }
+            }));
+
+            showAlert({
+                title: "Theme aplicado",
+                text: "El theme fue aplicado correctamente.",
+                icon: "success"
+            });
+
+            await loadStore();
+
+        } catch (err) {
+
+            showAlert({
+                title: "Error",
+                text: err.message,
+                icon: "error"
+            });
+
+        }
+
     }
 
 
@@ -1000,7 +1081,7 @@ export default function StoreAdminClient({
                             </div>
 
                             <div className="qr_page_field">
-                                <label>Ctalálogo: Productos por página</label>
+                                <label>Catálogo: Productos por página</label>
                                 <select
                                     className="qr_page_select"
                                     value={form.settings_json?.productsPerPage || 12}
@@ -1302,6 +1383,23 @@ export default function StoreAdminClient({
                         <TabSaveBar />
 
                     </div>
+                )
+            }
+            {/* Tab Builder */}
+            {
+                activeTab === "builder" && (
+                    <>
+                        <StoreSectionsManager
+                            businessId={businessId}
+                            store={form}
+                            storeId={form.id}
+                            sections={sections}
+                            blocks={blocks}
+                            onReload={loadStore}
+                        />
+
+
+                    </>
                 )
             }
 

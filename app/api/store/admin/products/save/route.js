@@ -44,6 +44,8 @@ export async function POST(req) {
             stock_enabled,
             stock_qty,
             is_featured,
+            is_offer,
+            is_new,
             is_visible,
             status,
             seo_title,
@@ -137,6 +139,8 @@ export async function POST(req) {
                     stock_enabled = ?,
                     stock_qty = ?,
                     is_featured = ?,
+                    is_offer = ?,
+                    is_new = ?,
                     is_visible = ?,
                     status = ?,
                     seo_title = ?,
@@ -159,6 +163,8 @@ export async function POST(req) {
                     Number(stock_enabled) === 1 ? 1 : 0,
                     Number(stock_qty || 0),
                     Number(is_featured) === 1 ? 1 : 0,
+                    Number(is_offer) === 1 ? 1 : 0,
+                    Number(is_new) === 1 ? 1 : 0,
                     Number(is_visible) === 0 ? 0 : 1,
                     status || "draft",
                     safe(seo_title),
@@ -184,6 +190,8 @@ export async function POST(req) {
                     stock_enabled,
                     stock_qty,
                     is_featured,
+                    is_offer,
+                    is_new,
                     is_visible,
                     status,
                     seo_title,
@@ -192,7 +200,7 @@ export async function POST(req) {
                     created_at,
                     updated_at
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
                 `,
                 [
                     store.id,
@@ -209,6 +217,8 @@ export async function POST(req) {
                     Number(stock_enabled) === 1 ? 1 : 0,
                     Number(stock_qty || 0),
                     Number(is_featured) === 1 ? 1 : 0,
+                    Number(is_offer) === 1 ? 1 : 0,
+                    Number(is_new) === 1 ? 1 : 0,
                     Number(is_visible) === 0 ? 0 : 1,
                     status || "draft",
                     safe(seo_title),

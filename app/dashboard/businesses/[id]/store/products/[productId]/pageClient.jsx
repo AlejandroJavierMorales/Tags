@@ -28,6 +28,8 @@ const emptyProduct = {
     stock_enabled: 0,
     stock_qty: 0,
     is_featured: 0,
+    is_offer: 0,
+    is_new: 0,
     is_visible: 1,
     status: "draft",
     seo_title: "",
@@ -311,6 +313,12 @@ export default function StoreProductEditorClient({
 
                             is_visible:
                                 Number(product.is_visible) === 0 ? 0 : 1,
+
+                            is_offer:
+                                Number(product.is_offer) === 1 ? 1 : 0,
+
+                            is_new:
+                                Number(product.is_new) === 1 ? 1 : 0,
 
                             status:
                                 product.status || "draft",
@@ -790,6 +798,38 @@ export default function StoreProductEditorClient({
                                 }
                             />
                             Producto destacado
+                        </label>
+                    </div>
+
+                    <div className="qr_page_field">
+                        <label className="qr_page_checkbox">
+                            <input
+                                type="checkbox"
+                                checked={Number(product.is_offer) === 1}
+                                onChange={(e) =>
+                                    updateProduct(
+                                        "is_offer",
+                                        e.target.checked ? 1 : 0
+                                    )
+                                }
+                            />
+                            Producto en oferta
+                        </label>
+                    </div>
+
+                    <div className="qr_page_field">
+                        <label className="qr_page_checkbox">
+                            <input
+                                type="checkbox"
+                                checked={Number(product.is_new) === 1}
+                                onChange={(e) =>
+                                    updateProduct(
+                                        "is_new",
+                                        e.target.checked ? 1 : 0
+                                    )
+                                }
+                            />
+                            Producto nuevo
                         </label>
                     </div>
 

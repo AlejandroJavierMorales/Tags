@@ -16,11 +16,17 @@ import { db }
 import {
     normalizeProductVariants
 }
-from "@/app/modules/store/lib/normalizeProductVariants";
+    from "@/app/modules/store/lib/normalizeProductVariants";
 
 function safeParse(value) {
+    if (!value) {
+        return {};
+    }
+    if (typeof value === "object") {
+        return value;
+    }
     try {
-        return value ? JSON.parse(value) : {};
+        return JSON.parse(value);
     } catch {
         return {};
     }
@@ -35,22 +41,41 @@ export async function getStorePublicProductDetail({
         return null;
     }
 
+
+
     const [storeRows] =
         await db.execute(
             `
-            SELECT *
-            FROM tags_stores
-            WHERE slug = ?
-            AND status = 'published'
+        SELECT
+            s.*,
+            qrp.theme_id,
+            t.code AS theme_code,
+            t.name AS theme_name,
+            t.css_tokens AS theme_css_tokens
+        FROM tags_stores s
+        INNER JOIN tags_qr_pages qrp
+            ON qrp.id = s.page_id
+        LEFT JOIN tags_qr_page_themes t
+            ON t.id = qrp.theme_id
+        WHERE (
+                qrp.slug = ?
+                OR s.slug = ?
+            )
+            AND qrp.page_type = 'store'
+            AND qrp.status = 'published'
+            AND s.status = 'published'
             LIMIT 1
-            `,
+        `,
             [
+                slug,
                 slug
             ]
         );
 
     const store =
         storeRows?.[0];
+
+    console.log("STORE ROWS DETAIL:", storeRows);
 
     if (!store) {
         return null;
@@ -65,6 +90,23 @@ export async function getStorePublicProductDetail({
         safeParse(
             store.styles_json
         );
+
+    const themeTokens =
+        safeParse(
+            store.theme_css_tokens
+        );
+
+    const customTokens =
+        safeParse(
+            store.styles_json?.css_tokens
+        );
+
+    store.theme_css_vars = {
+        ...themeTokens,
+        ...customTokens
+    };
+
+
 
     const [productRows] =
         await db.execute(

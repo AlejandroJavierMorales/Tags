@@ -6,8 +6,8 @@
 // Renderizador genérico de bloques.
 //
 // Busca el módulo correspondiente
-// dentro del registry y renderiza
-// el componente asociado.
+// dentro del registry según el contexto
+// y renderiza el componente asociado.
 //
 // Utilizado por:
 // - BuilderRenderer
@@ -23,7 +23,12 @@
 import {
     getStoreModule
 }
-from "@/app/modules/store/lib/storeModuleRegistry";
+    from "@/app/modules/store/lib/storeModuleRegistry";
+
+import {
+    getRestoModule
+}
+    from "@/app/modules/resto/lib/restoModuleRegistry";
 
 export default function BuilderBlockRenderer({
     context,
@@ -49,6 +54,15 @@ export default function BuilderBlockRenderer({
 
             break;
 
+        case "resto":
+
+            module =
+                getRestoModule(
+                    block.block_type
+                );
+
+            break;
+
         default:
 
             return null;
@@ -58,7 +72,7 @@ export default function BuilderBlockRenderer({
     if (!module) {
 
         console.warn(
-            "Module not found:",
+            `[Builder] Module not found (${context}):`,
             block.block_type
         );
 
@@ -72,7 +86,7 @@ export default function BuilderBlockRenderer({
     if (!Component) {
 
         console.warn(
-            "Component not found:",
+            `[Builder] Component not found (${context}):`,
             block.block_type
         );
 
@@ -81,6 +95,7 @@ export default function BuilderBlockRenderer({
     }
 
     return (
+
         <Component
             entity={entity}
             section={section}
@@ -95,6 +110,7 @@ export default function BuilderBlockRenderer({
                 block.animation_json || {}
             }
         />
+
     );
 
 }

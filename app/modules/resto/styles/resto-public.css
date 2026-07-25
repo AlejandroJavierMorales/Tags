@@ -1,0 +1,3038 @@
+    /* =====================================
+    Archivo:
+    /app/modules/resto/styles/resto-public.css
+
+    Descripción:
+    Estilos públicos de Tags Resto.
+
+    Define la identidad visual de los bloques
+    públicos de Resto utilizando únicamente
+    las variables globales --qr-* provistas
+    por el theme seleccionado.
+
+    Contexto:
+    resto
+    ===================================== */
+
+
+    /* =====================================
+    BASE
+    ===================================== */
+
+    .resto_public {
+        min-height: 100vh;
+        background: var(--qr-bg);
+        color: var(--qr-text);
+    }
+
+    .resto_public *,
+    .resto_public *::before,
+    .resto_public *::after {
+        box-sizing: border-box;
+    }
+
+    .resto_public img {
+        display: block;
+        max-width: 100%;
+    }
+
+    .resto_public button,
+    .resto_public input,
+    .resto_public textarea,
+    .resto_public select {
+        font: inherit;
+    }
+
+    .resto_public button {
+        cursor: pointer;
+    }
+
+    .resto_public .container {
+        width: 100%;
+    }
+
+
+    /* =====================================
+    TOPBAR
+    ===================================== */
+
+    .resto_topbar {
+        position: relative;
+        z-index: 30;
+        width: 100%;
+        background: var(--qr-primary);
+        color: var(--qr-primary-text);
+        border-bottom: 1px solid var(--qr-border);
+    }
+
+    .resto_topbar_text {
+        display: block;
+        font-size: 0.82rem;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+
+    .resto_topbar_location,
+    .resto_topbar_session_status {
+        display: inline-flex;
+        align-items: center;
+        min-height: 26px;
+        padding: 0.25rem 0.65rem;
+        border: 1px solid color-mix(in srgb,
+                var(--qr-primary-text) 28%,
+                transparent);
+        border-radius: 999px;
+        background: color-mix(in srgb,
+                var(--qr-primary-text) 12%,
+                transparent);
+        color: var(--qr-primary-text);
+        font-size: 0.74rem;
+        font-weight: 700;
+        line-height: 1;
+        white-space: nowrap;
+    }
+
+
+    /* =====================================
+    HEADER
+    ===================================== */
+
+    .resto_header {
+        position: relative;
+        z-index: 25;
+        width: 100%;
+        background: var(--qr-surface);
+        color: var(--qr-text);
+        border-bottom: 1px solid var(--qr-border);
+    }
+
+    .resto_header_main {
+        min-width: 0;
+    }
+
+    .resto_header_identity {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .resto_header_logo_wrap {
+        width: 58px;
+        height: 58px;
+        overflow: hidden;
+        border: 1px solid var(--qr-border);
+        border-radius: calc(var(--qr-radius) * 0.72);
+        background: var(--qr-surface-alt);
+        box-shadow: 0 6px 18px color-mix(in srgb,
+                var(--qr-text) 8%,
+                transparent);
+    }
+
+    .resto_header_logo {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        padding: 0.25rem;
+    }
+
+    .resto_header_identity_text {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .resto_header_name {
+        max-width: 100%;
+        color: var(--qr-text);
+        font-size: clamp(1.05rem, 3vw, 1.35rem);
+        font-weight: 800;
+        line-height: 1.15;
+    }
+
+    .resto_header_description {
+        margin-top: 0.35rem !important;
+        max-width: 100%;
+        color: var(--qr-muted);
+        font-size: 0.84rem;
+        line-height: 1.35;
+    }
+
+    .resto_header_status {
+        display: inline-flex;
+        align-items: center;
+        min-height: 24px;
+        padding: 0.25rem 0.6rem;
+        border-radius: 999px;
+        font-size: 0.7rem;
+        font-weight: 800;
+        line-height: 1;
+        white-space: nowrap;
+    }
+
+    .resto_header_status.is_open {
+        background: color-mix(in srgb,
+                var(--qr-primary) 14%,
+                var(--qr-surface));
+        color: var(--qr-primary);
+        border: 1px solid color-mix(in srgb,
+                var(--qr-primary) 35%,
+                var(--qr-border));
+    }
+
+    .resto_header_status.is_closed {
+        background: color-mix(in srgb,
+                var(--qr-text) 8%,
+                var(--qr-surface));
+        color: var(--qr-muted);
+        border: 1px solid var(--qr-border);
+    }
+
+    .resto_header_order_btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.45rem;
+        min-height: 44px;
+        padding: 0.65rem 0.85rem;
+        border: 0;
+        border-radius: calc(var(--qr-radius) * 0.72);
+        background: var(--qr-primary);
+        color: var(--qr-primary-text);
+        box-shadow: 0 8px 20px color-mix(in srgb,
+                var(--qr-primary) 22%,
+                transparent);
+        font-size: 0.82rem;
+        font-weight: 800;
+        line-height: 1;
+        transition:
+            background 0.2s ease,
+            transform 0.2s ease,
+            box-shadow 0.2s ease;
+    }
+
+    .resto_header_order_btn:hover {
+        background: var(--qr-primary-hover);
+        transform: translateY(-1px);
+        box-shadow: 0 10px 24px color-mix(in srgb,
+                var(--qr-primary) 28%,
+                transparent);
+    }
+
+    .resto_header_order_btn:active {
+        transform: translateY(0);
+    }
+
+    .resto_header_order_icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+    }
+
+    .resto_header_order_count {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 22px;
+        height: 22px;
+        padding: 0 0.35rem;
+        border-radius: 999px;
+        background: var(--qr-primary-text);
+        color: var(--qr-primary);
+        font-size: 0.7rem;
+        font-weight: 900;
+    }
+
+    .resto_header_search_wrap {
+        width: 100%;
+    }
+
+    .resto_header_search {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        min-height: 46px;
+        padding: 0 0.9rem;
+        border: 1px solid var(--qr-border);
+        border-radius: calc(var(--qr-radius) * 0.72);
+        background: var(--qr-surface-alt);
+        transition:
+            border-color 0.2s ease,
+            box-shadow 0.2s ease,
+            background 0.2s ease;
+    }
+
+    .resto_header_search:focus-within {
+        border-color: var(--qr-primary);
+        background: var(--qr-surface);
+        box-shadow: 0 0 0 3px color-mix(in srgb,
+                var(--qr-primary) 14%,
+                transparent);
+    }
+
+    .resto_header_search_icon {
+        flex: 0 0 auto;
+        margin-right: 0.55rem;
+        font-size: 0.9rem;
+        opacity: 0.68;
+    }
+
+    .resto_header_search_input {
+        flex: 1 1 auto;
+        width: 100%;
+        min-width: 0;
+        border: 0;
+        outline: 0;
+        background: transparent;
+        color: var(--qr-text);
+        font-size: 0.9rem;
+    }
+
+    .resto_header_search_input::placeholder {
+        color: var(--qr-muted);
+    }
+
+    .resto_header_order_icon,
+    .resto_header_search_icon {
+        width: 48px;
+        height: 48px;
+        flex: 0 0 48px;
+
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+
+        border-radius: 14px;
+
+        background: color-mix(in srgb,
+                var(--qr-primary) 12%,
+                var(--qr-surface));
+
+        color: var(--qr-primary);
+
+        font-size: 20px;
+    }
+
+    .resto_header_order_icon svg,
+    .resto_header_search_icon svg {
+        width: 20px;
+        height: 20px;
+        fill: currentColor;
+    }
+
+
+    /* =====================================
+    HERO
+    ===================================== */
+
+    .resto_hero {
+        position: relative;
+        overflow: hidden;
+        background: var(--qr-surface);
+        color: var(--qr-text);
+        border-bottom: 1px solid var(--qr-border);
+    }
+
+    .resto_hero.has_cover {
+        min-height: 360px;
+        display: flex;
+        align-items: flex-end;
+    }
+
+    .resto_hero.without_cover {
+        padding: 2.5rem 0;
+        background:
+            linear-gradient(135deg,
+                color-mix(in srgb,
+                    var(--qr-primary) 10%,
+                    var(--qr-surface)),
+                var(--qr-surface));
+    }
+
+    .resto_hero_cover {
+        position: absolute;
+        inset: 0;
+    }
+
+    .resto_hero_cover_image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .resto_hero_cover_overlay {
+        position: absolute;
+        inset: 0;
+        background:
+            linear-gradient(to top,
+                color-mix(in srgb,
+                    var(--qr-text) 82%,
+                    transparent) 0%,
+                color-mix(in srgb,
+                    var(--qr-text) 52%,
+                    transparent) 42%,
+                color-mix(in srgb,
+                    var(--qr-text) 12%,
+                    transparent) 100%);
+    }
+
+    .resto_hero .container {
+        position: relative;
+        z-index: 2;
+    }
+
+    .resto_hero_content {
+        display: flex;
+        align-items: flex-end;
+        gap: 1.25rem;
+        width: 100%;
+        padding: 2rem 0;
+    }
+
+    .resto_hero_logo_wrap {
+        flex: 0 0 auto;
+        width: 88px;
+        height: 88px;
+        overflow: hidden;
+        border: 3px solid var(--qr-surface);
+        border-radius: calc(var(--qr-radius) * 0.9);
+        background: var(--qr-surface);
+        box-shadow: var(--qr-shadow);
+    }
+
+    .resto_hero_logo {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        padding: 0.35rem;
+    }
+
+    .resto_hero_text {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .resto_hero_status {
+        display: inline-flex;
+        align-items: center;
+        min-height: 27px;
+        margin-bottom: 0.65rem;
+        padding: 0.3rem 0.7rem;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 800;
+        line-height: 1;
+    }
+
+    .resto_hero_status.is_open {
+        background: var(--qr-primary);
+        color: var(--qr-primary-text);
+    }
+
+    .resto_hero_status.is_closed {
+        background: var(--qr-surface-alt);
+        color: var(--qr-muted);
+        border: 1px solid var(--qr-border);
+    }
+
+    .resto_hero_title {
+        margin: 0;
+        color: var(--qr-text);
+        font-size: clamp(1.8rem, 6vw, 3.2rem);
+        font-weight: 900;
+        line-height: 1.02;
+        letter-spacing: -0.035em;
+    }
+
+    .resto_hero_subtitle {
+        max-width: 720px;
+        margin: 0.75rem 0 0;
+        color: var(--qr-muted);
+        font-size: clamp(0.95rem, 2.6vw, 1.1rem);
+        line-height: 1.55;
+    }
+
+    .resto_hero.has_cover .resto_hero_title {
+        color: var(--qr-primary-text);
+        text-shadow: 0 3px 18px color-mix(in srgb,
+                var(--qr-text) 55%,
+                transparent);
+    }
+
+    .resto_hero.has_cover .resto_hero_subtitle {
+        color: color-mix(in srgb,
+                var(--qr-primary-text) 88%,
+                transparent);
+    }
+
+    .resto_hero_button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 46px;
+        margin-top: 1.1rem;
+        padding: 0.75rem 1.15rem;
+        border: 0;
+        border-radius: calc(var(--qr-radius) * 0.72);
+        background: var(--qr-primary);
+        color: var(--qr-primary-text);
+        font-size: 0.88rem;
+        font-weight: 800;
+        line-height: 1;
+        box-shadow: 0 10px 26px color-mix(in srgb,
+                var(--qr-primary) 28%,
+                transparent);
+        transition:
+            background 0.2s ease,
+            transform 0.2s ease;
+    }
+
+    .resto_hero_button:hover {
+        background: var(--qr-primary-hover);
+        transform: translateY(-1px);
+    }
+
+
+    /* =====================================
+    CATEGORIES
+    ===================================== */
+
+    .resto_categories {
+        position: relative;
+        z-index: 20;
+         background:
+        rgb(
+            from var(--qr-primary)
+            r g b / 0.12
+        ) !important;
+        color: var(--qr-text);
+        border-bottom: 1px solid var(--qr-border);
+    }
+
+    .resto_categories.is_sticky {
+        position: sticky;
+        top: 0;
+        box-shadow: 0 8px 24px color-mix(in srgb,
+                var(--qr-text) 7%,
+                transparent);
+    }
+
+    .resto_categories_header {
+        padding-top: 1rem;
+    }
+
+    .resto_categories_title {
+        margin: 0;
+        color: var(--qr-text);
+        font-size: 1.05rem;
+        font-weight: 850;
+        line-height: 1.2;
+    }
+
+    .resto_categories_scroll {
+        overflow-x: auto;
+        overflow-y: visible;
+        padding-top: 6px;
+        padding-bottom: 6px;
+    }
+
+    .resto_categories_scroll::-webkit-scrollbar {
+        display: none;
+    }
+
+    .resto_categories_list {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+
+        overflow-x: auto;
+        overflow-y: hidden;
+
+        white-space: nowrap;
+        padding-bottom: 4px;
+
+        scrollbar-width: thin;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .resto_categories_list>* {
+        flex: 0 0 auto;
+    }
+
+    .resto_categories_item {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.45rem;
+        min-height: 40px;
+        padding: 0.55rem 0.9rem;
+        border: 1px solid var(--qr-border);
+        border-radius: 999px;
+        background: var(--qr-surface-alt);
+        color: var(--qr-text);
+        font-size: 0.8rem;
+        font-weight: 750;
+        line-height: 1;
+        white-space: nowrap;
+        transition:
+            background 0.2s ease,
+            border-color 0.2s ease,
+            color 0.2s ease,
+            transform 0.2s ease;
+    }
+
+    .resto_categories_item:hover {
+        border-color: var(--qr-primary);
+        color: var(--qr-primary);
+        transform: none;
+        box-shadow: 0 4px 12px color-mix(in srgb,
+                var(--qr-primary) 14%,
+                transparent);
+    }
+
+    .resto_categories_item.is_active {
+        border-color: var(--qr-primary);
+        background: var(--qr-primary);
+        color: var(--qr-primary-text);
+        box-shadow: 0 7px 18px color-mix(in srgb,
+                var(--qr-primary) 22%,
+                transparent);
+    }
+
+    .resto_categories_item_image_wrap {
+        flex: 0 0 auto;
+        width: 24px;
+        height: 24px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: var(--qr-surface);
+    }
+
+    .resto_categories_item_image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .resto_categories_item_label {
+        display: block;
+    }
+
+
+    /* =====================================
+    MENU
+    ===================================== */
+
+    .resto_menu {
+        padding: 1.4rem 0 6rem;
+        background: var(--qr-bg);
+        color: var(--qr-text);
+    }
+
+    .resto_menu_header {
+        margin-bottom: 1.15rem;
+    }
+
+    .resto_menu_title {
+        margin: 0;
+        color: var(--qr-text);
+        font-size: clamp(1.3rem, 4vw, 1.75rem);
+        font-weight: 900;
+        line-height: 1.15;
+        letter-spacing: -0.025em;
+    }
+
+    .resto_menu_subtitle {
+        margin: 0.4rem 0 0;
+        color: var(--qr-muted);
+        font-size: 0.9rem;
+        line-height: 1.45;
+    }
+
+    .resto_menu_grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 1rem;
+    }
+
+    .resto_product_card {
+        display: flex;
+        min-width: 0;
+        overflow: hidden;
+        flex-direction: column;
+        border: 1px solid var(--qr-border);
+        border-radius: var(--qr-radius);
+        background: var(--qr-surface);
+        box-shadow: 0 8px 24px color-mix(in srgb,
+                var(--qr-text) 6%,
+                transparent);
+        transition:
+            border-color 0.2s ease,
+            box-shadow 0.2s ease,
+            transform 0.2s ease;
+    }
+
+    .resto_product_card:hover {
+        border-color: color-mix(in srgb,
+                var(--qr-primary) 38%,
+                var(--qr-border));
+        box-shadow: var(--qr-shadow);
+        transform: translateY(-2px);
+    }
+
+    .resto_product_media {
+        position: relative;
+        width: 100%;
+        overflow: hidden;
+        aspect-ratio: 4 / 3;
+        border: 0;
+        background: var(--qr-surface-alt);
+        touch-action: pan-y;
+    }
+
+    .resto_product_media.is_detail {
+        aspect-ratio: 16 / 10;
+        border-radius: 0;
+    }
+
+    .resto_product_media_button {
+        display: block;
+        width: 100%;
+        height: 100%;
+        padding: 0;
+        overflow: hidden;
+        border: 0;
+        background: transparent;
+    }
+
+    .resto_product_media_image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+        user-select: none;
+    }
+
+    .resto_product_card:hover .resto_product_media_image {
+        transform: scale(1.035);
+    }
+
+    .resto_product_media_empty {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--qr-muted);
+        font-size: 0.82rem;
+        font-weight: 700;
+    }
+
+    .resto_product_slider_arrow {
+        position: absolute;
+        top: 50%;
+        z-index: 3;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 34px;
+        height: 34px;
+        padding: 0;
+        border: 1px solid color-mix(in srgb,
+                var(--qr-surface) 65%,
+                transparent);
+        border-radius: 999px;
+        background: color-mix(in srgb,
+                var(--qr-text) 55%,
+                transparent);
+        color: var(--qr-primary-text);
+        font-size: 1.45rem;
+        font-weight: 400;
+        line-height: 1;
+        transform: translateY(-50%);
+        backdrop-filter: blur(5px);
+    }
+
+    .resto_product_slider_arrow.is_previous {
+        left: 0.65rem;
+    }
+
+    .resto_product_slider_arrow.is_next {
+        right: 0.65rem;
+    }
+
+    .resto_product_slider_dots {
+        position: absolute;
+        right: 0;
+        bottom: 0.65rem;
+        left: 0;
+        z-index: 3;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.35rem;
+        pointer-events: none;
+    }
+
+    .resto_product_slider_dot {
+        width: 7px;
+        height: 7px;
+        padding: 0;
+        border: 0;
+        border-radius: 999px;
+        background: color-mix(in srgb,
+                var(--qr-primary-text) 60%,
+                transparent);
+        box-shadow: 0 1px 4px color-mix(in srgb,
+                var(--qr-text) 45%,
+                transparent);
+        pointer-events: auto;
+        transition:
+            width 0.2s ease,
+            background 0.2s ease;
+    }
+
+    .resto_product_slider_dot.is_active {
+        width: 18px;
+        background: var(--qr-primary-text);
+    }
+
+    .resto_product_body {
+        display: flex;
+        flex: 1 1 auto;
+        min-width: 0;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 1rem;
+    }
+
+    .resto_product_content {
+        min-width: 0;
+    }
+
+    .resto_product_category {
+        display: block;
+        margin-bottom: 0.4rem;
+        color: var(--qr-primary);
+        font-size: 0.68rem;
+        font-weight: 850;
+        line-height: 1.2;
+        text-transform: uppercase;
+        letter-spacing: 0.045em;
+    }
+
+    .resto_product_title_button {
+        display: block;
+        width: 100%;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: inherit;
+        text-align: left;
+    }
+
+    .resto_product_title {
+        margin: 0;
+        color: var(--qr-text);
+        font-size: 1rem;
+        font-weight: 900;
+        line-height: 1.25;
+    }
+
+    .resto_product_title_button:hover .resto_product_title {
+        color: var(--qr-primary);
+    }
+
+    .resto_product_description {
+        display: -webkit-box;
+        overflow: hidden;
+        margin: 0.5rem 0 0;
+        color: var(--qr-muted);
+        font-size: 0.8rem;
+        line-height: 1.45;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+    }
+
+    .resto_product_footer {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 0.75rem;
+        margin-top: 1rem;
+    }
+
+    .resto_product_prices {
+        display: flex;
+        min-width: 0;
+        flex-direction: column;
+        gap: 0.2rem;
+    }
+
+    .resto_product_old_price {
+        color: var(--qr-muted);
+        font-size: 0.72rem;
+        font-weight: 650;
+        line-height: 1;
+        text-decoration: line-through;
+    }
+
+    .resto_product_price {
+        color: var(--qr-text);
+        font-size: 1.05rem;
+        font-weight: 950;
+        line-height: 1;
+    }
+
+    .resto_product_add_btn {
+        display: inline-flex;
+        flex: 0 0 auto;
+        align-items: center;
+        justify-content: center;
+        min-height: 38px;
+        padding: 0.55rem 0.9rem;
+        border: 0;
+        border-radius: calc(var(--qr-radius) * 0.62);
+        background: var(--qr-primary);
+        color: var(--qr-primary-text);
+        font-size: 0.76rem;
+        font-weight: 850;
+        line-height: 1;
+        transition:
+            background 0.2s ease,
+            transform 0.2s ease;
+    }
+
+    .resto_product_add_btn:hover {
+        background: var(--qr-primary-hover);
+        transform: translateY(-1px);
+    }
+
+    .resto_menu_empty {
+        grid-column: 1 / -1;
+        padding: 2rem 1rem;
+        border: 1px dashed var(--qr-border);
+        border-radius: var(--qr-radius);
+        background: var(--qr-surface);
+        color: var(--qr-muted);
+        text-align: center;
+        font-size: 0.9rem;
+    }
+
+
+    /* =====================================
+    PRODUCT DETAIL
+    ===================================== */
+
+    .resto_product_detail_overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 9000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+        background: color-mix(in srgb,
+                var(--qr-text) 68%,
+                transparent);
+        backdrop-filter: blur(5px);
+    }
+
+    .resto_product_detail_drawer {
+        position: relative;
+        display: flex;
+        width: min(760px, 100%);
+        max-height: min(880px, calc(100vh - 3rem));
+        overflow: hidden;
+        flex-direction: column;
+        border: 1px solid var(--qr-border);
+        border-radius: var(--qr-radius);
+        background: var(--qr-surface);
+        color: var(--qr-text);
+        box-shadow: 0 24px 80px color-mix(in srgb,
+                var(--qr-text) 35%,
+                transparent);
+    }
+
+    .resto_product_detail_close {
+        position: absolute;
+        top: 0.85rem;
+        right: 0.85rem;
+        z-index: 6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        border: 1px solid color-mix(in srgb,
+                var(--qr-surface) 70%,
+                transparent);
+        border-radius: 999px;
+        background: color-mix(in srgb,
+                var(--qr-text) 60%,
+                transparent);
+        color: var(--qr-primary-text);
+        font-size: 1.5rem;
+        font-weight: 400;
+        line-height: 1;
+        backdrop-filter: blur(6px);
+    }
+
+    .resto_product_detail_scroll {
+        overflow-y: auto;
+    }
+
+    .resto_product_detail_body {
+        padding: 1.35rem;
+    }
+
+    .resto_product_detail_category {
+        display: block;
+        margin-bottom: 0.45rem;
+        color: var(--qr-primary);
+        font-size: 0.72rem;
+        font-weight: 850;
+        line-height: 1.2;
+        text-transform: uppercase;
+        letter-spacing: 0.045em;
+    }
+
+    .resto_product_detail_title {
+        margin: 0;
+        color: var(--qr-text);
+        font-size: clamp(1.4rem, 4vw, 2rem);
+        font-weight: 950;
+        line-height: 1.12;
+        letter-spacing: -0.025em;
+    }
+
+    .resto_product_detail_price {
+        display: block;
+        margin-top: 0.75rem;
+        color: var(--qr-text);
+        font-size: 1.35rem;
+        font-weight: 950;
+        line-height: 1;
+    }
+
+    .resto_product_detail_description {
+        margin: 1rem 0 0;
+        color: var(--qr-muted);
+        font-size: 0.95rem;
+        line-height: 1.6;
+    }
+
+    .resto_product_detail_footer {
+        flex: 0 0 auto;
+        padding: 1rem 1.35rem;
+        border-top: 1px solid var(--qr-border);
+        background: var(--qr-surface);
+    }
+
+    .resto_product_detail_add_btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        min-height: 48px;
+        padding: 0.75rem 1rem;
+        border: 0;
+        border-radius: calc(var(--qr-radius) * 0.7);
+        background: var(--qr-primary);
+        color: var(--qr-primary-text);
+        font-size: 0.9rem;
+        font-weight: 900;
+        line-height: 1;
+    }
+
+    .resto_product_detail_add_btn:hover {
+        background: var(--qr-primary-hover);
+    }
+
+
+    /* =====================================
+    MENU RESPONSIVE
+    ===================================== */
+
+    @media (min-width: 450px) {
+
+        .resto_menu_grid {
+            grid-template-columns: repeat(2,
+                    minmax(0, 1fr));
+        }
+
+    }
+
+    @media (min-width: 768px) {
+
+        .resto_menu_grid {
+            grid-template-columns: repeat(3,
+                    minmax(0, 1fr));
+        }
+
+    }
+
+    @media (min-width: 1200px) {
+
+        .resto_menu_grid {
+            grid-template-columns: repeat(4,
+                    minmax(0, 1fr));
+        }
+
+    }
+
+    @media (min-width: 1600px) {
+
+        .resto_menu .container {
+            max-width: 1540px;
+        }
+
+        .resto_menu_grid {
+            grid-template-columns: repeat(6,
+                    minmax(0, 1fr));
+        }
+
+    }
+
+    @media (max-width: 767.98px) {
+
+        .resto_menu {
+            padding-top: 1.1rem;
+        }
+
+        .resto_product_slider_arrow {
+            display: none;
+        }
+
+        .resto_product_detail_overlay {
+            align-items: flex-end;
+            padding: 0;
+        }
+
+        .resto_product_detail_drawer {
+            width: 100%;
+            max-height: 92vh;
+            border-right: 0;
+            border-bottom: 0;
+            border-left: 0;
+            border-radius:
+                var(--qr-radius) var(--qr-radius) 0 0;
+        }
+
+        .resto_product_detail_body {
+            padding: 1.1rem;
+        }
+
+        .resto_product_detail_footer {
+            padding:
+                0.85rem 1rem max(0.85rem,
+                    env(safe-area-inset-bottom));
+        }
+
+    }
+
+    @media (max-width: 449.98px) {
+
+        .resto_menu_grid {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .resto_product_media {
+            aspect-ratio: 16 / 10;
+        }
+
+        .resto_product_body {
+            padding: 0.9rem;
+        }
+
+        .resto_product_footer {
+            margin-top: 0.85rem;
+        }
+
+    }
+
+    /* =====================================
+    ORDER STATUS
+    ===================================== */
+
+    .resto_order_status {
+        padding: 1.35rem 0;
+        background: var(--qr-bg);
+        color: var(--qr-text);
+    }
+
+    .resto_order_status_card {
+        overflow: hidden;
+        border: 1px solid var(--qr-border);
+        border-radius: var(--qr-radius);
+        background: var(--qr-surface);
+        box-shadow: var(--qr-shadow);
+    }
+
+    .resto_order_status_header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 1.1rem 1.15rem;
+        border-bottom: 1px solid var(--qr-border);
+    }
+
+    .resto_order_status_heading {
+        min-width: 0;
+    }
+
+    .resto_order_status_title {
+        margin: 0;
+        color: var(--qr-text);
+        font-size: 1.15rem;
+        font-weight: 900;
+        line-height: 1.15;
+    }
+
+    .resto_order_status_number {
+        display: block;
+        margin-top: 0.35rem;
+        color: var(--qr-muted);
+        font-size: 0.78rem;
+        font-weight: 650;
+    }
+
+    .resto_order_status_badge {
+        display: inline-flex;
+        align-items: center;
+        min-height: 28px;
+        padding: 0.35rem 0.7rem;
+        border: 1px solid var(--qr-border);
+        border-radius: 999px;
+        background: var(--qr-surface-alt);
+        color: var(--qr-muted);
+        font-size: 0.72rem;
+        font-weight: 850;
+        line-height: 1;
+        white-space: nowrap;
+    }
+
+    .resto_order_status_badge.is_sent,
+    .resto_order_status_badge.is_confirmed,
+    .resto_order_status_badge.is_preparing,
+    .resto_order_status_badge.is_ready,
+    .resto_order_status_badge.is_delivered {
+        border-color: color-mix(in srgb,
+                var(--qr-primary) 35%,
+                var(--qr-border));
+        background: color-mix(in srgb,
+                var(--qr-primary) 13%,
+                var(--qr-surface));
+        color: var(--qr-primary);
+    }
+
+    .resto_order_status_progress {
+        overflow-x: auto;
+        padding: 1.1rem 1.15rem 0.8rem;
+        scrollbar-width: none;
+    }
+
+    .resto_order_status_progress::-webkit-scrollbar {
+        display: none;
+    }
+
+    .resto_order_status_progress_line {
+        position: relative;
+        display: flex;
+        justify-content: space-between;
+        min-width: 520px;
+    }
+
+    .resto_order_status_progress_line::before {
+        position: absolute;
+        top: 7px;
+        right: 0;
+        left: 0;
+        height: 2px;
+        background: var(--qr-border);
+        content: "";
+    }
+
+    .resto_order_status_step {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        flex: 1 1 0;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.45rem;
+        color: var(--qr-muted);
+        text-align: center;
+    }
+
+    .resto_order_status_step_dot {
+        display: block;
+        width: 16px;
+        height: 16px;
+        border: 3px solid var(--qr-surface);
+        border-radius: 999px;
+        background: var(--qr-border);
+        box-shadow: 0 0 0 1px var(--qr-border);
+    }
+
+    .resto_order_status_step_label {
+        font-size: 0.68rem;
+        font-weight: 750;
+        line-height: 1.15;
+    }
+
+    .resto_order_status_step.is_completed {
+        color: var(--qr-primary);
+    }
+
+    .resto_order_status_step.is_completed .resto_order_status_step_dot {
+        background: var(--qr-primary);
+        box-shadow: 0 0 0 1px var(--qr-primary);
+    }
+
+    .resto_order_status_step.is_current .resto_order_status_step_dot {
+        box-shadow:
+            0 0 0 1px var(--qr-primary),
+            0 0 0 5px color-mix(in srgb,
+                var(--qr-primary) 16%,
+                transparent);
+    }
+
+    .resto_order_status_details {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        border-top: 1px solid var(--qr-border);
+        background: var(--qr-surface-alt);
+    }
+
+    .resto_order_status_detail {
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+        min-width: 0;
+        padding: 1rem 1.1rem;
+        border-right: 1px solid var(--qr-border);
+    }
+
+    .resto_order_status_detail:last-child {
+        border-right: 0;
+    }
+
+    .resto_order_status_detail_label {
+        color: var(--qr-muted);
+        font-size: 0.7rem;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+
+    .resto_order_status_detail_value {
+        overflow: hidden;
+        color: var(--qr-text);
+        font-size: 0.92rem;
+        font-weight: 900;
+        line-height: 1.2;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+
+    /* =====================================
+    ACCESSIBILITY
+    ===================================== */
+
+    .resto_public button:focus-visible,
+    .resto_public input:focus-visible,
+    .resto_public a:focus-visible {
+        outline: 3px solid color-mix(in srgb,
+                var(--qr-primary) 28%,
+                transparent);
+        outline-offset: 2px;
+    }
+
+
+    /* =====================================
+    TABLET
+    ===================================== */
+
+    @media (max-width: 991.98px) {
+
+        .resto_hero.has_cover {
+            min-height: 330px;
+        }
+
+        .resto_hero_content {
+            padding: 1.65rem 0;
+        }
+
+    }
+
+
+    /* =====================================
+    MOBILE
+    ===================================== */
+
+    @media (max-width: 767.98px) {
+
+        .resto_topbar_text {
+            font-size: 0.76rem;
+        }
+
+        .resto_topbar_location,
+        .resto_topbar_session_status {
+            min-height: 23px;
+            padding: 0.2rem 0.5rem;
+            font-size: 0.66rem;
+        }
+
+        .resto_header_logo_wrap {
+            width: 48px;
+            height: 48px;
+        }
+
+        .resto_header_order_btn {
+            width: 44px;
+            height: 44px;
+            padding: 0;
+            border-radius: 999px;
+        }
+
+        .resto_header_order_label {
+            display: none;
+        }
+
+        .resto_header_order_count {
+            position: absolute;
+            top: -4px;
+            right: -3px;
+            min-width: 20px;
+            height: 20px;
+            border: 2px solid var(--qr-surface);
+        }
+
+        .resto_header_order_btn {
+            position: relative;
+        }
+
+        .resto_hero.has_cover {
+            min-height: 310px;
+        }
+
+        .resto_hero_content {
+            align-items: flex-end;
+            gap: 0.9rem;
+            padding: 1.4rem 0;
+        }
+
+        .resto_hero_logo_wrap {
+            width: 70px;
+            height: 70px;
+        }
+
+        .resto_hero_button {
+            min-height: 42px;
+            padding: 0.65rem 1rem;
+        }
+
+        .resto_categories_header {
+            padding-top: 0.85rem;
+        }
+
+        .resto_categories {
+            overflow: hidden;
+        }
+
+        .resto_categories_list {
+            width: 100%;
+            padding-right: 12px;
+        }
+
+
+        .resto_categories_item {
+            min-height: 37px;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.75rem;
+        }
+
+        .resto_menu {
+            padding-top: 1.1rem;
+        }
+
+        .resto_order_status_header {
+            align-items: flex-start;
+            padding: 1rem;
+        }
+
+        .resto_order_status_details {
+            grid-template-columns: 1fr;
+        }
+
+        .resto_order_status_detail {
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+            border-right: 0;
+            border-bottom: 1px solid var(--qr-border);
+        }
+
+        .resto_order_status_detail:last-child {
+            border-bottom: 0;
+        }
+
+    }
+
+
+    /* =====================================
+    MOBILE SMALL
+    ===================================== */
+
+    @media (max-width: 479.98px) {
+
+        .resto_topbar .container>div {
+            align-items: flex-start !important;
+        }
+
+        .resto_topbar_location {
+            display: none;
+        }
+
+        .resto_header_main {
+            gap: 0.65rem !important;
+        }
+
+        .resto_header_identity {
+            gap: 0.65rem !important;
+        }
+
+        .resto_header_name {
+            font-size: 1rem;
+        }
+
+        .resto_header_description {
+            font-size: 0.76rem;
+        }
+
+        .resto_hero.has_cover {
+            min-height: 290px;
+        }
+
+        .resto_hero_content {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .resto_hero_logo_wrap {
+            width: 64px;
+            height: 64px;
+        }
+
+        .resto_hero_title {
+            font-size: 1.75rem;
+        }
+
+        .resto_product_card {
+            min-height: 108px;
+        }
+
+        .resto_product_image_wrap {
+            flex-basis: 96px;
+            width: 96px;
+            min-height: 108px;
+        }
+
+        .resto_product_description {
+            -webkit-line-clamp: 1;
+        }
+
+        .resto_product_footer {
+            align-items: flex-end;
+        }
+
+        .resto_order_status_header {
+            flex-direction: column;
+        }
+
+    }
+
+    /* =====================================
+   SERVICE INFO
+===================================== */
+
+    .resto_service_info {
+        position: relative;
+        background: var(--qr-bg);
+        color: var(--qr-text);
+    }
+
+    .resto_service_info_header {
+        margin-bottom: 1rem;
+    }
+
+    .resto_service_info_title {
+        margin: 0;
+        color: var(--qr-text);
+        font-size: 1.05rem;
+        font-weight: 850;
+        line-height: 1.2;
+    }
+
+    .resto_service_info_subtitle {
+        margin: 0.35rem 0 0;
+        color: var(--qr-muted);
+        font-size: 0.82rem;
+        line-height: 1.4;
+    }
+
+
+    /* =====================================
+   SERVICE INFO ITEMS
+===================================== */
+
+    .resto_service_info_bar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        justify-content: center;
+        gap: 1.35rem 1.8rem;
+        width: 100%;
+    }
+
+    .resto_service_info_entry {
+        appearance: none;
+        display: flex;
+        flex: 0 0 86px;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 0.5rem;
+        width: 86px;
+        min-width: 0;
+        max-width: 86px;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: inherit;
+        font: inherit;
+        text-align: center;
+        cursor: pointer;
+    }
+
+    .resto_service_info_entry_icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 56px;
+        height: 56px;
+        border-radius: 999px;
+        background: color-mix(in srgb,
+                var(--qr-primary) 12%,
+                transparent);
+        color: var(--qr-primary);
+        transition:
+            transform 160ms ease,
+            background 160ms ease;
+    }
+
+    .resto_service_info_entry_icon svg {
+        width: 27px;
+        height: 27px;
+    }
+
+    .resto_service_info_entry:hover .resto_service_info_entry_icon,
+    .resto_service_info_entry:focus-visible .resto_service_info_entry_icon {
+        background: color-mix(in srgb,
+                var(--qr-primary) 18%,
+                transparent);
+        transform: translateY(-2px);
+    }
+
+    .resto_service_info_entry:focus-visible {
+        outline: none;
+    }
+
+    .resto_service_info_entry.is_open .resto_service_info_entry_icon {
+        background: color-mix(in srgb,
+                var(--qr-primary) 15%,
+                transparent);
+        color: var(--qr-primary);
+    }
+
+    .resto_service_info_entry.is_closed .resto_service_info_entry_icon {
+        background: color-mix(in srgb,
+                var(--qr-muted) 13%,
+                transparent);
+        color: var(--qr-muted);
+    }
+
+    .resto_service_info_entry_title {
+        display: block;
+        width: 100%;
+        color: var(--qr-text);
+        font-size: 0.72rem;
+        font-weight: 800;
+        line-height: 1.2;
+        text-align: center;
+    }
+
+
+    /* =====================================
+   SERVICE INFO MODAL
+===================================== */
+
+    .resto_service_info_modal_overlay {
+        position: fixed;
+        z-index: 10000;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1.25rem;
+        background: color-mix(in srgb,
+                #000 48%,
+                transparent);
+        backdrop-filter: blur(6px);
+    }
+
+    .resto_service_info_modal {
+        position: relative;
+        width: min(100%,
+                460px);
+        max-height: 82vh;
+        overflow-y: auto;
+        padding: 1.8rem;
+        border: 0;
+        border-radius: 24px;
+        background: var(--qr-surface);
+        color: var(--qr-text);
+        box-shadow:
+            0 24px 70px color-mix(in srgb,
+                #000 28%,
+                transparent);
+    }
+
+    .resto_service_info_modal_close {
+        appearance: none;
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 38px;
+        height: 38px;
+        padding: 0;
+        border: 0;
+        border-radius: 999px;
+        background: color-mix(in srgb,
+                var(--qr-muted) 10%,
+                transparent);
+        color: var(--qr-text);
+        font-size: 1.55rem;
+        font-weight: 400;
+        line-height: 1;
+        cursor: pointer;
+        transition:
+            background 160ms ease,
+            transform 160ms ease;
+    }
+
+    .resto_service_info_modal_close:hover,
+    .resto_service_info_modal_close:focus-visible {
+        background: color-mix(in srgb,
+                var(--qr-muted) 18%,
+                transparent);
+        transform: rotate(4deg);
+        outline: none;
+    }
+
+    .resto_service_info_modal_header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding-right: 3rem;
+    }
+
+    .resto_service_info_modal_icon {
+        display: inline-flex;
+        flex: 0 0 64px;
+        align-items: center;
+        justify-content: center;
+        width: 64px;
+        height: 64px;
+        border-radius: 999px;
+        background: color-mix(in srgb,
+                var(--qr-primary) 13%,
+                transparent);
+        color: var(--qr-primary);
+    }
+
+    .resto_service_info_modal_icon svg {
+        width: 31px;
+        height: 31px;
+    }
+
+    .resto_service_info_modal_icon.is_closed {
+        background: color-mix(in srgb,
+                var(--qr-muted) 13%,
+                transparent);
+        color: var(--qr-muted);
+    }
+
+    .resto_service_info_modal_title {
+        margin: 0;
+        color: var(--qr-text);
+        font-size: 1.25rem;
+        font-weight: 850;
+        line-height: 1.2;
+    }
+
+    .resto_service_info_modal_body {
+        margin-top: 1.65rem;
+    }
+
+    .resto_service_info_modal_description {
+        margin: 0;
+        color: var(--qr-muted);
+        font-size: 0.92rem;
+        line-height: 1.75;
+        white-space: pre-line;
+    }
+
+    .resto_service_info_contact_list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.85rem;
+    }
+
+    .resto_service_info_contact_item {
+        display: flex;
+        align-items: center;
+        gap: 0.9rem;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: var(--qr-text);
+        text-decoration: none;
+    }
+
+    .resto_service_info_contact_icon {
+        display: inline-flex;
+        flex: 0 0 46px;
+        align-items: center;
+        justify-content: center;
+        width: 46px;
+        height: 46px;
+        border-radius: 999px;
+        background: color-mix(in srgb,
+                var(--qr-primary) 13%,
+                transparent);
+        color: var(--qr-primary);
+    }
+
+    .resto_service_info_contact_icon svg {
+        width: 22px;
+        height: 22px;
+    }
+
+    .resto_service_info_contact_content {
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+        min-width: 0;
+    }
+
+    .resto_service_info_contact_content strong {
+        color: var(--qr-text);
+        font-size: 0.82rem;
+        font-weight: 850;
+        line-height: 1.2;
+    }
+
+    .resto_service_info_contact_content span {
+        margin-top: 0.2rem;
+        color: var(--qr-muted);
+        font-size: 0.88rem;
+        line-height: 1.35;
+        overflow-wrap: anywhere;
+    }
+
+    .resto_service_info_contact_item:hover .resto_service_info_contact_content span,
+    .resto_service_info_contact_item:focus-visible .resto_service_info_contact_content span {
+        color: var(--qr-primary);
+    }
+
+    .resto_service_info_contact_item:focus-visible {
+        outline: none;
+    }
+
+    .resto_service_info_contact_note {
+        margin: 0.45rem 0 0;
+        color: var(--qr-muted);
+        font-size: 0.8rem;
+        line-height: 1.5;
+    }
+
+    .resto_service_info_location {
+        display: flex;
+        flex-direction: column;
+        gap: 1.1rem;
+    }
+
+    .resto_service_info_location_address {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        color: var(--qr-text);
+        font-size: 0.9rem;
+        font-weight: 700;
+        line-height: 1.45;
+    }
+
+    .resto_service_info_location_address_icon {
+        display: inline-flex;
+        flex: 0 0 42px;
+        align-items: center;
+        justify-content: center;
+        width: 42px;
+        height: 42px;
+        border-radius: 999px;
+        background: color-mix(in srgb,
+                var(--qr-primary) 13%,
+                transparent);
+        color: var(--qr-primary);
+    }
+
+    .resto_service_info_location_address_icon svg {
+        width: 21px;
+        height: 21px;
+    }
+
+    .resto_service_info_location_map {
+        position: relative;
+        width: 100%;
+        height: 260px;
+        overflow: hidden;
+        border-radius: var(--qr-radius);
+        background: color-mix(in srgb,
+                var(--qr-muted) 8%,
+                transparent);
+    }
+
+    .resto_service_info_location_map iframe {
+        display: block;
+        width: 100%;
+        height: 100%;
+        border: 0;
+    }
+
+    .resto_service_info_location_action {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.55rem;
+        min-height: 44px;
+        padding: 0.7rem 1rem;
+        border: 0;
+        border-radius: var(--qr-radius);
+        background: var(--qr-primary);
+        color: var(--qr-primary-text);
+        font-size: 0.84rem;
+        font-weight: 850;
+        line-height: 1;
+        text-decoration: none;
+    }
+
+    .resto_service_info_location_action svg {
+        width: 19px;
+        height: 19px;
+    }
+
+    .resto_service_info_location_action:hover,
+    .resto_service_info_location_action:focus-visible {
+        color: var(--qr-primary-text);
+        filter: brightness(0.96);
+        outline: none;
+    }
+
+    @media (max-width: 575.98px) {
+
+        .resto_service_info_location_map {
+            height: 220px;
+        }
+
+    }
+
+    /* =====================================
+   SERVICE INFO RESPONSIVE
+===================================== */
+
+    @media (max-width: 767.98px) {
+
+        .resto_service_info_bar {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1rem 0.7rem;
+        }
+
+        .resto_service_info_entry {
+            flex-basis: 74px;
+            width: 74px;
+            max-width: 74px;
+        }
+
+        .resto_service_info_entry_icon {
+            width: 52px;
+            height: 52px;
+        }
+
+        .resto_service_info_entry_icon svg {
+            width: 25px;
+            height: 25px;
+        }
+
+    }
+
+    @media (max-width: 575.98px) {
+
+        .resto_service_info_header {
+            margin-bottom: 0.9rem;
+        }
+
+        .resto_service_info_bar {
+            gap: 1rem 0.45rem;
+        }
+
+        /* .resto_service_info_entry {
+            flex-basis: 72px;
+            width: 72px;
+            max-width: 72px;
+        } */
+
+        .resto_service_info_entry_icon {
+            width: 48px;
+            height: 48px;
+        }
+
+        .resto_service_info_entry_icon svg {
+            width: 23px;
+            height: 23px;
+        }
+
+        .resto_service_info_entry_title {
+            font-size: 0.65rem;
+        }
+
+        .resto_service_info_modal_overlay {
+            padding: 0.75rem;
+        }
+
+        .resto_service_info_modal {
+            width: 100%;
+            padding: 1.45rem;
+            border-radius: 22px;
+        }
+
+        .resto_service_info_modal_header {
+            align-items: center;
+            gap: 0.9rem;
+        }
+
+        .resto_service_info_modal_icon {
+            flex-basis: 58px;
+            width: 58px;
+            height: 58px;
+        }
+
+        .resto_service_info_modal_icon svg {
+            width: 28px;
+            height: 28px;
+        }
+
+        .resto_service_info_modal_title {
+            font-size: 1.1rem;
+        }
+
+        .resto_service_info_modal_body {
+            margin-top: 1.4rem;
+        }
+
+        .resto_service_info_modal_description {
+            font-size: 0.86rem;
+            line-height: 1.7;
+        }
+
+    }
+
+    .resto_service_info_contact_list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.7rem;
+    }
+
+    .resto_service_info_contact_item {
+        display: flex;
+        align-items: center;
+        gap: 0.9rem;
+        padding: 0.8rem;
+        border: 0;
+        border-radius: var(--qr-radius);
+        background: color-mix(in srgb,
+                var(--qr-primary) 6%,
+                transparent);
+        color: var(--qr-text);
+        text-decoration: none;
+        transition:
+            background 160ms ease,
+            transform 160ms ease;
+    }
+
+    .resto_service_info_contact_item:hover,
+    .resto_service_info_contact_item:focus-visible {
+        background: color-mix(in srgb,
+                var(--qr-primary) 11%,
+                transparent);
+        transform: translateY(-1px);
+        outline: none;
+    }
+
+    .resto_service_info_contact_icon {
+        display: inline-flex;
+        flex: 0 0 44px;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        border-radius: 999px;
+        background: color-mix(in srgb,
+                var(--qr-primary) 13%,
+                transparent);
+        color: var(--qr-primary);
+    }
+
+    .resto_service_info_contact_icon svg {
+        width: 22px;
+        height: 22px;
+    }
+
+    .resto_service_info_contact_content {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+    }
+
+    .resto_service_info_contact_content strong {
+        color: var(--qr-text);
+        font-size: 0.82rem;
+        font-weight: 850;
+        line-height: 1.2;
+    }
+
+    .resto_service_info_contact_content span {
+        margin-top: 0.2rem;
+        color: var(--qr-muted);
+        font-size: 0.84rem;
+        line-height: 1.35;
+        overflow-wrap: anywhere;
+    }
+
+    .resto_service_info_contact_note {
+        margin: 0.4rem 0 0;
+        color: var(--qr-muted);
+        font-size: 0.8rem;
+        line-height: 1.5;
+    }
+    .resto_categories_title{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:.65rem;
+
+}
+
+.resto_categories_title_icon{
+
+    width:32px;
+
+    height:32px;
+
+    color:var(--qr-primary);
+
+    flex:0 0 auto;
+
+}
+/* =====================================
+   RESTO ACTIONS
+===================================== */
+
+.resto_actions {
+
+    padding: 3.75rem 0;
+
+    background: var(--qr-surface);
+
+    color: var(--qr-text);
+
+    border-top: 1px solid var(--qr-border);
+
+}
+
+.resto_actions_header {
+
+    display: flex;
+
+    justify-content: center;
+
+    margin-bottom: 2.25rem;
+
+}
+
+.resto_actions_title {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: .7rem;
+
+    margin: 0;
+
+    color: var(--qr-text);
+
+    font-size: clamp(
+        1.45rem,
+        2vw,
+        1.9rem
+    );
+
+    font-weight: 750;
+
+    letter-spacing: -.025em;
+
+}
+
+.resto_actions_title svg {
+
+    color: var(--qr-primary);
+
+    font-size: 1.5em;
+
+}
+
+.resto_actions_row {
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: flex-start;
+
+    flex-wrap: wrap;
+
+    gap: 1.5rem 2rem;
+
+}
+
+.resto_actions_primary {
+
+    max-width: 920px;
+
+    margin: 0 auto;
+
+}
+
+.resto_action_button {
+
+    appearance: none;
+
+    display: inline-flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: flex-start;
+
+    gap: .75rem;
+
+    width: 112px;
+
+    padding: 0;
+
+    border: 0;
+
+    background: transparent;
+
+    color: var(--qr-text);
+
+    font: inherit;
+
+    text-align: center;
+
+    text-decoration: none;
+
+    cursor: pointer;
+
+    transition:
+        color .2s ease,
+        transform .2s ease;
+
+}
+
+.resto_action_button:hover {
+
+    color: var(--qr-primary);
+
+    text-decoration: none;
+
+    transform: translateY(-4px);
+
+}
+
+.resto_action_icon {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    width: 72px;
+
+    height: 72px;
+
+    border-radius: 50%;
+
+    background:
+        color-mix(
+            in srgb,
+            var(--qr-primary) 11%,
+            var(--qr-surface)
+        );
+
+    color: var(--qr-primary);
+
+    font-size: 1.9rem;
+
+    transition:
+        color .2s ease,
+        background .2s ease,
+        transform .2s ease,
+        box-shadow .2s ease;
+
+}
+
+.resto_action_button:hover
+.resto_action_icon {
+
+    background: var(--qr-primary);
+
+    color: var(--qr-primary-text);
+
+    transform: scale(1.06);
+
+    box-shadow:
+        0 14px 34px
+        color-mix(
+            in srgb,
+            var(--qr-primary) 24%,
+            transparent
+        );
+
+}
+
+.resto_action_button:focus-visible {
+
+    outline: 3px solid
+        color-mix(
+            in srgb,
+            var(--qr-primary) 35%,
+            transparent
+        );
+
+    outline-offset: 8px;
+
+    border-radius: var(--qr-radius);
+
+}
+
+.resto_action_label {
+
+    display: block;
+
+    max-width: 110px;
+
+    color: currentColor;
+
+    font-size: .9rem;
+
+    font-weight: 650;
+
+    line-height: 1.25;
+
+}
+
+.resto_actions_social_section {
+
+    max-width: 720px;
+
+    margin: 2.6rem auto 0;
+
+    padding-top: 2rem;
+
+    border-top: 1px solid var(--qr-border);
+
+}
+
+.resto_actions_social_title {
+
+    margin: 0 0 1.3rem;
+
+    color: var(--qr-text-muted);
+
+    font-size: .85rem;
+
+    font-weight: 700;
+
+    letter-spacing: .12em;
+
+    text-align: center;
+
+    text-transform: uppercase;
+
+}
+
+.resto_actions_social {
+
+    gap: 1.25rem;
+
+}
+
+.resto_action_button_social {
+
+    width: 84px;
+
+}
+
+.resto_action_button_social
+.resto_action_icon {
+
+    width: 56px;
+
+    height: 56px;
+
+    font-size: 1.4rem;
+
+    background:
+        color-mix(
+            in srgb,
+            var(--qr-primary) 7%,
+            var(--qr-surface)
+        );
+
+}
+
+.resto_action_button_icon_only {
+
+    width: auto;
+
+}
+
+
+/* =====================================
+   RESTO FOOTER
+===================================== */
+
+.resto_footer {
+
+    position: relative;
+
+    overflow: hidden;
+
+    margin-top: 0;
+
+    padding: 4.5rem 0 1.5rem;
+
+    background:
+        var(
+            --qr-footer-bg,
+            #101216
+        );
+
+    color:
+        var(
+            --qr-footer-text,
+            #ffffff
+        );
+
+}
+
+.resto_footer_inner {
+
+    max-width: 980px;
+
+    margin: 0 auto;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    text-align: center;
+
+}
+
+.resto_footer_identity {
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    gap: 1rem;
+
+}
+
+.resto_footer_logo_wrapper {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    max-width: min(
+        300px,
+        85vw
+    );
+
+    padding: 0;
+
+    background: transparent;
+
+    border-radius: 0;
+
+}
+
+.resto_footer_logo_wrapper_active {
+
+    padding:
+        var(
+            --resto-footer-logo-padding,
+            1rem
+        );
+
+    background:
+        var(
+            --resto-footer-logo-background,
+            #ffffff
+        );
+
+    border-radius:
+        var(
+            --resto-footer-logo-radius,
+            var(--qr-radius)
+        );
+
+}
+
+.resto_footer_logo {
+
+    display: block;
+
+    width: auto;
+
+    max-width: 240px;
+
+    height: auto;
+
+    max-height: 130px;
+
+    object-fit: contain;
+
+    border: 0;
+
+    border-radius: 0;
+
+    box-shadow: none;
+
+}
+
+.resto_footer_name {
+
+    margin: .5rem 0 0;
+
+    color: inherit;
+
+    font-size: clamp(
+        1.7rem,
+        3vw,
+        2.4rem
+    );
+
+    font-weight: 800;
+
+    letter-spacing: -.03em;
+
+}
+
+.resto_footer_description {
+
+    max-width: 680px;
+
+    margin: 0;
+
+    color:
+        var(
+            --qr-footer-text-muted,
+            rgba(
+                255,
+                255,
+                255,
+                .68
+            )
+        );
+
+    line-height: 1.7;
+
+}
+
+.resto_footer_contacts {
+
+    width: 100%;
+
+    margin-top: 2.25rem;
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    flex-wrap: wrap;
+
+    gap: .75rem 1.3rem;
+
+}
+
+.resto_footer_contact {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: .55rem;
+
+    max-width: 100%;
+
+    padding: .35rem 0;
+
+    color:
+        var(
+            --qr-footer-text-muted,
+            rgba(
+                255,
+                255,
+                255,
+                .76
+            )
+        );
+
+    text-decoration: none;
+
+    transition:
+        color .2s ease,
+        transform .2s ease;
+
+}
+
+.resto_footer_contact:hover {
+
+    color:
+        var(
+            --qr-footer-text,
+            #ffffff
+        );
+
+    text-decoration: none;
+
+    transform: translateY(-2px);
+
+}
+
+.resto_footer_contact svg {
+
+    flex: 0 0 auto;
+
+    color:
+        var(
+            --qr-footer-accent,
+            var(--qr-primary)
+        );
+
+    font-size: 1.2rem;
+
+}
+
+.resto_footer_contact span {
+
+    overflow-wrap: anywhere;
+
+}
+
+.resto_footer_social {
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    flex-wrap: wrap;
+
+    gap: .75rem;
+
+    margin-top: 1.75rem;
+
+}
+
+.resto_footer_social_button {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    width: 44px;
+
+    height: 44px;
+
+    border-radius: 50%;
+
+    border: 1px solid
+        rgba(
+            255,
+            255,
+            255,
+            .16
+        );
+
+    background:
+        rgba(
+            255,
+            255,
+            255,
+            .06
+        );
+
+    color:
+        var(
+            --qr-footer-text,
+            #ffffff
+        );
+
+    text-decoration: none;
+
+    transition:
+        color .2s ease,
+        background .2s ease,
+        border-color .2s ease,
+        transform .2s ease;
+
+}
+
+.resto_footer_social_button:hover {
+
+    background:
+        var(
+            --qr-footer-accent,
+            var(--qr-primary)
+        );
+
+    border-color:
+        var(
+            --qr-footer-accent,
+            var(--qr-primary)
+        );
+
+    color: var(--qr-primary-text);
+
+    text-decoration: none;
+
+    transform: translateY(-3px);
+
+}
+
+.resto_footer_social_button svg {
+
+    font-size: 1.12rem;
+
+}
+
+.resto_footer_bottom {
+
+    width: 100%;
+
+    margin-top: 3rem;
+
+    padding-top: 1.5rem;
+
+    border-top: 1px solid
+        rgba(
+            255,
+            255,
+            255,
+            .12
+        );
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    gap: 1rem 2rem;
+
+    color:
+        var(
+            --qr-footer-text-muted,
+            rgba(
+                255,
+                255,
+                255,
+                .56
+            )
+        );
+
+    font-size: .85rem;
+
+}
+
+.resto_footer_powered {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: flex-end;
+
+    gap: .55rem;
+
+    color: inherit;
+
+    text-decoration: none;
+
+    transition:
+        color .2s ease,
+        opacity .2s ease;
+
+}
+
+.resto_footer_powered:hover {
+
+    color:
+        var(
+            --qr-footer-text,
+            #ffffff
+        );
+
+    text-decoration: none;
+
+}
+
+.resto_footer_powered strong {
+
+    color:
+        var(
+            --qr-footer-text,
+            #ffffff
+        );
+
+    font-weight: 700;
+
+}
+
+.resto_footer_tags_logo {
+
+    display: block;
+
+    width: auto;
+
+    height: 28px;
+
+    max-width: 110px;
+
+    object-fit: contain;
+
+}
+
+
+/* =====================================
+   MOBILE
+===================================== */
+
+@media (max-width: 768px) {
+
+    .resto_actions {
+
+        padding: 3rem 0;
+
+    }
+
+    .resto_actions_header {
+
+        margin-bottom: 2rem;
+
+    }
+
+    .resto_actions_row {
+
+        gap: 1.4rem .75rem;
+
+    }
+
+    .resto_action_button {
+
+        width: 92px;
+
+    }
+
+    .resto_action_icon {
+
+        width: 62px;
+
+        height: 62px;
+
+        font-size: 1.65rem;
+
+    }
+
+    .resto_action_label {
+
+        max-width: 90px;
+
+        font-size: .82rem;
+
+    }
+
+    .resto_actions_social_section {
+
+        margin-top: 2rem;
+
+        padding-top: 1.7rem;
+
+    }
+
+    .resto_action_button_social {
+
+        width: 72px;
+
+    }
+
+    .resto_action_button_social
+    .resto_action_icon {
+
+        width: 52px;
+
+        height: 52px;
+
+        font-size: 1.3rem;
+
+    }
+
+    .resto_footer {
+
+        padding: 3.5rem 0 1.5rem;
+
+    }
+
+    .resto_footer_logo {
+
+        max-width: 200px;
+
+        max-height: 110px;
+
+    }
+
+    .resto_footer_contacts {
+
+        flex-direction: column;
+
+        gap: .8rem;
+
+    }
+
+    .resto_footer_contact {
+
+        justify-content: center;
+
+        text-align: center;
+
+    }
+
+    .resto_footer_bottom {
+
+        flex-direction: column;
+
+        justify-content: center;
+
+        text-align: center;
+
+    }
+
+    .resto_footer_powered {
+
+        justify-content: center;
+
+        flex-wrap: wrap;
+
+    }
+
+}
+
+
+@media (max-width: 420px) {
+
+    .resto_action_button {
+
+        width: 82px;
+
+    }
+
+    .resto_action_icon {
+
+        width: 56px;
+
+        height: 56px;
+
+        font-size: 1.5rem;
+
+    }
+
+    .resto_action_label {
+
+        max-width: 80px;
+
+        font-size: .77rem;
+
+    }
+
+    .resto_footer_name {
+
+        font-size: 1.65rem;
+
+    }
+
+    .resto_footer_description {
+
+        font-size: .92rem;
+
+    }
+
+}

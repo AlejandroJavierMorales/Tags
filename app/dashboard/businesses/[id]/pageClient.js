@@ -52,6 +52,7 @@ export default function BusinessDetailClient({ session, isAdmin }) {
   const [portalRoutes, setPortalRoutes] = useState([]);
   const [qrPageSelectorOpen, setQrPageSelectorOpen] = useState(false);
   const [qrPageActivateOpen, setQrPageActivateOpen] = useState(false);
+  const [restoActivateOpen, setRestoActivateOpen] = useState(false);
 
   const [qrs, setQrs] = useState([]);
   const [business, setBusiness] = useState(null);
@@ -436,7 +437,8 @@ export default function BusinessDetailClient({ session, isAdmin }) {
     setStoreActivateOpen,
     setReviewsActivateOpen,
     setTagsIdActivateOpen,
-    setPortalActivateOpen
+    setPortalActivateOpen,
+    setRestoActivateOpen
   });
 
   if (loading) {
@@ -690,6 +692,15 @@ export default function BusinessDetailClient({ session, isAdmin }) {
                 {subscriptionSummary.usage.store_used}
                 {" / "}
                 {subscriptionSummary.usage.store_total}
+              </div>
+            </div>
+            <div className="col-6 col-md-2 mb-3">
+              <strong>Resto</strong>
+
+              <div>
+                {subscriptionSummary.usage.resto_used}
+                {" / "}
+                {subscriptionSummary.usage.resto_total}
               </div>
             </div>
 
@@ -1199,6 +1210,24 @@ export default function BusinessDetailClient({ session, isAdmin }) {
       {/* ===================================== */}
       {/* EDIT MODAL */}
       {/* ===================================== */}
+      <WorkspaceAppCreateModal
+        open={restoActivateOpen}
+        businessId={id}
+        title="Tags Resto"
+        description="Creá el menú digital y sistema gastronómico del negocio."
+        endpoint="/api/workspace/apps/resto/activate"
+        createButtonLabel="Crear Tags Resto"
+        successTitle="Tags Resto creado"
+        successMessage="Tags Resto fue creado correctamente."
+        onClose={() =>
+          setRestoActivateOpen(false)
+        }
+        onCreated={() => {
+          load();
+          loadPortal();
+          setRestoActivateOpen(false);
+        }}
+      />
 
       <WorkspaceAppCreateModal
         open={portalActivateOpen}

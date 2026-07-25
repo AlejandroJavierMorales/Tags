@@ -1,0 +1,317 @@
+/* =====================================
+   FILE: app/modules/resto/styles/resto-categories.css
+   Descripción:
+   Administración de categorías
+   de Tags Resto.
+===================================== */
+
+.resto_categories_email{
+    display:block;
+    margin-top:6px;
+    font-size:.82rem;
+    color:#cbd5e1;
+}
+
+.resto_categories_filters{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    gap:16px;
+
+    margin:30px 0;
+
+}
+
+.resto_categories_search{
+
+    width:100%;
+
+    max-width:420px;
+
+    height:52px;
+
+    display:flex;
+
+    align-items:center;
+
+    gap:12px;
+
+    padding:0 18px;
+
+    background:#fff;
+
+    border:1px solid #dfe5ec;
+
+    border-radius:14px;
+
+}
+
+.resto_categories_search input{
+
+    width:100%;
+
+    border:none;
+
+    outline:none;
+
+    background:transparent;
+
+    font-size:.95rem;
+
+}
+
+.resto_categories_search svg{
+
+    color:#64748b;
+
+}
+
+.resto_categories_grid{
+
+    display:grid;
+
+    gap:18px;
+
+}
+
+.resto_category_card{
+
+    display:flex;
+
+    gap:22px;
+
+    padding:22px;
+
+    border-radius:18px;
+
+    background:#fff;
+
+    border:1px solid #e6ebf1;
+
+    box-shadow:
+        0 8px 22px
+        rgba(0,0,0,.05);
+
+    transition:.18s;
+
+}
+
+.resto_category_card:hover{
+
+    transform:translateY(-2px);
+
+    box-shadow:
+        0 16px 30px
+        rgba(0,0,0,.10);
+
+}
+
+.resto_category_icon{
+
+    width:72px;
+
+    height:72px;
+
+    flex:0 0 72px;
+
+    border-radius:18px;
+
+    background:#ecfdf3;
+
+    color:#198754;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    font-size:30px;
+
+}
+
+.resto_category_content{
+
+    flex:1;
+
+}
+
+.resto_category_top{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    gap:18px;
+
+}
+
+.resto_category_top h3{
+
+    margin:0;
+
+    font-size:1.08rem;
+
+    font-weight:700;
+
+    color:#1f2937;
+
+}
+
+.resto_category_top p{
+
+    margin:6px 0 0;
+
+    color:#64748b;
+
+    font-size:.90rem;
+
+}
+
+.resto_category_status{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:6px;
+
+    height:34px;
+
+    padding:0 12px;
+
+    border-radius:999px;
+
+    font-size:.75rem;
+
+    font-weight:700;
+
+}
+
+.resto_category_status.visible{
+
+    background:#ecfdf3;
+
+    color:#198754;
+
+}
+
+.resto_category_status.hidden{
+
+    background:#fff1f2;
+
+    color:#dc2626;
+
+}
+
+.resto_category_meta{
+
+    display:flex;
+
+    gap:24px;
+
+    flex-wrap:wrap;
+
+    margin-top:18px;
+
+    color:#64748b;
+
+    font-size:.86rem;
+
+}
+
+.resto_category_actions{
+
+    display:flex;
+
+    justify-content:flex-end;
+
+    gap:12px;
+
+    margin-top:22px;
+
+}
+
+.resto_category_delete{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:8px;
+
+    padding:0 18px;
+
+    height:40px;
+
+    border:none;
+
+    border-radius:10px;
+
+    background:#fff1f2;
+
+    color:#dc2626;
+
+    cursor:pointer;
+
+    transition:.18s;
+
+}
+
+.resto_category_delete:hover{
+
+    background:#fee2e2;
+
+}
+
+.resto_categories_empty{
+
+    text-align:center;
+
+}
+
+@media(max-width:768px){
+
+    .resto_category_card{
+
+        flex-direction:column;
+
+    }
+
+    .resto_category_top{
+
+        flex-direction:column;
+
+    }
+
+    .resto_category_actions{
+
+        justify-content:stretch;
+
+        flex-direction:column;
+
+    }
+
+    .resto_category_delete{
+
+        justify-content:center;
+
+        width:100%;
+
+    }
+
+}
+
+@media(max-width:576px){
+
+    .resto_categories_search{
+
+        max-width:none;
+
+    }
+
+}

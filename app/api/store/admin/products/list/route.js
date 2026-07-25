@@ -1,58 +1,109 @@
 // =====================================
 // API: /api/store/admin/products/list
-// Descripción: Lista productos de Tags Tienda por businessId con búsqueda y filtros.
-// Uso: Dashboard Tags Tienda.
+// Descripción:
+// Lista productos por businessId y appType,
+// con búsqueda y filtros.
+// Compatible con Tags Store y Tags Resto.
 // =====================================
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-import { db } from "@/app/lib/tags-db";
+import { db }
+    from "@/app/lib/tags-db";
+
+const VALID_APP_TYPES = [
+    "store",
+    "resto"
+];
 
 export async function GET(req) {
+
     try {
+
         const { searchParams } =
             new URL(req.url);
 
         const businessId =
-            searchParams.get("businessId");
+            searchParams.get(
+                "businessId"
+            );
+
+        const appType =
+            searchParams.get(
+                "appType"
+            ) || "store";
 
         const q =
-            String(searchParams.get("q") || "").trim();
+            String(
+                searchParams.get("q") || ""
+            ).trim();
 
         const categoryId =
-            searchParams.get("categoryId") || "";
+            searchParams.get(
+                "categoryId"
+            ) || "";
 
         const status =
-            searchParams.get("status") || "";
+            searchParams.get(
+                "status"
+            ) || "";
 
         const visible =
-            searchParams.get("visible") || "";
+            searchParams.get(
+                "visible"
+            ) || "";
 
         const featured =
-            searchParams.get("featured") || "";
+            searchParams.get(
+                "featured"
+            ) || "";
 
         if (!businessId) {
+
             return Response.json(
                 {
-                    error: "businessId es requerido"
+                    error:
+                        "businessId es requerido"
                 },
                 {
                     status: 400
                 }
             );
+
+        }
+
+        if (
+            !VALID_APP_TYPES.includes(
+                appType
+            )
+        ) {
+
+            return Response.json(
+                {
+                    error:
+                        "appType inválido"
+                },
+                {
+                    status: 400
+                }
+            );
+
         }
 
         const [storeRows] =
             await db.query(
                 `
-                SELECT id
+                SELECT
+                    id
                 FROM tags_stores
                 WHERE business_id = ?
+                AND app_type = ?
                 LIMIT 1
                 `,
                 [
-                    businessId
+                    businessId,
+                    appType
                 ]
             );
 
@@ -60,26 +111,28 @@ export async function GET(req) {
             storeRows[0];
 
         if (!store) {
+
             return Response.json({
                 ok: true,
+                appType,
                 storeId: null,
                 storeMissing: true,
                 products: [],
                 categories: []
             });
+
         }
 
-        const where =
-            [
-                "p.store_id = ?"
-            ];
+        const where = [
+            "p.store_id = ?"
+        ];
 
-        const params =
-            [
-                store.id
-            ];
+        const params = [
+            store.id
+        ];
 
         if (q) {
+
             where.push(
                 `
                 (
@@ -102,9 +155,11 @@ export async function GET(req) {
                 like,
                 like
             );
+
         }
 
         if (categoryId) {
+
             where.push(
                 "p.category_id = ?"
             );
@@ -112,9 +167,11 @@ export async function GET(req) {
             params.push(
                 categoryId
             );
+
         }
 
         if (status) {
+
             where.push(
                 "p.status = ?"
             );
@@ -122,57 +179,71 @@ export async function GET(req) {
             params.push(
                 status
             );
+
         }
 
         if (visible !== "") {
+
             where.push(
                 "p.is_visible = ?"
             );
 
             params.push(
-                Number(visible) === 1 ? 1 : 0
+                Number(visible) === 1
+                    ? 1
+                    : 0
             );
+
         }
 
         if (featured !== "") {
+
             where.push(
                 "p.is_featured = ?"
             );
 
             params.push(
-                Number(featured) === 1 ? 1 : 0
+                Number(featured) === 1
+                    ? 1
+                    : 0
             );
+
         }
 
         const [products] =
             await db.query(
                 `
-        SELECT
-            p.*,
-            c.name AS category_name,
-            img.image_url AS primary_image_url,
-            COUNT(DISTINCT v.id) AS variants_count
-        FROM tags_store_products p
+                SELECT
+                    p.*,
+                    c.name AS category_name,
+                    img.image_url AS primary_image_url,
+                    COUNT(
+                        DISTINCT v.id
+                    ) AS variants_count
 
-        LEFT JOIN tags_store_categories c
-            ON c.id = p.category_id
+                FROM tags_store_products p
 
-        LEFT JOIN tags_store_product_images img
-            ON img.product_id = p.id
-            AND img.is_primary = 1
+                LEFT JOIN tags_store_categories c
+                    ON c.id = p.category_id
+                    AND c.store_id = p.store_id
 
-        LEFT JOIN tags_store_variants v
-            ON v.product_id = p.id
+                LEFT JOIN tags_store_product_images img
+                    ON img.product_id = p.id
+                    AND img.is_primary = 1
 
-        WHERE ${where.join(" AND ")}
+                LEFT JOIN tags_store_variants v
+                    ON v.product_id = p.id
 
-        GROUP BY
-            p.id,
-            c.name,
-            img.image_url
+                WHERE ${where.join(" AND ")}
 
-        ORDER BY p.created_at DESC
-        `,
+                GROUP BY
+                    p.id,
+                    c.name,
+                    img.image_url
+
+                ORDER BY
+                    p.created_at DESC
+                `,
                 params
             );
 
@@ -184,7 +255,9 @@ export async function GET(req) {
                     name
                 FROM tags_store_categories
                 WHERE store_id = ?
-                ORDER BY sort_order ASC, name ASC
+                ORDER BY
+                    sort_order ASC,
+                    name ASC
                 `,
                 [
                     store.id
@@ -193,12 +266,14 @@ export async function GET(req) {
 
         return Response.json({
             ok: true,
+            appType,
             storeId: store.id,
             products,
             categories
         });
 
     } catch (err) {
+
         console.error(
             "STORE PRODUCTS LIST ERROR:",
             err
@@ -206,11 +281,14 @@ export async function GET(req) {
 
         return Response.json(
             {
-                error: "Error listando productos"
+                error:
+                    "Error listando productos"
             },
             {
                 status: 500
             }
         );
+
     }
+
 }

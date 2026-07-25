@@ -1,43 +1,83 @@
 // =====================================
 // API: /api/store/admin/categories/list
-// Descripción: Lista las categorías de una tienda por businessId.
-// Uso: Dashboard Tags Tienda.
+// Descripción:
+// Lista las categorías por businessId y appType.
+// Compatible con Tags Store y Tags Resto.
 // =====================================
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-import { db } from "@/app/lib/tags-db";
+import { db }
+    from "@/app/lib/tags-db";
+
+const VALID_APP_TYPES = [
+    "store",
+    "resto"
+];
 
 export async function GET(req) {
+
     try {
+
         const { searchParams } =
             new URL(req.url);
 
         const businessId =
-            searchParams.get("businessId");
+            searchParams.get(
+                "businessId"
+            );
+
+        const appType =
+            searchParams.get(
+                "appType"
+            ) || "store";
 
         if (!businessId) {
+
             return Response.json(
                 {
-                    error: "businessId es requerido"
+                    error:
+                        "businessId es requerido"
                 },
                 {
                     status: 400
                 }
             );
+
+        }
+
+        if (
+            !VALID_APP_TYPES.includes(
+                appType
+            )
+        ) {
+
+            return Response.json(
+                {
+                    error:
+                        "appType inválido"
+                },
+                {
+                    status: 400
+                }
+            );
+
         }
 
         const [storeRows] =
             await db.query(
                 `
-                SELECT id
+                SELECT
+                    id
                 FROM tags_stores
                 WHERE business_id = ?
+                AND app_type = ?
                 LIMIT 1
                 `,
                 [
-                    businessId
+                    businessId,
+                    appType
                 ]
             );
 
@@ -45,21 +85,26 @@ export async function GET(req) {
             storeRows[0];
 
         if (!store) {
+
             return Response.json({
                 ok: true,
                 storeId: null,
                 storeMissing: true,
                 categories: []
             });
+
         }
 
         const [categories] =
             await db.query(
                 `
-                SELECT *
+                SELECT
+                    *
                 FROM tags_store_categories
                 WHERE store_id = ?
-                ORDER BY sort_order ASC, name ASC
+                ORDER BY
+                    sort_order ASC,
+                    name ASC
                 `,
                 [
                     store.id
@@ -69,10 +114,12 @@ export async function GET(req) {
         return Response.json({
             ok: true,
             storeId: store.id,
+            appType,
             categories
         });
 
     } catch (err) {
+
         console.error(
             "STORE CATEGORIES LIST ERROR:",
             err
@@ -80,11 +127,14 @@ export async function GET(req) {
 
         return Response.json(
             {
-                error: "Error listando categorías"
+                error:
+                    "Error listando categorías"
             },
             {
                 status: 500
             }
         );
+
     }
+
 }

@@ -4,14 +4,20 @@
 //
 // Descripción:
 // Devuelve reseñas públicas de experiencias,
-// productos o ambas para mostrarlas en los
-// bloques públicos de Tags Store.
+// productos, platos o ambas para mostrarlas
+// en Tags Store y Tags Resto.
 //
 // Solo incluye reseñas marcadas con
 // is_public = 1.
 //
+// Compatibilidad:
+// - Si no llega type, conserva exactamente
+//   la validación original de Tags Store.
+// - Si type = "resto", verifica app_type
+//   sin modificar el flujo de Store.
+//
 // Contexto:
-// store / reviews
+// store + resto / reviews
 // =====================================
 
 export const runtime =
@@ -37,7 +43,9 @@ function normalizeLimit(value) {
         Number(value);
 
     if (
-        !Number.isFinite(parsed)
+        !Number.isFinite(
+            parsed
+        )
     ) {
         return 10;
     }
@@ -46,7 +54,9 @@ function normalizeLimit(value) {
         50,
         Math.max(
             1,
-            Math.trunc(parsed)
+            Math.trunc(
+                parsed
+            )
         )
     );
 
@@ -60,7 +70,9 @@ function normalizeSource(value) {
         "commerce"
     ];
 
-    return allowedSources.includes(value)
+    return allowedSources.includes(
+        value
+    )
         ? value
         : "both";
 
@@ -74,7 +86,9 @@ function normalizeOrder(value) {
         "random"
     ];
 
-    return allowedOrders.includes(value)
+    return allowedOrders.includes(
+        value
+    )
         ? value
         : "newest";
 
@@ -86,22 +100,26 @@ function getOrderSql(order) {
         order ===
         "best_rating"
     ) {
+
         return `
             ORDER BY
                 normalized.rating DESC,
                 normalized.created_at DESC,
                 normalized.id DESC
         `;
+
     }
 
     if (
         order ===
         "random"
     ) {
+
         return `
             ORDER BY
                 RAND()
         `;
+
     }
 
     return `
@@ -118,7 +136,9 @@ export async function GET(req) {
 
         const {
             searchParams
-        } = new URL(req.url);
+        } = new URL(
+            req.url
+        );
 
         const storeId =
             Number(
@@ -126,6 +146,16 @@ export async function GET(req) {
                     "storeId"
                 )
             );
+
+        const type =
+            clean(
+                searchParams.get(
+                    "type"
+                )
+            ).toLowerCase();
+
+        const isResto =
+            type === "resto";
 
         const source =
             normalizeSource(
@@ -172,6 +202,7 @@ export async function GET(req) {
                 SELECT
                     s.id,
                     s.business_id,
+                    s.app_type,
                     s.status,
                     s.page_id,
 
@@ -200,7 +231,9 @@ export async function GET(req) {
             return Response.json(
                 {
                     error:
-                        "Tienda no encontrada"
+                        isResto
+                            ? "Restaurante no encontrado"
+                            : "Tienda no encontrada"
                 },
                 {
                     status: 404
@@ -209,24 +242,63 @@ export async function GET(req) {
 
         }
 
-        if (
-            store.status !==
-                "published" ||
-            store.page_status !==
-                "published" ||
-            store.page_type !==
-                "store"
-        ) {
+        /*
+         * Tags Resto:
+         * solo se ejecuta esta validación
+         * cuando type = "resto".
+         */
 
-            return Response.json(
-                {
-                    error:
-                        "La tienda no está disponible"
-                },
-                {
-                    status: 404
-                }
-            );
+        if (isResto) {
+
+            if (
+                store.status !==
+                "published" ||
+                store.page_status !==
+                "published" ||
+                store.app_type !==
+                "resto"
+            ) {
+
+                return Response.json(
+                    {
+                        error:
+                            "El restaurante no está disponible"
+                    },
+                    {
+                        status: 404
+                    }
+                );
+
+            }
+
+        } else {
+
+            /*
+             * Tags Store:
+             * se conserva la validación
+             * original sin cambios.
+             */
+
+            if (
+                store.status !==
+                "published" ||
+                store.page_status !==
+                "published" ||
+                store.page_type !==
+                "store"
+            ) {
+
+                return Response.json(
+                    {
+                        error:
+                            "La tienda no está disponible"
+                    },
+                    {
+                        status: 404
+                    }
+                );
+
+            }
 
         }
 
@@ -275,14 +347,20 @@ export async function GET(req) {
                     ON oi.id = r.source_item_id
 
                 WHERE r.business_id = ?
-                AND r.source_type = 'store_order'
-                AND r.item_type = 'store_product'
+                AND r.source_type = ?
+                AND r.item_type = ?
                 AND r.is_public = 1
                 `
             );
 
             params.push(
-                store.business_id
+                store.business_id,
+                isResto
+                    ? "restaurant_order"
+                    : "store_order",
+                isResto
+                    ? "restaurant_item"
+                    : "store_product"
             );
 
         }
@@ -320,11 +398,13 @@ export async function GET(req) {
 
                 WHERE r.business_id = ?
                 AND r.is_public = 1
+                AND r.store_id = ?
                 `
             );
 
             params.push(
-                store.business_id
+                store.business_id,
+                store.id
             );
 
         }
@@ -408,6 +488,7 @@ export async function GET(req) {
 
         return Response.json({
             ok: true,
+
             data:
                 normalizedRows
         });

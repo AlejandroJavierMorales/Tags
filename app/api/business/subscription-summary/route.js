@@ -1,6 +1,9 @@
 // =====================================
 // API: /api/business/subscription-summary
-// Descripción: Devuelve resumen visible para el cliente sobre plan, suscripción, último pago, uso y features.
+// Descripción:
+// Devuelve resumen visible para el cliente sobre
+// plan, suscripción, último pago, uso y features.
+// Separa correctamente Tags Tienda y Tags Resto.
 // =====================================
 
 export const runtime = "nodejs";
@@ -18,8 +21,12 @@ export async function GET(req) {
 
         if (!id) {
             return Response.json(
-                { error: "id requerido" },
-                { status: 400 }
+                {
+                    error: "id requerido"
+                },
+                {
+                    status: 400
+                }
             );
         }
 
@@ -61,7 +68,9 @@ export async function GET(req) {
                 WHERE b.id = ?
                 LIMIT 1
                 `,
-                [id]
+                [
+                    id
+                ]
             );
 
         const business =
@@ -69,8 +78,12 @@ export async function GET(req) {
 
         if (!business) {
             return Response.json(
-                { error: "Cliente no encontrado" },
-                { status: 404 }
+                {
+                    error: "Cliente no encontrado"
+                },
+                {
+                    status: 404
+                }
             );
         }
 
@@ -80,11 +93,17 @@ export async function GET(req) {
                 SELECT *
                 FROM tags_subscriptions
                 WHERE business_id = ?
-                AND status IN ('active', 'trial', 'past_due')
+                AND status IN (
+                    'active',
+                    'trial',
+                    'past_due'
+                )
                 ORDER BY id DESC
                 LIMIT 1
                 `,
-                [id]
+                [
+                    id
+                ]
             );
 
         const subscription =
@@ -100,7 +119,9 @@ export async function GET(req) {
                 ORDER BY paid_at DESC, id DESC
                 LIMIT 1
                 `,
-                [id]
+                [
+                    id
+                ]
             );
 
         const lastPayment =
@@ -109,44 +130,91 @@ export async function GET(req) {
         const [qrUsageRows] =
             await db.query(
                 `
-                SELECT COUNT(*) AS total_qrs
+                SELECT
+                    COUNT(*) AS total_qrs
                 FROM tags_qr_codes
                 WHERE business_id = ?
                 `,
-                [id]
+                [
+                    id
+                ]
             );
 
         const [pageUsageRows] =
             await db.query(
                 `
                 SELECT
-                    SUM(CASE WHEN page_type = 'qr_page' THEN 1 ELSE 0 END) AS qr_pages_used,
-                    SUM(CASE WHEN page_type = 'tags_id' THEN 1 ELSE 0 END) AS tags_id_used,
-                    SUM(CASE WHEN page_type = 'client_reviews' THEN 1 ELSE 0 END) AS reviews_used
+                    SUM(
+                        CASE
+                            WHEN page_type = 'qr_page'
+                            THEN 1
+                            ELSE 0
+                        END
+                    ) AS qr_pages_used,
+
+                    SUM(
+                        CASE
+                            WHEN page_type = 'tags_id'
+                            THEN 1
+                            ELSE 0
+                        END
+                    ) AS tags_id_used,
+
+                    SUM(
+                        CASE
+                            WHEN page_type = 'client_reviews'
+                            THEN 1
+                            ELSE 0
+                        END
+                    ) AS reviews_used
+
                 FROM tags_qr_pages
                 WHERE business_id = ?
                 `,
-                [id]
+                [
+                    id
+                ]
             );
 
         const [storeUsageRows] =
             await db.query(
                 `
-                SELECT COUNT(*) AS store_used
+                SELECT
+                    SUM(
+                        CASE
+                            WHEN app_type = 'store'
+                            THEN 1
+                            ELSE 0
+                        END
+                    ) AS store_used,
+
+                    SUM(
+                        CASE
+                            WHEN app_type = 'resto'
+                            THEN 1
+                            ELSE 0
+                        END
+                    ) AS resto_used
+
                 FROM tags_stores
                 WHERE business_id = ?
                 `,
-                [id]
+                [
+                    id
+                ]
             );
 
         const [portalUsageRows] =
             await db.query(
                 `
-                SELECT COUNT(*) AS portal_public_used
+                SELECT
+                    COUNT(*) AS portal_public_used
                 FROM tags_portals
                 WHERE business_id = ?
                 `,
-                [id]
+                [
+                    id
+                ]
             );
 
         const [addonRows] =
@@ -165,37 +233,59 @@ export async function GET(req) {
                     OR expires_at >= NOW()
                 )
                 `,
-                [id]
+                [
+                    id
+                ]
             );
 
         const getAddonTotal = (code) => {
-            const addon =
-                addonRows.find(
-                    row => row.addon_code === code
+            return addonRows
+                .filter(
+                    row =>
+                        row.addon_code === code
+                )
+                .reduce(
+                    (total, row) =>
+                        total +
+                        Number(row.quantity || 1),
+                    0
                 );
-
-            return addon
-                ? Number(addon.quantity || 1)
-                : 0;
         };
 
         const qrsUsed =
-            Number(qrUsageRows[0]?.total_qrs || 0);
+            Number(
+                qrUsageRows[0]?.total_qrs || 0
+            );
 
         const qrPagesUsed =
-            Number(pageUsageRows[0]?.qr_pages_used || 0);
+            Number(
+                pageUsageRows[0]?.qr_pages_used || 0
+            );
 
         const tagsIdUsed =
-            Number(pageUsageRows[0]?.tags_id_used || 0);
+            Number(
+                pageUsageRows[0]?.tags_id_used || 0
+            );
 
         const reviewsUsed =
-            Number(pageUsageRows[0]?.reviews_used || 0);
+            Number(
+                pageUsageRows[0]?.reviews_used || 0
+            );
 
         const storeUsed =
-            Number(storeUsageRows[0]?.store_used || 0);
+            Number(
+                storeUsageRows[0]?.store_used || 0
+            );
+
+        const restoUsed =
+            Number(
+                storeUsageRows[0]?.resto_used || 0
+            );
 
         const portalPublicUsed =
-            Number(portalUsageRows[0]?.portal_public_used || 0);
+            Number(
+                portalUsageRows[0]?.portal_public_used || 0
+            );
 
         return Response.json({
             ok: true,
@@ -211,65 +301,115 @@ export async function GET(req) {
                 id: business.plan_id,
                 code: business.plan_code,
                 name: business.plan_name,
-                description: business.plan_description,
-                price: business.plan_price,
-                currency: business.plan_currency
+                description:
+                    business.plan_description,
+                price:
+                    business.plan_price,
+                currency:
+                    business.plan_currency
             },
 
             subscription: {
                 status:
                     subscription?.status ||
                     business.subscription_status,
+
                 started_at:
                     subscription?.started_at ||
                     business.plan_started_at,
+
                 expires_at:
                     subscription?.expires_at ||
                     business.plan_expires_at,
+
                 auto_renew:
                     subscription?.auto_renew || 0,
+
                 grace_days:
                     subscription?.grace_days || 0
             },
 
-            lastPayment: lastPayment
-                ? {
-                    amount: lastPayment.amount,
-                    currency: lastPayment.currency,
-                    provider: lastPayment.provider,
-                    paid_at: lastPayment.paid_at,
-                    period_start: lastPayment.period_start,
-                    period_end: lastPayment.period_end
-                }
-                : null,
+            lastPayment:
+                lastPayment
+                    ? {
+                        amount:
+                            lastPayment.amount,
+
+                        currency:
+                            lastPayment.currency,
+
+                        provider:
+                            lastPayment.provider,
+
+                        paid_at:
+                            lastPayment.paid_at,
+
+                        period_start:
+                            lastPayment.period_start,
+
+                        period_end:
+                            lastPayment.period_end
+                    }
+                    : null,
 
             usage: {
-                qrs_used: qrsUsed,
-                qrs_total: Number(business.max_qr_codes || 0),
+                qrs_used:
+                    qrsUsed,
 
-                qr_pages_used: qrPagesUsed,
-                qr_pages_total: getAddonTotal("qr_page"),
+                qrs_total:
+                    Number(
+                        business.max_qr_codes || 0
+                    ),
 
-                tags_id_used: tagsIdUsed,
-                tags_id_total: getAddonTotal("tagsid"),
+                qr_pages_used:
+                    qrPagesUsed,
 
-                reviews_used: reviewsUsed,
-                reviews_total: getAddonTotal("client_reviews"),
+                qr_pages_total:
+                    getAddonTotal("qr_page"),
 
-                store_used: storeUsed,
-                store_total: getAddonTotal("store"),
+                tags_id_used:
+                    tagsIdUsed,
 
-                portal_public_used: portalPublicUsed,
-                portal_public_total: getAddonTotal("portal_public"),
+                tags_id_total:
+                    getAddonTotal("tagsid"),
 
-                restaurant_used: 0,
-                restaurant_total: getAddonTotal("restaurant"),
+                reviews_used:
+                    reviewsUsed,
 
-                booking_used: 0,
-                booking_total: getAddonTotal("booking")
+                reviews_total:
+                    getAddonTotal(
+                        "client_reviews"
+                    ),
+
+                store_used:
+                    storeUsed,
+
+                store_total:
+                    getAddonTotal("store"),
+
+                resto_used:
+                    restoUsed,
+
+                resto_total:
+                    getAddonTotal("resto"),
+
+                portal_public_used:
+                    portalPublicUsed,
+
+                portal_public_total:
+                    getAddonTotal(
+                        "portal_public"
+                    ),
+
+                booking_used:
+                    0,
+
+                booking_total:
+                    getAddonTotal("booking")
             },
 
-            addons: addonRows,
+            addons:
+                addonRows,
 
             features: {
                 dashboard_enabled:
@@ -308,8 +448,13 @@ export async function GET(req) {
         );
 
         return Response.json(
-            { error: "Error obteniendo resumen de suscripción" },
-            { status: 500 }
+            {
+                error:
+                    "Error obteniendo resumen de suscripción"
+            },
+            {
+                status: 500
+            }
         );
     }
 }

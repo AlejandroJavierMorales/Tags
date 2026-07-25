@@ -1,0 +1,141 @@
+/* =====================================
+   FILE: /app/modules/resto/styles/kitchen/RestoKitchenGrid.css
+   Descripción:
+   Estilos de la grilla del módulo Cocina.
+===================================== */
+
+.tags_resto_kitchen_grid {
+
+    width: 100%;
+
+}
+
+.tags_resto_kitchen_grid_row {
+
+    align-items: stretch;
+
+}
+
+.tags_resto_kitchen_grid_col {
+
+    display: flex;
+
+    min-width: 0;
+
+}
+
+.tags_resto_kitchen_grid_col > * {
+
+    width: 100%;
+
+}
+
+.tags_resto_kitchen_empty {
+
+    background: var(--tags-resto-kitchen-surface);
+
+    border: 2px dashed var(--tags-resto-kitchen-border);
+
+    border-radius: var(--tags-resto-kitchen-radius);
+
+    box-shadow: var(--tags-resto-kitchen-shadow);
+
+}
+
+.tags_resto_kitchen_empty_content {
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    min-height: 340px;
+
+    padding: 2.5rem;
+
+}
+
+.tags_resto_kitchen_empty_icon {
+
+    width: 86px;
+
+    height: 86px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: var(--tags-resto-kitchen-success-bg);
+
+    font-size: 2.3rem;
+
+    margin-bottom: 1.25rem;
+
+}
+
+.tags_resto_kitchen_empty_title {
+
+    color: var(--tags-resto-kitchen-title);
+
+    font-size: 1.5rem;
+
+    font-weight: 700;
+
+    margin-bottom: .50rem;
+
+}
+
+.tags_resto_kitchen_empty_text {
+
+    color: var(--tags-resto-kitchen-muted);
+
+    font-size: 1rem;
+
+    max-width: 420px;
+
+}
+
+@media (max-width: 1200px) {
+
+    .tags_resto_kitchen_empty_content {
+
+        min-height: 300px;
+
+    }
+
+}
+
+@media (max-width: 768px) {
+
+    .tags_resto_kitchen_empty_content {
+
+        min-height: 240px;
+
+        padding: 2rem 1.25rem;
+
+    }
+
+    .tags_resto_kitchen_empty_icon {
+
+        width: 72px;
+
+        height: 72px;
+
+        font-size: 2rem;
+
+    }
+
+    .tags_resto_kitchen_empty_title {
+
+        font-size: 1.3rem;
+
+    }
+
+}

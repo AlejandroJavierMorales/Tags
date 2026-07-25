@@ -1,0 +1,609 @@
+/* =====================================
+   FILE: /app/modules/resto/styles/kitchen/RestoKitchenCard.css
+   Descripción:
+   Tarjeta operativa del Kitchen Display System.
+   Sigue el mismo patrón visual utilizado
+   por RestoOrderCard.
+===================================== */
+
+.tags_resto_kitchen_card {
+
+    position: relative;
+
+    display: flex;
+    flex-direction: column;
+
+    width: 100%;
+
+    min-width: 0;
+
+    overflow: hidden;
+
+    padding: 1rem 1rem 1rem 1.25rem;
+
+    gap: .85rem;
+
+    border: 1px solid var(--resto-admin-border);
+
+    background: var(--resto-admin-surface);
+
+    border-radius: 8px;
+
+}
+
+.tags_resto_kitchen_card:hover {
+
+    transform: translateY(-3px);
+
+    box-shadow: var(--resto-admin-shadow-hover);
+
+}
+
+.tags_resto_kitchen_card::before {
+
+    content: "";
+
+    position: absolute;
+
+    left: 0;
+    top: 0;
+    bottom: 0;
+
+    width: 6px;
+
+    border-radius: 18px 0 0 18px;
+
+    background: var(--resto-admin-success);
+
+}
+
+.tags_resto_kitchen_card_warning::before {
+
+    background: var(--resto-admin-warning);
+
+}
+
+.tags_resto_kitchen_card_urgent::before {
+
+    background: var(--resto-admin-danger);
+
+}
+
+/* =====================================
+   HEADER
+===================================== */
+
+.tags_resto_kitchen_card_header {
+
+    display: grid;
+
+    grid-template-columns:
+        minmax(0, 1fr)
+        auto;
+
+    align-items: start;
+
+    gap: 1rem;
+
+    flex-shrink: 0;
+
+    width: 100%;
+
+}
+.tags_resto_kitchen_card_identity {
+
+    display: flex;
+    align-items: center;
+
+    gap: 1rem;
+
+    min-width: 0;
+
+}
+
+.tags_resto_kitchen_card_main_icon {
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 48px;
+    height: 48px;
+
+    flex-shrink: 0;
+
+    border-radius: 14px;
+
+    background: var(--resto-admin-primary-soft);
+
+    color: var(--resto-admin-primary);
+
+    font-size: 1.45rem;
+
+}
+
+.tags_resto_kitchen_card_identity_content {
+
+    display: flex;
+    flex-direction: column;
+
+    gap: .30rem;
+
+    min-width: 0;
+
+}
+
+.tags_resto_kitchen_card_location_label {
+
+    color: var(--resto-admin-text-muted);
+
+    font-size: .78rem;
+    font-weight: 600;
+
+    text-transform: uppercase;
+
+    letter-spacing: .05em;
+
+}
+
+.tags_resto_kitchen_card_location {
+
+    margin: 0;
+
+    color: var(--resto-admin-text);
+
+    font-size: 1.45rem;
+    font-weight: 700;
+
+}
+
+.tags_resto_kitchen_card_order_number {
+
+    color: var(--resto-admin-text-muted);
+
+    font-size: .90rem;
+
+}
+
+/* =====================================
+   TIMER
+===================================== */
+.tags_resto_kitchen_card_timer {
+
+    display: flex;
+    align-items: center;
+
+    gap: .45rem;
+
+   /*  flex-shrink: 0; */
+
+    min-width: 100px;
+
+    padding:
+        .3rem
+        .4rem;
+
+    border-radius: 14px;
+
+    background:
+        var(--resto-admin-primary-soft);
+
+}
+
+.tags_resto_kitchen_card_timer_icon {
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 36px;
+    height: 36px;
+
+    flex-shrink: 0;
+
+    border-radius: 11px;
+
+    background: rgba(255,255,255,.7);
+
+    color: var(--resto-admin-primary);
+
+    font-size: 1rem;
+
+}
+
+.tags_resto_kitchen_card_timer_icon {
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 46px;
+    height: 46px;
+
+    border-radius: 14px;
+
+    background: rgba(255,255,255,.7);
+
+    color: var(--resto-admin-primary);
+
+    font-size: 1.25rem;
+
+}
+
+.tags_resto_kitchen_card_warning
+.tags_resto_kitchen_card_timer {
+
+    background: var(--resto-admin-warning-soft);
+
+}
+
+.tags_resto_kitchen_card_warning
+.tags_resto_kitchen_card_timer_icon {
+
+    color: var(--resto-admin-warning);
+
+}
+
+.tags_resto_kitchen_card_urgent
+.tags_resto_kitchen_card_timer {
+
+    background: var(--resto-admin-danger-soft);
+
+}
+
+.tags_resto_kitchen_card_urgent
+.tags_resto_kitchen_card_timer_icon {
+
+    color: var(--resto-admin-danger);
+
+}
+
+.tags_resto_kitchen_card_timer_content {
+
+    display: flex;
+    flex-direction: column;
+
+}
+
+.tags_resto_kitchen_card_timer_label {
+
+    color: var(--resto-admin-text-muted);
+
+    font-size: .75rem;
+
+}
+
+.tags_resto_kitchen_card_timer_value {
+
+    color: var(--resto-admin-text);
+
+    font-size: 1.25rem;
+    font-weight: 700;
+    white-space: nowrap;
+
+}
+
+/* =====================================
+   SUMMARY
+===================================== */
+
+.tags_resto_kitchen_card_summary {
+
+    display: flex;
+    flex-direction: column;
+
+    gap: .9rem;
+
+}
+
+.tags_resto_kitchen_card_summary_item {
+
+    display: flex;
+    align-items: center;
+
+    gap: .9rem;
+
+}
+
+.tags_resto_kitchen_card_summary_icon {
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 42px;
+    height: 42px;
+
+    border-radius: 12px;
+
+    background: var(--resto-admin-primary-soft);
+
+    color: var(--resto-admin-primary);
+
+}
+
+.tags_resto_kitchen_card_summary_label {
+
+    display: block;
+
+    color: var(--resto-admin-text-muted);
+
+    font-size: .75rem;
+
+    margin-bottom: .20rem;
+
+}
+
+.tags_resto_kitchen_card_summary strong {
+
+    color: var(--resto-admin-text);
+
+}
+
+/* =====================================
+   NOTES
+===================================== */
+
+.tags_resto_kitchen_card_notes {
+
+    padding: 1rem;
+
+    border-radius: 16px;
+
+    background: var(--resto-admin-neutral-soft);
+
+}
+
+.tags_resto_kitchen_card_notes_header {
+
+    display: flex;
+    align-items: center;
+
+    gap: .60rem;
+
+    margin-bottom: .60rem;
+
+    color: var(--resto-admin-text);
+
+    font-weight: 700;
+
+}
+
+.tags_resto_kitchen_card_notes p {
+
+    margin: 0;
+
+    color: var(--resto-admin-text-muted);
+
+    line-height: 1.6;
+
+}
+
+/* =====================================
+   ITEMS
+===================================== */
+
+.tags_resto_kitchen_card_items {
+
+    display: flex;
+    flex-direction: column;
+
+    flex: 1;
+
+    min-height: 0;
+
+}
+
+.tags_resto_kitchen_card_items_header {
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+}
+
+.tags_resto_kitchen_card_items_title {
+
+    display: flex;
+    align-items: center;
+
+    gap: .55rem;
+
+    color: var(--resto-admin-text);
+
+    font-weight: 700;
+
+}
+
+.tags_resto_kitchen_card_items_count {
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-width: 34px;
+    height: 34px;
+
+    padding: 0 .70rem;
+
+    border-radius: 999px;
+
+    background: var(--resto-admin-primary-soft);
+
+    color: var(--resto-admin-primary);
+
+    font-weight: 700;
+
+}
+
+.tags_resto_kitchen_card_items_list {
+
+    flex: 1;
+
+    min-height: 0;
+
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    padding-right: .35rem;
+
+}
+
+.tags_resto_kitchen_item {
+
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+
+    gap: 1rem;
+
+    padding: 1rem;
+
+    border-bottom: 1px solid var(--resto-admin-border);
+
+    background: #fff;
+
+}
+
+.tags_resto_kitchen_item_content {
+
+    flex: 1;
+
+}
+
+.tags_resto_kitchen_item_main {
+
+    display: flex;
+
+    gap: .8rem;
+
+}
+
+.tags_resto_kitchen_item_quantity {
+
+    font-size: 1.15rem;
+    font-weight: 700;
+
+    color: var(--resto-admin-primary);
+
+}
+
+.tags_resto_kitchen_item_identity {
+
+    display: flex;
+    flex-direction: column;
+
+    gap: .20rem;
+
+}
+
+.tags_resto_kitchen_item_title {
+
+    color: var(--resto-admin-text);
+
+}
+
+.tags_resto_kitchen_item_variant {
+
+    color: var(--resto-admin-text-muted);
+
+    font-size: .82rem;
+
+}
+
+.tags_resto_kitchen_item_notes {
+
+    display: inline-flex;
+    align-items: center;
+
+    gap: .50rem;
+
+    margin-top: .70rem;
+
+    padding: .55rem .75rem;
+
+    border-radius: 10px;
+
+    background: var(--resto-admin-warning-soft);
+
+    color: var(--resto-admin-warning);
+
+    font-size: .82rem;
+
+}
+
+.tags_resto_kitchen_item_actions {
+
+    display: flex;
+    align-items: center;
+
+}
+
+.tags_resto_kitchen_ready_btn {
+
+    min-width: 100px;
+
+    background: var(--resto-admin-primary-hover) !important;
+
+    border-color: var(--resto-admin-text) !important;
+
+    color: var(--resto-admin-surface) !important;
+
+}
+
+.tags_resto_kitchen_ready_btn:hover:not(:disabled) {
+
+    background: var(--resto-admin-text-muted) !important;
+
+    border-color: var(--resto-admin-text-muted) !important;
+
+    color: var(--resto-admin-surface) !important;
+
+}
+
+.tags_resto_kitchen_ready_btn:disabled {
+
+    opacity: .6;
+
+    cursor: not-allowed;
+
+}
+
+/* =====================================
+   MOBILE
+===================================== */
+
+@media (max-width:768px){
+
+    .tags_resto_kitchen_card_header{
+
+        flex-direction:column;
+
+    }
+
+    .tags_resto_kitchen_card_timer{
+
+        width:100%;
+       
+
+    }
+
+    .tags_resto_kitchen_item{
+
+        flex-direction:column;
+
+    }
+
+    .tags_resto_kitchen_item_actions{
+
+        width:100%;
+
+    }
+
+    .tags_resto_kitchen_ready_btn{
+
+        width:100%;
+
+    }
+
+}

@@ -1,0 +1,143 @@
+/* =====================================
+   FILE: /app/modules/resto/styles/kitchen/RestoKitchenStats.css
+   Descripción:
+   Estilos de las tarjetas de estadísticas del módulo Cocina.
+===================================== */
+
+.tags_resto_kitchen_stats {
+
+    margin-bottom: 1.5rem;
+
+}
+
+.tags_resto_kitchen_stat_card {
+
+    height: 100%;
+
+    background: var(--tags-resto-kitchen-surface);
+
+    border: 1px solid var(--tags-resto-kitchen-border);
+
+    border-radius: var(--tags-resto-kitchen-radius);
+
+    box-shadow: var(--tags-resto-kitchen-shadow);
+
+    transition:
+        transform var(--tags-resto-kitchen-transition),
+        box-shadow var(--tags-resto-kitchen-transition),
+        border-color var(--tags-resto-kitchen-transition);
+
+}
+
+.tags_resto_kitchen_stat_card:hover {
+
+    transform: translateY(-2px);
+
+    box-shadow: 0 14px 32px rgba(15,23,42,.12);
+
+}
+
+.tags_resto_kitchen_stat_inner {
+
+    gap: 1rem;
+
+    padding: 1.25rem;
+
+}
+
+.tags_resto_kitchen_stat_icon {
+
+    width: 58px;
+
+    height: 58px;
+
+    border-radius: 14px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    color: #fff;
+
+}
+
+.tags_resto_kitchen_stat_orders
+.tags_resto_kitchen_stat_icon {
+
+    background: var(--tags-resto-kitchen-primary);
+
+}
+
+.tags_resto_kitchen_stat_items
+.tags_resto_kitchen_stat_icon {
+
+    background: var(--tags-resto-kitchen-warning);
+
+}
+
+.tags_resto_kitchen_stat_time
+.tags_resto_kitchen_stat_icon {
+
+    background: var(--tags-resto-kitchen-success);
+
+}
+
+.tags_resto_kitchen_stat_content {
+
+    flex: 1;
+
+    min-width: 0;
+
+}
+
+.tags_resto_kitchen_stat_label {
+
+    color: var(--tags-resto-kitchen-muted);
+
+    font-size: .90rem;
+
+    line-height: 1.2;
+
+    margin-bottom: .35rem;
+
+}
+
+.tags_resto_kitchen_stat_value {
+
+    color: var(--tags-resto-kitchen-title);
+
+    font-size: 2rem;
+
+    font-weight: 700;
+
+    line-height: 1;
+
+}
+
+@media (max-width: 768px) {
+
+    .tags_resto_kitchen_stat_inner {
+
+        padding: 1rem;
+
+    }
+
+    .tags_resto_kitchen_stat_icon {
+
+        width: 50px;
+
+        height: 50px;
+
+    }
+
+    .tags_resto_kitchen_stat_value {
+
+        font-size: 1.7rem;
+
+    }
+
+}

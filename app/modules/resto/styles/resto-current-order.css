@@ -1,0 +1,1029 @@
+/* =====================================
+   FILE: app/modules/resto/styles/resto-current-order.css
+   Descripción:
+   Estilos públicos del pedido activo de Tags Resto.
+===================================== */
+
+.tags_resto_current_order_page {
+    min-height: 100vh;
+    padding: 30px 0 48px;
+    background:
+        linear-gradient(180deg,
+            color-mix(in srgb, var(--qr-primary) 10%, var(--qr-background)) 0,
+            var(--qr-background) 280px);
+    color: var(--qr-text);
+}
+
+.tags_resto_current_order_shell {
+    width: 100%;
+    max-width: 1120px;
+    margin: 0 auto;
+}
+
+.tags_resto_current_order_brand_header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 22px 24px;
+    margin-bottom: 16px;
+    border: 1px solid color-mix(in srgb, var(--qr-primary) 20%, var(--qr-border));
+    border-radius: var(--qr-radius-lg);
+    background:
+        linear-gradient(135deg,
+            color-mix(in srgb, var(--qr-primary) 14%, var(--qr-surface)),
+            color-mix(in srgb, var(--qr-primary) 4%, var(--qr-surface)));
+    box-shadow: var(--qr-shadow-sm);
+}
+
+.tags_resto_current_order_brand_identity {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-width: 0;
+}
+
+.tags_resto_current_order_brand_logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 64px;
+    height: 64px;
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--qr-primary) 24%, var(--qr-border));
+    border-radius: var(--qr-radius-lg);
+    background: var(--qr-surface);
+    box-shadow: var(--qr-shadow-sm);
+}
+
+.tags_resto_current_order_brand_logo img {
+    width: 100%;
+    height: 100%;
+    padding: 7px;
+    object-fit: contain;
+}
+
+.tags_resto_current_order_brand_logo span {
+    font-size: 30px;
+    line-height: 1;
+}
+
+.tags_resto_current_order_brand_text {
+    min-width: 0;
+}
+
+.tags_resto_current_order_brand_type,
+.tags_resto_current_order_eyebrow,
+.tags_resto_current_order_section_eyebrow {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--qr-primary);
+    font-size: 0.72rem;
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.tags_resto_current_order_section_eyebrow_h2 {
+    font-size: 1.6rem !important;
+}
+
+.tags_resto_current_order_brand_text h1 {
+    margin: 0;
+    color: var(--qr-text);
+    font-size: clamp(1.45rem, 3vw, 2rem);
+    font-weight: 850;
+    line-height: 1.08;
+}
+
+.tags_resto_current_order_brand_text p {
+    margin: 6px 0 0;
+    color: var(--qr-muted);
+    font-size: 0.88rem;
+}
+
+.tags_resto_current_order_brand_status {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 7px;
+    flex: 0 0 auto;
+}
+
+.tags_resto_current_order_brand_status_label {
+    color: var(--qr-muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.tags_resto_current_order_status_badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 34px;
+    padding: 7px 13px;
+    border: 1px solid color-mix(in srgb, var(--qr-primary) 28%, var(--qr-border));
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--qr-primary) 12%, var(--qr-surface));
+    color: var(--qr-primary);
+    font-size: 0.8rem;
+    font-weight: 800;
+}
+
+.tags_resto_current_order_status_bill_requested {
+    background: color-mix(in srgb, var(--qr-primary) 22%, var(--qr-surface));
+}
+
+.tags_resto_current_order_status_closed,
+.tags_resto_current_order_status_cancelled {
+    border-color: var(--qr-border);
+    background: color-mix(in srgb, var(--qr-text) 8%, var(--qr-surface));
+    color: var(--qr-muted);
+}
+
+.tags_resto_current_order_context {
+    padding: 24px;
+    margin-bottom: 18px;
+    border: 1px solid color-mix(in srgb, var(--qr-primary) 20%, var(--qr-border));
+    border-radius: var(--qr-radius-lg);
+    background: color-mix(in srgb, var(--qr-primary) 7%, var(--qr-surface));
+    box-shadow: var(--qr-shadow-sm);
+}
+
+.tags_resto_current_order_context_intro {
+    max-width: 720px;
+    margin-bottom: 18px;
+}
+
+.tags_resto_current_order_context_intro h2 {
+    margin: 0;
+    color: var(--qr-text);
+    font-size: clamp(1.35rem, 3vw, 1.85rem);
+    font-weight: 850;
+    line-height: 1.15;
+}
+
+.tags_resto_current_order_context_intro p {
+    margin: 7px 0 0;
+    color: var(--qr-muted);
+    font-size: 0.92rem;
+    line-height: 1.5;
+}
+
+.tags_resto_current_order_context_grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.tags_resto_current_order_context_item {
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    column-gap: 11px;
+    align-items: center;
+    min-height: 88px;
+    padding: 15px;
+    border: 1px solid color-mix(in srgb, var(--qr-primary) 14%, var(--qr-border));
+    border-radius: var(--qr-radius-md);
+    background: var(--qr-surface);
+}
+
+.tags_resto_current_order_context_item_primary {
+    background: color-mix(in srgb, var(--qr-primary) 12%, var(--qr-surface));
+}
+
+.tags_resto_current_order_context_icon {
+    grid-row: 1 / 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--qr-primary) 14%, var(--qr-surface));
+    color: var(--qr-primary);
+    font-size: 1.9rem;
+    font-weight: 850;
+}
+
+.tags_resto_current_order_summary_label {
+    color: var(--qr-muted);
+    font-size: 0.7rem;
+    font-weight: 750;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.tags_resto_current_order_summary_value {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    color: var(--qr-text);
+    font-size: 0.96rem;
+    font-weight: 800;
+    line-height: 1.25;
+}
+
+.tags_resto_current_order_summary_value small {
+    color: var(--qr-muted);
+    font-size: 0.76rem;
+    font-weight: 600;
+}
+
+.tags_resto_current_order_layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 350px);
+    align-items: start;
+    gap: 18px;
+}
+
+.tags_resto_current_order_tracking {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 320px);
+    gap: 20px;
+    align-items: center;
+    padding: 22px 24px;
+    margin-bottom: 18px;
+    border: 1px solid color-mix(in srgb, var(--qr-primary) 22%, var(--qr-border));
+    border-radius: var(--qr-radius-lg);
+    background: var(--qr-surface);
+    box-shadow: var(--qr-shadow-sm);
+}
+
+.tags_resto_current_order_tracking_copy span {
+    color: var(--qr-primary);
+    font-size: .72rem;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.tags_resto_current_order_tracking_copy h2 {
+    margin: 5px 0;
+    color: var(--qr-text);
+    font-size: 1.35rem;
+    font-weight: 850;
+}
+
+.tags_resto_current_order_tracking_copy p {
+    margin: 0;
+    color: var(--qr-muted);
+}
+
+.tags_resto_current_order_tracking_progress {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+}
+
+.tags_resto_current_order_tracking_progress > div:first-child {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.tags_resto_current_order_tracking_progress strong {
+    color: var(--qr-primary);
+    font-size: 1.25rem;
+}
+
+.tags_resto_current_order_tracking_progress span {
+    color: var(--qr-muted);
+    font-size: .78rem;
+    font-weight: 700;
+}
+
+.tags_resto_current_order_tracking_bar {
+    height: 10px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--qr-primary) 12%, var(--qr-surface));
+}
+
+.tags_resto_current_order_tracking_bar span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--qr-primary);
+    transition: width .3s ease;
+}
+
+.tags_resto_current_order_request_notice {
+    grid-column: 1 / -1;
+    padding: 10px 12px;
+    border-radius: var(--qr-radius-md);
+    background: color-mix(in srgb, var(--qr-primary) 10%, var(--qr-surface));
+    color: var(--qr-primary);
+    font-size: .82rem;
+    font-weight: 750;
+}
+
+.tags_resto_current_order_products,
+.tags_resto_current_order_totals,
+.tags_resto_current_order_actions {
+    border: 1px solid color-mix(in srgb, var(--qr-primary) 14%, var(--qr-border));
+    border-radius: var(--qr-radius-lg);
+    box-shadow: var(--qr-shadow-sm);
+}
+
+.tags_resto_current_order_products {
+    padding: 22px;
+    background: color-mix(in srgb, var(--qr-primary) 4%, var(--qr-surface));
+}
+
+.tags_resto_current_order_section_header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 18px;
+    padding-bottom: 17px;
+}
+
+.tags_resto_current_order_section_header h2,
+.tags_resto_current_order_totals_header h2 {
+    margin: 0;
+    color: var(--qr-text);
+    font-size: 1.18rem;
+    font-weight: 850;
+    line-height: 1.25;
+}
+
+.tags_resto_current_order_product_count {
+    flex: 0 0 auto;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--qr-primary) 13%, var(--qr-surface));
+    color: var(--qr-primary);
+    font-size: 0.76rem;
+    font-weight: 800;
+}
+
+.tags_resto_current_order_items {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.tags_resto_current_order_item {
+
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+
+    padding: 10px;
+
+    border: none;
+
+    border-radius: 22px;
+
+    background: var(--qr-surface);
+
+    box-shadow:
+        0 10px 28px rgba(0, 0, 0, .08);
+
+    transition: .25s;
+
+}
+
+.tags_resto_current_order_item:hover {
+
+    transform: translateY(-2px);
+
+    box-shadow:
+        0 16px 36px rgba(0, 0, 0, .12);
+
+}
+
+.tags_resto_current_order_item_header {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    gap: 18px;
+
+    align-items: flex-start;
+
+}
+
+.tags_resto_current_order_item_content {
+
+    flex: 1;
+
+    min-width: 0;
+
+}
+
+.tags_resto_current_order_item_title {
+
+    margin: 0;
+
+    font-size: 1.1rem;
+
+    font-weight: 700;
+
+    color: var(--qr-text);
+
+}
+
+.tags_resto_current_order_item_chip {
+
+    display: inline-flex;
+
+    margin-top: 4px;
+
+    padding: 6px 12px;
+
+    border-radius: 999px;
+
+    background:
+        color-mix(in srgb,
+            var(--qr-primary) 12%,
+            transparent);
+
+    color: var(--qr-primary);
+
+    font-size: .82rem;
+
+    font-weight: 700;
+
+}
+
+.tags_resto_current_order_item_note {
+
+    margin-top: 14px;
+
+    padding: 12px 14px;
+
+    border-radius: 14px;
+
+    background:
+        color-mix(in srgb,
+            var(--qr-text) 4%,
+            var(--qr-surface));
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 4px;
+
+}
+
+.tags_resto_current_order_item_note strong {
+
+    font-size: .72rem;
+
+    text-transform: uppercase;
+
+    letter-spacing: .05em;
+
+    color: var(--qr-muted);
+
+}
+
+.tags_resto_current_order_item_note span {
+
+    color: var(--qr-text);
+
+}
+
+.tags_resto_current_order_item_price {
+
+    text-align: right;
+
+    flex-shrink: 0;
+
+}
+
+.tags_resto_current_order_item_price small {
+
+    display: block;
+
+    color: var(--qr-muted);
+
+    margin-bottom: 4px;
+
+    font-size: .72rem;
+
+    text-transform: uppercase;
+
+}
+
+.tags_resto_current_order_item_price strong {
+
+    display: block;
+
+    font-size: 1.5rem;
+
+    font-weight: 900;
+
+    color: var(--qr-primary);
+
+    line-height: 1;
+
+}
+
+.tags_resto_current_order_item_footer {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    gap: 12px;
+
+}
+
+.tags_resto_current_order_quantity {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    padding: 6px;
+
+    border-radius: 999px;
+
+    background:
+        color-mix(in srgb,
+            var(--qr-primary) 8%,
+            transparent);
+
+}
+
+.tags_resto_current_order_quantity_button {
+
+    width: 42px;
+
+    height: 42px;
+
+    border: none !important;
+
+    border-radius: 50% !important;
+
+    background: white !important;
+
+    color: var(--qr-primary) !important;
+
+    font-size: 22px !important;
+
+    font-weight: 700 !important;
+
+    box-shadow: none !important;
+
+}
+
+.tags_resto_current_order_quantity_value {
+
+    min-width: 44px;
+
+    text-align: center;
+
+    font-size: 1.15rem;
+
+    font-weight: 800;
+
+}
+
+.tags_resto_current_order_remove_button {
+
+    border: none !important;
+
+    border-radius: 999px !important;
+
+    padding: 9px 16px !important;
+
+    background:
+        color-mix(in srgb,
+            #dc3545 10%,
+            transparent) !important;
+
+    color: #dc3545 !important;
+
+    font-weight: 700 !important;
+
+    box-shadow: none !important;
+
+}
+.tags_resto_current_order_remove_button svg{
+
+    font-size:1.3rem;
+
+}
+
+@media(max-width:575px) {
+
+    .tags_resto_current_order_item_header {
+
+        flex-direction: column;
+
+    }
+
+    .tags_resto_current_order_item_price {
+
+        width: 100%;
+
+        text-align: left;
+
+    }
+
+    .tags_resto_current_order_item_footer {
+
+        flex-direction: column;
+
+        align-items: stretch;
+
+    }
+
+    .tags_resto_current_order_remove_button {
+
+        width: 100%;
+
+    }
+
+}
+
+.tags_resto_current_order_sidebar {
+    position: sticky;
+    top: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.tags_resto_current_order_totals {
+    padding: 22px;
+    background:
+        linear-gradient(160deg,
+            color-mix(in srgb, var(--qr-text) 92%, var(--qr-primary)),
+            color-mix(in srgb, var(--qr-text) 84%, var(--qr-primary)));
+    color: var(--qr-primary-text);
+    border-radius: 16px;
+}
+
+.tags_resto_current_order_totals .tags_resto_current_order_section_eyebrow {
+    color: color-mix(in srgb, var(--qr-primary) 65%, white);
+}
+
+.tags_resto_current_order_totals_header {
+    padding-bottom: 17px;
+    margin-bottom: 6px;
+    border-bottom: 1px solid color-mix(in srgb, var(--qr-primary-text) 18%, transparent);
+}
+
+.tags_resto_current_order_totals_header h2,
+.tags_resto_current_order_totals .tags_resto_current_order_total_row,
+.tags_resto_current_order_totals .tags_resto_current_order_total_row strong {
+    color: var(--qr-primary-text);
+}
+
+.tags_resto_current_order_total_row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 13px 0;
+    color: color-mix(in srgb, var(--qr-primary-text) 78%, transparent);
+    font-size: 1.1rem;
+}
+
+/* .tags_resto_current_order_total_final {
+    padding-top: 17px;
+    margin-top: 3px;
+    border-top: 1px solid color-mix(in srgb, var(--qr-primary-text) 18%, transparent);
+    font-size: 1.6rem;
+    font-weight: 800;
+} */
+
+.tags_resto_current_order_total_final strong {
+    color: color-mix(in srgb, var(--qr-primary) 68%, white) !important;
+    font-size: 1.8rem;
+    font-weight: 900;
+}
+
+.tags_resto_current_order_actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px;
+    background: color-mix(in srgb, var(--qr-primary) 7%, var(--qr-surface));
+}
+
+.tags_resto_current_order_actions .btn {
+    width: 100%;
+    min-height: 46px;
+    padding: 10px 16px;
+    border-radius: var(--qr-radius-md);
+    font-size: 0.88rem;
+    font-weight: 800;
+    box-shadow: none;
+}
+
+.tags_resto_current_order_continue_button.btn {
+    border: 1px solid var(--qr-primary);
+    background: var(--qr-surface);
+    color: var(--qr-primary);
+
+}
+
+.tags_resto_current_order_bill_button, 
+.tags_resto_current_order_continue_button.btn,
+.tags_resto_current_order_waiter_button
+ {
+    border-radius: 10px !important;
+    padding: 20px 20px !important;
+}
+
+.tags_resto_current_order_continue_button.btn:hover,
+.tags_resto_current_order_continue_button.btn:focus {
+    background: color-mix(in srgb, var(--qr-primary) 12%, var(--qr-surface));
+    color: var(--qr-primary);
+}
+
+.tags_resto_current_order_bill_button.btn {
+    border: 1px solid var(--qr-primary);
+    background: var(--qr-primary);
+    color: var(--qr-primary-text);
+}
+
+.tags_resto_current_order_bill_button.btn:hover,
+.tags_resto_current_order_bill_button.btn:focus {
+    border-color: color-mix(in srgb, var(--qr-primary) 82%, black);
+    background: color-mix(in srgb, var(--qr-primary) 82%, black);
+    color: var(--qr-primary-text);
+}
+
+.tags_resto_current_order_waiter_button.btn {
+    border: 1px solid color-mix(in srgb, var(--qr-text) 18%, var(--qr-border));
+    background: color-mix(in srgb, var(--qr-text) 88%, var(--qr-primary));
+    color: var(--qr-primary-text);
+}
+
+.tags_resto_current_order_waiter_button.btn:hover,
+.tags_resto_current_order_waiter_button.btn:focus {
+    background: color-mix(in srgb, var(--qr-text) 80%, var(--qr-primary));
+    color: var(--qr-primary-text);
+}
+
+.tags_resto_current_order_back_link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 38px;
+    padding: 8px 12px;
+    color: var(--qr-muted);
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-align: center;
+    text-decoration: none;
+}
+
+.tags_resto_current_order_back_link:hover,
+.tags_resto_current_order_back_link:focus {
+    color: var(--qr-primary);
+}
+
+.tags_resto_current_order_closed_notice {
+    padding: 14px;
+    border: 1px solid var(--qr-border);
+    border-radius: var(--qr-radius-md);
+    background: color-mix(in srgb, var(--qr-text) 8%, var(--qr-surface));
+    text-align: center;
+}
+
+.tags_resto_current_order_closed_notice strong {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--qr-text);
+}
+
+.tags_resto_current_order_closed_notice p {
+    margin: 0;
+    color: var(--qr-muted);
+    font-size: 0.8rem;
+}
+
+.tags_resto_current_order_no_items,
+.tags_resto_current_order_loading,
+.tags_resto_current_order_empty {
+    text-align: center;
+}
+
+.tags_resto_current_order_no_items {
+    padding: 44px 20px 30px;
+}
+
+.tags_resto_current_order_no_items_icon,
+.tags_resto_current_order_empty_icon {
+    margin-bottom: 12px;
+    font-size: 40px;
+}
+
+.tags_resto_current_order_no_items h3,
+.tags_resto_current_order_empty h1 {
+    margin: 0;
+    color: var(--qr-text);
+    font-weight: 850;
+}
+
+.tags_resto_current_order_no_items p,
+.tags_resto_current_order_empty p,
+.tags_resto_current_order_loading p {
+    color: var(--qr-muted);
+}
+
+.tags_resto_current_order_loading,
+.tags_resto_current_order_empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 560px;
+    min-height: 360px;
+    padding: 36px;
+    margin: 48px auto;
+    border: 1px solid color-mix(in srgb, var(--qr-primary) 18%, var(--qr-border));
+    border-radius: var(--qr-radius-lg);
+    background: color-mix(in srgb, var(--qr-primary) 7%, var(--qr-surface));
+    box-shadow: var(--qr-shadow-sm);
+}
+
+.tags_resto_current_order_loading .spinner-border {
+    color: var(--qr-primary);
+}
+
+.tags_resto_current_order_primary_link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 10px 18px;
+    border-radius: var(--qr-radius-md);
+    background: var(--qr-primary);
+    color: var(--qr-primary-text);
+    font-size: 0.88rem;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+@media (max-width: 991px) {
+
+    .tags_resto_current_order_context_grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .tags_resto_current_order_layout {
+        grid-template-columns: 1fr;
+    }
+
+    .tags_resto_current_order_sidebar {
+        position: static;
+    }
+
+}
+
+@media (max-width: 767px) {
+
+    .tags_resto_current_order_page {
+        padding: 16px 0 32px;
+    }
+
+    .tags_resto_current_order_brand_header,
+    .tags_resto_current_order_context,
+    .tags_resto_current_order_products,
+    .tags_resto_current_order_totals,
+    .tags_resto_current_order_actions {
+        border-radius: var(--qr-radius-md);
+    }
+
+    .tags_resto_current_order_brand_header {
+        align-items: flex-start;
+        padding: 18px;
+    }
+
+    .tags_resto_current_order_brand_logo {
+        width: 52px;
+        height: 52px;
+    }
+
+    .tags_resto_current_order_context {
+        padding: 18px;
+    }
+
+    .tags_resto_current_order_products {
+        padding: 18px;
+    }
+
+}
+
+@media (max-width: 575px) {
+
+    .tags_resto_current_order_page .container {
+        padding-right: 12px;
+        padding-left: 12px;
+    }
+
+    .tags_resto_current_order_brand_header {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .tags_resto_current_order_brand_status {
+        align-items: stretch;
+        width: 100%;
+    }
+
+    .tags_resto_current_order_status_badge {
+        width: 100%;
+    }
+
+    .tags_resto_current_order_context_grid {
+        grid-template-columns: 1fr;
+    }
+
+    .tags_resto_current_order_context_item {
+        min-height: 76px;
+    }
+
+    .tags_resto_current_order_section_header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .tags_resto_current_order_item_main {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .tags_resto_current_order_item_total {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        padding-top: 12px;
+        border-top: 1px dashed var(--qr-border);
+        text-align: left;
+    }
+
+    .tags_resto_current_order_item_actions {
+        align-items: stretch;
+    }
+
+    .tags_resto_current_order_remove_button.btn {
+        margin-left: auto;
+    }
+
+}
+.tags_resto_current_order_button_icon{
+
+    flex-shrink:0;
+
+    font-size:1.9rem;
+
+    margin-right:12px;
+
+}
+
+@media (max-width: 991px) {
+
+    .tags_resto_current_order_tracking {
+        grid-template-columns: 1fr;
+    }
+
+}
+
+.tags_resto_current_order_item_status {
+    display: inline-flex;
+    margin-top: 7px;
+    padding: 5px 9px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--qr-text) 8%, var(--qr-surface));
+    color: var(--qr-muted);
+    font-size: .72rem;
+    font-weight: 800;
+}
+
+.tags_resto_current_order_item_status_sent {
+    background: color-mix(in srgb, #f59e0b 14%, var(--qr-surface));
+    color: #9a5c00;
+}
+
+.tags_resto_current_order_item_status_ready {
+    background: color-mix(in srgb, #16a34a 13%, var(--qr-surface));
+    color: #117337;
+}
+
+.tags_resto_current_order_item_status_served {
+    background: color-mix(in srgb, var(--qr-primary) 13%, var(--qr-surface));
+    color: var(--qr-primary);
+}

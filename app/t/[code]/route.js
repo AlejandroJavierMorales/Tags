@@ -304,6 +304,44 @@ export async function GET(req, { params }) {
       console.log("Error tracking:", e.message);
     }
 
+
+    // =====================================
+    // TAGS RESTO
+    // =====================================
+
+    if (qr.product_id) {
+
+      const [productRows] =
+        await db.execute(
+          `
+            SELECT
+                t.code AS qr_type
+            FROM tags_products p
+
+            INNER JOIN tags_qr_types t
+                ON t.id = p.qr_type_id
+
+            WHERE p.id = ?
+            LIMIT 1
+            `,
+          [
+            qr.product_id
+          ]
+        );
+
+      /* if (
+        productRows.length &&
+        productRows[0].qr_type === "tags_resto"
+      ) {
+
+        return NextResponse.redirect(
+          `${baseUrl}/api/resto/public/session/open?code=${code}`
+        );
+
+      } */
+
+    }
+
     // =============================
     // RESPONSE + COOKIE
     // =============================

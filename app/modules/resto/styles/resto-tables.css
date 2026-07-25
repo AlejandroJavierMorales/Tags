@@ -1,0 +1,33 @@
+.tags_resto_tables_page {
+    padding: 0 .5rem 48px;
+}
+
+.tags_resto_tables_grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.tags_resto_tables_card {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    height: 100%;
+}
+
+.tags_resto_tables_card > .tags_resto_location_qr,
+.tags_resto_tables_card > .tags_resto_location_qr_empty {
+    margin-top: 15px;
+}
+
+.tags_resto_tables_card_actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+@media (max-width: 850px) {
+    .tags_resto_tables_grid {
+        grid-template-columns: 1fr;
+    }
+}

@@ -1,0 +1,409 @@
+/* =====================================
+   FILE: app/modules/resto/styles/resto-locations.css
+   Descripción:
+   Administración de sectores, mesas y
+   ubicaciones de Tags Resto.
+===================================== */
+
+.resto_locations_email{
+    display:block;
+    margin-top:6px;
+    font-size:.82rem;
+    color:#cbd5e1;
+}
+
+.resto_locations_toolbar{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    gap:18px;
+
+    margin:28px 0 18px;
+
+}
+
+.resto_locations_tabs{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:20px;
+    padding:7px;
+    overflow-x:auto;
+    border:1px solid #dfe5ec;
+    border-radius:16px;
+    background:#fff;
+    scrollbar-width:thin;
+}
+
+.resto_locations_tabs button{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    min-height:42px;
+    padding:9px 13px;
+    border:1px solid transparent;
+    border-radius:11px;
+    color:#52606d;
+    background:transparent;
+    font-size:.88rem;
+    font-weight:700;
+    white-space:nowrap;
+    transition:.16s ease;
+}
+
+.resto_locations_tabs button:hover{
+    color:#198754;
+    background:#f1f8f4;
+}
+
+.resto_locations_tabs button.active{
+    border-color:#b9dfca;
+    color:#157347;
+    background:#e8f5ee;
+    box-shadow:0 2px 7px rgba(25,135,84,.10);
+}
+
+.resto_locations_tabs button strong{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:23px;
+    height:23px;
+    padding:0 6px;
+    border-radius:999px;
+    color:#64748b;
+    background:#eef2f6;
+    font-size:.73rem;
+}
+
+.resto_locations_tabs button.active strong{
+    color:#fff;
+    background:#198754;
+}
+
+.resto_locations_sector_header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:20px;
+    margin-bottom:20px;
+    padding:18px 20px;
+    border:1px solid #dfe5ec;
+    border-radius:16px;
+    background:linear-gradient(135deg,#fff,#f4faf7);
+}
+
+.resto_locations_sector_header > div:first-child > span{
+    color:#198754;
+    font-size:.74rem;
+    font-weight:800;
+    letter-spacing:.04em;
+    text-transform:uppercase;
+}
+
+.resto_locations_sector_header h2{
+    margin:3px 0 2px;
+    color:#1f2937;
+    font-size:1.15rem;
+}
+
+.resto_locations_sector_header p{
+    margin:0;
+    color:#64748b;
+    font-size:.84rem;
+}
+
+.resto_locations_sector_header > div:last-child{
+    display:flex;
+    gap:9px;
+    flex-wrap:wrap;
+}
+
+.resto_locations_search{
+
+    width:100%;
+
+    max-width:430px;
+
+    height:52px;
+
+    display:flex;
+
+    align-items:center;
+
+    gap:12px;
+
+    padding:0 18px;
+
+    border-radius:14px;
+
+    background:#fff;
+
+    border:1px solid #dfe5ec;
+
+}
+
+.resto_locations_search svg{
+
+    color:#64748b;
+
+}
+
+.resto_locations_search input{
+
+    flex:1;
+
+    border:none;
+
+    outline:none;
+
+    background:transparent;
+
+    font-size:.95rem;
+
+}
+
+.resto_locations_grid{
+
+    display:grid;
+
+    grid-template-columns:
+        repeat(
+            auto-fill,
+            minmax(330px,1fr)
+        );
+
+    gap:22px;
+
+}
+
+.resto_location_card{
+
+    background:#fff;
+
+    border:1px solid #e6ebf1;
+
+    border-radius:18px;
+
+    padding:22px;
+
+    display:flex;
+
+    gap:18px;
+
+    transition:.18s;
+
+    box-shadow:
+        0 8px 24px
+        rgba(0,0,0,.05);
+
+}
+
+.resto_location_card:hover{
+
+    transform:translateY(-3px);
+
+    box-shadow:
+        0 16px 32px
+        rgba(0,0,0,.10);
+
+}
+
+.resto_location_icon{
+
+    width:70px;
+
+    height:70px;
+
+    flex:0 0 70px;
+
+    border-radius:18px;
+
+    background:#ecfdf3;
+
+    color:#198754;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    font-size:30px;
+
+}
+
+.resto_location_body{
+
+    flex:1;
+
+    display:flex;
+
+    flex-direction:column;
+
+}
+
+.resto_location_body h3{
+
+    margin:0;
+
+    color:#1f2937;
+
+    font-size:1.08rem;
+
+    font-weight:700;
+
+}
+
+.resto_location_body p{
+
+    margin:6px 0 0;
+
+    color:#64748b;
+
+    font-size:.90rem;
+
+    text-transform:capitalize;
+
+}
+
+.resto_location_meta{
+
+    display:flex;
+
+    flex-wrap:wrap;
+
+    gap:18px;
+
+    margin-top:16px;
+
+    color:#64748b;
+
+    font-size:.84rem;
+
+}
+
+.resto_location_meta strong{
+
+    margin-left:5px;
+
+    color:#1f2937;
+
+}
+
+.resto_location_body > .tags_resto_location_qr,
+.resto_location_body > .tags_resto_location_qr_empty{
+    margin-top:16px;
+}
+
+.resto_location_actions{
+
+    margin-top:auto;
+
+    padding-top:20px;
+
+    display:flex;
+
+    justify-content:flex-end;
+
+}
+
+.resto_location_actions .qr_page_btn{
+
+    min-width:130px;
+
+}
+
+.resto_location_card.is-focused{
+    border-color:#52b788;
+    box-shadow:
+        0 0 0 3px rgba(25,135,84,.12),
+        0 16px 32px rgba(0,0,0,.08);
+}
+
+.resto_locations_empty{
+    display:flex;
+    align-items:center;
+    flex-direction:column;
+    justify-content:center;
+    min-height:230px;
+    margin-top:2px;
+    padding:30px;
+    border:1px dashed #cbd5e1;
+    border-radius:18px;
+    color:#64748b;
+    text-align:center;
+    background:#fff;
+}
+
+.resto_locations_empty > svg{
+    margin-bottom:12px;
+    color:#198754;
+    font-size:2rem;
+}
+
+.resto_locations_empty h3{
+    margin:0 0 6px;
+    color:#1f2937;
+    font-size:1rem;
+}
+
+.resto_locations_empty p{
+    margin:0;
+    font-size:.86rem;
+}
+
+@media(max-width:768px){
+
+    .resto_locations_grid{
+
+        grid-template-columns:1fr;
+
+    }
+
+    .resto_location_card{
+
+        flex-direction:column;
+
+    }
+
+    .resto_location_icon{
+
+        width:60px;
+
+        height:60px;
+
+        flex:0 0 60px;
+
+        font-size:26px;
+
+    }
+
+    .resto_locations_sector_header{
+        align-items:flex-start;
+        flex-direction:column;
+    }
+
+}
+
+@media(max-width:576px){
+
+    .resto_locations_toolbar{
+
+        flex-direction:column;
+
+        align-items:stretch;
+
+    }
+
+    .resto_locations_search{
+
+        max-width:none;
+
+    }
+
+}

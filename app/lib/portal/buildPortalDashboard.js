@@ -58,7 +58,8 @@ export function buildPortalDashboard({
     setStoreActivateOpen,
     setReviewsActivateOpen,
     setTagsIdActivateOpen,
-    setPortalActivateOpen
+    setPortalActivateOpen,
+    setRestoActivateOpen
 }) {
     const qrPagesAvailable =
         Number(subscriptionSummary?.usage?.qr_pages_total || 0) -
@@ -77,8 +78,14 @@ export function buildPortalDashboard({
     const reviewsPage =
         qrs.find((qr) => isClientReviewsPage(qr));
 
+    const restoPage =
+        qrs.find((qr) => qr.qr_page_type === "resto");
+
     const hasStoreAddon =
         businessHasAddon(businessAddons, "store");
+
+    const hasRestoAddon =
+        businessHasAddon(businessAddons, "resto");
 
     const hasTagsIdAddon =
         businessHasAddon(businessAddons, "tagsid");
@@ -117,6 +124,39 @@ export function buildPortalDashboard({
     }
 
     const portalFeatures = [
+        {
+            ...portalRegistry.resto,
+            active:
+                hasRestoAddon,
+            status:
+                getFeatureStatusLabel({
+                    hasAddon:
+                        hasRestoAddon,
+                    exists:
+                        !!restoPage,
+                    status:
+                        restoPage?.qr_page_status
+                }),
+            actionLabel:
+                restoPage
+                    ? "Administrar"
+                    : "Crear Tags Resto",
+
+            onClick: () => {
+                if (!hasRestoAddon) {
+                    return;
+                }
+                if (restoPage) {
+                    router.push(
+                        portalRegistry.resto.adminPath({
+                            businessId
+                        })
+                    );
+                    return;
+                }
+                setRestoActivateOpen(true);
+            }
+        },
         {
             ...portalRegistry.tags_id,
             active: hasTagsIdAddon,

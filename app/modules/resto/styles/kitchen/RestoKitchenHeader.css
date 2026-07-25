@@ -1,0 +1,384 @@
+/* =====================================
+   FILE: /app/modules/resto/styles/kitchen/RestoKitchenHeader.css
+   Descripción:
+   Estilos del encabezado del módulo Cocina.
+===================================== */
+
+.tags_resto_kitchen_header {
+
+    margin-bottom: 1.75rem;
+
+}
+
+.tags_resto_kitchen_header_container {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 1.5rem;
+
+    background: var(--tags-resto-kitchen-surface);
+
+    border: 1px solid var(--tags-resto-kitchen-border);
+
+    border-radius: var(--tags-resto-kitchen-radius);
+
+    box-shadow: var(--tags-resto-kitchen-shadow);
+
+    padding: 1.35rem 1.5rem;
+
+}
+
+.tags_resto_kitchen_header_left {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 1rem;
+
+    min-width: 0;
+
+    flex: 1;
+
+}
+
+.tags_resto_kitchen_back_btn {
+
+    width: 44px;
+
+    height: 44px;
+
+    border: 1px solid var(--tags-resto-kitchen-border);
+
+    border-radius: 12px;
+
+    background: var(--tags-resto-kitchen-surface);
+
+    color: var(--tags-resto-kitchen-title);
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    cursor: pointer;
+
+    flex-shrink: 0;
+
+    transition:
+        background .20s ease,
+        color .20s ease,
+        border-color .20s ease,
+        transform .20s ease,
+        box-shadow .20s ease;
+
+}
+
+.tags_resto_kitchen_back_btn:hover {
+
+    background: var(--tags-resto-kitchen-primary);
+
+    color: var(--tags-resto-kitchen-primary-text);
+
+    border-color: var(--tags-resto-kitchen-primary);
+
+    transform: translateY(-1px);
+
+    box-shadow: 0 10px 24px rgba(0,0,0,.10);
+
+}
+
+.tags_resto_kitchen_back_btn:active {
+
+    transform: translateY(0);
+
+}
+
+.tags_resto_kitchen_back_btn:focus-visible {
+
+    outline: none;
+
+    box-shadow:
+        0 0 0 3px rgba(59,130,246,.18);
+
+}
+
+.tags_resto_kitchen_header_content {
+
+    min-width: 0;
+
+    flex: 1;
+
+}
+
+.tags_resto_kitchen_title_row {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: .90rem;
+
+}
+
+.tags_resto_kitchen_title_icon {
+
+    width: 52px;
+
+    height: 52px;
+
+    border-radius: 14px;
+
+    background: color-mix(
+        in srgb,
+        var(--tags-resto-kitchen-primary) 12%,
+        transparent
+    );
+
+    color: var(--tags-resto-kitchen-primary);
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    flex-shrink: 0;
+
+}
+
+.tags_resto_kitchen_title_content {
+
+    min-width: 0;
+
+}
+
+.tags_resto_kitchen_title {
+
+    margin: 0;
+
+    color: var(--tags-resto-kitchen-title);
+
+    font-size: 1.85rem;
+
+    font-weight: 700;
+
+    line-height: 1.1;
+
+    letter-spacing: -.02em;
+
+}
+
+.tags_resto_kitchen_store_name {
+
+    margin-top: .35rem;
+
+    color: var(--tags-resto-kitchen-muted);
+
+    font-size: .96rem;
+
+    font-weight: 500;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+}
+
+.tags_resto_kitchen_header_actions {
+
+    display: flex;
+
+    align-items: center;
+
+    flex-shrink: 0;
+
+}
+
+.tags_resto_kitchen_refresh_btn {
+
+    height: 44px;
+
+    min-width: 170px;
+
+    padding: 0 1.2rem;
+
+    border: none;
+
+    border-radius: 12px;
+
+    background: var(--tags-resto-kitchen-primary);
+
+    color: var(--tags-resto-kitchen-primary-text);
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: .70rem;
+
+    font-size: .95rem;
+
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+        transform .20s ease,
+        opacity .20s ease,
+        box-shadow .20s ease,
+        filter .20s ease;
+
+    box-shadow:
+        0 10px 24px rgba(0,0,0,.12);
+
+}
+
+.tags_resto_kitchen_refresh_btn:hover:not(:disabled) {
+
+    transform: translateY(-1px);
+
+    filter: brightness(1.03);
+
+}
+
+.tags_resto_kitchen_refresh_btn:active:not(:disabled) {
+
+    transform: translateY(0);
+
+}
+
+.tags_resto_kitchen_refresh_btn:disabled {
+
+    opacity: .65;
+
+    cursor: wait;
+
+}
+
+.tags_spin {
+
+    animation:
+        tags_resto_kitchen_spin
+        .9s linear infinite;
+
+}
+
+@keyframes tags_resto_kitchen_spin {
+
+    from {
+
+        transform: rotate(0deg);
+
+    }
+
+    to {
+
+        transform: rotate(360deg);
+
+    }
+
+}
+
+@media (max-width: 991px) {
+
+    .tags_resto_kitchen_header_container {
+
+        padding: 1.1rem;
+
+    }
+
+}
+
+@media (max-width: 768px) {
+
+    .tags_resto_kitchen_header_container {
+
+        flex-direction: column;
+
+        align-items: stretch;
+
+        gap: 1rem;
+
+    }
+
+    .tags_resto_kitchen_header_left {
+
+        width: 100%;
+
+    }
+
+    .tags_resto_kitchen_title {
+
+        font-size: 1.55rem;
+
+    }
+
+    .tags_resto_kitchen_title_icon {
+
+        width: 48px;
+
+        height: 48px;
+
+    }
+
+    .tags_resto_kitchen_header_actions {
+
+        width: 100%;
+
+    }
+
+    .tags_resto_kitchen_refresh_btn {
+
+        width: 100%;
+
+        min-width: 100%;
+
+    }
+
+}
+
+@media (max-width: 480px) {
+
+    .tags_resto_kitchen_header_container {
+
+        padding: 1rem;
+
+    }
+
+    .tags_resto_kitchen_header_left {
+
+        gap: .75rem;
+
+    }
+
+    .tags_resto_kitchen_back_btn {
+
+        width: 42px;
+
+        height: 42px;
+
+    }
+
+    .tags_resto_kitchen_title {
+
+        font-size: 1.35rem;
+
+    }
+
+    .tags_resto_kitchen_store_name {
+
+        font-size: .88rem;
+
+    }
+
+}

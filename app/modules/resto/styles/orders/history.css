@@ -1,0 +1,523 @@
+.tags_resto_history_page {
+    gap: 22px;
+    padding: 0 .5rem 48px;
+}
+
+.tags_resto_history_kpis {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.tags_resto_history_kpi {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    min-height: 88px;
+    padding: 17px 18px;
+    border: 1px solid var(--resto-admin-border);
+    border-radius: 14px;
+    background: var(--resto-admin-surface);
+    box-shadow: var(--resto-admin-shadow);
+}
+
+.tags_resto_history_kpi > svg {
+    flex: 0 0 auto;
+    width: 38px;
+    height: 38px;
+    padding: 10px;
+    border-radius: 11px;
+    color: var(--resto-admin-neutral);
+    background: var(--resto-admin-neutral-soft);
+}
+
+.tags_resto_history_kpi div {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.tags_resto_history_kpi strong {
+    color: var(--resto-admin-text);
+    font-size: 1.45rem;
+    line-height: 1;
+}
+
+.tags_resto_history_kpi span {
+    margin-top: 6px;
+    color: var(--resto-admin-text-muted);
+    font-size: .83rem;
+}
+
+.tags_resto_history_kpi.is-active > svg,
+.tags_resto_history_kpi.is-paid > svg,
+.tags_resto_history_kpi.is-closed > svg {
+    color: var(--resto-admin-success);
+    background: var(--resto-admin-success-soft);
+}
+
+.tags_resto_history_kpi.is-kitchen > svg,
+.tags_resto_history_kpi.is-pending > svg {
+    color: var(--resto-admin-warning);
+    background: var(--resto-admin-warning-soft);
+}
+
+.tags_resto_history_kpi.is-ready > svg {
+    color: var(--resto-admin-info);
+    background: var(--resto-admin-info-soft);
+}
+
+.tags_resto_history_kpi.is-cancelled > svg {
+    color: var(--resto-admin-danger);
+    background: var(--resto-admin-danger-soft);
+}
+
+.tags_resto_history_money_kpis {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.tags_resto_history_money_kpi {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: 13px;
+    padding: 19px;
+    overflow: hidden;
+    border: 1px solid var(--resto-admin-border);
+    border-radius: 15px;
+    background: var(--resto-admin-surface);
+    box-shadow: var(--resto-admin-shadow);
+}
+
+.tags_resto_history_money_kpi > div {
+    display: flex;
+    grid-row: span 3;
+    align-items: center;
+    justify-content: center;
+    width: 46px;
+    height: 46px;
+    border-radius: 13px;
+    color: var(--resto-admin-success);
+    background: var(--resto-admin-success-soft);
+}
+
+.tags_resto_history_money_kpi > span {
+    color: var(--resto-admin-text-muted);
+    font-size: .78rem;
+    font-weight: 700;
+}
+
+.tags_resto_history_money_kpi > strong {
+    margin: 2px 0;
+    color: var(--resto-admin-text);
+    font-size: 1.35rem;
+    line-height: 1.15;
+}
+
+.tags_resto_history_money_kpi > small {
+    color: var(--resto-admin-text-muted);
+    font-size: .72rem;
+}
+
+.tags_resto_history_money_kpi.is-refund > div {
+    color: var(--resto-admin-danger);
+    background: var(--resto-admin-danger-soft);
+}
+
+.tags_resto_history_money_kpi.is-net {
+    border-color: #a9dcc1;
+    background: linear-gradient(135deg, #fff, var(--resto-admin-primary-soft));
+}
+
+.tags_resto_history_filters {
+    padding: 20px;
+    border: 1px solid var(--resto-admin-border);
+    border-radius: 16px;
+    background: var(--resto-admin-surface);
+    box-shadow: var(--resto-admin-shadow);
+}
+
+.tags_resto_history_filters_title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding-bottom: 16px;
+    margin-bottom: 17px;
+    border-bottom: 1px solid var(--resto-admin-border);
+}
+
+.tags_resto_history_filters_title div {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    color: var(--resto-admin-text);
+}
+
+.tags_resto_history_filters_title svg {
+    color: var(--resto-admin-primary);
+}
+
+.tags_resto_history_filters_title button {
+    padding: 0;
+    border: 0;
+    color: var(--resto-admin-primary);
+    background: transparent;
+    font-size: .85rem;
+    font-weight: 700;
+}
+
+.tags_resto_history_filter_grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 15px;
+}
+
+.tags_resto_history_field {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    min-width: 0;
+}
+
+.tags_resto_history_field > span {
+    color: var(--resto-admin-text-muted);
+    font-size: .77rem;
+    font-weight: 700;
+    letter-spacing: .02em;
+}
+
+.tags_resto_history_field select,
+.tags_resto_history_field input {
+    width: 100%;
+    min-width: 0;
+    height: 43px;
+    padding: 0 12px;
+    border: 1px solid var(--resto-admin-border-strong);
+    border-radius: 10px;
+    outline: 0;
+    color: var(--resto-admin-text);
+    background: #fff;
+    font-size: .88rem;
+}
+
+.tags_resto_history_field select:focus,
+.tags_resto_history_field input:focus {
+    border-color: var(--resto-admin-primary);
+    box-shadow: 0 0 0 3px var(--resto-admin-primary-soft);
+}
+
+.tags_resto_history_search {
+    grid-column: span 2;
+}
+
+.tags_resto_history_search > div,
+.tags_resto_history_date {
+    position: relative;
+}
+
+.tags_resto_history_search svg,
+.tags_resto_history_date svg {
+    position: absolute;
+    top: 50%;
+    left: 13px;
+    z-index: 1;
+    color: var(--resto-admin-text-muted);
+    transform: translateY(-50%);
+    pointer-events: none;
+}
+
+.tags_resto_history_search input,
+.tags_resto_history_date input {
+    padding-left: 38px;
+}
+
+.tags_resto_history_results {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    padding: 0 3px;
+    color: var(--resto-admin-text-muted);
+    font-size: .9rem;
+}
+
+.tags_resto_history_results strong {
+    color: var(--resto-admin-text);
+}
+
+.tags_resto_history_results > span {
+    padding: 6px 10px;
+    border-radius: 999px;
+    color: var(--resto-admin-primary);
+    background: var(--resto-admin-primary-soft);
+    font-size: .78rem;
+    font-weight: 700;
+}
+
+.tags_resto_history_grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.tags_resto_history_card {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-width: 0;
+    border: 1px solid var(--resto-admin-border);
+    border-radius: 15px;
+    background: var(--resto-admin-surface);
+    box-shadow: var(--resto-admin-shadow);
+    transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+
+.tags_resto_history_card:hover {
+    border-color: var(--resto-admin-border-strong);
+    box-shadow: var(--resto-admin-shadow-hover);
+    transform: translateY(-2px);
+}
+
+.tags_resto_history_card_header,
+.tags_resto_history_card_footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 13px;
+    padding: 15px 17px;
+}
+
+.tags_resto_history_card_header {
+    border-bottom: 1px solid var(--resto-admin-border);
+    background: #fafbfc;
+}
+
+.tags_resto_history_card_header > div,
+.tags_resto_history_card_footer > div,
+.tags_resto_history_card_customer {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.tags_resto_history_card_header strong {
+    color: var(--resto-admin-text);
+    font-size: 1rem;
+}
+
+.tags_resto_history_card_header > div > span,
+.tags_resto_history_card_customer span,
+.tags_resto_history_card_footer span {
+    overflow: hidden;
+    margin-top: 3px;
+    color: var(--resto-admin-text-muted);
+    font-size: .78rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tags_resto_history_card_body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 14px;
+    padding: 17px;
+}
+
+.tags_resto_history_card_customer strong {
+    overflow: hidden;
+    color: var(--resto-admin-text);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tags_resto_history_products {
+    display: -webkit-box;
+    overflow: hidden;
+    min-height: 42px;
+    margin: 0;
+    color: var(--resto-admin-text-muted);
+    font-size: .86rem;
+    line-height: 1.45;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
+.tags_resto_history_card_meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-top: auto;
+}
+
+.tags_resto_history_card_meta > span,
+.tags_resto_history_badge {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    padding: 5px 9px;
+    border-radius: 999px;
+    color: var(--resto-admin-neutral);
+    background: var(--resto-admin-neutral-soft);
+    font-size: .72rem;
+    font-weight: 700;
+    line-height: 1.15;
+}
+
+.tags_resto_history_badge.is-preparing {
+    color: var(--resto-admin-warning);
+    background: var(--resto-admin-warning-soft);
+}
+
+.tags_resto_history_badge.is-ready {
+    color: var(--resto-admin-info);
+    background: var(--resto-admin-info-soft);
+}
+
+.tags_resto_history_badge.is-served,
+.tags_resto_history_badge.is-shipped,
+.tags_resto_history_badge.is-completed,
+.tags_resto_history_payment.is-paid {
+    color: var(--resto-admin-success);
+    background: var(--resto-admin-success-soft);
+}
+
+.tags_resto_history_badge.is-cancelled,
+.tags_resto_history_payment.is-cancelled,
+.tags_resto_history_payment.is-refunded {
+    color: var(--resto-admin-danger);
+    background: var(--resto-admin-danger-soft);
+}
+
+.tags_resto_history_payment.is-pending,
+.tags_resto_history_payment.is-partial {
+    color: var(--resto-admin-warning);
+    background: var(--resto-admin-warning-soft);
+}
+
+.tags_resto_history_card_footer {
+    border-top: 1px solid var(--resto-admin-border);
+}
+
+.tags_resto_history_card_footer > div strong {
+    color: var(--resto-admin-text);
+    font-size: 1rem;
+}
+
+.tags_resto_history_card_footer .tags_resto_btn {
+    flex: 0 0 auto;
+    min-height: 36px;
+    padding: 8px 11px;
+    font-size: .79rem;
+}
+
+.tags_resto_history_empty {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 280px;
+    padding: 35px;
+    border: 1px dashed var(--resto-admin-border-strong);
+    border-radius: 16px;
+    color: var(--resto-admin-text-muted);
+    text-align: center;
+    background: var(--resto-admin-surface);
+}
+
+.tags_resto_history_empty > svg {
+    margin-bottom: 12px;
+    color: var(--resto-admin-primary);
+    font-size: 2rem;
+}
+
+.tags_resto_history_empty h2 {
+    margin: 0 0 7px;
+    color: var(--resto-admin-text);
+    font-size: 1.05rem;
+}
+
+.tags_resto_history_empty p {
+    margin: 0;
+    font-size: .88rem;
+}
+
+.tags_resto_history_error {
+    padding: 12px 15px;
+    border: 1px solid #f5b8bf;
+    border-radius: 10px;
+    color: var(--resto-admin-danger);
+    background: var(--resto-admin-danger-soft);
+}
+
+.tags_resto_history_spinning {
+    animation: tags-resto-history-spin .8s linear infinite;
+}
+
+@keyframes tags-resto-history-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (max-width: 1180px) {
+    .tags_resto_history_kpis {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .tags_resto_history_filter_grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .tags_resto_history_money_kpis {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .tags_resto_history_grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 700px) {
+    .tags_resto_history_page {
+        gap: 16px;
+        padding-bottom: 28px;
+    }
+
+    .tags_resto_history_kpis,
+    .tags_resto_history_money_kpis,
+    .tags_resto_history_filter_grid,
+    .tags_resto_history_grid {
+        grid-template-columns: 1fr;
+    }
+
+    .tags_resto_history_search {
+        grid-column: auto;
+    }
+
+    .tags_resto_history_filters {
+        padding: 16px;
+    }
+
+    .tags_resto_history_card_header,
+    .tags_resto_history_card_footer {
+        align-items: flex-start;
+    }
+
+    .tags_resto_history_card_footer {
+        flex-direction: column;
+    }
+
+    .tags_resto_history_card_footer .tags_resto_btn {
+        justify-content: center;
+        width: 100%;
+    }
+
+    .tags_resto_history_results {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}

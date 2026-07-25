@@ -1,0 +1,278 @@
+/* =====================================
+   FILE: /app/modules/resto/styles/orders/animations.css
+   Descripción:
+   Animaciones reutilizables del módulo
+   Pedidos de Tags Resto.
+===================================== */
+
+/* =====================================
+   TRANSICIONES GENERALES
+===================================== */
+
+.tags_resto_fade_in {
+
+    animation:
+        tagsRestoFadeIn .25s ease forwards;
+
+}
+
+.tags_resto_slide_up {
+
+    animation:
+        tagsRestoSlideUp .25s ease forwards;
+
+}
+
+.tags_resto_scale_in {
+
+    animation:
+        tagsRestoScaleIn .22s ease forwards;
+
+}
+
+/* =====================================
+   PEDIDO NUEVO
+===================================== */
+
+.tags_resto_order_new {
+
+    animation:
+        tagsRestoHighlight 1.2s ease;
+
+}
+
+/* =====================================
+   LLAMADO DE MOZO
+===================================== */
+
+.tags_resto_order_calling {
+
+    animation:
+        tagsRestoPulseDanger 1.2s infinite;
+
+}
+
+/* =====================================
+   SOLICITUD DE CUENTA
+===================================== */
+
+.tags_resto_order_bill_requested {
+
+    animation:
+        tagsRestoPulseWarning 1.5s infinite;
+
+}
+
+/* =====================================
+   LISTO PARA ENTREGAR
+===================================== */
+
+.tags_resto_order_ready {
+
+    animation:
+        tagsRestoPulseSuccess 2s infinite;
+
+}
+
+/* =====================================
+   BOTONES
+===================================== */
+
+.tags_resto_btn:active {
+
+    transform:
+        scale(.97);
+
+}
+
+/* =====================================
+   HOVER SUAVE
+===================================== */
+
+.tags_resto_hover_lift {
+
+    transition:
+        transform .20s ease,
+        box-shadow .20s ease;
+
+}
+
+.tags_resto_hover_lift:hover {
+
+    transform:
+        translateY(-3px);
+
+}
+
+/* =====================================
+   KEYFRAMES
+===================================== */
+
+@keyframes tagsRestoFadeIn {
+
+    from {
+
+        opacity: 0;
+
+    }
+
+    to {
+
+        opacity: 1;
+
+    }
+
+}
+
+@keyframes tagsRestoSlideUp {
+
+    from {
+
+        opacity: 0;
+
+        transform:
+            translateY(12px);
+
+    }
+
+    to {
+
+        opacity: 1;
+
+        transform:
+            translateY(0);
+
+    }
+
+}
+
+@keyframes tagsRestoScaleIn {
+
+    from {
+
+        opacity: 0;
+
+        transform:
+            scale(.95);
+
+    }
+
+    to {
+
+        opacity: 1;
+
+        transform:
+            scale(1);
+
+    }
+
+}
+
+@keyframes tagsRestoHighlight {
+
+    0% {
+
+        box-shadow:
+            0 0 0 0 color-mix(
+                in srgb,
+                var(--resto-admin-primary) 35%,
+                transparent
+            );
+
+    }
+
+    100% {
+
+        box-shadow:
+            0 0 0 18px transparent;
+
+    }
+
+}
+
+@keyframes tagsRestoPulseDanger {
+
+    0% {
+
+        box-shadow:
+            0 0 0 0 color-mix(
+                in srgb,
+                var(--resto-admin-danger) 40%,
+                transparent
+            );
+
+    }
+
+    70% {
+
+        box-shadow:
+            0 0 0 14px transparent;
+
+    }
+
+    100% {
+
+        box-shadow:
+            0 0 0 0 transparent;
+
+    }
+
+}
+
+@keyframes tagsRestoPulseWarning {
+
+    0% {
+
+        box-shadow:
+            0 0 0 0 color-mix(
+                in srgb,
+                var(--resto-admin-warning) 40%,
+                transparent
+            );
+
+    }
+
+    70% {
+
+        box-shadow:
+            0 0 0 14px transparent;
+
+    }
+
+    100% {
+
+        box-shadow:
+            0 0 0 0 transparent;
+
+    }
+
+}
+
+@keyframes tagsRestoPulseSuccess {
+
+    0% {
+
+        box-shadow:
+            0 0 0 0 color-mix(
+                in srgb,
+                var(--resto-admin-success) 40%,
+                transparent
+            );
+
+    }
+
+    70% {
+
+        box-shadow:
+            0 0 0 14px transparent;
+
+    }
+
+    100% {
+
+        box-shadow:
+            0 0 0 0 transparent;
+
+    }
+
+}

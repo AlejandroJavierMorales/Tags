@@ -1,0 +1,315 @@
+/* =====================================
+   Archivo:
+   /app/modules/resto/styles/resto-reviews-cta.css
+
+   Descripción:
+   Estilos públicos exclusivos del bloque
+   RestoReviewsCTA.
+===================================== */
+
+.resto_reviews_cta {
+    width: 100%;
+    padding: 56px 0;
+}
+
+.resto_reviews_cta_card {
+    width: 100%;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: clamp(32px, 6vw, 64px);
+    text-align: center;
+    background: var(--qr-surface);
+    color: var(--qr-text);
+    border: 1px solid var(--qr-border);
+    border-radius: var(--qr-radius, 24px);
+    box-shadow: var(--qr-shadow);
+}
+
+.resto_reviews_cta_badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 18px;
+    padding: 7px 14px;
+    background: color-mix(
+        in srgb,
+        var(--qr-primary) 12%,
+        transparent
+    );
+    color: var(--qr-primary);
+    border: 1px solid color-mix(
+        in srgb,
+        var(--qr-primary) 22%,
+        transparent
+    );
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.resto_reviews_cta_stars,
+.resto_reviews_modal_stars {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    color: var(--qr-primary);
+}
+
+.resto_reviews_cta_stars {
+    margin-bottom: 20px;
+    font-size: clamp(1.35rem, 3vw, 1.75rem);
+}
+
+.resto_reviews_cta_card h2 {
+    max-width: 680px;
+    margin: 0 auto 14px;
+    color: inherit;
+    font-size: clamp(1.75rem, 4vw, 2.5rem);
+    font-weight: 800;
+    line-height: 1.12;
+}
+
+.resto_reviews_cta_card > p {
+    max-width: 650px;
+    margin: 0 auto 28px;
+    color: var(--qr-text-muted);
+    font-size: 1rem;
+    line-height: 1.65;
+}
+
+.resto_reviews_cta_button {
+    display: inline-flex;
+    min-height: 48px;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 24px;
+    background: var(--qr-primary);
+    color: var(--qr-primary-text);
+    border: 1px solid var(--qr-primary);
+    border-radius: var(--qr-button-radius, 12px);
+    font-weight: 700;
+    line-height: 1.2;
+    text-align: center;
+    cursor: pointer;
+    transition:
+        transform 0.18s ease,
+        opacity 0.18s ease,
+        box-shadow 0.18s ease;
+}
+
+.resto_reviews_cta_button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 26px color-mix(
+        in srgb,
+        var(--qr-primary) 25%,
+        transparent
+    );
+}
+
+.resto_reviews_cta_button:active {
+    transform: translateY(0);
+}
+
+.resto_reviews_cta_button:disabled {
+    opacity: 0.65;
+    cursor: wait;
+    transform: none;
+    box-shadow: none;
+}
+
+.resto_reviews_modal_overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.58);
+    backdrop-filter: blur(7px);
+    animation: resto_reviews_overlay_in 0.2s ease;
+}
+
+.resto_reviews_modal {
+    position: relative;
+    width: 100%;
+    max-width: 480px;
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+    padding: 36px;
+    background: var(--qr-surface);
+    color: var(--qr-text);
+    border: 1px solid var(--qr-border);
+    border-radius: 24px;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
+    animation: resto_reviews_modal_in 0.22s ease;
+}
+
+.resto_reviews_modal_close {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    display: inline-flex;
+    width: 38px;
+    height: 38px;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    background: transparent;
+    color: var(--qr-text-muted);
+    border: 0;
+    border-radius: 50%;
+    font-size: 1.05rem;
+    cursor: pointer;
+}
+
+.resto_reviews_modal_close:hover {
+    background: color-mix(
+        in srgb,
+        var(--qr-text) 8%,
+        transparent
+    );
+    color: var(--qr-text);
+}
+
+.resto_reviews_modal_close:disabled {
+    opacity: 0.45;
+    cursor: wait;
+}
+
+.resto_reviews_modal_stars {
+    margin: 8px 0 18px;
+    font-size: 1.25rem;
+}
+
+.resto_reviews_modal h3 {
+    margin: 0 0 10px;
+    padding: 0 34px;
+    color: inherit;
+    font-size: 1.55rem;
+    font-weight: 800;
+    line-height: 1.2;
+    text-align: center;
+}
+
+.resto_reviews_modal > p {
+    margin: 0 0 26px;
+    color: var(--qr-text-muted);
+    font-size: 0.95rem;
+    line-height: 1.55;
+    text-align: center;
+}
+
+.resto_reviews_modal_form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.resto_reviews_modal_field {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.resto_reviews_modal_field label {
+    color: var(--qr-text);
+    font-size: 0.88rem;
+    font-weight: 700;
+}
+
+.resto_reviews_modal_input {
+    width: 100%;
+    min-height: 48px;
+    padding: 11px 14px;
+    background: var(--qr-background);
+    color: var(--qr-text);
+    border: 1px solid var(--qr-border);
+    border-radius: 12px;
+    outline: none;
+    transition:
+        border-color 0.18s ease,
+        box-shadow 0.18s ease;
+}
+
+.resto_reviews_modal_input::placeholder {
+    color: var(--qr-text-muted);
+    opacity: 0.72;
+}
+
+.resto_reviews_modal_input:focus {
+    border-color: var(--qr-primary);
+    box-shadow: 0 0 0 3px color-mix(
+        in srgb,
+        var(--qr-primary) 14%,
+        transparent
+    );
+}
+
+.resto_reviews_modal_input:disabled {
+    opacity: 0.65;
+    cursor: wait;
+}
+
+.resto_reviews_modal_submit {
+    width: 100%;
+    margin-top: 4px;
+}
+
+@keyframes resto_reviews_overlay_in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes resto_reviews_modal_in {
+    from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@media (max-width: 767px) {
+
+    .resto_reviews_cta {
+        padding: 36px 0;
+    }
+
+    .resto_reviews_cta_card {
+        padding: 32px 20px;
+        border-radius: 20px;
+    }
+
+    .resto_reviews_cta_card h2 {
+        font-size: 1.75rem;
+    }
+
+    .resto_reviews_cta_button {
+        width: 100%;
+    }
+
+    .resto_reviews_modal_overlay {
+        align-items: flex-end;
+        padding: 12px;
+    }
+
+    .resto_reviews_modal {
+        max-width: none;
+        padding: 32px 20px 22px;
+        border-radius: 22px;
+    }
+
+}

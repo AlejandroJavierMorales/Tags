@@ -42,13 +42,13 @@ export const portalRegistry = {
             `/dashboard/businesses/${businessId}/store`
     },
 
-    restaurant: {
-        key: "restaurant",
-        title: "Tags Restaurant",
-        description: "Menú digital y gestión gastronómica.",
+    resto: {
+        key: "resto",
+        title: "Tags Resto",
+        description: "Menú digital, pedidos por mesa y gestión gastronómica.",
         canHaveMultiple: false,
         adminPath: ({ businessId }) =>
-            `/dashboard/businesses/${businessId}/restaurant`
+            `/dashboard/businesses/${businessId}/resto`
     },
 
     booking: {

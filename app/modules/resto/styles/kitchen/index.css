@@ -1,0 +1,112 @@
+/* =====================================
+   FILE: /app/modules/resto/styles/kitchen/index.css
+   Descripción:
+   Punto de entrada de estilos del
+   Kitchen Display System de Tags Resto.
+===================================== */
+
+@import "../orders/buttons.css";
+
+@import "./RestoKitchenHeader.css";
+@import "./RestoKitchenStats.css";
+@import "./RestoKitchenGrid.css";
+@import "./RestoKitchenCard.css";
+
+:root {
+
+    --resto-admin-primary: #0ed377;
+    --resto-admin-primary-hover: #157347;
+    --resto-admin-primary-soft: #e8f5ee;
+
+    --resto-admin-background: #f5f7f8;
+    --resto-admin-surface: #ffffff;
+
+    --resto-admin-text: #1f2933;
+    --resto-admin-text-muted: #667085;
+    --resto-admin-text-on-primary: #ffffff;
+
+    --resto-admin-border: #e1e5e9;
+    --resto-admin-border-strong: #c8ced5;
+
+    --resto-admin-success: #12af66;
+    --resto-admin-success-soft: #e8f5ee;
+
+    --resto-admin-warning: #d97706;
+    --resto-admin-warning-soft: #fff4df;
+
+    --resto-admin-danger: #dc3545;
+    --resto-admin-danger-soft: #fdebed;
+
+    --resto-admin-info: #0d6efd;
+    --resto-admin-info-soft: #e7f0ff;
+
+    --resto-admin-neutral: #5f6b76;
+    --resto-admin-neutral-soft: #eef1f4;
+
+    --resto-admin-shadow:
+        0 2px 8px rgba(16, 24, 40, .08);
+
+    --resto-admin-shadow-hover:
+        0 8px 20px rgba(16, 24, 40, .12);
+
+    --tags-resto-kitchen-primary:
+        var(--resto-admin-primary);
+
+    --tags-resto-kitchen-primary-text:
+        var(--resto-admin-text-on-primary);
+
+    --tags-resto-kitchen-surface:
+        var(--resto-admin-surface);
+
+    --tags-resto-kitchen-title:
+        var(--resto-admin-text);
+
+    --tags-resto-kitchen-muted:
+        var(--resto-admin-text-muted);
+
+    --tags-resto-kitchen-border:
+        var(--resto-admin-border);
+
+    --tags-resto-kitchen-warning:
+        var(--resto-admin-warning);
+
+    --tags-resto-kitchen-success:
+        var(--resto-admin-success);
+
+    --tags-resto-kitchen-success-bg:
+        var(--resto-admin-success-soft);
+
+    --tags-resto-kitchen-radius:
+        18px;
+
+    --tags-resto-kitchen-shadow:
+        var(--resto-admin-shadow);
+
+    --tags-resto-kitchen-transition:
+        .20s ease;
+
+}
+
+.tags_resto_kitchen_page {
+
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
+
+    width: 100%;
+    min-height: 100%;
+
+    color:
+        var(--resto-admin-text);
+
+}
+
+.tags_resto_kitchen_loading {
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    min-height: 320px;
+
+}

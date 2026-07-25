@@ -1,6 +1,8 @@
 import { notFound }
     from "next/navigation";
 
+import "@/app/modules/resto/styles/resto-public.css";
+
 import { db }
     from "@/app/lib/tags-db";
 
@@ -31,6 +33,11 @@ import {
 
 import "@/app/modules/store/styles/store-public.css";
 import StoreRenderer from "@/app/modules/store/components/StoreRenderer";
+import { getPublicResto as getPublicRestoBuilderData }
+    from "@/app/modules/resto/lib/getPublicResto";
+
+import RestoPublicRenderer
+    from "@/app/modules/resto/public/RestoPublicRenderer";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -976,6 +983,136 @@ function buildStructuredData({
 
 
 
+
+async function getPublicResto(slug) {
+
+    const [stores] =
+        await db.query(
+            `
+            SELECT
+                s.*,
+                p.id AS page_id,
+                p.slug AS page_slug,
+                p.status AS page_status,
+                p.page_type,
+
+                t.id AS theme_id,
+                t.code AS theme_code,
+                t.name AS theme_name,
+                t.css_tokens AS theme_css_tokens
+
+            FROM tags_stores s
+
+            INNER JOIN tags_qr_pages p
+                ON p.id = s.page_id
+
+            LEFT JOIN tags_qr_page_themes t
+                ON t.id = p.theme_id
+
+            WHERE p.slug = ?
+            AND p.status = 'published'
+            AND p.page_type = 'resto'
+            AND s.status = 'published'
+            AND s.app_type = 'resto'
+
+            LIMIT 1
+            `,
+            [
+                slug
+            ]
+        );
+
+    const store =
+        stores[0];
+
+    if (!store) {
+        return null;
+    }
+
+    store.settings_json =
+        safeParseJSON(
+            store.settings_json
+        );
+
+    store.styles_json =
+        safeParseJSON(
+            store.styles_json
+        );
+
+    store.theme =
+        store.theme_id
+            ? {
+                id: store.theme_id,
+                code: store.theme_code,
+                name: store.theme_name,
+                css_tokens: safeParseJSON(
+                    store.theme_css_tokens
+                )
+            }
+            : null;
+
+    const [categories] =
+        await db.query(
+            `
+            SELECT *
+            FROM tags_store_categories
+            WHERE store_id = ?
+            AND is_visible = 1
+            ORDER BY sort_order ASC, name ASC
+            `,
+            [
+                store.id
+            ]
+        );
+
+    const [products] =
+        await db.query(
+            `
+            SELECT
+                p.*,
+                c.name AS category_name,
+                img.image_url AS primary_image_url,
+                COUNT(DISTINCT v.id) AS variants_count
+
+            FROM tags_store_products p
+
+            LEFT JOIN tags_store_categories c
+                ON c.id = p.category_id
+                AND c.store_id = p.store_id
+
+            LEFT JOIN tags_store_product_images img
+                ON img.product_id = p.id
+                AND img.is_primary = 1
+
+            LEFT JOIN tags_store_variants v
+                ON v.product_id = p.id
+                AND v.is_visible = 1
+
+            WHERE p.store_id = ?
+            AND p.status = 'published'
+            AND p.is_visible = 1
+
+            GROUP BY
+                p.id,
+                c.name,
+                img.image_url
+
+            ORDER BY
+                p.is_featured DESC,
+                p.created_at DESC
+            `,
+            [
+                store.id
+            ]
+        );
+
+    return {
+        store,
+        categories,
+        products
+    };
+}
+
 export default async function PublicQRPage({
     params,
     searchParams
@@ -1306,7 +1443,47 @@ export default async function PublicQRPage({
             </>
         );
     }
+    if (page.page_type === "resto") {
 
+        const resto =
+            await getPublicRestoBuilderData(
+                params.slug,
+                {
+                    locationId:
+                        searchParams?.locationId ||
+                        null,
+
+                    qrCode:
+                        searchParams?.qr ||
+                        null
+                }
+            );
+
+        if (!resto) {
+            notFound();
+        }
+
+
+
+        console.log({
+            sections: resto.sections?.length,
+            blocks: resto.blocks?.length,
+            sectionTypes: resto.sections?.map(s => s.section_type)
+        });
+
+        return (
+            <RestoPublicRenderer
+                page={page}
+                resto={resto.store}
+                sections={resto.sections}
+                blocks={resto.blocks}
+                categories={resto.categories}
+                products={resto.products}
+                location={resto.location}
+            />
+        );
+
+    }
 
     const structuredData =
         buildStructuredData({

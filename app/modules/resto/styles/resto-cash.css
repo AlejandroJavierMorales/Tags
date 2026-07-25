@@ -1,0 +1,48 @@
+.tags_resto_cash_page{padding:0 .5rem 50px}
+.tags_resto_cash_open,.tags_resto_cash_shift_header,.tags_resto_cash_panel,.tags_resto_cash_methods{border:1px solid var(--resto-admin-border);border-radius:16px;background:#fff;box-shadow:var(--resto-admin-shadow)}
+.tags_resto_cash_open{display:grid;grid-template-columns:auto 1fr minmax(160px,220px) minmax(180px,1fr) auto;align-items:end;gap:16px;padding:22px}
+.tags_resto_cash_open_icon{display:flex;align-items:center;justify-content:center;width:52px;height:52px;border-radius:14px;color:var(--resto-admin-primary);background:var(--resto-admin-primary-soft)}
+.tags_resto_cash_open h2,.tags_resto_cash_shift_header h2,.tags_resto_cash_panel h2{margin:3px 0;color:var(--resto-admin-text);font-size:1.08rem}
+.tags_resto_cash_open p,.tags_resto_cash_shift_header p,.tags_resto_cash_panel p{margin:0;color:var(--resto-admin-text-muted);font-size:.82rem}
+.tags_resto_cash_open>div>span,.tags_resto_cash_form label>span{color:var(--resto-admin-text-muted);font-size:.75rem;font-weight:700}
+.tags_resto_cash_open label,.tags_resto_cash_form label{display:flex;flex-direction:column;gap:6px}
+.tags_resto_cash_open input,.tags_resto_cash_form input,.tags_resto_cash_form select{width:100%;height:42px;padding:0 11px;border:1px solid var(--resto-admin-border-strong);border-radius:9px;background:#fff;color:var(--resto-admin-text)}
+.tags_resto_cash_shift_header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:19px 21px}
+.tags_resto_cash_open_badge{display:inline-flex;padding:5px 9px;border-radius:999px;color:var(--resto-admin-success);background:var(--resto-admin-success-soft);font-size:.72rem;font-weight:800}
+.tags_resto_cash_kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:13px}
+.tags_resto_cash_kpis article{display:grid;grid-template-columns:auto 1fr;gap:5px 11px;padding:17px;border:1px solid var(--resto-admin-border);border-radius:14px;background:#fff;box-shadow:var(--resto-admin-shadow)}
+.tags_resto_cash_kpis svg{grid-row:span 2;color:var(--resto-admin-neutral);font-size:1.25rem}
+.tags_resto_cash_kpis span{color:var(--resto-admin-text-muted);font-size:.73rem}
+.tags_resto_cash_kpis strong{color:var(--resto-admin-text);font-size:1.05rem}
+.tags_resto_cash_kpis .is-income svg,.tags_resto_cash_kpis .is-cash svg{color:var(--resto-admin-success)}
+.tags_resto_cash_kpis .is-expense svg{color:var(--resto-admin-danger)}
+.tags_resto_cash_kpis .is-net{border-color:#aadbc1;background:var(--resto-admin-primary-soft)}
+.tags_resto_cash_methods{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));padding:14px}
+.tags_resto_cash_methods div{display:flex;flex-direction:column;gap:4px;padding:5px 15px;border-right:1px solid var(--resto-admin-border)}
+.tags_resto_cash_methods div:last-child{border-right:0}
+.tags_resto_cash_methods span{color:var(--resto-admin-text-muted);font-size:.73rem}
+.tags_resto_cash_methods strong{color:var(--resto-admin-text);font-size:.95rem}
+.tags_resto_cash_columns{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.tags_resto_cash_panel{overflow:hidden}
+.tags_resto_cash_panel>header{display:flex;align-items:center;gap:11px;padding:17px 19px;border-bottom:1px solid var(--resto-admin-border);background:#fafbfc}
+.tags_resto_cash_panel>header>svg{color:var(--resto-admin-primary);font-size:1.2rem}
+.tags_resto_cash_form{display:grid;grid-template-columns:1fr 1fr;gap:13px;padding:19px}
+.tags_resto_cash_form .is-full,.tags_resto_cash_form button{grid-column:1/-1}
+.tags_resto_cash_movements,.tags_resto_cash_history{display:flex;flex-direction:column}
+.tags_resto_cash_movements article{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;padding:13px 18px;border-bottom:1px solid var(--resto-admin-border)}
+.tags_resto_cash_movements article:last-child,.tags_resto_cash_history article:last-child{border-bottom:0}
+.tags_resto_cash_movements article>div:first-child{display:flex;align-items:center;justify-content:center;width:35px;height:35px;border-radius:10px}
+.tags_resto_cash_movements article>div:first-child.is-income{color:var(--resto-admin-success);background:var(--resto-admin-success-soft)}
+.tags_resto_cash_movements article>div:first-child.is-expense{color:var(--resto-admin-danger);background:var(--resto-admin-danger-soft)}
+.tags_resto_cash_movements article>div:nth-child(2){display:flex;flex-direction:column;min-width:0}
+.tags_resto_cash_movements span,.tags_resto_cash_movements small,.tags_resto_cash_history span,.tags_resto_cash_history small{color:var(--resto-admin-text-muted);font-size:.75rem}
+.tags_resto_cash_movements>article>strong.is-income{color:var(--resto-admin-success)}
+.tags_resto_cash_movements>article>strong.is-expense{color:var(--resto-admin-danger)}
+.tags_resto_cash_empty{margin:0;padding:28px;color:var(--resto-admin-text-muted);text-align:center}
+.tags_resto_cash_history article{display:grid;grid-template-columns:1fr auto minmax(100px,auto);align-items:center;gap:18px;padding:14px 18px;border-bottom:1px solid var(--resto-admin-border)}
+.tags_resto_cash_history article>div{display:flex;flex-direction:column}
+.tags_resto_cash_history>article>span{padding:5px 9px;border-radius:999px;font-weight:700}
+.tags_resto_cash_history .is-open{color:var(--resto-admin-success);background:var(--resto-admin-success-soft)}
+.tags_resto_cash_history .is-closed{color:var(--resto-admin-neutral);background:var(--resto-admin-neutral-soft)}
+@media(max-width:1050px){.tags_resto_cash_open{grid-template-columns:auto 1fr}.tags_resto_cash_open label,.tags_resto_cash_open button{grid-column:span 1}.tags_resto_cash_kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.tags_resto_cash_methods{grid-template-columns:repeat(2,minmax(0,1fr))}.tags_resto_cash_methods div{border-right:0;border-bottom:1px solid var(--resto-admin-border)}}
+@media(max-width:760px){.tags_resto_cash_columns,.tags_resto_cash_kpis,.tags_resto_cash_methods{grid-template-columns:1fr}.tags_resto_cash_open{grid-template-columns:1fr;align-items:stretch}.tags_resto_cash_open>*{grid-column:auto!important}.tags_resto_cash_shift_header{align-items:flex-start;flex-direction:column}.tags_resto_cash_form{grid-template-columns:1fr}.tags_resto_cash_history article{grid-template-columns:1fr}.tags_resto_cash_movements article{grid-template-columns:auto 1fr}.tags_resto_cash_movements>article>strong{grid-column:2}}

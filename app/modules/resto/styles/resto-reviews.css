@@ -1,0 +1,358 @@
+/* =====================================
+   Archivo:
+   /app/modules/resto/styles/resto-reviews.css
+
+   Descripción:
+   Estilos públicos exclusivos del bloque
+   RestoReviewsBlock.
+===================================== */
+
+.resto_reviews {
+    width: 100%;
+    padding: 56px 0;
+    overflow: hidden;
+}
+
+.resto_reviews_header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 30px;
+}
+
+.resto_reviews_header_content {
+    width: 100%;
+    max-width: 760px;
+}
+
+.resto_reviews_badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 13px;
+    padding: 7px 13px;
+    background: color-mix(
+        in srgb,
+        var(--qr-primary) 12%,
+        transparent
+    );
+    color: var(--qr-primary);
+    border: 1px solid color-mix(
+        in srgb,
+        var(--qr-primary) 22%,
+        transparent
+    );
+    border-radius: 999px;
+    font-size: 0.76rem;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.resto_reviews_header h2 {
+    margin: 0;
+    color: var(--qr-text);
+    font-size: clamp(1.75rem, 4vw, 2.5rem);
+    font-weight: 800;
+    line-height: 1.12;
+}
+
+.resto_reviews_header p {
+    max-width: 680px;
+    margin: 12px 0 0;
+    color: var(--qr-text-muted);
+    font-size: 1rem;
+    line-height: 1.6;
+}
+
+.resto_reviews_navigation {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 10px;
+}
+
+.resto_reviews_navigation button {
+    display: inline-flex;
+    width: 44px;
+    height: 44px;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    background: var(--qr-surface);
+    color: var(--qr-text);
+    border: 1px solid var(--qr-border);
+    border-radius: 50%;
+    cursor: pointer;
+    transition:
+        transform 0.18s ease,
+        background 0.18s ease,
+        border-color 0.18s ease,
+        color 0.18s ease;
+}
+
+.resto_reviews_navigation button:hover {
+    background: var(--qr-primary);
+    color: var(--qr-primary-text);
+    border-color: var(--qr-primary);
+    transform: translateY(-1px);
+}
+
+.resto_reviews_items {
+    width: 100%;
+}
+
+.resto_reviews_items_grid {
+    display: grid;
+    grid-template-columns:
+        repeat(
+            3,
+            minmax(0, 1fr)
+        );
+    gap: 20px;
+}
+
+.resto_reviews_items_slider {
+    display: flex;
+    gap: 20px;
+    overflow-x: auto;
+    padding: 4px 2px 14px;
+    scroll-behavior: smooth;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: thin;
+    scrollbar-color:
+        color-mix(
+            in srgb,
+            var(--qr-primary) 35%,
+            transparent
+        )
+        transparent;
+}
+
+.resto_reviews_items_slider::-webkit-scrollbar {
+    height: 6px;
+}
+
+.resto_reviews_items_slider::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.resto_reviews_items_slider::-webkit-scrollbar-thumb {
+    background: color-mix(
+        in srgb,
+        var(--qr-primary) 35%,
+        transparent
+    );
+    border-radius: 999px;
+}
+
+.resto_review_card {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    padding: 26px;
+    background: var(--qr-surface);
+    color: var(--qr-text);
+    border: 1px solid var(--qr-border);
+    border-radius: var(--qr-radius, 20px);
+    box-shadow: var(--qr-shadow);
+}
+
+.resto_reviews_items_slider .resto_review_card {
+    flex:
+        0 0
+        min(
+            390px,
+            calc(100vw - 48px)
+        );
+    scroll-snap-align: start;
+}
+
+.resto_review_rating {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 20px;
+}
+
+.resto_review_stars {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: color-mix(
+        in srgb,
+        var(--qr-text-muted) 28%,
+        transparent
+    );
+    font-size: 1rem;
+}
+
+.resto_review_stars svg.active {
+    color: var(--qr-primary);
+}
+
+.resto_review_rating_value {
+    color: var(--qr-text-muted);
+    font-size: 0.84rem;
+    font-weight: 700;
+}
+
+.resto_review_card h3 {
+    margin: 0 0 11px;
+    color: var(--qr-text);
+    font-size: 1.1rem;
+    font-weight: 800;
+    line-height: 1.35;
+}
+
+.resto_review_comment {
+    flex: 1;
+    margin: 0;
+    color: var(--qr-text-muted);
+    font-size: 0.96rem;
+    line-height: 1.65;
+    white-space: pre-line;
+}
+
+.resto_review_footer {
+    display: flex;
+    flex-direction: column;
+    gap: 13px;
+    margin-top: 24px;
+    padding-top: 18px;
+    border-top: 1px solid var(--qr-border);
+}
+
+.resto_review_footer > strong {
+    color: var(--qr-text);
+    font-size: 0.9rem;
+    font-weight: 800;
+}
+
+.resto_review_metadata {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 14px;
+}
+
+.resto_review_meta_item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--qr-text-muted);
+    font-size: 0.78rem;
+    line-height: 1.3;
+}
+
+.resto_review_meta_item svg {
+    flex: 0 0 auto;
+    font-size: 0.9rem;
+}
+
+.resto_review_product {
+    width: 100%;
+}
+
+.resto_review_verified {
+    color: var(--qr-primary);
+    font-weight: 700;
+}
+
+.resto_review_metadata small {
+    color: var(--qr-text-muted);
+    font-size: 0.76rem;
+}
+
+.resto_reviews_empty {
+    display: flex;
+    min-height: 180px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 13px;
+    padding: 28px;
+    background: color-mix(
+        in srgb,
+        var(--qr-surface) 72%,
+        transparent
+    );
+    color: var(--qr-text-muted);
+    border: 1px dashed var(--qr-border);
+    border-radius: var(--qr-radius, 20px);
+    text-align: center;
+}
+
+.resto_reviews_empty > svg {
+    color: var(--qr-primary);
+    font-size: 1.65rem;
+    opacity: 0.8;
+}
+
+.resto_reviews_empty p {
+    margin: 0;
+}
+
+@media (max-width: 991px) {
+
+    .resto_reviews_items_grid {
+        grid-template-columns:
+            repeat(
+                2,
+                minmax(0, 1fr)
+            );
+    }
+
+}
+
+@media (max-width: 767px) {
+
+    .resto_reviews {
+        padding: 38px 0;
+    }
+
+    .resto_reviews_header {
+        align-items: center;
+        margin-bottom: 22px;
+    }
+
+    .resto_reviews_header h2 {
+        font-size: 1.75rem;
+    }
+
+    .resto_reviews_navigation {
+        display: none;
+    }
+
+    .resto_reviews_items_grid {
+        grid-template-columns: 1fr;
+    }
+
+    .resto_review_card {
+        padding: 22px 20px;
+        border-radius: 18px;
+    }
+
+    .resto_reviews_items_slider {
+        margin-right: calc(var(--bs-gutter-x, 1.5rem) * -0.5);
+        padding-right: calc(var(--bs-gutter-x, 1.5rem) * 0.5);
+    }
+
+}
+
+@media (max-width: 420px) {
+
+    .resto_reviews_items_slider .resto_review_card {
+        flex-basis: calc(100vw - 38px);
+    }
+
+    .resto_review_metadata {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+}

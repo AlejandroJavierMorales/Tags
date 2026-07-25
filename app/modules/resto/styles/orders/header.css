@@ -1,0 +1,239 @@
+/* =====================================
+   FILE: /app/modules/resto/styles/orders/header.css
+   Descripción:
+   Encabezado del módulo Pedidos de
+   Tags Resto.
+===================================== */
+
+.tags_resto_orders_header {
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 1.5rem;
+
+    flex-wrap: wrap;
+
+    padding: 1.5rem;
+
+    border:
+        1px solid
+        var(--resto-admin-border);
+
+    border-radius:
+        18px;
+
+    background:
+        var(--resto-admin-surface);
+
+    box-shadow:
+        var(--resto-admin-shadow);
+
+}
+
+.tags_resto_orders_header_left {
+
+    display: flex;
+    align-items: center;
+
+    gap: 1rem;
+
+    min-width: 0;
+
+}
+
+.tags_resto_orders_header_identity {
+
+    display: flex;
+    align-items: flex-start;
+
+    gap: 1rem;
+
+    min-width: 0;
+
+}
+
+.tags_resto_orders_header_icon {
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 64px;
+    height: 64px;
+
+    flex-shrink: 0;
+
+    border-radius: 18px;
+
+    background:
+        var(--resto-admin-primary-soft);
+
+    color:
+        var(--resto-admin-primary);
+
+    font-size: 2rem;
+
+}
+
+.tags_resto_orders_header_content {
+
+    display: flex;
+    flex-direction: column;
+
+    gap: .35rem;
+
+    min-width: 0;
+
+}
+
+.tags_resto_orders_header_title {
+
+    margin: 0;
+
+    color:
+        var(--resto-admin-text);
+
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.1;
+
+}
+
+.tags_resto_orders_header_store {
+
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+
+    flex-wrap: wrap;
+
+}
+
+.tags_resto_orders_header_store_name {
+
+    color:
+        var(--resto-admin-text);
+
+    font-weight: 600;
+
+}
+
+.tags_resto_orders_header_separator {
+
+    color:
+        var(--resto-admin-border);
+
+}
+
+.tags_resto_orders_header_session {
+
+    color:
+        var(--resto-admin-text-muted);
+
+    font-size: .9rem;
+
+}
+
+.tags_resto_orders_header_right {
+
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+
+    gap: .75rem;
+
+    flex-wrap: wrap;
+
+}
+
+.tags_resto_orders_header_actions {
+
+    display: flex;
+    align-items: center;
+
+    gap: .75rem;
+
+    flex-wrap: wrap;
+
+}
+
+.tags_resto_orders_header_status {
+
+    display: inline-flex;
+    align-items: center;
+
+    gap: .5rem;
+
+    padding: .55rem .9rem;
+
+    border-radius: 999px;
+
+    font-size: .85rem;
+    font-weight: 600;
+
+    border:
+        1px solid
+        var(--resto-admin-border);
+
+    background:
+        var(--resto-admin-success-soft);
+
+    color:
+        var(--resto-admin-success);
+
+}
+
+.tags_resto_orders_header_status svg {
+
+    font-size: 1rem;
+
+}
+
+.tags_resto_orders_header_refreshing {
+
+    opacity: .7;
+
+    pointer-events: none;
+
+}
+
+.tags_resto_orders_header_info {
+
+    display: flex;
+    align-items: center;
+
+    gap: 1rem;
+
+    flex-wrap: wrap;
+
+}
+
+.tags_resto_orders_header_chip {
+
+    display: inline-flex;
+    align-items: center;
+
+    gap: .45rem;
+
+    padding: .45rem .8rem;
+
+    border-radius: 999px;
+
+    background:
+        var(--resto-admin-primary-soft);
+
+    color:
+        var(--resto-admin-primary);
+
+    font-size: .82rem;
+    font-weight: 600;
+
+}
+
+.tags_resto_orders_header_chip svg {
+
+    font-size: .95rem;
+
+}

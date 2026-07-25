@@ -1,0 +1,249 @@
+/* =====================================
+   FILE: app/modules/resto/styles/resto-products.css
+   Descripción:
+   Administración de productos de
+   Tags Resto.
+===================================== */
+
+.resto_products_email {
+    display: block;
+    margin-top: 6px;
+    color: #cbd5e1;
+    font-size: .82rem;
+}
+
+.resto_products_filters {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    margin: 30px 0;
+    flex-wrap: wrap;
+}
+
+.resto_products_search {
+    flex: 1;
+    min-width: 280px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #fff;
+    border: 1px solid #dfe5ec;
+    border-radius: 14px;
+    padding: 0 18px;
+    height: 52px;
+}
+
+.resto_products_search svg {
+    color: #64748b;
+    font-size: 15px;
+}
+
+.resto_products_search input {
+    border: none;
+    outline: none;
+    width: 100%;
+    background: transparent;
+    font-size: .95rem;
+}
+
+.resto_products_filters select {
+    min-width: 240px;
+    height: 52px;
+    border-radius: 14px;
+    border: 1px solid #dfe5ec;
+    background: #fff;
+    padding: 0 14px;
+}
+
+.resto_products_grid {
+    display: grid;
+    grid-template-columns:
+        repeat(
+            auto-fill,
+            minmax(260px, 1fr)
+        );
+    gap: 22px;
+    align-items: stretch;
+}
+
+.resto_product_card {
+    min-width: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    border-radius: 18px;
+    overflow: hidden;
+    border: 1px solid #e6ebf1;
+    transition:
+        transform .20s ease,
+        box-shadow .20s ease;
+    box-shadow:
+        0 8px 24px
+        rgba(0, 0, 0, .05);
+}
+
+.resto_product_card:hover {
+    transform: translateY(-4px);
+    box-shadow:
+        0 18px 34px
+        rgba(0, 0, 0, .12);
+}
+
+.resto_product_image {
+    width: 100%;
+    height: 220px;
+    flex: 0 0 220px;
+    background: #f5f7fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding: 14px;
+}
+
+.resto_product_image img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center;
+}
+
+.resto_product_image svg {
+    font-size: 58px;
+    color: #b8c1cc;
+}
+
+.resto_product_body {
+    min-width: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+}
+
+.resto_product_header {
+    min-width: 0;
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    align-items: flex-start;
+}
+
+.resto_product_header h3 {
+    min-width: 0;
+    margin: 0;
+    font-size: 1.04rem;
+    line-height: 1.35;
+    font-weight: 700;
+    color: #1f2937;
+    overflow-wrap: anywhere;
+}
+
+.resto_product_price {
+    flex: 0 0 auto;
+    font-size: 1rem;
+    line-height: 1.35;
+    font-weight: 700;
+    color: #198754;
+    white-space: nowrap;
+}
+
+.resto_product_category {
+    min-height: 22px;
+    margin-top: 10px;
+    color: #64748b;
+    font-size: .90rem;
+    line-height: 1.4;
+}
+
+.resto_product_status {
+    min-height: 31px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-top: 16px;
+}
+
+.resto_product_status span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 999px;
+    padding: 6px 11px;
+    font-size: .75rem;
+    line-height: 1;
+    font-weight: 600;
+}
+
+.resto_product_status .visible {
+    background: #ecfdf3;
+    color: #198754;
+}
+
+.resto_product_status .hidden {
+    background: #fff1f2;
+    color: #dc2626;
+}
+
+.resto_product_status .featured {
+    background: #fff8db;
+    color: #b58105;
+}
+
+.resto_product_actions{
+    margin-top:auto;
+    padding-top:22px;
+    display:flex;
+    justify-content:flex-end;
+    gap:10px;
+}
+
+.resto_product_actions .qr_page_btn {
+    min-height: 40px;
+}
+
+@media (max-width: 991px) {
+
+    .resto_products_grid {
+        grid-template-columns:
+            repeat(
+                auto-fill,
+                minmax(240px, 1fr)
+            );
+    }
+
+}
+
+@media (max-width: 576px) {
+
+    .resto_products_filters {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .resto_products_search {
+        min-width: unset;
+    }
+
+    .resto_products_filters select {
+        min-width: unset;
+        width: 100%;
+    }
+
+    .resto_products_grid {
+        grid-template-columns: 1fr;
+    }
+
+    .resto_product_image {
+        height: 240px;
+        flex-basis: 240px;
+    }
+
+    .resto_product_body {
+        padding: 18px;
+    }
+
+}

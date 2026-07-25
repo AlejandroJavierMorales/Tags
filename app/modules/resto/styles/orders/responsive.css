@@ -1,0 +1,333 @@
+/* =====================================
+   FILE: /app/modules/resto/styles/orders/responsive.css
+   Descripción:
+   Adaptaciones responsive del módulo
+   Pedidos de Tags Resto.
+===================================== */
+
+/* =====================================
+   <= 1200px
+===================================== */
+
+@media (max-width:1200px) {
+
+    .tags_resto_orders_filters_grid {
+
+        grid-template-columns:
+            repeat(2, minmax(220px, 1fr));
+
+    }
+
+}
+
+/* =====================================
+   <= 992px
+===================================== */
+
+@media (max-width:992px) {
+
+    .tags_resto_orders_header {
+
+        flex-direction: column;
+        align-items: stretch;
+
+    }
+
+    .tags_resto_orders_header_left,
+    .tags_resto_orders_header_right {
+
+        width: 100%;
+
+    }
+
+    .tags_resto_orders_header_right {
+
+        justify-content: flex-start;
+
+    }
+
+    .tags_resto_orders_stats_grid>.row,
+    .tags_resto_orders_grid>.row {
+
+        --bs-gutter-x: 1rem;
+        --bs-gutter-y: 1rem;
+
+    }
+
+    .tags_resto_orders_filters {
+
+        padding: 1.25rem;
+
+    }
+
+    .tags_resto_orders_filters_grid {
+
+        grid-template-columns: repeat(2, 1fr);
+
+    }
+
+    .tags_resto_order_card {
+
+        padding: 1.20rem;
+
+    }
+
+}
+
+/* =====================================
+   <= 768px
+===================================== */
+
+@media (max-width:768px) {
+
+    .tags_resto_orders_header {
+
+        gap: 1rem;
+
+    }
+
+    .tags_resto_orders_header_left,
+    .tags_resto_orders_header_right {
+
+        flex-direction: column;
+        align-items: stretch;
+
+        gap: .75rem;
+
+    }
+
+    .tags_resto_orders_actions,
+    .tags_resto_btn_group {
+
+        width: 100%;
+
+    }
+
+    .tags_resto_btn_group .tags_resto_btn {
+
+        flex: 1;
+
+    }
+
+    .tags_resto_orders_stats_grid>.row {
+
+        --bs-gutter-x: .9rem;
+        --bs-gutter-y: .9rem;
+
+    }
+
+    .tags_resto_orders_stat_card {
+
+        padding: 1rem;
+
+    }
+
+    .tags_resto_orders_stat_icon {
+
+        width: 56px;
+        height: 56px;
+
+        font-size: 1.55rem;
+
+    }
+
+    .tags_resto_orders_stat_value {
+
+        font-size: 1.60rem;
+
+    }
+
+    .tags_resto_orders_filters {
+
+        padding: 1rem;
+
+    }
+
+    .tags_resto_orders_filters_grid {
+
+        grid-template-columns: 1fr;
+
+    }
+
+    .tags_resto_orders_filters_actions,
+    .tags_resto_orders_filters_footer {
+
+        flex-direction: column;
+        align-items: stretch;
+
+    }
+
+    .tags_resto_orders_filter_chips {
+
+        width: 100%;
+
+    }
+
+    .tags_resto_orders_filter_chip {
+
+        justify-content: center;
+
+    }
+
+    .tags_resto_order_card_header {
+
+        flex-direction: column;
+        align-items: flex-start;
+
+    }
+
+    .tags_resto_order_card_identity {
+
+        width: 100%;
+
+    }
+
+    .tags_resto_order_card_main_icon {
+
+        width: 56px;
+        height: 56px;
+
+        font-size: 1.6rem;
+
+    }
+
+    .tags_resto_order_card_location {
+
+        font-size: 1.20rem;
+
+    }
+
+    .tags_resto_order_card_number,
+    .tags_resto_order_card_total {
+
+        flex-direction: column;
+        align-items: flex-start;
+
+        gap: .45rem;
+
+    }
+
+    .tags_resto_order_card_primary_actions,
+    .tags_resto_order_card_operational_actions {
+
+        flex-direction: column;
+
+    }
+
+    .tags_resto_order_card_primary_actions .tags_resto_btn,
+    .tags_resto_order_card_operational_actions .tags_resto_btn {
+
+        width: 100%;
+
+    }
+
+    .tags_resto_orders_grid_results {
+
+        flex-direction: column;
+        align-items: flex-start;
+
+    }
+
+}
+
+/* =====================================
+   <= 576px
+===================================== */
+
+@media (max-width:576px) {
+
+    .tags_resto_orders_layout {
+
+        gap: 1rem;
+
+    }
+
+    .tags_resto_orders_filters,
+    .tags_resto_order_card,
+    .tags_resto_orders_stat_card {
+
+        border-radius: 16px;
+
+    }
+
+    .tags_resto_order_card {
+
+        padding: .95rem;
+
+    }
+
+    .tags_resto_order_card_identity {
+
+        gap: .75rem;
+
+    }
+
+    .tags_resto_order_card_main_icon {
+
+        width: 50px;
+        height: 50px;
+
+        border-radius: 14px;
+
+        font-size: 1.35rem;
+
+    }
+
+    .tags_resto_order_card_location {
+
+        font-size: 1.05rem;
+
+    }
+
+    .tags_resto_order_card_summary_item {
+
+        align-items: flex-start;
+
+    }
+
+    .tags_resto_order_card_summary_icon {
+
+        width: 38px;
+        height: 38px;
+
+        font-size: .95rem;
+
+    }
+
+    .tags_resto_order_card_total strong {
+
+        font-size: 1.20rem;
+
+    }
+
+    .tags_resto_orders_grid_empty {
+
+        min-height: 240px;
+
+        padding: 2rem 1rem;
+
+    }
+
+    .tags_resto_orders_grid_empty_icon {
+
+        width: 68px;
+        height: 68px;
+
+        font-size: 2rem;
+
+    }
+
+    .tags_resto_orders_grid_empty_title {
+
+        font-size: 1.15rem;
+
+    }
+
+    .tags_resto_badge,
+    .tags_resto_chip {
+
+        font-size: .74rem;
+
+    }
+
+}

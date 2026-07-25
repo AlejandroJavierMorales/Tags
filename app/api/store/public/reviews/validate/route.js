@@ -3,11 +3,17 @@
 //
 // Descripción:
 // Valida una compra real de Tags Tienda
-// y genera un token para calificar
-// la experiencia en Tags Reviews.
+// o Tags Resto y genera un token para
+// calificar la experiencia en Tags Reviews.
+//
+// Compatibilidad:
+// - Si no llega type, conserva el flujo
+//   original de Tags Store.
+// - Si type = "resto", verifica que el
+//   registro pertenezca a Tags Resto.
 //
 // Contexto:
-// store + client_reviews
+// store + resto + client_reviews
 // =====================================
 
 export const runtime =
@@ -23,26 +29,36 @@ import { db }
     from "@/app/lib/tags-db";
 
 function clean(value) {
-    return String(value || "")
-        .trim();
+
+    return String(
+        value || ""
+    ).trim();
+
 }
 
 function normalizeContact(value) {
+
     return clean(value)
         .toLowerCase()
         .replace(/\s+/g, "")
         .replace(/-/g, "")
         .replace(/\(/g, "")
         .replace(/\)/g, "");
+
 }
 
 function createToken() {
+
     return crypto
         .randomBytes(32)
         .toString("hex");
+
 }
 
-async function getPublishedReviewsPageSlug(businessId) {
+async function getPublishedReviewsPageSlug(
+    businessId
+) {
+
     const [rows] =
         await db.query(
             `
@@ -60,27 +76,48 @@ async function getPublishedReviewsPageSlug(businessId) {
         );
 
     return rows?.[0]?.slug || null;
+
 }
 
-function buildReviewUrl(slug, token) {
+function buildReviewUrl(
+    slug,
+    token
+) {
+
     return `/p/${slug}?token=${token}`;
+
 }
 
 export async function POST(req) {
+
     try {
+
         const body =
             await req.json();
 
         const storeId =
             body.storeId;
 
+        const type =
+            clean(
+                body.type
+            ).toLowerCase();
+
+        const isResto =
+            type === "resto";
+
         const orderNumber =
-            clean(body.orderNumber);
+            clean(
+                body.orderNumber
+            );
 
         const contact =
-            normalizeContact(body.contact);
+            normalizeContact(
+                body.contact
+            );
 
         if (!storeId) {
+
             return Response.json(
                 {
                     error:
@@ -90,9 +127,11 @@ export async function POST(req) {
                     status: 400
                 }
             );
+
         }
 
         if (!orderNumber) {
+
             return Response.json(
                 {
                     error:
@@ -102,9 +141,11 @@ export async function POST(req) {
                     status: 400
                 }
             );
+
         }
 
         if (!contact) {
+
             return Response.json(
                 {
                     error:
@@ -114,8 +155,15 @@ export async function POST(req) {
                     status: 400
                 }
             );
+
         }
 
+        const restoCondition =
+            isResto
+                ? `
+                    AND s.app_type = 'resto'
+                `
+                : "";
 
         const [orders] =
             await db.query(
@@ -131,6 +179,7 @@ export async function POST(req) {
                     o.payment_status,
                     o.created_at,
                     s.business_id
+
                 FROM tags_store_orders o
 
                 INNER JOIN tags_stores s
@@ -139,6 +188,9 @@ export async function POST(req) {
                 WHERE o.store_id = ?
                 AND o.order_number = ?
                 AND o.order_status <> 'cancelled'
+
+                ${restoCondition}
+
                 LIMIT 1
                 `,
                 [
@@ -150,38 +202,48 @@ export async function POST(req) {
         const order =
             orders?.[0];
 
-
-
         if (!order) {
+
             return Response.json(
                 {
                     error:
-                        "No encontramos una compra con esos datos."
+                        isResto
+                            ? "No encontramos un pedido del restaurante con esos datos."
+                            : "No encontramos una compra con esos datos."
                 },
                 {
                     status: 404
                 }
             );
+
         }
 
-        /* Valida si ya Existe Reseña para esta compra */
+        /*
+         * Valida si ya existe una reseña
+         * para esta compra o pedido.
+         */
+
         const [alreadyReviewedRows] =
             await db.query(
                 `
-        SELECT id
-        FROM tags_client_review_responses
-        WHERE store_id = ?
-        AND order_id = ?
-        AND verified_purchase = 1
-        LIMIT 1
-        `,
+                SELECT id
+                FROM tags_client_review_responses
+                WHERE store_id = ?
+                AND order_id = ?
+                AND verified_purchase = 1
+                LIMIT 1
+                `,
                 [
                     storeId,
                     order.id
                 ]
             );
 
-        if (alreadyReviewedRows.length > 0) {
+        if (
+            alreadyReviewedRows.length >
+            0
+        ) {
+
             return Response.json(
                 {
                     error:
@@ -191,6 +253,7 @@ export async function POST(req) {
                     status: 409
                 }
             );
+
         }
 
         const email =
@@ -214,14 +277,19 @@ export async function POST(req) {
             ) ||
             (
                 phone &&
-                phone.endsWith(contact)
+                phone.endsWith(
+                    contact
+                )
             ) ||
             (
                 phone &&
-                contact.endsWith(phone)
+                contact.endsWith(
+                    phone
+                )
             );
 
         if (!matchesContact) {
+
             return Response.json(
                 {
                     error:
@@ -231,6 +299,7 @@ export async function POST(req) {
                     status: 403
                 }
             );
+
         }
 
         const reviewSlug =
@@ -239,6 +308,7 @@ export async function POST(req) {
             );
 
         if (!reviewSlug) {
+
             return Response.json(
                 {
                     error:
@@ -248,6 +318,7 @@ export async function POST(req) {
                     status: 404
                 }
             );
+
         }
 
         const [existingTokens] =
@@ -268,29 +339,39 @@ export async function POST(req) {
                 ]
             );
 
-        if (existingTokens.length > 0) {
+        if (
+            existingTokens.length >
+            0
+        ) {
+
             const existingToken =
                 existingTokens[0].token;
 
             return Response.json({
                 ok: true,
                 verified: true,
+
                 token:
                     existingToken,
+
                 reviewUrl:
                     buildReviewUrl(
                         reviewSlug,
                         existingToken
                     ),
+
                 order: {
                     id:
                         order.id,
+
                     order_number:
                         order.order_number,
+
                     customer_name:
                         order.customer_name
                 }
             });
+
         }
 
         const token =
@@ -310,7 +391,19 @@ export async function POST(req) {
                 created_at
             )
             VALUES
-            (?, ?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL 90 DAY), NOW())
+            (
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                DATE_ADD(
+                    NOW(),
+                    INTERVAL 90 DAY
+                ),
+                NOW()
+            )
             `,
             [
                 storeId,
@@ -326,22 +419,27 @@ export async function POST(req) {
             ok: true,
             verified: true,
             token,
+
             reviewUrl:
                 buildReviewUrl(
                     reviewSlug,
                     token
                 ),
+
             order: {
                 id:
                     order.id,
+
                 order_number:
                     order.order_number,
+
                 customer_name:
                     order.customer_name
             }
         });
 
     } catch (err) {
+
         console.error(
             "STORE REVIEW VALIDATE ERROR:",
             err
@@ -356,5 +454,7 @@ export async function POST(req) {
                 status: 500
             }
         );
+
     }
+
 }

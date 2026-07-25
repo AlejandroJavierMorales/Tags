@@ -1,0 +1,559 @@
+/* =====================================
+   FILE: /app/modules/resto/styles/orders/cards.css
+   Descripción:
+   Tarjetas operativas del módulo
+   Pedidos de Tags Resto.
+===================================== */
+
+.tags_resto_order_card {
+
+    position: relative;
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 1.25rem;
+
+    height: 100%;
+
+    padding: 1.35rem;
+
+    overflow: hidden;
+
+    border: 1px solid var(--resto-admin-border);
+    border-radius: 18px;
+
+    background: var(--resto-admin-surface);
+
+    box-shadow: var(--resto-admin-shadow);
+
+    transition:
+        transform .20s ease,
+        box-shadow .20s ease,
+        border-color .20s ease;
+
+}
+
+.tags_resto_order_card:hover {
+
+    transform: translateY(-3px);
+
+    box-shadow: var(--resto-admin-shadow-hover);
+
+}
+
+.tags_resto_order_card::before {
+
+    content: "";
+
+    position: absolute;
+
+    left: 0;
+    top: 0;
+    bottom: 0;
+
+    width: 6px;
+
+    border-radius: 18px 0 0 18px;
+
+    background: var(--resto-admin-primary);
+
+}
+
+/* =====================================
+   HEADER
+===================================== */
+
+.tags_resto_order_card_header {
+
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+
+    gap: 1rem;
+
+}
+
+.tags_resto_order_card_identity {
+
+    display: flex;
+    align-items: center;
+
+    gap: 1rem;
+
+    min-width: 0;
+
+}
+
+.tags_resto_order_card_main_icon {
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 64px;
+    height: 64px;
+
+    flex-shrink: 0;
+
+    border-radius: 18px;
+
+    background: var(--resto-admin-primary-soft);
+
+    color: var(--resto-admin-primary);
+
+    font-size: 2rem;
+
+}
+
+.tags_resto_order_card_identity_content {
+
+    display: flex;
+    flex-direction: column;
+
+    gap: .25rem;
+
+    min-width: 0;
+
+}
+
+.tags_resto_order_card_location_label {
+
+    color: var(--resto-admin-text-muted);
+
+    font-size: .78rem;
+    font-weight: 600;
+
+    text-transform: uppercase;
+
+    letter-spacing: .05em;
+
+}
+
+.tags_resto_order_card_location {
+
+    margin: 0;
+
+    color: var(--resto-admin-text);
+
+    font-size: 1.45rem;
+    font-weight: 700;
+
+}
+
+.tags_resto_order_card_service_mode {
+
+    color: var(--resto-admin-text-muted);
+
+    font-size: .85rem;
+
+}
+
+/* =====================================
+   STATUS
+===================================== */
+
+.tags_resto_order_status {
+
+    display: inline-flex;
+    align-items: center;
+
+    gap: .55rem;
+
+    padding: .55rem .95rem;
+
+    border-radius: 999px;
+
+    font-size: .82rem;
+    font-weight: 700;
+
+    white-space: nowrap;
+
+}
+
+.tags_resto_order_status_new {
+
+    background: var(--resto-admin-primary-soft);
+    color: var(--resto-admin-primary);
+
+}
+
+.tags_resto_order_status_confirmed {
+
+    background: var(--resto-admin-info-soft);
+    color: var(--resto-admin-info);
+
+}
+
+.tags_resto_order_status_preparing {
+
+    background: var(--resto-admin-warning-soft);
+    color: var(--resto-admin-warning);
+
+}
+
+.tags_resto_order_status_ready {
+
+    background: var(--resto-admin-success-soft);
+    color: var(--resto-admin-success);
+
+}
+
+.tags_resto_order_status_shipped,
+.tags_resto_order_status_completed {
+
+    background: var(--resto-admin-success-soft);
+    color: var(--resto-admin-success);
+
+}
+
+.tags_resto_order_status_cancelled {
+
+    background: var(--resto-admin-danger-soft);
+    color: var(--resto-admin-danger);
+
+}
+
+/* =====================================
+   PEDIDO
+===================================== */
+
+.tags_resto_order_card_number {
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    padding-bottom: .9rem;
+
+    border-bottom: 1px solid var(--resto-admin-border);
+
+}
+
+.tags_resto_order_card_number span {
+
+    color: var(--resto-admin-text-muted);
+
+}
+
+.tags_resto_order_card_number strong {
+
+    color: var(--resto-admin-text);
+
+    font-size: 1.15rem;
+
+}
+
+/* =====================================
+   RESUMEN
+===================================== */
+
+.tags_resto_order_card_summary {
+
+    display: flex;
+    flex-direction: column;
+
+    gap: .85rem;
+
+}
+
+.tags_resto_order_card_summary_item {
+
+    display: flex;
+    align-items: center;
+
+    gap: .9rem;
+
+}
+
+.tags_resto_order_card_summary_icon {
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 42px;
+    height: 42px;
+
+    border-radius: 12px;
+
+    background: var(--resto-admin-primary-soft);
+
+    color: var(--resto-admin-primary);
+
+}
+
+.tags_resto_order_card_summary_label {
+
+    display: block;
+
+    color: var(--resto-admin-text-muted);
+
+    font-size: .75rem;
+
+    margin-bottom: .2rem;
+
+}
+
+.tags_resto_order_card_summary strong {
+
+    color: var(--resto-admin-text);
+
+}
+
+/* =====================================
+   TOTAL
+===================================== */
+
+.tags_resto_order_card_total {
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    padding: 1rem;
+
+    border-radius: 16px;
+
+    background: var(--resto-admin-primary-soft);
+
+}
+
+.tags_resto_order_card_total span {
+
+    color: var(--resto-admin-text-muted);
+
+}
+
+.tags_resto_order_card_total strong {
+
+    color: var(--resto-admin-primary);
+
+    font-size: 1.45rem;
+    font-weight: 700;
+
+}
+
+/* =====================================
+   ALERTAS
+===================================== */
+
+.tags_resto_order_card_badges {
+
+    display: flex;
+    flex-wrap: wrap;
+
+    gap: .7rem;
+
+}
+
+.tags_resto_order_alert,
+.tags_resto_order_chip {
+
+    display: inline-flex;
+    align-items: center;
+
+    gap: .6rem;
+
+    padding: .65rem .95rem;
+
+    border-radius: 999px;
+
+    font-size: .8rem;
+    font-weight: 700;
+
+}
+
+.tags_resto_order_chip_payment_pending {
+
+    padding: .75rem 1.05rem;
+
+    background: var(--resto-admin-warning-soft);
+    color: var(--resto-admin-warning);
+
+    border: 1px solid
+        color-mix(
+            in srgb,
+            var(--resto-admin-warning) 35%,
+            transparent
+        );
+
+    font-size: 1.1rem;
+
+}
+
+.tags_resto_order_chip_payment_pending svg {
+
+    font-size: 1.5rem;
+    flex-shrink: 0;
+
+}
+
+.tags_resto_order_chip_payment_paid {
+
+    padding: .75rem 1.05rem;
+
+    background: var(--resto-admin-success-soft);
+    color: var(--resto-admin-success);
+
+    border: 1px solid
+        color-mix(
+            in srgb,
+            var(--resto-admin-success) 35%,
+            transparent
+        );
+
+    font-size: 1.1rem;
+
+}
+
+.tags_resto_order_chip_payment_paid svg {
+
+    font-size: 1rem;
+    flex-shrink: 0;
+
+}
+
+.tags_resto_order_alert_bill {
+
+    background: var(--resto-admin-warning-soft);
+    color: var(--resto-admin-warning);
+
+}
+
+.tags_resto_order_alert_staff {
+
+    background: var(--resto-admin-danger-soft);
+    color: var(--resto-admin-danger);
+
+}
+
+.tags_resto_order_chip_ready {
+
+    background: var(--resto-admin-success-soft);
+    color: var(--resto-admin-success);
+
+}
+
+.tags_resto_order_chip_kitchen {
+
+    background: var(--resto-admin-warning-soft);
+    color: var(--resto-admin-warning);
+
+}
+
+/* =====================================
+   OBSERVACIONES
+===================================== */
+
+.tags_resto_order_card_notes {
+
+    padding: 1rem;
+
+    border-radius: 16px;
+
+    background: var(--resto-admin-neutral-soft);
+
+}
+
+.tags_resto_order_card_notes strong {
+
+    display: block;
+
+    margin-bottom: .5rem;
+
+    color: var(--resto-admin-text);
+
+}
+
+.tags_resto_order_card_notes p {
+
+    margin: 0;
+
+    color: var(--resto-admin-text-muted);
+
+    line-height: 1.6;
+
+}
+
+/* =====================================
+   FOOTER
+===================================== */
+
+.tags_resto_order_card_footer {
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 1rem;
+
+    margin-top: auto;
+
+    padding-top: 1rem;
+
+    border-top: 1px solid var(--resto-admin-border);
+
+}
+
+.tags_resto_order_card_primary_actions,
+.tags_resto_order_card_operational_actions {
+
+    display: flex;
+    flex-wrap: wrap;
+
+    gap: .75rem;
+
+}
+
+.tags_resto_order_card_created {
+
+    display: flex;
+    align-items: center;
+
+    gap: .55rem;
+
+    color: var(--resto-admin-text-muted);
+
+    font-size: .82rem;
+
+}
+
+/* =====================================
+   PRIORIDADES
+===================================== */
+
+.tags_resto_order_card_bill_requested {
+
+    border-color: var(--resto-admin-warning);
+
+}
+
+.tags_resto_order_card_bill_requested::before {
+
+    background: var(--resto-admin-warning);
+
+}
+
+.tags_resto_order_card_staff_requested {
+
+    border-color: var(--resto-admin-danger);
+
+}
+
+.tags_resto_order_card_staff_requested::before {
+
+    background: var(--resto-admin-danger);
+
+}
+
+.tags_resto_order_card_ready {
+
+    border-color: var(--resto-admin-success);
+
+}
+
+.tags_resto_order_card_ready::before {
+
+    background: var(--resto-admin-success);
+
+}

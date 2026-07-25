@@ -1,0 +1,314 @@
+/* =====================================
+   FILE: /app/modules/resto/styles/orders/stats.css
+   Descripción:
+   Tarjetas de estadísticas del módulo
+   Pedidos de Tags Resto.
+===================================== */
+
+.tags_resto_orders_stats {
+
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+
+}
+
+.tags_resto_orders_stats_grid {
+
+    width: 100%;
+
+}
+
+.tags_resto_orders_stats_grid>.row {
+
+    --bs-gutter-x: 1.25rem;
+    --bs-gutter-y: 1.25rem;
+
+}
+
+.tags_resto_orders_stat_card {
+
+    position: relative;
+    overflow: hidden;
+
+    display: flex;
+    align-items: center;
+
+    gap: 1rem;
+
+    height: 100%;
+
+    padding: 1.25rem;
+
+    border:
+        1px solid var(--resto-admin-border);
+
+    border-radius:
+        18px;
+
+    background:
+        var(--resto-admin-surface);
+
+    box-shadow:
+        var(--resto-admin-shadow);
+
+    transition:
+        transform .20s ease,
+        box-shadow .20s ease,
+        border-color .20s ease;
+
+}
+
+.tags_resto_orders_stat_card:hover {
+
+    transform:
+        translateY(-2px);
+
+    box-shadow:
+        var(--resto-admin-shadow-hover);
+
+}
+
+.tags_resto_orders_stat_icon {
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 68px;
+    height: 68px;
+
+    flex-shrink: 0;
+
+    border-radius:
+        18px;
+
+    font-size:
+        1.9rem;
+
+}
+
+.tags_resto_orders_stat_content {
+
+    display: flex;
+    flex-direction: column;
+
+    min-width: 0;
+
+    flex: 1;
+
+    gap: .35rem;
+
+}
+
+.tags_resto_orders_stat_title {
+
+    margin: 0;
+
+    color:
+        var(--resto-admin-text-muted);
+
+    font-size:
+        .88rem;
+
+    font-weight:
+        600;
+
+}
+
+.tags_resto_orders_stat_value {
+
+    margin: 0;
+
+    color:
+        var(--resto-admin-text);
+
+    font-size:
+        2rem;
+
+    font-weight:
+        700;
+
+    line-height:
+        1;
+
+}
+
+.tags_resto_orders_stat_description {
+
+    margin: 0;
+
+    color:
+        var(--resto-admin-text-muted);
+
+    font-size:
+        .82rem;
+
+    line-height:
+        1.45;
+
+}
+
+/* =====================================
+   PRIMARY
+===================================== */
+
+.tags_resto_orders_stat_primary {
+
+    border-color:
+        var(--resto-admin-primary);
+
+}
+
+.tags_resto_orders_stat_primary .tags_resto_orders_stat_icon {
+
+    color:
+        var(--resto-admin-primary);
+
+    background:
+        var(--resto-admin-primary-soft);
+
+}
+
+/* =====================================
+   SUCCESS
+===================================== */
+
+.tags_resto_orders_stat_success {
+
+    border-color:
+        var(--resto-admin-success);
+
+}
+
+.tags_resto_orders_stat_success .tags_resto_orders_stat_icon {
+
+    color:
+        var(--resto-admin-success);
+
+    background:
+        var(--resto-admin-success-soft);
+
+}
+
+/* =====================================
+   WARNING
+===================================== */
+
+.tags_resto_orders_stat_warning {
+
+    border-color:
+        var(--resto-admin-warning);
+
+}
+
+.tags_resto_orders_stat_warning .tags_resto_orders_stat_icon {
+
+    color:
+        var(--resto-admin-warning);
+
+    background:
+        var(--resto-admin-warning-soft);
+
+}
+
+/* =====================================
+   DANGER
+===================================== */
+
+.tags_resto_orders_stat_danger {
+
+    border-color:
+        var(--resto-admin-danger);
+
+}
+
+.tags_resto_orders_stat_danger .tags_resto_orders_stat_icon {
+
+    color:
+        var(--resto-admin-danger);
+
+    background:
+        var(--resto-admin-danger-soft);
+
+}
+
+/* =====================================
+   NEUTRAL
+===================================== */
+
+.tags_resto_orders_stat_neutral {
+
+    border-color:
+        var(--resto-admin-border-strong);
+
+}
+
+.tags_resto_orders_stat_neutral .tags_resto_orders_stat_icon {
+
+    color:
+        var(--resto-admin-neutral);
+
+    background:
+        var(--resto-admin-neutral-soft);
+
+}
+
+/* =====================================
+   DESTACADO
+===================================== */
+
+.tags_resto_orders_stat_card::after {
+
+    content: "";
+
+    position: absolute;
+
+    left: 0;
+    top: 0;
+    bottom: 0;
+
+    width: 6px;
+
+    border-radius:
+        18px 0 0 18px;
+
+    background:
+        transparent;
+
+}
+
+.tags_resto_orders_stat_primary::after {
+
+    background:
+        var(--resto-admin-primary);
+
+}
+
+.tags_resto_orders_stat_success::after {
+
+    background:
+        var(--resto-admin-success);
+
+}
+
+.tags_resto_orders_stat_warning::after {
+
+    background:
+        var(--resto-admin-warning);
+
+}
+
+.tags_resto_orders_stat_danger::after {
+
+    background:
+        var(--resto-admin-danger);
+
+}
+
+.tags_resto_orders_stat_neutral::after {
+
+    background:
+        var(--resto-admin-neutral);
+
+}

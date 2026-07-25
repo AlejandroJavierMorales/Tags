@@ -1,0 +1,131 @@
+/* =====================================
+   FILE: app/modules/resto/styles/resto-category-editor.css
+   Descripción:
+   Editor de categorías de Tags Resto.
+===================================== */
+
+.resto_category_editor{
+
+    width:100%;
+
+}
+
+.resto_category_editor .qr_page_card{
+
+    margin-top:24px;
+
+}
+
+.resto_category_editor_section{
+
+    margin-bottom:34px;
+
+}
+
+.resto_category_editor_section:last-child{
+
+    margin-bottom:0;
+
+}
+
+.resto_category_editor_title{
+
+    margin:0 0 18px;
+
+    font-size:1.08rem;
+
+    font-weight:700;
+
+    color:#1f2937;
+
+}
+
+.resto_category_editor_subtitle{
+
+    margin:-10px 0 22px;
+
+    color:#64748b;
+
+    font-size:.90rem;
+
+}
+
+.resto_category_editor_grid{
+
+    display:grid;
+
+    grid-template-columns:
+        repeat(
+            2,
+            minmax(220px,1fr)
+        );
+
+    gap:20px;
+
+}
+
+.resto_category_editor_grid .full{
+
+    grid-column:1 / -1;
+
+}
+
+.resto_category_editor_switch{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
+    margin-top:8px;
+
+}
+
+.resto_category_editor_switch input{
+
+    width:18px;
+
+    height:18px;
+
+}
+
+.resto_category_editor_footer{
+
+    margin-top:30px;
+
+    display:flex;
+
+    justify-content:flex-end;
+
+    gap:12px;
+
+}
+
+.resto_category_editor_footer .qr_page_btn{
+
+    min-width:170px;
+
+}
+
+@media(max-width:768px){
+
+    .resto_category_editor_grid{
+
+        grid-template-columns:1fr;
+
+    }
+
+    .resto_category_editor_footer{
+
+        flex-direction:column;
+
+    }
+
+    .resto_category_editor_footer .qr_page_btn{
+
+        width:100%;
+
+    }
+
+}

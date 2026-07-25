@@ -1,0 +1,417 @@
+/* =====================================
+   FILE: /app/modules/resto/styles/orders/buttons.css
+   Descripción:
+   Botones operativos reutilizables para
+   el módulo Pedidos de Tags Resto.
+===================================== */
+
+.tags_resto_btn {
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: .60rem;
+
+    min-height: 42px;
+
+    padding: .70rem 1.10rem;
+
+    border: 1px solid transparent;
+    border-radius: 16px;
+
+    background: transparent;
+
+    color: var(--resto-admin-text);
+
+    font-size: .90rem;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+        background .20s ease,
+        color .20s ease,
+        border-color .20s ease,
+        transform .20s ease,
+        box-shadow .20s ease;
+
+    text-decoration: none;
+
+    white-space: nowrap;
+
+}
+
+.tags_resto_btn:hover {
+
+    transform: translateY(-1px);
+
+    text-decoration: none;
+
+}
+
+.tags_resto_btn:disabled {
+
+    opacity: .45;
+
+    cursor: not-allowed;
+
+    transform: none;
+
+    box-shadow: none;
+
+}
+
+/* =====================================
+   TAMAÑOS
+===================================== */
+
+.tags_resto_btn_sm {
+
+    min-height: 34px;
+
+    padding: .45rem .80rem;
+
+    font-size: .78rem;
+
+}
+
+.tags_resto_btn_md {
+
+    min-height: 42px;
+
+}
+
+.tags_resto_btn_lg {
+
+    min-height: 48px;
+
+    padding: .85rem 1.40rem;
+
+    font-size: .95rem;
+
+}
+
+/* =====================================
+   FULL
+===================================== */
+
+.tags_resto_btn_block {
+
+    width: 100%;
+
+}
+
+/* =====================================
+   PRIMARY
+===================================== */
+
+.tags_resto_btn_primary {
+
+    background: var(--resto-admin-primary);
+
+    border-color: var(--resto-admin-primary);
+
+    color: var(--resto-admin-text-on-primary);
+
+}
+
+.tags_resto_btn_primary:hover {
+
+    background: var(--resto-admin-primary-hover);
+
+    border-color: var(--resto-admin-primary-hover);
+
+    color: var(--resto-admin-text-on-primary);
+
+}
+
+/* =====================================
+   SECONDARY
+===================================== */
+
+.tags_resto_btn_secondary {
+
+    background: var(--resto-admin-surface);
+
+    border-color: var(--resto-admin-border);
+
+    color: var(--resto-admin-text);
+
+}
+
+.tags_resto_btn_secondary:hover {
+
+    border-color: var(--resto-admin-primary);
+
+    background: var(--resto-admin-primary-soft);
+
+    color: var(--resto-admin-primary);
+
+}
+
+/* =====================================
+   SUCCESS
+===================================== */
+
+.tags_resto_btn_success {
+
+    background: var(--resto-admin-success);
+
+    border-color: var(--resto-admin-success);
+
+    color: #fff;
+
+}
+
+.tags_resto_btn_success:hover {
+
+    filter: brightness(.94);
+
+}
+
+/* =====================================
+   WARNING
+===================================== */
+
+.tags_resto_btn_warning {
+
+    background: var(--resto-admin-warning);
+
+    border-color: var(--resto-admin-warning);
+
+    color: #fff;
+
+}
+
+.tags_resto_btn_warning:hover {
+
+    filter: brightness(.94);
+
+}
+
+/* =====================================
+   DANGER
+===================================== */
+
+.tags_resto_btn_danger {
+
+    background: var(--resto-admin-danger);
+
+    border-color: var(--resto-admin-danger);
+
+    color: #fff;
+
+}
+
+.tags_resto_btn_danger:hover {
+
+    filter: brightness(.94);
+
+}
+
+/* =====================================
+   INFO
+===================================== */
+
+.tags_resto_btn_info {
+
+    background: var(--resto-admin-info);
+
+    border-color: var(--resto-admin-info);
+
+    color: #fff;
+
+}
+
+.tags_resto_btn_info:hover {
+
+    filter: brightness(.94);
+
+}
+
+/* =====================================
+   GHOST
+===================================== */
+
+.tags_resto_btn_ghost {
+
+    background: transparent;
+
+    border-color: transparent;
+
+    color: var(--resto-admin-text-muted);
+
+}
+
+.tags_resto_btn_ghost:hover {
+
+    background: var(--resto-admin-primary-soft);
+
+    color: var(--resto-admin-primary);
+
+}
+
+/* =====================================
+   OUTLINE
+===================================== */
+
+.tags_resto_btn_outline {
+
+    background: transparent;
+
+    border-color: var(--resto-admin-border);
+
+    color: var(--resto-admin-text);
+
+}
+
+.tags_resto_btn_outline:hover {
+
+    border-color: var(--resto-admin-primary);
+
+    background: var(--resto-admin-primary-soft);
+
+    color: var(--resto-admin-primary);
+
+}
+
+/* =====================================
+   GRUPOS
+===================================== */
+
+.tags_resto_btn_group {
+
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+
+    gap: .75rem;
+
+}
+
+.tags_resto_btn_group_end {
+
+    justify-content: flex-end;
+
+}
+
+.tags_resto_btn_group_between {
+
+    justify-content: space-between;
+
+}
+
+/* =====================================
+   ACCIONES OPERATIVAS
+===================================== */
+
+.tags_resto_btn_call {
+
+    background: var(--resto-admin-danger-soft);
+
+    border-color: var(--resto-admin-danger);
+
+    color: var(--resto-admin-danger);
+
+}
+
+.tags_resto_btn_call:hover {
+
+    background: var(--resto-admin-danger);
+
+    border-color: var(--resto-admin-danger);
+
+    color: #fff;
+
+}
+
+.tags_resto_btn_bill {
+
+    background: var(--resto-admin-warning-soft);
+
+    border-color: var(--resto-admin-warning);
+
+    color: var(--resto-admin-warning);
+
+}
+
+.tags_resto_btn_bill:hover {
+
+    background: var(--resto-admin-warning);
+
+    border-color: var(--resto-admin-warning);
+
+    color: #fff;
+
+}
+
+.tags_resto_btn_kitchen {
+
+    background: var(--resto-admin-info-soft);
+
+    border-color: var(--resto-admin-info);
+
+    color: var(--resto-admin-info);
+
+}
+
+.tags_resto_btn_kitchen:hover {
+
+    background: var(--resto-admin-info);
+
+    border-color: var(--resto-admin-info);
+
+    color: #fff;
+
+}
+
+.tags_resto_btn_ready {
+
+    background: var(--resto-admin-success-soft);
+
+    border-color: var(--resto-admin-success);
+
+    color: var(--resto-admin-success);
+
+}
+
+.tags_resto_btn_ready:hover {
+
+    background: var(--resto-admin-success);
+
+    border-color: var(--resto-admin-success);
+
+    color: #fff;
+
+}
+
+.tags_resto_btn_pay {
+
+    background: var(--resto-admin-primary);
+
+    border-color: var(--resto-admin-primary);
+
+    color: var(--resto-admin-text-on-primary);
+
+}
+
+.tags_resto_btn_pay:hover {
+
+    background: var(--resto-admin-primary-hover);
+
+    border-color: var(--resto-admin-primary-hover);
+
+}
+
+/* =====================================
+   ICONOS
+===================================== */
+
+.tags_resto_btn svg {
+
+    font-size: 1rem;
+
+    flex-shrink: 0;
+
+}

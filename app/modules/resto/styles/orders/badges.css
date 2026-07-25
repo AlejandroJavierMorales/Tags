@@ -1,0 +1,280 @@
+/* =====================================
+   FILE: /app/modules/resto/styles/orders/badges.css
+   Descripción:
+   Badges, chips y etiquetas reutilizables
+   del módulo Pedidos de Tags Resto.
+===================================== */
+
+.tags_resto_badge,
+.tags_resto_chip {
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: .45rem;
+
+    min-height: 34px;
+
+    padding: .45rem .85rem;
+
+    border-radius: 999px;
+
+    border: 1px solid transparent;
+
+    font-size: .80rem;
+    font-weight: 700;
+    line-height: 1;
+
+    white-space: nowrap;
+
+}
+
+.tags_resto_badge svg,
+.tags_resto_chip svg {
+
+    font-size: .95rem;
+
+}
+
+/* =====================================
+   PRIMARY
+===================================== */
+
+.tags_resto_badge_primary,
+.tags_resto_chip_primary {
+
+    color:
+        var(--resto-admin-primary);
+
+    border-color:
+        var(--resto-admin-primary);
+
+    background:
+        var(--resto-admin-primary-soft);
+
+}
+
+/* =====================================
+   SUCCESS
+===================================== */
+
+.tags_resto_badge_success,
+.tags_resto_chip_success {
+
+    color:
+        var(--resto-admin-success);
+
+    border-color:
+        var(--resto-admin-success);
+
+    background:
+        var(--resto-admin-success-soft);
+
+}
+
+/* =====================================
+   WARNING
+===================================== */
+
+.tags_resto_badge_warning,
+.tags_resto_chip_warning {
+
+    color:
+        var(--resto-admin-warning);
+
+    border-color:
+        var(--resto-admin-warning);
+
+    background:
+        var(--resto-admin-warning-soft);
+
+}
+
+/* =====================================
+   DANGER
+===================================== */
+
+.tags_resto_badge_danger,
+.tags_resto_chip_danger {
+
+    color:
+        var(--resto-admin-danger);
+
+    border-color:
+        var(--resto-admin-danger);
+
+    background:
+        var(--resto-admin-danger-soft);
+
+}
+
+/* =====================================
+   INFO
+===================================== */
+
+.tags_resto_badge_info,
+.tags_resto_chip_info {
+
+    color:
+        var(--resto-admin-info);
+
+    border-color:
+        var(--resto-admin-info);
+
+    background:
+        var(--resto-admin-info-soft);
+
+}
+
+/* =====================================
+   NEUTRAL
+===================================== */
+
+.tags_resto_badge_neutral,
+.tags_resto_chip_neutral {
+
+    color:
+        var(--resto-admin-text);
+
+    border-color:
+        var(--resto-admin-border);
+
+    background:
+        var(--resto-admin-neutral-soft);
+
+}
+
+/* =====================================
+   PRIORIDADES OPERATIVAS
+===================================== */
+
+.tags_resto_priority_staff {
+
+    color:
+        var(--resto-admin-danger);
+
+    border-color:
+        var(--resto-admin-danger);
+
+    background:
+        var(--resto-admin-danger-soft);
+
+}
+
+.tags_resto_priority_bill {
+
+    color:
+        var(--resto-admin-warning);
+
+    border-color:
+        var(--resto-admin-warning);
+
+    background:
+        var(--resto-admin-warning-soft);
+
+}
+
+.tags_resto_priority_kitchen {
+
+    color:
+        var(--resto-admin-warning);
+
+    border-color:
+        var(--resto-admin-warning);
+
+    background:
+        var(--resto-admin-warning-soft);
+
+}
+
+.tags_resto_priority_ready {
+
+    color:
+        var(--resto-admin-success);
+
+    border-color:
+        var(--resto-admin-success);
+
+    background:
+        var(--resto-admin-success-soft);
+
+}
+
+/* =====================================
+   MODALIDAD
+===================================== */
+
+.tags_resto_mode_table {
+
+    color:
+        var(--resto-admin-primary);
+
+}
+
+.tags_resto_mode_takeaway {
+
+    color:
+        var(--resto-admin-warning);
+
+}
+
+.tags_resto_mode_delivery {
+
+    color:
+        var(--resto-admin-success);
+
+}
+
+/* =====================================
+   PAGO
+===================================== */
+
+.tags_resto_payment_pending {
+
+    color:
+        var(--resto-admin-warning);
+
+}
+
+.tags_resto_payment_paid {
+
+    color:
+        var(--resto-admin-success);
+
+}
+
+.tags_resto_payment_cancelled,
+.tags_resto_payment_refunded {
+
+    color:
+        var(--resto-admin-danger);
+
+}
+
+/* =====================================
+   MESA
+===================================== */
+
+.tags_resto_table_badge {
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-width: 64px;
+
+    padding: .5rem .85rem;
+
+    border-radius: 999px;
+
+    background:
+        var(--resto-admin-primary);
+
+    color:
+        var(--resto-admin-text-on-primary);
+
+    font-size: .9rem;
+    font-weight: 700;
+
+}

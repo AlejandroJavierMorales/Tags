@@ -78,6 +78,10 @@ export default function RestoReviewsCTA({
     styles = {}
 }) {
 
+    if (!entity?.has_reviews) {
+        return null;
+    }
+
     const finalContent =
         Object.keys(
             content || {}
@@ -286,14 +290,6 @@ export default function RestoReviewsCTA({
         finalStyles.starColor ||
         "var(--qr-primary)";
 
-/*     if (!entity?.has_reviews) {
-        return null;
-    } */
-   console.log(
-    "RESTO REVIEWS CTA ENTITY:",
-    entity
-);
-
     function updateField(
         field,
         value
@@ -326,7 +322,7 @@ export default function RestoReviewsCTA({
 
             const response =
                 await fetch(
-                    "/api/store/public/reviews/validate",
+                    "/api/resto/public/reviews/validate",
                     {
                         method:
                             "POST",

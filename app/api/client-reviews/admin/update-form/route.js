@@ -187,6 +187,21 @@ export async function POST(req) {
             ]
         );
 
+        await db.query(
+            `
+            UPDATE tags_qr_pages p
+            INNER JOIN tags_client_review_forms f
+                ON f.page_id = p.id
+            SET p.global_styles =
+                ${finalThemeId
+                    ? "JSON_SET(COALESCE(p.global_styles, JSON_OBJECT()), '$.theme_override', true)"
+                    : "JSON_REMOVE(COALESCE(p.global_styles, JSON_OBJECT()), '$.theme_override')"}
+            WHERE f.id = ?
+            AND f.business_id = ?
+            `,
+            [formId, businessId]
+        );
+
         return Response.json({
             ok: true
         });

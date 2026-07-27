@@ -12,6 +12,7 @@ import {
     db
 } from "@/app/lib/tags-db";
 import { getRestoAccess, restoAccessResponse } from "@/app/modules/resto/lib/staff/getRestoAccess";
+import { logRestoAudit } from "@/app/modules/resto/lib/staff/restoAudit";
 
 function clean(value) {
 
@@ -184,10 +185,36 @@ export async function POST(req) {
                     item.session_id
                 ]
             );
-                    const pending =
+        const pending =
             Number(
                 pendingRows?.[0]?.total || 0
             );
+
+        await logRestoAudit(
+            connection,
+            {
+                storeId:
+                    store.id,
+                access,
+                actionCode:
+                    "kitchen.item.ready",
+                entityType:
+                    "session_item",
+                entityId:
+                    item.id,
+                description:
+                    "Producto marcado como listo",
+                metadata: {
+                    sessionId:
+                        item.session_id,
+                    previousStatus:
+                        item.preparation_status,
+                    pendingItems:
+                        pending
+                },
+                req
+            }
+        );
 
         /* if (pending === 0) {
 

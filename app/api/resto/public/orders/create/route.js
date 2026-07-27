@@ -17,6 +17,9 @@ import crypto from "crypto";
 import {
     db
 } from "@/app/lib/tags-db";
+import {
+    getRestoProductAvailability
+} from "@/app/modules/resto/lib/products/restoProductAvailability";
 
 function createToken() {
 
@@ -343,12 +346,45 @@ export async function POST(req) {
                     location.qr_code_id ||
                     null;
 
-                orderRules =
+                const tableSettings =
                     parseSettings(
                         location
                             .store_settings_json
-                    )?.resto_order_rules ||
+                    );
+
+                orderRules =
+                    tableSettings
+                        ?.resto_order_rules ||
                     {};
+
+                const tableModeSetting =
+                    tableSettings
+                        ?.serviceModes
+                        ?.table;
+
+                const tableModeEnabled =
+                    tableModeSetting ===
+                        undefined
+                        ? true
+                        : settingEnabled(
+                            tableModeSetting
+                        );
+
+                if (!tableModeEnabled) {
+
+                    await conn.rollback();
+
+                    return Response.json(
+                        {
+                            error:
+                                "El consumo en el lugar no está habilitado."
+                        },
+                        {
+                            status: 400
+                        }
+                    );
+
+                }
 
                 const [activeTableRows] =
                     await conn.query(
@@ -821,6 +857,25 @@ export async function POST(req) {
 
             }
 
+            if (
+                !getRestoProductAvailability(
+                    product
+                ).isAvailable
+            ) {
+                await conn.rollback();
+
+                return Response.json(
+                    {
+                        error:
+                            `"${product.title}" está agotado por el momento`
+                    },
+                    {
+                        status:
+                            409
+                    }
+                );
+            }
+
             let variant =
                 null;
 
@@ -912,12 +967,6 @@ export async function POST(req) {
                 )
                     ? "ready"
                     : "pending";
-
-            console.log({
-                product: product.title,
-                product_requires_preparation: product.requires_preparation,
-                calculated_requires_preparation: requiresPreparation
-            });
 
             const optionsJson =
                 JSON.stringify(
@@ -1120,7 +1169,13 @@ RECALCULAR TOTALES DE LA SESIÓN
                 totalRows[0].subtotal
             );
 
-        discountTotal = 0;
+        discountTotal =
+            Math.min(
+                subtotal,
+                money(
+                    session.discount_total
+                )
+            );
 
         const total =
             money(

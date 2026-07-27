@@ -27,6 +27,8 @@ import {
     FaFire,
     FaHome,
     FaPen,
+    FaPrint,
+    FaReceipt,
     FaTimes,
     FaUtensils
 } from "react-icons/fa";
@@ -53,6 +55,9 @@ import {
 import {
     requestRestoPayment
 } from "@/app/modules/resto/lib/cash/requestRestoPayment";
+
+import RestoOrderMessages
+    from "@/app/modules/resto/components/admin/orders/RestoOrderMessages";
 
 import "@/app/styles/qr-page.css";
 import "@/app/styles/tags_dashboard.css";
@@ -142,6 +147,16 @@ export default function RestoOrderDetailPageClient({
             permissions.includes(
                 permission
             );
+
+    function printOrder(
+        documentType
+    ) {
+        window.open(
+            `/dashboard/businesses/${businessId}/resto/orders/${orderId}/print?document=${documentType}`,
+            "_blank",
+            "noopener,noreferrer"
+        );
+    }
 
     const searchParams =
         useSearchParams();
@@ -396,7 +411,11 @@ export default function RestoOrderDetailPageClient({
                         Array.isArray(
                             data?.products
                         )
-                            ? data.products
+                            ? data.products.filter(
+                                product =>
+                                    product.is_available !==
+                                    false
+                            )
                             : []
                     );
 
@@ -1022,6 +1041,48 @@ export default function RestoOrderDetailPageClient({
 
     }
 
+    async function deliverItem(
+        item
+    ) {
+
+        const confirmed =
+            await showAlert({
+                icon:
+                    "question",
+                title:
+                    "Entregar producto",
+                text:
+                    `¿Confirmás la entrega de "${item.title}"?`,
+                showCancelButton:
+                    true,
+                confirmButtonText:
+                    "Sí, entregar",
+                cancelButtonText:
+                    "Volver"
+            });
+
+        if (!confirmed) {
+
+            return;
+
+        }
+
+        await postAction(
+            "/api/resto/admin/waiter",
+            {
+                businessId,
+                orderId:
+                    order.id,
+                itemId:
+                    item.id,
+                action:
+                    "serve_item"
+            },
+            "El producto fue marcado como entregado."
+        );
+
+    }
+
     async function closeSession() {
 
         const confirmed =
@@ -1056,6 +1117,25 @@ export default function RestoOrderDetailPageClient({
                     "close_session"
             },
             "La sesión fue cerrada y pasó al historial."
+        );
+
+    }
+
+    async function resolveServiceRequest(
+        action
+    ) {
+
+        await postAction(
+            "/api/resto/admin/waiter",
+            {
+                businessId,
+                orderId:
+                    order.id,
+                action
+            },
+            action === "resolve_call"
+                ? "El llamado al personal fue atendido."
+                : "La solicitud de cuenta fue atendida."
         );
 
     }
@@ -1121,6 +1201,40 @@ export default function RestoOrderDetailPageClient({
                         </span>
 
                         {
+                            (
+                                can("waiter.serve") ||
+                                can("orders.deliver")
+                            ) &&
+                            !isClosed &&
+                            (
+                                item.preparation_status ===
+                                    "ready" ||
+                                (
+                                    Number(
+                                        item.requires_preparation
+                                    ) === 0 &&
+                                    item.preparation_status ===
+                                        "pending"
+                                )
+                            ) && (
+                                <button
+                                    type="button"
+                                    className="tags_resto_btn tags_resto_btn_success tags_resto_btn_sm"
+                                    disabled={updating}
+                                    onClick={() =>
+                                        deliverItem(
+                                            item
+                                        )
+                                    }
+                                    title="Marcar producto como entregado"
+                                >
+                                    <FaCheck />
+                                    Entregar
+                                </button>
+                            )
+                        }
+
+                        {
                             item.preparation_status ===
                                 "sent" &&
                             can("kitchen.ready") &&
@@ -1144,6 +1258,7 @@ export default function RestoOrderDetailPageClient({
 
                         {
                             editMode &&
+                            !isPaid &&
                             can("orders.items") &&
                             canRemoveItem(
                                 item
@@ -1264,6 +1379,10 @@ export default function RestoOrderDetailPageClient({
             order.session_status
         );
 
+    const isPaid =
+        order.payment_status ===
+        "paid";
+
     const pendingKitchenItems =
         (
             Array.isArray(
@@ -1278,6 +1397,22 @@ export default function RestoOrderDetailPageClient({
                 ) === 1 &&
                 item.preparation_status ===
                 "pending"
+        );
+
+    const hasSentKitchenItems =
+        (
+            Array.isArray(
+                order.items
+            )
+                ? order.items
+                : []
+        ).some(
+            item =>
+                Number(
+                    item.requires_preparation
+                ) === 1 &&
+                item.preparation_status ===
+                "sent"
         );
 
     const hasBlockingItems =
@@ -1322,38 +1457,99 @@ export default function RestoOrderDetailPageClient({
         safeNumber(
             order.pending_amount
         ) <= 0 &&
-        !hasBlockingItems;
+        !hasBlockingItems &&
+        !order.bill_requested &&
+        !order.staff_requested;
+
+    const billRequested =
+        Boolean(
+            order.bill_requested_at &&
+            [
+                "pending",
+                "acknowledged"
+            ].includes(
+                order.bill_request_status
+            )
+        );
+
+    const staffRequested =
+        Boolean(
+            order.staff_requested_at &&
+            [
+                "pending",
+                "acknowledged"
+            ].includes(
+                order.staff_request_status
+            )
+        );
 
     return (
         <main className="container py-4 pb-5 mb-5">
 
-            <div className="tags_resto_btn_group mb-4">
-                <button
-                    type="button"
-                    className="tags_resto_btn tags_resto_btn_secondary"
-                    onClick={() =>
-                        router.push(
-                            `/dashboard/businesses/${businessId}/resto`
-                        )
-                    }
-                >
-                    <FaHome />
-                    Inicio
-                </button>
+            <header className="tags_resto_orders_header mb-4">
+                <div className="tags_resto_orders_header_left">
+                    <div className="tags_resto_orders_header_identity">
+                        <div className="tags_resto_orders_header_icon">
+                            <FaReceipt />
+                        </div>
+                        <div className="tags_resto_orders_header_content">
+                            <span className="tags_resto_orders_header_eyebrow">
+                                Tags Resto
+                            </span>
+                            <h1>Detalle del pedido</h1>
+                            <p>
+                                Gestión operativa e información completa.
+                            </p>
+                        </div>
+                    </div>
+                </div>
 
-                <button
-                    type="button"
-                    className="tags_resto_btn tags_resto_btn_secondary"
-                    onClick={() =>
-                        router.push(
-                            `/dashboard/businesses/${businessId}/resto/orders`
+                <nav
+                    className="tags_resto_orders_header_right"
+                    aria-label="Navegación del restaurante"
+                >
+                    <button
+                        type="button"
+                        className="tags_resto_btn tags_resto_btn_secondary"
+                        onClick={() =>
+                            router.push(
+                                `/dashboard/businesses/${businessId}/resto`
+                            )
+                        }
+                    >
+                        <FaHome />
+                        Inicio
+                    </button>
+                    <button
+                        type="button"
+                        className="tags_resto_btn tags_resto_btn_secondary"
+                        onClick={() =>
+                            router.push(
+                                `/dashboard/businesses/${businessId}/resto/orders`
+                            )
+                        }
+                    >
+                        <FaArrowLeft />
+                        Pedidos
+                    </button>
+                    {
+                        can("kitchen.view") && (
+                            <button
+                                type="button"
+                                className="tags_resto_btn tags_resto_btn_warning"
+                                onClick={() =>
+                                    router.push(
+                                        `/dashboard/businesses/${businessId}/resto/kitchen`
+                                    )
+                                }
+                            >
+                                <FaFire />
+                                Cocina
+                            </button>
                         )
                     }
-                >
-                    <FaArrowLeft />
-                    Pedidos
-                </button>
-            </div>
+                </nav>
+            </header>
 
             <section className="tags_resto_order_card mb-4">
                 <div className="d-flex flex-wrap justify-content-between gap-3 align-items-start">
@@ -1391,6 +1587,98 @@ export default function RestoOrderDetailPageClient({
                     </div>
                 </div>
             </section>
+
+            {
+                (
+                    billRequested ||
+                    staffRequested
+                ) && (
+                    <section className="tags_resto_order_card mb-4">
+                        <h2 className="h5 text-uppercase mb-3">
+                            Solicitudes del cliente
+                        </h2>
+
+                        <div className="tags_resto_order_card_badges">
+                            {
+                                staffRequested && (
+                                    <div className="tags_resto_order_alert tags_resto_order_alert_staff">
+                                        <div className="tags_resto_order_alert_icon">
+                                            <FaUtensils />
+                                        </div>
+                                        <div className="tags_resto_order_alert_content">
+                                            <strong>
+                                                Llamado al personal
+                                            </strong>
+                                            {
+                                                order.staff_request_notes && (
+                                                    <span>
+                                                        {order.staff_request_notes}
+                                                    </span>
+                                                )
+                                            }
+                                            {
+                                                can("waiter.resolve") && (
+                                                    <button
+                                                        type="button"
+                                                        className="tags_resto_order_alert_action"
+                                                        disabled={updating}
+                                                        onClick={() =>
+                                                            resolveServiceRequest(
+                                                                "resolve_call"
+                                                            )
+                                                        }
+                                                    >
+                                                        Marcar atendido
+                                                    </button>
+                                                )
+                                            }
+                                        </div>
+                                    </div>
+                                )
+                            }
+
+                            {
+                                billRequested && (
+                                    <div className="tags_resto_order_alert tags_resto_order_alert_bill">
+                                        <div className="tags_resto_order_alert_icon">
+                                            <FaReceipt />
+                                        </div>
+                                        <div className="tags_resto_order_alert_content">
+                                            <strong>
+                                                Cuenta solicitada
+                                            </strong>
+                                            {
+                                                can("waiter.resolve") && (
+                                                    <button
+                                                        type="button"
+                                                        className="tags_resto_order_alert_action"
+                                                        disabled={updating}
+                                                        onClick={() =>
+                                                            resolveServiceRequest(
+                                                                "resolve_bill"
+                                                            )
+                                                        }
+                                                    >
+                                                        Marcar atendida
+                                                    </button>
+                                                )
+                                            }
+                                        </div>
+                                    </div>
+                                )
+                            }
+                        </div>
+                    </section>
+                )
+            }
+
+            <RestoOrderMessages
+                businessId={businessId}
+                orderId={orderId}
+                isOpen={!isClosed}
+                unreadCount={order.unread_message_count}
+                needsReply={order.has_unanswered_messages}
+            />
 
             {
                 kitchenTotal > 0 && (
@@ -1530,6 +1818,7 @@ export default function RestoOrderDetailPageClient({
 
             {
                 editMode &&
+                !isPaid &&
                 can("orders.items") && (
                     <section className="tags_resto_order_card mb-4">
                         <div className="d-flex justify-content-between align-items-center gap-3 mb-4">
@@ -1873,12 +2162,49 @@ export default function RestoOrderDetailPageClient({
                 </h2>
 
                 <div className="d-flex flex-wrap gap-2">
+                    <button
+                        type="button"
+                        className="tags_resto_btn tags_resto_btn_secondary"
+                        onClick={() =>
+                            printOrder(
+                                "bill"
+                            )
+                        }
+                    >
+                        <FaPrint />
+                        Imprimir cuenta
+                    </button>
+
+                    {
+                        hasSentKitchenItems &&
+                        can("kitchen.view") && (
+                            <button
+                                type="button"
+                                className="tags_resto_btn tags_resto_btn_warning"
+                                onClick={() =>
+                                    printOrder(
+                                        "kitchen"
+                                    )
+                                }
+                            >
+                                <FaPrint />
+                                Imprimir comanda
+                            </button>
+                        )
+                    }
+
                     {
                         needsConfirmation &&
                         can("tables.open") && (
                             <button
                                 type="button"
-                                className="tags_resto_btn tags_resto_btn_success"
+                                className={[
+                                    "tags_resto_btn",
+                                    order.session_status ===
+                                        "pending_confirmation"
+                                        ? "tags_resto_btn_danger"
+                                        : "tags_resto_btn_success"
+                                ].join(" ")}
                                 disabled={updating}
                                 onClick={confirmSession}
                             >
@@ -1943,7 +2269,8 @@ export default function RestoOrderDetailPageClient({
                         className="tags_resto_btn tags_resto_btn_secondary"
                         disabled={
                             updating ||
-                            isClosed
+                            isClosed ||
+                            isPaid
                         }
                         onClick={() =>
                             setEditMode(

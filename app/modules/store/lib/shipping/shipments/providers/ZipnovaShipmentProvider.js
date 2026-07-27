@@ -501,10 +501,10 @@ export async function downloadZipnovaShipmentDocument({
             }
         );
 
-    const data =
-        await res.json().catch(() => ({}));
-
     if (!res.ok) {
+        const data =
+            await res.json().catch(() => ({}));
+
         const error =
             new Error("Zipnova no pudo descargar el documento");
 
@@ -514,5 +514,32 @@ export async function downloadZipnovaShipmentDocument({
         throw error;
     }
 
-    return data;
+    const contentType =
+        res.headers.get("content-type") ||
+        "";
+
+    if (
+        contentType.includes(
+            "application/json"
+        )
+    ) {
+        return res.json();
+    }
+
+    const buffer =
+        Buffer.from(
+            await res.arrayBuffer()
+        );
+
+    return {
+        content:
+            buffer.toString("base64"),
+        mime:
+            contentType ||
+            (
+                cleanFormat === "pdf"
+                    ? "application/pdf"
+                    : "text/plain"
+            )
+    };
 }

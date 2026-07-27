@@ -13,6 +13,7 @@ import {
     db
 } from "@/app/lib/tags-db";
 import { getRestoAccess, restoAccessResponse } from "@/app/modules/resto/lib/staff/getRestoAccess";
+import { logRestoAudit } from "@/app/modules/resto/lib/staff/restoAudit";
 
 function safeNumber(
     value
@@ -112,11 +113,6 @@ export async function POST(
         const store =
             storeRows[0];
 
-        console.log("STORE:", {
-            businessId,
-            storeId: store?.id
-        });
-
         if (
             !store
         ) {
@@ -168,11 +164,6 @@ export async function POST(
         const session =
             sessionRows[0];
 
-        console.log("SEND TO KITCHEN:", {
-            orderId,
-            session
-        });
-
         if (
             !session
         ) {
@@ -193,12 +184,12 @@ export async function POST(
         }
 
         if (
-            session.status ===
-            "closed" ||
-            session.status ===
-            "completed" ||
-            session.status ===
-            "cancelled"
+            ![
+                "open",
+                "bill_requested"
+            ].includes(
+                session.status
+            )
         ) {
 
             await connection.rollback();
@@ -206,7 +197,7 @@ export async function POST(
             return Response.json(
                 {
                     error:
-                        "No se pueden enviar productos de un pedido cerrado o cancelado."
+                        "El pedido debe estar confirmado antes de enviarlo a cocina."
                 },
                 {
                     status:
@@ -221,11 +212,6 @@ export async function POST(
         | OBTENER ÍTEMS PENDIENTES
         |------------------------------------------------------------
         */
-        console.log({
-            orderId,
-            storeId: store.id
-        });
-
         const [
             pendingItems
         ] =
@@ -405,8 +391,6 @@ export async function POST(
         const updatedSession =
             updatedSessionRows[0];
 
-        await connection.commit();
-
         const sentUnits =
             sentItemRows.reduce(
                 (
@@ -419,6 +403,31 @@ export async function POST(
                     ),
                 0
             );
+
+        await logRestoAudit(
+            connection,
+            {
+                storeId:
+                    store.id,
+                access,
+                actionCode:
+                    "order.sent_to_kitchen",
+                entityType:
+                    "session",
+                entityId:
+                    session.id,
+                description:
+                    `Pedido enviado a cocina: ${session.order_number}`,
+                metadata: {
+                    itemIds:
+                        pendingItemIds,
+                    sentUnits
+                },
+                req
+            }
+        );
+
+        await connection.commit();
 
         return Response.json(
             {

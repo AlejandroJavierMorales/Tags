@@ -1,0 +1,664 @@
+.tags_resto_delivery_page {
+    --delivery-ink: #17231d;
+    --delivery-muted: #66736c;
+    --delivery-line: #e1e9e4;
+    --delivery-soft: #f4f8f5;
+    --delivery-green: #177245;
+    --delivery-green-dark: #0d5633;
+    --delivery-orange: #d97706;
+    --delivery-blue: #2563eb;
+    color: var(--delivery-ink);
+    padding-bottom: 5rem;
+}
+
+.tags_resto_delivery_header .qr_page_title {
+    align-items: center;
+    display: flex;
+    gap: .65rem;
+}
+
+.tags_resto_delivery_header .qr_page_title svg {
+    color: var(--delivery-green);
+}
+
+.tags_resto_delivery_identity {
+    align-items: center;
+    display: flex;
+    gap: 1rem;
+}
+
+.tags_resto_delivery_identity > img {
+    display: block;
+    height: auto;
+    max-height: 74px;
+    max-width: 150px;
+    object-fit: contain;
+    width: auto;
+}
+
+.tags_resto_delivery_identity_fallback {
+    align-items: center;
+    color: var(--delivery-green);
+    display: flex;
+    font-size: 2rem;
+    justify-content: center;
+}
+
+.tags_resto_delivery_eyebrow {
+    color: var(--delivery-green);
+    display: block;
+    font-size: .72rem;
+    font-weight: 800;
+    letter-spacing: .12em;
+    margin-bottom: .35rem;
+    text-transform: uppercase;
+}
+
+.tags_resto_delivery_kpis {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin: 1.25rem 0;
+}
+
+.tags_resto_delivery_kpi {
+    align-items: center;
+    background: #fff;
+    border: 1px solid var(--delivery-line);
+    border-radius: 18px;
+    box-shadow: 0 10px 28px rgba(23, 35, 29, .06);
+    display: flex;
+    gap: 1rem;
+    min-height: 128px;
+    padding: 1.15rem;
+}
+
+.tags_resto_delivery_kpi > span {
+    align-items: center;
+    background: #edf4ef;
+    border-radius: 14px;
+    color: var(--delivery-green);
+    display: flex;
+    flex: 0 0 48px;
+    font-size: 1.25rem;
+    height: 48px;
+    justify-content: center;
+}
+
+.tags_resto_delivery_kpi.ready > span {
+    background: #fff7e6;
+    color: var(--delivery-orange);
+}
+
+.tags_resto_delivery_kpi.transit > span {
+    background: #eef4ff;
+    color: var(--delivery-blue);
+}
+
+.tags_resto_delivery_kpi.cash > span {
+    background: #ecfdf3;
+    color: #138a45;
+}
+
+.tags_resto_delivery_kpi small,
+.tags_resto_delivery_kpi p {
+    color: var(--delivery-muted);
+}
+
+.tags_resto_delivery_kpi small {
+    display: block;
+    font-size: .78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.tags_resto_delivery_kpi strong {
+    display: block;
+    font-size: 1.65rem;
+    line-height: 1.15;
+    margin: .22rem 0;
+}
+
+.tags_resto_delivery_kpi p {
+    font-size: .82rem;
+    margin: 0;
+}
+
+.tags_resto_delivery_tabs {
+    background: #fff;
+    border: 1px solid var(--delivery-line);
+    border-radius: 16px;
+    display: flex;
+    gap: .35rem;
+    margin-bottom: 1rem;
+    overflow-x: auto;
+    padding: .4rem;
+}
+
+.tags_resto_delivery_tabs button {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: 12px;
+    color: var(--delivery-muted);
+    cursor: pointer;
+    display: flex;
+    font-weight: 750;
+    gap: .5rem;
+    padding: .8rem 1rem;
+    white-space: nowrap;
+}
+
+.tags_resto_delivery_tabs button.active {
+    background: var(--delivery-green);
+    color: #fff;
+}
+
+.tags_resto_delivery_section {
+    background: var(--delivery-soft);
+    border: 1px solid var(--delivery-line);
+    border-radius: 20px;
+    padding: 1.2rem;
+}
+
+.tags_resto_delivery_section_header {
+    align-items: center;
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.tags_resto_delivery_section_header h2 {
+    font-size: 1.25rem;
+    margin: 0 0 .25rem;
+}
+
+.tags_resto_delivery_section_header p {
+    color: var(--delivery-muted);
+    margin: 0;
+}
+
+.tags_resto_delivery_section_header select,
+.tags_resto_delivery_field select,
+.tags_resto_delivery_field input,
+.tags_resto_delivery_assign select,
+.tags_resto_delivery_remittance_list input,
+.tags_resto_delivery_remittance_list select {
+    background: #fff;
+    border: 1px solid #cedbd3;
+    border-radius: 10px;
+    color: var(--delivery-ink);
+    min-height: 42px;
+    padding: .6rem .75rem;
+}
+
+.tags_resto_delivery_grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.tags_resto_delivery_card {
+    background: #fff;
+    border: 1px solid var(--delivery-line);
+    border-radius: 18px;
+    box-shadow: 0 8px 24px rgba(23, 35, 29, .06);
+    overflow: hidden;
+}
+
+.tags_resto_delivery_card > header {
+    align-items: flex-start;
+    border-bottom: 1px solid var(--delivery-line);
+    display: flex;
+    justify-content: space-between;
+    padding: 1rem;
+}
+
+.tags_resto_delivery_card h3 {
+    font-size: 1.2rem;
+    margin: .45rem 0 .2rem;
+}
+
+.tags_resto_delivery_card header small {
+    color: var(--delivery-muted);
+}
+
+.tags_resto_delivery_status {
+    border-radius: 999px;
+    display: inline-flex;
+    font-size: .72rem;
+    font-weight: 800;
+    padding: .35rem .6rem;
+}
+
+.tags_resto_delivery_status.pending {
+    background: #f3f4f6;
+    color: #4b5563;
+}
+
+.tags_resto_delivery_status.preparing {
+    background: #fff7e6;
+    color: #a65600;
+}
+
+.tags_resto_delivery_status.ready,
+.tags_resto_delivery_status.assigned {
+    background: #eaf7ef;
+    color: #12653d;
+}
+
+.tags_resto_delivery_status.picked,
+.tags_resto_delivery_status.transit {
+    background: #eaf2ff;
+    color: #1d4ed8;
+}
+
+.tags_resto_delivery_status.delivered {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.tags_resto_delivery_status.failed,
+.tags_resto_delivery_status.cancelled {
+    background: #feecec;
+    color: #b42318;
+}
+
+.tags_resto_delivery_detail {
+    background: transparent;
+    border: 0;
+    color: var(--delivery-green);
+    cursor: pointer;
+    font-weight: 800;
+}
+
+.tags_resto_delivery_customer,
+.tags_resto_delivery_products,
+.tags_resto_delivery_finance,
+.tags_resto_delivery_driver {
+    border-bottom: 1px solid var(--delivery-line);
+    padding: .9rem 1rem;
+}
+
+.tags_resto_delivery_customer > strong {
+    display: block;
+    margin-bottom: .4rem;
+}
+
+.tags_resto_delivery_customer a,
+.tags_resto_delivery_customer p,
+.tags_resto_delivery_products > span,
+.tags_resto_delivery_driver {
+    align-items: flex-start;
+    color: var(--delivery-muted);
+    display: flex;
+    font-size: .86rem;
+    gap: .5rem;
+}
+
+.tags_resto_delivery_customer a {
+    color: var(--delivery-green);
+    margin-bottom: .35rem;
+    text-decoration: none;
+}
+
+.tags_resto_delivery_customer p,
+.tags_resto_delivery_products p {
+    margin: 0;
+}
+
+.tags_resto_delivery_products p {
+    color: var(--delivery-muted);
+    font-size: .84rem;
+    line-height: 1.45;
+    margin-top: .4rem;
+}
+
+.tags_resto_delivery_finance {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: 1fr 1fr;
+}
+
+.tags_resto_delivery_finance span {
+    color: var(--delivery-muted);
+    font-size: .76rem;
+    text-transform: uppercase;
+}
+
+.tags_resto_delivery_finance strong {
+    color: var(--delivery-ink);
+    display: block;
+    font-size: 1rem;
+    margin-top: .15rem;
+}
+
+.tags_resto_delivery_driver {
+    align-items: center;
+}
+
+.tags_resto_delivery_driver strong {
+    color: var(--delivery-ink);
+    display: block;
+}
+
+.tags_resto_delivery_card footer {
+    padding: 1rem;
+}
+
+.tags_resto_delivery_assign,
+.tags_resto_delivery_actions {
+    display: flex;
+    gap: .55rem;
+}
+
+.tags_resto_delivery_assign {
+    margin-bottom: .65rem;
+}
+
+.tags_resto_delivery_assign select {
+    flex: 1;
+    min-width: 0;
+}
+
+.tags_resto_delivery_assign button,
+.tags_resto_delivery_actions button,
+.tags_resto_delivery_primary,
+.tags_resto_delivery_remittance_list button,
+.tags_resto_delivery_settlement_form > button,
+.tags_resto_delivery_table_wrap button {
+    align-items: center;
+    background: var(--delivery-green);
+    border: 0;
+    border-radius: 10px;
+    color: #fff;
+    cursor: pointer;
+    display: inline-flex;
+    font-weight: 800;
+    gap: .4rem;
+    justify-content: center;
+    min-height: 42px;
+    padding: .65rem .85rem;
+}
+
+.tags_resto_delivery_actions {
+    flex-wrap: wrap;
+}
+
+.tags_resto_delivery_issue {
+    display: flex;
+    flex: 1 0 100%;
+    gap: .5rem;
+    margin-top: .25rem;
+}
+
+.tags_resto_delivery_collection_method {
+    background: #f7faf8;
+    border: 1px solid var(--delivery-line);
+    border-radius: 10px;
+    flex: 1 0 100%;
+    padding: .7rem;
+}
+
+.tags_resto_delivery_collection_method label {
+    align-items: center;
+    color: var(--delivery-muted);
+    display: flex;
+    font-size: .78rem;
+    font-weight: 750;
+    gap: .65rem;
+}
+
+.tags_resto_delivery_collection_method select {
+    border: 1px solid #cedbd3;
+    border-radius: 8px;
+    margin-left: auto;
+    min-height: 36px;
+    padding: .4rem .55rem;
+}
+
+.tags_resto_delivery_collection_method small {
+    color: #9a3412;
+    display: block;
+    line-height: 1.35;
+    margin-top: .5rem;
+}
+
+.tags_resto_delivery_issue input {
+    border: 1px solid #cedbd3;
+    border-radius: 10px;
+    flex: 1;
+    min-height: 42px;
+    min-width: 180px;
+    padding: .6rem .75rem;
+}
+
+.tags_resto_delivery_actions button.danger {
+    background: #b42318;
+}
+
+.tags_resto_delivery_actions button.danger.secondary {
+    background: #fff;
+    border: 1px solid #e5b8b4;
+    color: #b42318;
+}
+
+.tags_resto_delivery_actions button.success {
+    background: #168249;
+    flex: 1;
+}
+
+.tags_resto_delivery_assign button:disabled,
+.tags_resto_delivery_actions button:disabled,
+.tags_resto_delivery_primary:disabled,
+.tags_resto_delivery_remittance_list button:disabled,
+.tags_resto_delivery_settlement_form > button:disabled {
+    cursor: not-allowed;
+    opacity: .55;
+}
+
+.tags_resto_delivery_empty {
+    align-items: center;
+    background: #fff;
+    border: 1px dashed #c8d7ce;
+    border-radius: 16px;
+    color: var(--delivery-muted);
+    display: flex;
+    flex-direction: column;
+    padding: 3rem 1rem;
+    text-align: center;
+}
+
+.tags_resto_delivery_empty > svg {
+    color: var(--delivery-green);
+    font-size: 2rem;
+}
+
+.tags_resto_delivery_empty h3 {
+    color: var(--delivery-ink);
+    margin: .8rem 0 .25rem;
+}
+
+.tags_resto_delivery_empty p {
+    margin: 0;
+}
+
+.tags_resto_delivery_table_wrap {
+    background: #fff;
+    border: 1px solid var(--delivery-line);
+    border-radius: 14px;
+    overflow-x: auto;
+}
+
+.tags_resto_delivery_table_wrap table {
+    border-collapse: collapse;
+    min-width: 760px;
+    width: 100%;
+}
+
+.tags_resto_delivery_table_wrap th,
+.tags_resto_delivery_table_wrap td {
+    border-bottom: 1px solid var(--delivery-line);
+    padding: .85rem;
+    text-align: left;
+}
+
+.tags_resto_delivery_table_wrap th {
+    background: #f8faf9;
+    color: var(--delivery-muted);
+    font-size: .74rem;
+    text-transform: uppercase;
+}
+
+.tags_resto_delivery_table_wrap td small {
+    color: var(--delivery-muted);
+    display: block;
+    margin-top: .2rem;
+}
+
+.tags_resto_delivery_form {
+    background: #fff;
+    border: 1px solid var(--delivery-line);
+    border-radius: 16px;
+    margin-top: 1rem;
+    padding: 1rem;
+}
+
+.tags_resto_delivery_form > header {
+    align-items: flex-start;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.tags_resto_delivery_form h3,
+.tags_resto_delivery_form p {
+    margin: 0;
+}
+
+.tags_resto_delivery_form p {
+    color: var(--delivery-muted);
+}
+
+.tags_resto_delivery_form > header > button {
+    background: transparent;
+    border: 0;
+    color: var(--delivery-muted);
+    cursor: pointer;
+}
+
+.tags_resto_delivery_form_grid,
+.tags_resto_delivery_settlement_form {
+    display: grid;
+    gap: .75rem;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.tags_resto_delivery_field {
+    display: flex;
+    flex-direction: column;
+    gap: .35rem;
+}
+
+.tags_resto_delivery_field > span {
+    color: var(--delivery-muted);
+    font-size: .76rem;
+    font-weight: 750;
+}
+
+.tags_resto_delivery_check {
+    align-items: center;
+    display: flex;
+    gap: .5rem;
+    margin: 1rem 0;
+}
+
+.tags_resto_delivery_remittance_list {
+    display: grid;
+    gap: .7rem;
+}
+
+.tags_resto_delivery_remittance_list article {
+    align-items: center;
+    background: #fff;
+    border: 1px solid var(--delivery-line);
+    border-radius: 14px;
+    display: grid;
+    gap: .75rem;
+    grid-template-columns: 1.4fr .8fr .7fr .8fr auto;
+    padding: .85rem;
+}
+
+.tags_resto_delivery_remittance_list article > div:first-child span,
+.tags_resto_delivery_remittance_list article > div:first-child small {
+    color: var(--delivery-muted);
+    display: block;
+    font-size: .8rem;
+}
+
+.tags_resto_delivery_remittance_amount span {
+    color: var(--delivery-muted);
+    display: block;
+    font-size: .72rem;
+    text-transform: uppercase;
+}
+
+.tags_resto_delivery_settlement_form {
+    align-items: end;
+    background: #fff;
+    border: 1px solid var(--delivery-line);
+    border-radius: 14px;
+    margin-bottom: 1rem;
+    padding: 1rem;
+}
+
+@media (max-width: 1100px) {
+    .tags_resto_delivery_kpis,
+    .tags_resto_delivery_form_grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .tags_resto_delivery_remittance_list article {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .tags_resto_delivery_settlement_form {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 760px) {
+    .tags_resto_delivery_kpis,
+    .tags_resto_delivery_grid,
+    .tags_resto_delivery_form_grid,
+    .tags_resto_delivery_settlement_form {
+        grid-template-columns: 1fr;
+    }
+
+    .tags_resto_delivery_section {
+        padding: .8rem;
+    }
+
+    .tags_resto_delivery_section_header {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .tags_resto_delivery_card > header {
+        gap: .7rem;
+    }
+
+    .tags_resto_delivery_assign {
+        flex-direction: column;
+    }
+
+    .tags_resto_delivery_issue {
+        flex-direction: column;
+    }
+
+    .tags_resto_delivery_remittance_list article {
+        grid-template-columns: 1fr;
+    }
+}
+.tags_resto_delivery_map_link{display:inline-flex;align-items:center;gap:.4rem;margin-top:.45rem;color:var(--delivery-blue);font-size:.85rem;font-weight:600;text-decoration:none}.tags_resto_delivery_map_link:hover{text-decoration:underline}.tags_resto_delivery_history{margin-top:1.25rem;padding:1rem;background:#fff;border:1px solid var(--delivery-line);border-radius:14px}.tags_resto_delivery_history h3{margin:0 0 .75rem}.tags_resto_delivery_history_table_wrap{overflow-x:auto}.tags_resto_delivery_history table{width:100%;border-collapse:collapse;font-size:.84rem}.tags_resto_delivery_history th,.tags_resto_delivery_history td{padding:.65rem;border-bottom:1px solid var(--delivery-line);text-align:left;white-space:nowrap}.tags_resto_delivery_history th{color:var(--delivery-muted);font-weight:600}.tags_resto_delivery_history_note{margin:.75rem 0 0;color:var(--delivery-muted);font-size:.8rem}

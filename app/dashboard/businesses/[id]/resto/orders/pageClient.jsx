@@ -79,7 +79,9 @@ export default function RestoOrdersPageClient({
         charge:
             can("orders.payment"),
         close:
-            can("tables.close")
+            can("tables.close"),
+        resolveService:
+            can("waiter.resolve")
     };
 
     const [loading, setLoading] =
@@ -476,6 +478,81 @@ export default function RestoOrdersPageClient({
                     }
                 )
         );
+
+    }
+
+    async function resolveServiceRequest(
+        order,
+        action
+    ) {
+
+        if (
+            !order?.id ||
+            ![
+                "resolve_call",
+                "resolve_bill"
+            ].includes(action)
+        ) {
+            return;
+        }
+
+        setUpdatingOrderId(order.id);
+
+        try {
+            const response =
+                await fetch(
+                    "/api/resto/admin/waiter",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type":
+                                "application/json"
+                        },
+                        body: JSON.stringify({
+                            businessId,
+                            orderId: order.id,
+                            action
+                        })
+                    }
+                );
+
+            const data =
+                await response
+                    .json()
+                    .catch(() => null);
+
+            if (!response.ok) {
+                throw new Error(
+                    data?.error ||
+                    "No se pudo marcar la solicitud como atendida."
+                );
+            }
+
+            await loadOrders({
+                silent: true
+            });
+
+            showAlert({
+                icon: "success",
+                title: "Solicitud atendida",
+                text:
+                    action === "resolve_call"
+                        ? "El llamado al personal fue atendido."
+                        : "La solicitud de cuenta fue atendida.",
+                timer: 1300,
+                showConfirmButton: false
+            });
+        } catch (err) {
+            showAlert({
+                icon: "error",
+                title: "Pedidos",
+                text:
+                    err.message ||
+                    "No se pudo actualizar la solicitud."
+            });
+        } finally {
+            setUpdatingOrderId(null);
+        }
 
     }
 
@@ -975,6 +1052,16 @@ export default function RestoOrdersPageClient({
 
     }
 
+    function printBill(
+        order
+    ) {
+        window.open(
+            `/dashboard/businesses/${businessId}/resto/orders/${order.id}/print?document=bill`,
+            "_blank",
+            "noopener,noreferrer"
+        );
+    }
+
     function editOrder(
         order
     ) {
@@ -1108,6 +1195,12 @@ export default function RestoOrdersPageClient({
                 }
                 onConfirmSession={
                     confirmPendingOrder
+                }
+                onResolveServiceRequest={
+                    resolveServiceRequest
+                }
+                onPrintBill={
+                    printBill
                 }
                 capabilities={
                     capabilities

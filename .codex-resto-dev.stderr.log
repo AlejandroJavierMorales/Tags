@@ -1,0 +1,973 @@
+request to https://fonts.googleapis.com/css2?family=Oswald:wght@200..700&display=swap failed, reason: unable to verify the first certificate
+
+Retrying 1/3...
+request to https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap failed, reason: unable to verify the first certificate
+
+Retrying 1/3...
+request to https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap failed, reason: unable to verify the first certificate
+
+Retrying 1/3...
+request to https://fonts.googleapis.com/css2?family=Montserrat:wght@100..900&display=swap failed, reason: unable to verify the first certificate
+
+Retrying 1/3...
+request to https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400..900&display=swap failed, reason: unable to verify the first certificate
+
+Retrying 1/3...
+request to https://fonts.googleapis.com/css2?family=Lora:wght@400..700&display=swap failed, reason: unable to verify the first certificate
+
+Retrying 1/3...
+request to https://fonts.googleapis.com/css2?family=Bebas+Neue:wght@400&display=swap failed, reason: unable to verify the first certificate
+
+Retrying 1/3...
+request to https://fonts.googleapis.com/css2?family=Raleway:wght@100..900&display=swap failed, reason: unable to verify the first certificate
+
+Retrying 1/3...
+request to https://fonts.googleapis.com/css2?family=Oswald:wght@200..700&display=swap failed, reason: unable to verify the first certificate
+
+Retrying 2/3...
+request to https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap failed, reason: unable to verify the first certificate
+
+Retrying 2/3...
+request to https://fonts.googleapis.com/css2?family=Montserrat:wght@100..900&display=swap failed, reason: unable to verify the first certificate
+
+Retrying 2/3...
+request to https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap failed, reason: unable to verify the first certificate
+
+Retrying 2/3...
+request to https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400..900&display=swap failed, reason: unable to verify the first certificate
+
+Retrying 2/3...
+request to https://fonts.googleapis.com/css2?family=Lora:wght@400..700&display=swap failed, reason: unable to verify the first certificate
+
+Retrying 2/3...
+request to https://fonts.googleapis.com/css2?family=Bebas+Neue:wght@400&display=swap failed, reason: unable to verify the first certificate
+
+Retrying 2/3...
+request to https://fonts.googleapis.com/css2?family=Raleway:wght@100..900&display=swap failed, reason: unable to verify the first certificate
+
+Retrying 2/3...
+request to https://fonts.googleapis.com/css2?family=Oswald:wght@200..700&display=swap failed, reason: unable to verify the first certificate
+
+Retrying 3/3...
+request to https://fonts.googleapis.com/css2?family=Montserrat:wght@100..900&display=swap failed, reason: unable to verify the first certificate
+
+Retrying 3/3...
+request to https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap failed, reason: unable to verify the first certificate
+
+Retrying 3/3...
+request to https://fonts.googleapis.com/css2?family=Lora:wght@400..700&display=swap failed, reason: unable to verify the first certificate
+
+Retrying 3/3...
+request to https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400..900&display=swap failed, reason: unable to verify the first certificate
+
+Retrying 3/3...
+request to https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap failed, reason: unable to verify the first certificate
+
+Retrying 3/3...
+request to https://fonts.googleapis.com/css2?family=Bebas+Neue:wght@400&display=swap failed, reason: unable to verify the first certificate
+
+Retrying 3/3...
+request to https://fonts.googleapis.com/css2?family=Raleway:wght@100..900&display=swap failed, reason: unable to verify the first certificate
+
+Retrying 3/3...
+FetchError: request to https://fonts.googleapis.com/css2?family=Oswald:wght@200..700&display=swap failed, reason: unable to verify the first certificate
+    at ClientRequest.<anonymous> (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\node-fetch\index.js:1:66160)
+    at ClientRequest.emit (node:events:519:28)
+    at emitErrorEvent (node:_http_client:108:11)
+    at TLSSocket.socketErrorListener (node:_http_client:511:5)
+    at TLSSocket.emit (node:events:519:28)
+    at emitErrorNT (node:internal/streams/destroy:169:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:128:3)
+    at process.processTicksAndRejections (node:internal/process/task_queues:82:21) {
+  type: 'system',
+  errno: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE',
+  code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+}
+ ⨯ Failed to download `Oswald` from Google Fonts. Using fallback font instead.
+
+Failed to fetch `Oswald` from Google Fonts.}
+FetchError: request to https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap failed, reason: unable to verify the first certificate
+    at ClientRequest.<anonymous> (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\node-fetch\index.js:1:66160)
+    at ClientRequest.emit (node:events:519:28)
+    at emitErrorEvent (node:_http_client:108:11)
+    at TLSSocket.socketErrorListener (node:_http_client:511:5)
+    at TLSSocket.emit (node:events:519:28)
+    at emitErrorNT (node:internal/streams/destroy:169:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:128:3)
+    at process.processTicksAndRejections (node:internal/process/task_queues:82:21) {
+  type: 'system',
+  errno: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE',
+  code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+}
+ ⨯ Failed to download `Inter` from Google Fonts. Using fallback font instead.
+
+Failed to fetch `Inter` from Google Fonts.}
+FetchError: request to https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap failed, reason: unable to verify the first certificate
+    at ClientRequest.<anonymous> (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\node-fetch\index.js:1:66160)
+    at ClientRequest.emit (node:events:519:28)
+    at emitErrorEvent (node:_http_client:108:11)
+    at TLSSocket.socketErrorListener (node:_http_client:511:5)
+    at TLSSocket.emit (node:events:519:28)
+    at emitErrorNT (node:internal/streams/destroy:169:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:128:3)
+    at process.processTicksAndRejections (node:internal/process/task_queues:82:21) {
+  type: 'system',
+  errno: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE',
+  code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+}
+ ⨯ Failed to download `Poppins` from Google Fonts. Using fallback font instead.
+
+Failed to fetch `Poppins` from Google Fonts.}
+FetchError: request to https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400..900&display=swap failed, reason: unable to verify the first certificate
+    at ClientRequest.<anonymous> (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\node-fetch\index.js:1:66160)
+    at ClientRequest.emit (node:events:519:28)
+    at emitErrorEvent (node:_http_client:108:11)
+    at TLSSocket.socketErrorListener (node:_http_client:511:5)
+    at TLSSocket.emit (node:events:519:28)
+    at emitErrorNT (node:internal/streams/destroy:169:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:128:3)
+    at process.processTicksAndRejections (node:internal/process/task_queues:82:21) {
+  type: 'system',
+  errno: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE',
+  code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+}
+ ⨯ Failed to download `Playfair Display` from Google Fonts. Using fallback font instead.
+
+Failed to fetch `Playfair Display` from Google Fonts.}
+FetchError: request to https://fonts.googleapis.com/css2?family=Lora:wght@400..700&display=swap failed, reason: unable to verify the first certificate
+    at ClientRequest.<anonymous> (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\node-fetch\index.js:1:66160)
+    at ClientRequest.emit (node:events:519:28)
+    at emitErrorEvent (node:_http_client:108:11)
+    at TLSSocket.socketErrorListener (node:_http_client:511:5)
+    at TLSSocket.emit (node:events:519:28)
+    at emitErrorNT (node:internal/streams/destroy:169:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:128:3)
+    at process.processTicksAndRejections (node:internal/process/task_queues:82:21) {
+  type: 'system',
+  errno: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE',
+  code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+}
+ ⨯ Failed to download `Lora` from Google Fonts. Using fallback font instead.
+
+Failed to fetch `Lora` from Google Fonts.}
+FetchError: request to https://fonts.googleapis.com/css2?family=Montserrat:wght@100..900&display=swap failed, reason: unable to verify the first certificate
+    at ClientRequest.<anonymous> (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\node-fetch\index.js:1:66160)
+    at ClientRequest.emit (node:events:519:28)
+    at emitErrorEvent (node:_http_client:108:11)
+    at TLSSocket.socketErrorListener (node:_http_client:511:5)
+    at TLSSocket.emit (node:events:519:28)
+    at emitErrorNT (node:internal/streams/destroy:169:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:128:3)
+    at process.processTicksAndRejections (node:internal/process/task_queues:82:21) {
+  type: 'system',
+  errno: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE',
+  code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+}
+ ⨯ Failed to download `Montserrat` from Google Fonts. Using fallback font instead.
+
+Failed to fetch `Montserrat` from Google Fonts.}
+FetchError: request to https://fonts.googleapis.com/css2?family=Raleway:wght@100..900&display=swap failed, reason: unable to verify the first certificate
+    at ClientRequest.<anonymous> (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\node-fetch\index.js:1:66160)
+    at ClientRequest.emit (node:events:519:28)
+    at emitErrorEvent (node:_http_client:108:11)
+    at TLSSocket.socketErrorListener (node:_http_client:511:5)
+    at TLSSocket.emit (node:events:519:28)
+    at emitErrorNT (node:internal/streams/destroy:169:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:128:3)
+    at process.processTicksAndRejections (node:internal/process/task_queues:82:21) {
+  type: 'system',
+  errno: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE',
+  code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+}
+ ⨯ Failed to download `Raleway` from Google Fonts. Using fallback font instead.
+
+Failed to fetch `Raleway` from Google Fonts.}
+FetchError: request to https://fonts.googleapis.com/css2?family=Bebas+Neue:wght@400&display=swap failed, reason: unable to verify the first certificate
+    at ClientRequest.<anonymous> (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\node-fetch\index.js:1:66160)
+    at ClientRequest.emit (node:events:519:28)
+    at emitErrorEvent (node:_http_client:108:11)
+    at TLSSocket.socketErrorListener (node:_http_client:511:5)
+    at TLSSocket.emit (node:events:519:28)
+    at emitErrorNT (node:internal/streams/destroy:169:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:128:3)
+    at process.processTicksAndRejections (node:internal/process/task_queues:82:21) {
+  type: 'system',
+  errno: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE',
+  code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+}
+ ⨯ Failed to download `Bebas Neue` from Google Fonts. Using fallback font instead.
+
+Failed to fetch `Bebas Neue` from Google Fonts.}
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+Warning: Invalid hook call. Hooks can only be called inside of the body of a function component. This could happen for one of the following reasons:
+1. You might have mismatching versions of React and the renderer (such as React DOM)
+2. You might be breaking the Rules of Hooks
+3. You might have more than one copy of React in the same app
+See https://reactjs.org/link/invalid-hook-call for tips about how to debug and fix this problem.
+ ⨯ Internal error: TypeError: Cannot read properties of null (reading 'useContext')
+    at t.useContext (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:162364)
+    at usePathname (./node_modules/next/dist/client/components/navigation.js:121:34)
+    at ErrorBoundary (./node_modules/next/dist/client/components/error-boundary.js:159:50)
+    at au (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:10446)
+    at C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:15122
+    at aw (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:16908)
+    at a_ (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:49776)
+    at ab (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:11808)
+    at C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:16871
+    at aw (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:16908)
+    at aw (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:46505)
+    at a_ (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:49776)
+    at ab (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:11808)
+    at C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:16871
+    at aw (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:16908)
+    at a_ (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:49776)
+    at C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:58612
+    at C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:59270
+    at aN (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:59278)
+    at Timeout._onTimeout (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:6939)
+    at listOnTimeout (node:internal/timers:581:17)
+    at process.processTimers (node:internal/timers:519:7)
+digest: "543093616"
+Warning: Invalid hook call. Hooks can only be called inside of the body of a function component. This could happen for one of the following reasons:
+1. You might have mismatching versions of React and the renderer (such as React DOM)
+2. You might be breaking the Rules of Hooks
+3. You might have more than one copy of React in the same app
+See https://reactjs.org/link/invalid-hook-call for tips about how to debug and fix this problem.
+TypeError: Cannot read properties of null (reading 'useContext')
+    at t.useContext (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:162364)
+    at usePathname (webpack-internal:///(ssr)/./node_modules/next/dist/client/components/navigation.js:121:34)
+    at ErrorBoundary (webpack-internal:///(ssr)/./node_modules/next/dist/client/components/error-boundary.js:159:50)
+    at au (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:10446)
+    at C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:15122
+    at aw (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:16908)
+    at a_ (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:49776)
+    at ab (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:11808)
+    at C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:16871
+    at aw (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:16908)
+    at aw (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:46505)
+    at a_ (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:49776)
+    at ab (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:11808)
+    at C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:16871
+    at aw (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:16908)
+    at a_ (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:49776)
+    at C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:58612
+    at C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:59270
+    at aN (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:59278)
+    at Timeout._onTimeout (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:6939)
+    at listOnTimeout (node:internal/timers:581:17)
+    at process.processTimers (node:internal/timers:519:7)
+ ⨯ TypeError: Cannot read properties of null (reading 'useContext')
+    at t.useContext (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:162364)
+    at usePathname (webpack-internal:///(ssr)/./node_modules/next/dist/client/components/navigation.js:121:34)
+    at ErrorBoundary (webpack-internal:///(ssr)/./node_modules/next/dist/client/components/error-boundary.js:159:50)
+    at au (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:10446)
+    at C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:15122
+    at aw (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:16908)
+    at a_ (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:49776)
+    at ab (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:11808)
+    at C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:16871
+    at aw (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:16908)
+    at aw (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:46505)
+    at a_ (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:49776)
+    at ab (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:11808)
+    at C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:16871
+    at aw (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:16908)
+    at a_ (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:49776)
+    at C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:58612
+    at C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:59270
+    at aN (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:59278)
+    at Timeout._onTimeout (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:6939)
+    at listOnTimeout (node:internal/timers:581:17)
+    at process.processTimers (node:internal/timers:519:7) {
+  page: '/p/ingematec-resto/order/554d8fb140fb31214ec729bc2230ff050d2bd3e03e1a44b0ebae2a578cb97bdf'
+}
+TypeError: fetch failed
+    at node:internal/deps/undici/undici:13178:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async fetchExternalImage (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\image-optimizer.js:723:17)
+    at async DevServer.imageOptimizer (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:654:48)
+    at async cacheEntry.imageResponseCache.get.incrementalCache (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:182:65)
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\response-cache\index.js:90:36
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\lib\batcher.js:45:32 {
+  [cause]: Error: unable to verify the first certificate
+      at TLSSocket.onConnectSecure (node:_tls_wrap:1685:34)
+      at TLSSocket.emit (node:events:519:28)
+      at TLSSocket._finishInit (node:_tls_wrap:1085:8)
+      at ssl.onhandshakedone (node:_tls_wrap:871:12)
+      at TLSWrap.callbackTrampoline (node:internal/async_hooks:130:17) {
+    code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+  }
+}
+TypeError: fetch failed
+    at node:internal/deps/undici/undici:13178:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async fetchExternalImage (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\image-optimizer.js:723:17)
+    at async DevServer.imageOptimizer (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:654:48)
+    at async cacheEntry.imageResponseCache.get.incrementalCache (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:182:65)
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\response-cache\index.js:90:36
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\lib\batcher.js:45:32 {
+  [cause]: Error: unable to verify the first certificate
+      at TLSSocket.onConnectSecure (node:_tls_wrap:1685:34)
+      at TLSSocket.emit (node:events:519:28)
+      at TLSSocket._finishInit (node:_tls_wrap:1085:8)
+      at ssl.onhandshakedone (node:_tls_wrap:871:12)
+      at TLSWrap.callbackTrampoline (node:internal/async_hooks:130:17) {
+    code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+  }
+}
+TypeError: fetch failed
+    at node:internal/deps/undici/undici:13178:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async fetchExternalImage (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\image-optimizer.js:723:17)
+    at async DevServer.imageOptimizer (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:654:48)
+    at async cacheEntry.imageResponseCache.get.incrementalCache (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:182:65)
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\response-cache\index.js:90:36
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\lib\batcher.js:45:32 {
+  [cause]: Error: unable to verify the first certificate
+      at TLSSocket.onConnectSecure (node:_tls_wrap:1685:34)
+      at TLSSocket.emit (node:events:519:28)
+      at TLSSocket._finishInit (node:_tls_wrap:1085:8)
+      at ssl.onhandshakedone (node:_tls_wrap:871:12)
+      at TLSWrap.callbackTrampoline (node:internal/async_hooks:130:17) {
+    code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+  }
+}
+TypeError: fetch failed
+    at node:internal/deps/undici/undici:13178:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async fetchExternalImage (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\image-optimizer.js:723:17)
+    at async DevServer.imageOptimizer (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:654:48)
+    at async cacheEntry.imageResponseCache.get.incrementalCache (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:182:65)
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\response-cache\index.js:90:36
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\lib\batcher.js:45:32 {
+  [cause]: Error: unable to verify the first certificate
+      at TLSSocket.onConnectSecure (node:_tls_wrap:1685:34)
+      at TLSSocket.emit (node:events:519:28)
+      at TLSSocket._finishInit (node:_tls_wrap:1085:8)
+      at ssl.onhandshakedone (node:_tls_wrap:871:12)
+      at TLSWrap.callbackTrampoline (node:internal/async_hooks:130:17) {
+    code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+  }
+}
+TypeError: fetch failed
+    at node:internal/deps/undici/undici:13178:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async fetchExternalImage (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\image-optimizer.js:723:17)
+    at async DevServer.imageOptimizer (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:654:48)
+    at async cacheEntry.imageResponseCache.get.incrementalCache (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:182:65)
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\response-cache\index.js:90:36
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\lib\batcher.js:45:32 {
+  [cause]: Error: unable to verify the first certificate
+      at TLSSocket.onConnectSecure (node:_tls_wrap:1685:34)
+      at TLSSocket.emit (node:events:519:28)
+      at TLSSocket._finishInit (node:_tls_wrap:1085:8)
+      at ssl.onhandshakedone (node:_tls_wrap:871:12)
+      at TLSWrap.callbackTrampoline (node:internal/async_hooks:130:17) {
+    code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+  }
+}
+TypeError: fetch failed
+    at node:internal/deps/undici/undici:13178:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async fetchExternalImage (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\image-optimizer.js:723:17)
+    at async DevServer.imageOptimizer (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:654:48)
+    at async cacheEntry.imageResponseCache.get.incrementalCache (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:182:65)
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\response-cache\index.js:90:36
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\lib\batcher.js:45:32 {
+  [cause]: Error: unable to verify the first certificate
+      at TLSSocket.onConnectSecure (node:_tls_wrap:1685:34)
+      at TLSSocket.emit (node:events:519:28)
+      at TLSSocket._finishInit (node:_tls_wrap:1085:8)
+      at ssl.onhandshakedone (node:_tls_wrap:871:12)
+      at TLSWrap.callbackTrampoline (node:internal/async_hooks:130:17) {
+    code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+  }
+}
+TypeError: fetch failed
+    at node:internal/deps/undici/undici:13178:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async fetchExternalImage (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\image-optimizer.js:723:17)
+    at async DevServer.imageOptimizer (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:654:48)
+    at async cacheEntry.imageResponseCache.get.incrementalCache (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:182:65)
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\response-cache\index.js:90:36
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\lib\batcher.js:45:32 {
+  [cause]: Error: unable to verify the first certificate
+      at TLSSocket.onConnectSecure (node:_tls_wrap:1685:34)
+      at TLSSocket.emit (node:events:519:28)
+      at TLSSocket._finishInit (node:_tls_wrap:1085:8)
+      at ssl.onhandshakedone (node:_tls_wrap:871:12)
+      at TLSWrap.callbackTrampoline (node:internal/async_hooks:130:17) {
+    code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+  }
+}
+TypeError: fetch failed
+    at node:internal/deps/undici/undici:13178:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async fetchExternalImage (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\image-optimizer.js:723:17)
+    at async DevServer.imageOptimizer (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:654:48)
+    at async cacheEntry.imageResponseCache.get.incrementalCache (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:182:65)
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\response-cache\index.js:90:36
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\lib\batcher.js:45:32 {
+  [cause]: Error: unable to verify the first certificate
+      at TLSSocket.onConnectSecure (node:_tls_wrap:1685:34)
+      at TLSSocket.emit (node:events:519:28)
+      at TLSSocket._finishInit (node:_tls_wrap:1085:8)
+      at ssl.onhandshakedone (node:_tls_wrap:871:12)
+      at TLSWrap.callbackTrampoline (node:internal/async_hooks:130:17) {
+    code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+  }
+}
+TypeError: fetch failed
+    at node:internal/deps/undici/undici:13178:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async fetchExternalImage (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\image-optimizer.js:723:17)
+    at async DevServer.imageOptimizer (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:654:48)
+    at async cacheEntry.imageResponseCache.get.incrementalCache (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:182:65)
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\response-cache\index.js:90:36
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\lib\batcher.js:45:32 {
+  [cause]: Error: unable to verify the first certificate
+      at TLSSocket.onConnectSecure (node:_tls_wrap:1685:34)
+      at TLSSocket.emit (node:events:519:28)
+      at TLSSocket._finishInit (node:_tls_wrap:1085:8)
+      at ssl.onhandshakedone (node:_tls_wrap:871:12)
+      at TLSWrap.callbackTrampoline (node:internal/async_hooks:130:17) {
+    code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+  }
+}
+TypeError: fetch failed
+    at node:internal/deps/undici/undici:13178:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async fetchExternalImage (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\image-optimizer.js:723:17)
+    at async DevServer.imageOptimizer (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:654:48)
+    at async cacheEntry.imageResponseCache.get.incrementalCache (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:182:65)
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\response-cache\index.js:90:36
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\lib\batcher.js:45:32 {
+  [cause]: Error: unable to verify the first certificate
+      at TLSSocket.onConnectSecure (node:_tls_wrap:1685:34)
+      at TLSSocket.emit (node:events:519:28)
+      at TLSSocket._finishInit (node:_tls_wrap:1085:8)
+      at ssl.onhandshakedone (node:_tls_wrap:871:12)
+      at TLSWrap.callbackTrampoline (node:internal/async_hooks:130:17) {
+    code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+  }
+}
+TypeError: fetch failed
+    at node:internal/deps/undici/undici:13178:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async fetchExternalImage (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\image-optimizer.js:723:17)
+    at async DevServer.imageOptimizer (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:654:48)
+    at async cacheEntry.imageResponseCache.get.incrementalCache (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:182:65)
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\response-cache\index.js:90:36
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\lib\batcher.js:45:32 {
+  [cause]: Error: unable to verify the first certificate
+      at TLSSocket.onConnectSecure (node:_tls_wrap:1685:34)
+      at TLSSocket.emit (node:events:519:28)
+      at TLSSocket._finishInit (node:_tls_wrap:1085:8)
+      at ssl.onhandshakedone (node:_tls_wrap:871:12)
+      at TLSWrap.callbackTrampoline (node:internal/async_hooks:130:17) {
+    code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+  }
+}
+TypeError: fetch failed
+    at node:internal/deps/undici/undici:13178:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async fetchExternalImage (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\image-optimizer.js:723:17)
+    at async DevServer.imageOptimizer (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:654:48)
+    at async cacheEntry.imageResponseCache.get.incrementalCache (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:182:65)
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\response-cache\index.js:90:36
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\lib\batcher.js:45:32 {
+  [cause]: Error: unable to verify the first certificate
+      at TLSSocket.onConnectSecure (node:_tls_wrap:1685:34)
+      at TLSSocket.emit (node:events:519:28)
+      at TLSSocket._finishInit (node:_tls_wrap:1085:8)
+      at ssl.onhandshakedone (node:_tls_wrap:871:12)
+      at TLSWrap.callbackTrampoline (node:internal/async_hooks:130:17) {
+    code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+  }
+}
+TypeError: fetch failed
+    at node:internal/deps/undici/undici:13178:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async fetchExternalImage (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\image-optimizer.js:723:17)
+    at async DevServer.imageOptimizer (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:654:48)
+    at async cacheEntry.imageResponseCache.get.incrementalCache (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:182:65)
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\response-cache\index.js:90:36
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\lib\batcher.js:45:32 {
+  [cause]: Error: unable to verify the first certificate
+      at TLSSocket.onConnectSecure (node:_tls_wrap:1685:34)
+      at TLSSocket.emit (node:events:519:28)
+      at TLSSocket._finishInit (node:_tls_wrap:1085:8)
+      at ssl.onhandshakedone (node:_tls_wrap:871:12)
+      at TLSWrap.callbackTrampoline (node:internal/async_hooks:130:17) {
+    code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+  }
+}
+TypeError: fetch failed
+    at node:internal/deps/undici/undici:13178:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async fetchExternalImage (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\image-optimizer.js:723:17)
+    at async DevServer.imageOptimizer (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:654:48)
+    at async cacheEntry.imageResponseCache.get.incrementalCache (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:182:65)
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\response-cache\index.js:90:36
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\lib\batcher.js:45:32 {
+  [cause]: Error: unable to verify the first certificate
+      at TLSSocket.onConnectSecure (node:_tls_wrap:1685:34)
+      at TLSSocket.emit (node:events:519:28)
+      at TLSSocket._finishInit (node:_tls_wrap:1085:8)
+      at ssl.onhandshakedone (node:_tls_wrap:871:12)
+      at TLSWrap.callbackTrampoline (node:internal/async_hooks:130:17) {
+    code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+  }
+}
+TypeError: fetch failed
+    at node:internal/deps/undici/undici:13178:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async fetchExternalImage (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\image-optimizer.js:723:17)
+    at async DevServer.imageOptimizer (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:654:48)
+    at async cacheEntry.imageResponseCache.get.incrementalCache (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:182:65)
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\response-cache\index.js:90:36
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\lib\batcher.js:45:32 {
+  [cause]: Error: unable to verify the first certificate
+      at TLSSocket.onConnectSecure (node:_tls_wrap:1685:34)
+      at TLSSocket.emit (node:events:519:28)
+      at TLSSocket._finishInit (node:_tls_wrap:1085:8)
+      at ssl.onhandshakedone (node:_tls_wrap:871:12)
+      at TLSWrap.callbackTrampoline (node:internal/async_hooks:130:17) {
+    code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+  }
+}
+TypeError: fetch failed
+    at node:internal/deps/undici/undici:13178:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async fetchExternalImage (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\image-optimizer.js:723:17)
+    at async DevServer.imageOptimizer (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:654:48)
+    at async cacheEntry.imageResponseCache.get.incrementalCache (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:182:65)
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\response-cache\index.js:90:36
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\lib\batcher.js:45:32 {
+  [cause]: Error: unable to verify the first certificate
+      at TLSSocket.onConnectSecure (node:_tls_wrap:1685:34)
+      at TLSSocket.emit (node:events:519:28)
+      at TLSSocket._finishInit (node:_tls_wrap:1085:8)
+      at ssl.onhandshakedone (node:_tls_wrap:871:12)
+      at TLSWrap.callbackTrampoline (node:internal/async_hooks:130:17) {
+    code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+  }
+}
+TypeError: fetch failed
+    at node:internal/deps/undici/undici:13178:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async fetchExternalImage (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\image-optimizer.js:723:17)
+    at async DevServer.imageOptimizer (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:654:48)
+    at async cacheEntry.imageResponseCache.get.incrementalCache (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:182:65)
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\response-cache\index.js:90:36
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\lib\batcher.js:45:32 {
+  [cause]: Error: unable to verify the first certificate
+      at TLSSocket.onConnectSecure (node:_tls_wrap:1685:34)
+      at TLSSocket.emit (node:events:519:28)
+      at TLSSocket._finishInit (node:_tls_wrap:1085:8)
+      at ssl.onhandshakedone (node:_tls_wrap:871:12)
+      at TLSWrap.callbackTrampoline (node:internal/async_hooks:130:17) {
+    code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+  }
+}
+TypeError: fetch failed
+    at node:internal/deps/undici/undici:13178:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async fetchExternalImage (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\image-optimizer.js:723:17)
+    at async DevServer.imageOptimizer (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:654:48)
+    at async cacheEntry.imageResponseCache.get.incrementalCache (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:182:65)
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\response-cache\index.js:90:36
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\lib\batcher.js:45:32 {
+  [cause]: Error: unable to verify the first certificate
+      at TLSSocket.onConnectSecure (node:_tls_wrap:1685:34)
+      at TLSSocket.emit (node:events:519:28)
+      at TLSSocket._finishInit (node:_tls_wrap:1085:8)
+      at ssl.onhandshakedone (node:_tls_wrap:871:12)
+      at TLSWrap.callbackTrampoline (node:internal/async_hooks:130:17) {
+    code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+  }
+}
+TypeError: fetch failed
+    at node:internal/deps/undici/undici:13178:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async fetchExternalImage (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\image-optimizer.js:723:17)
+    at async DevServer.imageOptimizer (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:654:48)
+    at async cacheEntry.imageResponseCache.get.incrementalCache (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:182:65)
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\response-cache\index.js:90:36
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\lib\batcher.js:45:32 {
+  [cause]: Error: unable to verify the first certificate
+      at TLSSocket.onConnectSecure (node:_tls_wrap:1685:34)
+      at TLSSocket.emit (node:events:519:28)
+      at TLSSocket._finishInit (node:_tls_wrap:1085:8)
+      at ssl.onhandshakedone (node:_tls_wrap:871:12)
+      at TLSWrap.callbackTrampoline (node:internal/async_hooks:130:17) {
+    code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+  }
+}
+TypeError: fetch failed
+    at node:internal/deps/undici/undici:13178:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async fetchExternalImage (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\image-optimizer.js:723:17)
+    at async DevServer.imageOptimizer (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:654:48)
+    at async cacheEntry.imageResponseCache.get.incrementalCache (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:182:65)
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\response-cache\index.js:90:36
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\lib\batcher.js:45:32 {
+  [cause]: Error: unable to verify the first certificate
+      at TLSSocket.onConnectSecure (node:_tls_wrap:1685:34)
+      at TLSSocket.emit (node:events:519:28)
+      at TLSSocket._finishInit (node:_tls_wrap:1085:8)
+      at ssl.onhandshakedone (node:_tls_wrap:871:12)
+      at TLSWrap.callbackTrampoline (node:internal/async_hooks:130:17) {
+    code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+  }
+}
+TypeError: fetch failed
+    at node:internal/deps/undici/undici:13178:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async fetchExternalImage (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\image-optimizer.js:723:17)
+    at async DevServer.imageOptimizer (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:654:48)
+    at async cacheEntry.imageResponseCache.get.incrementalCache (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:182:65)
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\response-cache\index.js:90:36
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\lib\batcher.js:45:32 {
+  [cause]: Error: unable to verify the first certificate
+      at TLSSocket.onConnectSecure (node:_tls_wrap:1685:34)
+      at TLSSocket.emit (node:events:519:28)
+      at TLSSocket._finishInit (node:_tls_wrap:1085:8)
+      at ssl.onhandshakedone (node:_tls_wrap:871:12)
+      at TLSWrap.callbackTrampoline (node:internal/async_hooks:130:17) {
+    code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+  }
+}
+TypeError: fetch failed
+    at node:internal/deps/undici/undici:13178:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async fetchExternalImage (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\image-optimizer.js:723:17)
+    at async DevServer.imageOptimizer (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:654:48)
+    at async cacheEntry.imageResponseCache.get.incrementalCache (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:182:65)
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\response-cache\index.js:90:36
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\lib\batcher.js:45:32 {
+  [cause]: Error: unable to verify the first certificate
+      at TLSSocket.onConnectSecure (node:_tls_wrap:1685:34)
+      at TLSSocket.emit (node:events:519:28)
+      at TLSSocket._finishInit (node:_tls_wrap:1085:8)
+      at ssl.onhandshakedone (node:_tls_wrap:871:12)
+      at TLSWrap.callbackTrampoline (node:internal/async_hooks:130:17) {
+    code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+  }
+}
+TypeError: fetch failed
+    at node:internal/deps/undici/undici:13178:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async fetchExternalImage (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\image-optimizer.js:723:17)
+    at async DevServer.imageOptimizer (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:654:48)
+    at async cacheEntry.imageResponseCache.get.incrementalCache (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:182:65)
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\response-cache\index.js:90:36
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\lib\batcher.js:45:32 {
+  [cause]: Error: unable to verify the first certificate
+      at TLSSocket.onConnectSecure (node:_tls_wrap:1685:34)
+      at TLSSocket.emit (node:events:519:28)
+      at TLSSocket._finishInit (node:_tls_wrap:1085:8)
+      at ssl.onhandshakedone (node:_tls_wrap:871:12)
+      at TLSWrap.callbackTrampoline (node:internal/async_hooks:130:17) {
+    code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+  }
+}
+TypeError: fetch failed
+    at node:internal/deps/undici/undici:13178:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async fetchExternalImage (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\image-optimizer.js:723:17)
+    at async DevServer.imageOptimizer (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:654:48)
+    at async cacheEntry.imageResponseCache.get.incrementalCache (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:182:65)
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\response-cache\index.js:90:36
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\lib\batcher.js:45:32 {
+  [cause]: Error: unable to verify the first certificate
+      at TLSSocket.onConnectSecure (node:_tls_wrap:1685:34)
+      at TLSSocket.emit (node:events:519:28)
+      at TLSSocket._finishInit (node:_tls_wrap:1085:8)
+      at ssl.onhandshakedone (node:_tls_wrap:871:12)
+      at TLSWrap.callbackTrampoline (node:internal/async_hooks:130:17) {
+    code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+  }
+}
+TypeError: fetch failed
+    at node:internal/deps/undici/undici:13178:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async fetchExternalImage (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\image-optimizer.js:723:17)
+    at async DevServer.imageOptimizer (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:654:48)
+    at async cacheEntry.imageResponseCache.get.incrementalCache (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:182:65)
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\response-cache\index.js:90:36
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\lib\batcher.js:45:32 {
+  [cause]: Error: unable to verify the first certificate
+      at TLSSocket.onConnectSecure (node:_tls_wrap:1685:34)
+      at TLSSocket.emit (node:events:519:28)
+      at TLSSocket._finishInit (node:_tls_wrap:1085:8)
+      at ssl.onhandshakedone (node:_tls_wrap:871:12)
+      at TLSWrap.callbackTrampoline (node:internal/async_hooks:130:17) {
+    code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+  }
+}
+TypeError: fetch failed
+    at node:internal/deps/undici/undici:13178:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async fetchExternalImage (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\image-optimizer.js:723:17)
+    at async DevServer.imageOptimizer (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:654:48)
+    at async cacheEntry.imageResponseCache.get.incrementalCache (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:182:65)
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\response-cache\index.js:90:36
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\lib\batcher.js:45:32 {
+  [cause]: Error: unable to verify the first certificate
+      at TLSSocket.onConnectSecure (node:_tls_wrap:1685:34)
+      at TLSSocket.emit (node:events:519:28)
+      at TLSSocket._finishInit (node:_tls_wrap:1085:8)
+      at ssl.onhandshakedone (node:_tls_wrap:871:12)
+      at TLSWrap.callbackTrampoline (node:internal/async_hooks:130:17) {
+    code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+  }
+}
+TypeError: fetch failed
+    at node:internal/deps/undici/undici:13178:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async fetchExternalImage (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\image-optimizer.js:723:17)
+    at async DevServer.imageOptimizer (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:654:48)
+    at async cacheEntry.imageResponseCache.get.incrementalCache (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:182:65)
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\response-cache\index.js:90:36
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\lib\batcher.js:45:32 {
+  [cause]: Error: unable to verify the first certificate
+      at TLSSocket.onConnectSecure (node:_tls_wrap:1685:34)
+      at TLSSocket.emit (node:events:519:28)
+      at TLSSocket._finishInit (node:_tls_wrap:1085:8)
+      at ssl.onhandshakedone (node:_tls_wrap:871:12)
+      at TLSWrap.callbackTrampoline (node:internal/async_hooks:130:17) {
+    code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+  }
+}
+TypeError: fetch failed
+    at node:internal/deps/undici/undici:13178:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async fetchExternalImage (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\image-optimizer.js:723:17)
+    at async DevServer.imageOptimizer (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:654:48)
+    at async cacheEntry.imageResponseCache.get.incrementalCache (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:182:65)
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\response-cache\index.js:90:36
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\lib\batcher.js:45:32 {
+  [cause]: Error: unable to verify the first certificate
+      at TLSSocket.onConnectSecure (node:_tls_wrap:1685:34)
+      at TLSSocket.emit (node:events:519:28)
+      at TLSSocket._finishInit (node:_tls_wrap:1085:8)
+      at ssl.onhandshakedone (node:_tls_wrap:871:12)
+      at TLSWrap.callbackTrampoline (node:internal/async_hooks:130:17) {
+    code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+  }
+}
+TypeError: fetch failed
+    at node:internal/deps/undici/undici:13178:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async fetchExternalImage (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\image-optimizer.js:723:17)
+    at async DevServer.imageOptimizer (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:654:48)
+    at async cacheEntry.imageResponseCache.get.incrementalCache (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:182:65)
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\response-cache\index.js:90:36
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\lib\batcher.js:45:32 {
+  [cause]: Error: unable to verify the first certificate
+      at TLSSocket.onConnectSecure (node:_tls_wrap:1685:34)
+      at TLSSocket.emit (node:events:519:28)
+      at TLSSocket._finishInit (node:_tls_wrap:1085:8)
+      at ssl.onhandshakedone (node:_tls_wrap:871:12)
+      at TLSWrap.callbackTrampoline (node:internal/async_hooks:130:17) {
+    code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+  }
+}
+TypeError: fetch failed
+    at node:internal/deps/undici/undici:13178:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async fetchExternalImage (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\image-optimizer.js:723:17)
+    at async DevServer.imageOptimizer (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:654:48)
+    at async cacheEntry.imageResponseCache.get.incrementalCache (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:182:65)
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\response-cache\index.js:90:36
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\lib\batcher.js:45:32 {
+  [cause]: Error: unable to verify the first certificate
+      at TLSSocket.onConnectSecure (node:_tls_wrap:1685:34)
+      at TLSSocket.emit (node:events:519:28)
+      at TLSSocket._finishInit (node:_tls_wrap:1085:8)
+      at ssl.onhandshakedone (node:_tls_wrap:871:12)
+      at TLSWrap.callbackTrampoline (node:internal/async_hooks:130:17) {
+    code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+  }
+}
+TypeError: fetch failed
+    at node:internal/deps/undici/undici:13178:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async fetchExternalImage (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\image-optimizer.js:723:17)
+    at async DevServer.imageOptimizer (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:654:48)
+    at async cacheEntry.imageResponseCache.get.incrementalCache (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:182:65)
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\response-cache\index.js:90:36
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\lib\batcher.js:45:32 {
+  [cause]: Error: unable to verify the first certificate
+      at TLSSocket.onConnectSecure (node:_tls_wrap:1685:34)
+      at TLSSocket.emit (node:events:519:28)
+      at TLSSocket._finishInit (node:_tls_wrap:1085:8)
+      at ssl.onhandshakedone (node:_tls_wrap:871:12)
+      at TLSWrap.callbackTrampoline (node:internal/async_hooks:130:17) {
+    code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+  }
+}
+TypeError: fetch failed
+    at node:internal/deps/undici/undici:13178:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async fetchExternalImage (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\image-optimizer.js:723:17)
+    at async DevServer.imageOptimizer (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:654:48)
+    at async cacheEntry.imageResponseCache.get.incrementalCache (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:182:65)
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\response-cache\index.js:90:36
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\lib\batcher.js:45:32 {
+  [cause]: Error: unable to verify the first certificate
+      at TLSSocket.onConnectSecure (node:_tls_wrap:1685:34)
+      at TLSSocket.emit (node:events:519:28)
+      at TLSSocket._finishInit (node:_tls_wrap:1085:8)
+      at ssl.onhandshakedone (node:_tls_wrap:871:12)
+      at TLSWrap.callbackTrampoline (node:internal/async_hooks:130:17) {
+    code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+  }
+}
+TypeError: fetch failed
+    at node:internal/deps/undici/undici:13178:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async fetchExternalImage (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\image-optimizer.js:723:17)
+    at async DevServer.imageOptimizer (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:654:48)
+    at async cacheEntry.imageResponseCache.get.incrementalCache (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:182:65)
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\response-cache\index.js:90:36
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\lib\batcher.js:45:32 {
+  [cause]: Error: unable to verify the first certificate
+      at TLSSocket.onConnectSecure (node:_tls_wrap:1685:34)
+      at TLSSocket.emit (node:events:519:28)
+      at TLSSocket._finishInit (node:_tls_wrap:1085:8)
+      at ssl.onhandshakedone (node:_tls_wrap:871:12)
+      at TLSWrap.callbackTrampoline (node:internal/async_hooks:130:17) {
+    code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+  }
+}
+TypeError: fetch failed
+    at node:internal/deps/undici/undici:13178:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async fetchExternalImage (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\image-optimizer.js:723:17)
+    at async DevServer.imageOptimizer (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:654:48)
+    at async cacheEntry.imageResponseCache.get.incrementalCache (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:182:65)
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\response-cache\index.js:90:36
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\lib\batcher.js:45:32 {
+  [cause]: Error: unable to verify the first certificate
+      at TLSSocket.onConnectSecure (node:_tls_wrap:1685:34)
+      at TLSSocket.emit (node:events:519:28)
+      at TLSSocket._finishInit (node:_tls_wrap:1085:8)
+      at ssl.onhandshakedone (node:_tls_wrap:871:12)
+      at TLSWrap.callbackTrampoline (node:internal/async_hooks:130:17) {
+    code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+  }
+}
+TypeError: fetch failed
+    at node:internal/deps/undici/undici:13178:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async fetchExternalImage (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\image-optimizer.js:723:17)
+    at async DevServer.imageOptimizer (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:654:48)
+    at async cacheEntry.imageResponseCache.get.incrementalCache (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:182:65)
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\response-cache\index.js:90:36
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\lib\batcher.js:45:32 {
+  [cause]: Error: unable to verify the first certificate
+      at TLSSocket.onConnectSecure (node:_tls_wrap:1685:34)
+      at TLSSocket.emit (node:events:519:28)
+      at TLSSocket._finishInit (node:_tls_wrap:1085:8)
+      at ssl.onhandshakedone (node:_tls_wrap:871:12)
+      at TLSWrap.callbackTrampoline (node:internal/async_hooks:130:17) {
+    code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+  }
+}
+TypeError: fetch failed
+    at node:internal/deps/undici/undici:13178:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async fetchExternalImage (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\image-optimizer.js:723:17)
+    at async DevServer.imageOptimizer (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:654:48)
+    at async cacheEntry.imageResponseCache.get.incrementalCache (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:182:65)
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\response-cache\index.js:90:36
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\lib\batcher.js:45:32 {
+  [cause]: Error: unable to verify the first certificate
+      at TLSSocket.onConnectSecure (node:_tls_wrap:1685:34)
+      at TLSSocket.emit (node:events:519:28)
+      at TLSSocket._finishInit (node:_tls_wrap:1085:8)
+      at ssl.onhandshakedone (node:_tls_wrap:871:12)
+      at TLSWrap.callbackTrampoline (node:internal/async_hooks:130:17) {
+    code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+  }
+}
+TypeError: fetch failed
+    at node:internal/deps/undici/undici:13178:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async fetchExternalImage (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\image-optimizer.js:723:17)
+    at async DevServer.imageOptimizer (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:654:48)
+    at async cacheEntry.imageResponseCache.get.incrementalCache (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:182:65)
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\response-cache\index.js:90:36
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\lib\batcher.js:45:32 {
+  [cause]: Error: unable to verify the first certificate
+      at TLSSocket.onConnectSecure (node:_tls_wrap:1685:34)
+      at TLSSocket.emit (node:events:519:28)
+      at TLSSocket._finishInit (node:_tls_wrap:1085:8)
+      at ssl.onhandshakedone (node:_tls_wrap:871:12)
+      at TLSWrap.callbackTrampoline (node:internal/async_hooks:130:17) {
+    code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+  }
+}
+TypeError: fetch failed
+    at node:internal/deps/undici/undici:13178:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async fetchExternalImage (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\image-optimizer.js:723:17)
+    at async DevServer.imageOptimizer (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:654:48)
+    at async cacheEntry.imageResponseCache.get.incrementalCache (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:182:65)
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\response-cache\index.js:90:36
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\lib\batcher.js:45:32 {
+  [cause]: Error: unable to verify the first certificate
+      at TLSSocket.onConnectSecure (node:_tls_wrap:1685:34)
+      at TLSSocket.emit (node:events:519:28)
+      at TLSSocket._finishInit (node:_tls_wrap:1085:8)
+      at ssl.onhandshakedone (node:_tls_wrap:871:12)
+      at TLSWrap.callbackTrampoline (node:internal/async_hooks:130:17) {
+    code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+  }
+}
+TypeError: fetch failed
+    at node:internal/deps/undici/undici:13178:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async fetchExternalImage (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\image-optimizer.js:723:17)
+    at async DevServer.imageOptimizer (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:654:48)
+    at async cacheEntry.imageResponseCache.get.incrementalCache (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:182:65)
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\response-cache\index.js:90:36
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\lib\batcher.js:45:32 {
+  [cause]: Error: unable to verify the first certificate
+      at TLSSocket.onConnectSecure (node:_tls_wrap:1685:34)
+      at TLSSocket.emit (node:events:519:28)
+      at TLSSocket._finishInit (node:_tls_wrap:1085:8)
+      at ssl.onhandshakedone (node:_tls_wrap:871:12)
+      at TLSWrap.callbackTrampoline (node:internal/async_hooks:130:17) {
+    code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+  }
+}
+TypeError: fetch failed
+    at node:internal/deps/undici/undici:13178:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async fetchExternalImage (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\image-optimizer.js:723:17)
+    at async DevServer.imageOptimizer (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:654:48)
+    at async cacheEntry.imageResponseCache.get.incrementalCache (C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\next-server.js:182:65)
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\server\response-cache\index.js:90:36
+    at async C:\Users\BANGHO\Desktop\Next Js FullStack\tags\node_modules\next\dist\lib\batcher.js:45:32 {
+  [cause]: Error: unable to verify the first certificate
+      at TLSSocket.onConnectSecure (node:_tls_wrap:1685:34)
+      at TLSSocket.emit (node:events:519:28)
+      at TLSSocket._finishInit (node:_tls_wrap:1085:8)
+      at ssl.onhandshakedone (node:_tls_wrap:871:12)
+      at TLSWrap.callbackTrampoline (node:internal/async_hooks:130:17) {
+    code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+  }
+}
+ ⨯ [k [Error]: UNABLE_TO_VERIFY_LEAF_SIGNATURE] {
+  status: 400,
+  details: 'unable to verify the first certificate',
+  type: 'MailgunAPIError'
+}
+ ⨯ [k [Error]: UNABLE_TO_VERIFY_LEAF_SIGNATURE] {
+  status: 400,
+  details: 'unable to verify the first certificate',
+  type: 'MailgunAPIError'
+}

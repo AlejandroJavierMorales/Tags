@@ -43,6 +43,8 @@ import {
 }
     from "@/app/modules/resto/lib/restoCart";
 
+import "../../styles/restoCartDrawer.css";
+
 const SERVICE_MODE_DINE_IN =
     "dine_in";
 
@@ -160,7 +162,8 @@ export default function RestoCartDrawer({
 
     onOrderCreated,
 
-    themeCssVars = {}
+    themeCssVars = {},
+    onRecoverOrder
 
 }) {
 
@@ -169,11 +172,23 @@ export default function RestoCartDrawer({
             store
         );
 
-    const accessFromTable =
-        Boolean(
-            session ||
-            location
-        );
+    const restaurantName =
+        store?.name ||
+        store?.title ||
+        "Tags Resto";
+
+    const restaurantLogo =
+        store?.logo_url ||
+        store?.logo ||
+        null;
+
+    const tableEnabled =
+        store?.serviceModes?.table ===
+            undefined
+            ? true
+            : settingEnabled(
+                store?.serviceModes?.table
+            );
 
     const takeawayEnabled =
         settingEnabled(
@@ -191,11 +206,31 @@ export default function RestoCartDrawer({
             store?.delivery?.enabled
         );
 
+    const initialServiceMode =
+        session?.service_mode ||
+        session?.serviceMode
+            ? normalizeServiceMode(
+                session?.service_mode ||
+                session?.serviceMode
+            )
+            : location &&
+                tableEnabled
+                ? SERVICE_MODE_DINE_IN
+                : takeawayEnabled
+                    ? SERVICE_MODE_TAKEAWAY
+                    : SERVICE_MODE_DELIVERY;
+
     const [cart, setCart] =
         useState([]);
 
     const [loading, setLoading] =
         useState(false);
+
+    const [
+        hydratedSessionToken,
+        setHydratedSessionToken
+    ] =
+        useState(null);
 
     const [notes, setNotes] =
         useState("");
@@ -208,14 +243,12 @@ export default function RestoCartDrawer({
 
     const [serviceMode, setServiceMode] =
         useState(
-            accessFromTable
-                ? SERVICE_MODE_DINE_IN
-                : (
-                    takeawayEnabled
-                        ? SERVICE_MODE_TAKEAWAY
-                        : SERVICE_MODE_DELIVERY
-                )
+            initialServiceMode
         );
+
+    const accessFromTable =
+        serviceMode ===
+        SERVICE_MODE_DINE_IN;
 
     const [customer, setCustomer] =
         useState({
@@ -231,6 +264,14 @@ export default function RestoCartDrawer({
             zip: ""
 
         });
+
+    const customerName =
+        String(
+            customer?.name ||
+            activeSession?.customer_name ||
+            activeSession?.customerName ||
+            ""
+        ).trim();
 
     useEffect(
         () => {
@@ -278,6 +319,146 @@ export default function RestoCartDrawer({
         [
             activeSession,
             session
+        ]
+    );
+
+    /*
+    =====================================
+    HIDRATAR DATOS DEL PEDIDO ACTIVO
+    =====================================
+    */
+
+    useEffect(
+        () => {
+
+            const sessionToken =
+                getSessionToken(
+                    activeSession
+                );
+
+            if (
+                !show ||
+                !storeSlug ||
+                !sessionToken ||
+                hydratedSessionToken ===
+                    sessionToken
+            ) {
+
+                return;
+
+            }
+
+            const controller =
+                new AbortController();
+
+            async function hydrateSession() {
+
+                try {
+
+                    const response =
+                        await fetch(
+                            "/api/resto/public/orders/get",
+                            {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type":
+                                        "application/json"
+                                },
+                                body: JSON.stringify({
+                                    sessionToken
+                                }),
+                                signal:
+                                    controller.signal
+                            }
+                        );
+
+                    const data =
+                        await response
+                            .json()
+                            .catch(() => ({}));
+
+                    if (
+                        !response.ok ||
+                        !data?.session
+                    ) {
+
+                        return;
+
+                    }
+
+                    setHydratedSessionToken(
+                        sessionToken
+                    );
+
+                    const hydratedSession = {
+                        ...activeSession,
+                        ...data.session,
+                        sessionToken,
+                        sessionId:
+                            data.session.id ??
+                            getSessionId(
+                                activeSession
+                            ),
+                        storeId:
+                            data.session.store_id ??
+                            activeSession?.storeId ??
+                            store?.id ??
+                            null,
+                        locationId:
+                            data.session.location_id ??
+                            activeSession?.locationId ??
+                            null,
+                        serviceMode:
+                            normalizeServiceMode(
+                                data.session.service_mode ??
+                                activeSession?.serviceMode
+                            )
+                    };
+
+                    const storedSession =
+                        setActiveRestoSession(
+                            storeSlug,
+                            hydratedSession
+                        );
+
+                    setActiveSession(
+                        storedSession ||
+                        hydratedSession
+                    );
+
+                } catch (error) {
+
+                    if (
+                        error?.name !==
+                        "AbortError"
+                    ) {
+
+                        console.error(
+                            "RESTO CART SESSION HYDRATION ERROR:",
+                            error
+                        );
+
+                    }
+
+                }
+
+            }
+
+            hydrateSession();
+
+            return () => {
+
+                controller.abort();
+
+            };
+
+        },
+        [
+            show,
+            storeSlug,
+            store?.id,
+            activeSession,
+            hydratedSessionToken
         ]
     );
 
@@ -710,7 +891,7 @@ export default function RestoCartDrawer({
                 title:
                     "Pedidos no disponibles",
                 text:
-                    "El restaurante no tiene habilitado retiro ni delivery."
+                    "El restaurante no tiene modalidades de pedido habilitadas."
             });
 
             return false;
@@ -878,14 +1059,6 @@ export default function RestoCartDrawer({
                 currentSession?.locationId ??
                 currentSession?.location_id ??
                 null;
-
-            console.log("ORDER PAYLOAD", {
-                currentSession,
-                currentSessionId,
-                currentSessionToken,
-                serviceMode,
-                currentLocationId
-            });
 
             const response =
                 await fetch(
@@ -1088,6 +1261,36 @@ export default function RestoCartDrawer({
 
                             serviceMode,
 
+                            customerName:
+                                data?.session?.customer_name ??
+                                customer.name.trim(),
+
+                            customerPhone:
+                                data?.session?.customer_phone ??
+                                customer.phone.trim(),
+
+                            customerEmail:
+                                data?.session?.customer_email ??
+                                customer.email.trim(),
+
+                            customerAddress:
+                                data?.session?.customer_address ??
+                                (
+                                    serviceMode ===
+                                        SERVICE_MODE_DELIVERY
+                                        ? customer.address.trim()
+                                        : ""
+                                ),
+
+                            customerZip:
+                                data?.session?.customer_zip ??
+                                (
+                                    serviceMode ===
+                                        SERVICE_MODE_DELIVERY
+                                        ? customer.zip.trim()
+                                        : ""
+                                ),
+
                             status:
                                 data?.status ??
                                 data?.session?.status ??
@@ -1228,17 +1431,58 @@ export default function RestoCartDrawer({
 
             <Offcanvas.Header
                 closeButton
+                className="tags_resto_cart_header"
             >
 
                 <Offcanvas.Title>
 
-                    Mi pedido
+                    <span className="tags_resto_cart_brand">
+
+                        {restaurantLogo && (
+
+                            <img
+                                src={restaurantLogo}
+                                alt=""
+                                className="tags_resto_cart_brand_logo"
+                            />
+
+                        )}
+
+                        <span className="tags_resto_cart_brand_copy">
+
+                            <small>
+                                {restaurantName}
+                            </small>
+
+                            <strong>
+                                Mi pedido
+                            </strong>
+
+                            {customerName && (
+
+                                <span>
+                                    Hola, {customerName}
+                                </span>
+
+                            )}
+
+                        </span>
+
+                    </span>
 
                 </Offcanvas.Title>
 
             </Offcanvas.Header>
 
-            <Offcanvas.Body>
+            <Offcanvas.Body
+                className="tags_resto_cart_body"
+            >
+
+                {onRecoverOrder && (
+                    <button type="button" className="resto_order_recover_link tags_resto_cart_recover" onClick={onRecoverOrder}>
+                        ¿Ya tenés un pedido? Recuperarlo
+                    </button>
+                )}
 
                 {!cart.length && (
 
@@ -1500,6 +1744,13 @@ export default function RestoCartDrawer({
 
                         <hr />
 
+                        {
+                            (
+                                accessFromTable ||
+                                takeawayEnabled ||
+                                deliveryEnabled
+                            ) && (
+
                         <Form.Group className="mb-3">
 
                             <Form.Label>
@@ -1558,6 +1809,9 @@ export default function RestoCartDrawer({
                             </Form.Select>
 
                         </Form.Group>
+
+                            )
+                        }
 
                         <Form.Group className="mb-3">
 

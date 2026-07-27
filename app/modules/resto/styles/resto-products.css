@@ -247,3 +247,13 @@
     }
 
 }
+
+.resto_product_status .available {
+    background: #ecfdf3;
+    color: #198754;
+}
+
+.resto_product_status .sold_out {
+    background: #fff1f2;
+    color: #b42318;
+}

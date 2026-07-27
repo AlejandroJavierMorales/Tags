@@ -12,7 +12,9 @@ export default function QRPageRenderer({
     page,
     sections = [],
     products = [],
-    preview = false
+    preview = false,
+    showOwnHeader = true,
+    showOwnFooter = true
 }) {
 
     const styles =
@@ -121,10 +123,12 @@ export default function QRPageRenderer({
                 )
             }
 
-            <QRPageHeader
-                page={page}
-                sections={visibleSections}
-            />
+            {showOwnHeader && (
+                <QRPageHeader
+                    page={page}
+                    sections={visibleSections}
+                />
+            )}
 
             {
                 visibleSections.map((section) => (
@@ -137,9 +141,11 @@ export default function QRPageRenderer({
                 ))
             }
 
-            <QRPageFooter
-                page={page}
-            />
+            {showOwnFooter && (
+                <QRPageFooter
+                    page={page}
+                />
+            )}
 
             <QRPageFloatingActions
                 page={page}

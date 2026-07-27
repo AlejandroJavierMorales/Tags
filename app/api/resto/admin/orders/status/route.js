@@ -18,6 +18,10 @@ import {
     requireOpenCashShift
 } from "@/app/modules/resto/lib/cash/restoCashService";
 import { getRestoAccess, restoAccessResponse } from "@/app/modules/resto/lib/staff/getRestoAccess";
+import { logRestoAudit } from "@/app/modules/resto/lib/staff/restoAudit";
+import {
+    assertRestoSessionCanClose
+} from "@/app/modules/resto/lib/orders/restoSessionClose";
 
 
 function clean(
@@ -298,6 +302,25 @@ export async function POST(
         if (!access.allowed) return restoAccessResponse(access);
 
         if (
+            requestedOrderStatus ===
+                "cancelled" &&
+            refundAmount > 0
+        ) {
+            const refundAccess =
+                await getRestoAccess({
+                    businessId,
+                    permission:
+                        "cash.refund"
+                });
+
+            if (!refundAccess.allowed) {
+                return restoAccessResponse(
+                    refundAccess
+                );
+            }
+        }
+
+        if (
             !Number.isInteger(
                 orderId
             ) ||
@@ -518,6 +541,11 @@ export async function POST(
             requestedSessionStatus ===
             "closed"
         ) {
+
+            await assertRestoSessionCanClose(
+                connection,
+                session.id
+            );
 
             const total =
                 safeNumber(
@@ -896,8 +924,21 @@ export async function POST(
                         THEN 'refunded'
                         ELSE payment_status
                     END,
-                    cancellation_reason = ?,
-                    cancelled_at = NOW(),
+                    cancellation_reason = CASE
+                        WHEN ? = 'cancelled'
+                        THEN ?
+                        ELSE cancellation_reason
+                    END,
+                    cancelled_at = CASE
+                        WHEN ? = 'cancelled'
+                        THEN NOW()
+                        ELSE cancelled_at
+                    END,
+                    closed_at = CASE
+                        WHEN ? = 'closed'
+                        THEN NOW()
+                        ELSE closed_at
+                    END,
                     updated_at = NOW()
                 WHERE id = ?
                 AND store_id = ?
@@ -906,7 +947,10 @@ export async function POST(
             [
                 requestedSessionStatus,
                 refundAmount,
+                requestedSessionStatus,
                 cancellationReason,
+                requestedSessionStatus,
+                requestedSessionStatus,
                 session.id,
                 store.id
             ]
@@ -941,6 +985,40 @@ export async function POST(
 
         const updatedSession =
             updatedRows[0];
+
+        await logRestoAudit(
+            connection,
+            {
+                storeId:
+                    store.id,
+                access,
+                actionCode:
+                    requestedSessionStatus ===
+                        "cancelled"
+                        ? "order.cancelled"
+                        : "order.status.updated",
+                entityType:
+                    "order",
+                entityId:
+                    session.id,
+                description:
+                    cancellationReason ||
+                    session.order_number,
+                metadata: {
+                    previous_status:
+                        currentSessionStatus,
+                    next_status:
+                        requestedSessionStatus,
+                    refund_amount:
+                        refundAmount,
+                    refund_method:
+                        refundAmount > 0
+                            ? refundMethod
+                            : null
+                },
+                req
+            }
+        );
 
         await connection.commit();
 
@@ -1041,6 +1119,7 @@ export async function POST(
             },
             {
                 status:
+                    err.status ||
                     500
             }
         );

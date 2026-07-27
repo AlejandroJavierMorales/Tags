@@ -12,6 +12,8 @@ export const dynamic = "force-dynamic";
 
 import { db }
     from "@/app/lib/tags-db";
+import { requireStoreResourceAccess, storeAccessResponse }
+    from "@/app/modules/store/lib/storeAdminAccess";
 
 export async function POST(req) {
     try {
@@ -25,6 +27,14 @@ export async function POST(req) {
                 { error: "sectionId requerido" },
                 { status: 400 }
             );
+        }
+
+        const access =
+            await requireStoreResourceAccess({
+                sectionId
+            });
+        if (!access.allowed) {
+            return storeAccessResponse(access);
         }
 
         if (!Array.isArray(blocks) || !blocks.length) {

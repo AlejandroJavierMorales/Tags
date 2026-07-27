@@ -22,6 +22,7 @@
 .tags_resto_cash_methods div:last-child{border-right:0}
 .tags_resto_cash_methods span{color:var(--resto-admin-text-muted);font-size:.73rem}
 .tags_resto_cash_methods strong{color:var(--resto-admin-text);font-size:.95rem}
+.tags_resto_cash_methods small{color:var(--resto-admin-text-muted);font-size:.68rem;line-height:1.35}
 .tags_resto_cash_columns{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .tags_resto_cash_panel{overflow:hidden}
 .tags_resto_cash_panel>header{display:flex;align-items:center;gap:11px;padding:17px 19px;border-bottom:1px solid var(--resto-admin-border);background:#fafbfc}
@@ -39,10 +40,22 @@
 .tags_resto_cash_movements>article>strong.is-income{color:var(--resto-admin-success)}
 .tags_resto_cash_movements>article>strong.is-expense{color:var(--resto-admin-danger)}
 .tags_resto_cash_empty{margin:0;padding:28px;color:var(--resto-admin-text-muted);text-align:center}
-.tags_resto_cash_history article{display:grid;grid-template-columns:1fr auto minmax(100px,auto);align-items:center;gap:18px;padding:14px 18px;border-bottom:1px solid var(--resto-admin-border)}
+.tags_resto_cash_pending{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:16px}
+.tags_resto_cash_pending article{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:14px;padding:14px;border:1px solid var(--resto-admin-border);border-radius:12px;background:#fff}
+.tags_resto_cash_pending article>div{display:flex;flex-direction:column;min-width:0}
+.tags_resto_cash_pending article>div:nth-child(2){align-items:flex-end}
+.tags_resto_cash_pending span,.tags_resto_cash_pending small{overflow:hidden;color:var(--resto-admin-text-muted);font-size:.73rem;text-overflow:ellipsis;white-space:nowrap}
+.tags_resto_cash_history article{display:grid;grid-template-columns:1fr auto minmax(100px,auto) auto;align-items:center;gap:18px;padding:14px 18px;border-bottom:1px solid var(--resto-admin-border)}
 .tags_resto_cash_history article>div{display:flex;flex-direction:column}
 .tags_resto_cash_history>article>span{padding:5px 9px;border-radius:999px;font-weight:700}
 .tags_resto_cash_history .is-open{color:var(--resto-admin-success);background:var(--resto-admin-success-soft)}
 .tags_resto_cash_history .is-closed{color:var(--resto-admin-neutral);background:var(--resto-admin-neutral-soft)}
+.tags_resto_cash_history_action{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:34px;padding:7px 11px;border:1px solid var(--resto-admin-border-strong);border-radius:9px;background:#fff;color:var(--resto-admin-primary);font-size:.73rem;font-weight:800;cursor:pointer}
+.tags_resto_cash_history_action:disabled{cursor:wait;opacity:.55}
+.tags_resto_cash_audit>header .tags_resto_cash_history_action{margin-left:auto}
+.tags_resto_cash_audit_totals{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;border-bottom:1px solid var(--resto-admin-border);background:var(--resto-admin-border)}
+.tags_resto_cash_audit_totals div{display:flex;flex-direction:column;gap:4px;padding:14px 17px;background:#fff}
+.tags_resto_cash_audit_totals span{color:var(--resto-admin-text-muted);font-size:.72rem}
+.tags_resto_cash_audit_totals strong{color:var(--resto-admin-text);font-size:.95rem}
 @media(max-width:1050px){.tags_resto_cash_open{grid-template-columns:auto 1fr}.tags_resto_cash_open label,.tags_resto_cash_open button{grid-column:span 1}.tags_resto_cash_kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.tags_resto_cash_methods{grid-template-columns:repeat(2,minmax(0,1fr))}.tags_resto_cash_methods div{border-right:0;border-bottom:1px solid var(--resto-admin-border)}}
-@media(max-width:760px){.tags_resto_cash_columns,.tags_resto_cash_kpis,.tags_resto_cash_methods{grid-template-columns:1fr}.tags_resto_cash_open{grid-template-columns:1fr;align-items:stretch}.tags_resto_cash_open>*{grid-column:auto!important}.tags_resto_cash_shift_header{align-items:flex-start;flex-direction:column}.tags_resto_cash_form{grid-template-columns:1fr}.tags_resto_cash_history article{grid-template-columns:1fr}.tags_resto_cash_movements article{grid-template-columns:auto 1fr}.tags_resto_cash_movements>article>strong{grid-column:2}}
+@media(max-width:760px){.tags_resto_cash_columns,.tags_resto_cash_kpis,.tags_resto_cash_methods,.tags_resto_cash_audit_totals,.tags_resto_cash_pending{grid-template-columns:1fr}.tags_resto_cash_open{grid-template-columns:1fr;align-items:stretch}.tags_resto_cash_open>*{grid-column:auto!important}.tags_resto_cash_shift_header{align-items:flex-start;flex-direction:column}.tags_resto_cash_form{grid-template-columns:1fr}.tags_resto_cash_history article{grid-template-columns:1fr}.tags_resto_cash_movements article{grid-template-columns:auto 1fr}.tags_resto_cash_movements>article>strong{grid-column:2}.tags_resto_cash_audit>header{align-items:flex-start;flex-wrap:wrap}.tags_resto_cash_audit>header .tags_resto_cash_history_action{margin-left:0}.tags_resto_cash_pending article{grid-template-columns:1fr}.tags_resto_cash_pending article>div:nth-child(2){align-items:flex-start}}

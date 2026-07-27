@@ -57,6 +57,7 @@ async function getOrder(orderId, businessId) {
             FROM tags_store_orders o
             INNER JOIN tags_stores s
                 ON s.id = o.store_id
+                AND s.app_type = 'store'
             WHERE o.id = ?
             ${businessSql}
             LIMIT 1
@@ -273,11 +274,11 @@ export const ShipmentEngine = {
 
     async create({
         orderId,
-        businessId = null
+        businessId
     }) {
-        if (!orderId) {
+        if (!orderId || !businessId) {
             throw new Error(
-                "orderId es requerido"
+                "businessId y orderId son requeridos"
             );
         }
 
@@ -287,6 +288,24 @@ export const ShipmentEngine = {
         if (!order) {
             throw new Error(
                 "Pedido no encontrado"
+            );
+        }
+
+        if (order.payment_status !== "paid") {
+            throw Object.assign(
+                new Error(
+                    "El pedido debe estar pagado antes de crear el envío"
+                ),
+                { status: 409 }
+            );
+        }
+
+        if (order.order_status === "cancelled") {
+            throw Object.assign(
+                new Error(
+                    "No se puede enviar un pedido cancelado"
+                ),
+                { status: 409 }
             );
         }
 
@@ -326,6 +345,15 @@ export const ShipmentEngine = {
             };
         }
 
+        if (order.shipping_status === "creating") {
+            throw Object.assign(
+                new Error(
+                    "El envío ya se está creando"
+                ),
+                { status: 409 }
+            );
+        }
+
         if (!order.shipping_quote_json) {
             throw new Error(
                 "El pedido no tiene cotización guardada"
@@ -356,12 +384,62 @@ export const ShipmentEngine = {
         const orderItems =
             await getOrderItems(order.id);
 
-        const result =
-            await createZipnovaShipment({
-                provider,
-                order,
-                orderItems
-            });
+        const [claim] =
+            await db.query(
+                `
+                UPDATE tags_store_orders
+                SET
+                    shipping_status = 'creating',
+                    updated_at = NOW()
+                WHERE id = ?
+                AND store_id = ?
+                AND shipping_status != 'creating'
+                AND tracking_code IS NULL
+                AND tracking_url IS NULL
+                `,
+                [
+                    order.id,
+                    order.store_id
+                ]
+            );
+
+        if (claim.affectedRows !== 1) {
+            throw Object.assign(
+                new Error(
+                    "El envío ya fue creado o se está procesando"
+                ),
+                { status: 409 }
+            );
+        }
+
+        let result;
+
+        try {
+            result =
+                await createZipnovaShipment({
+                    provider,
+                    order,
+                    orderItems
+                });
+        } catch (error) {
+            await db.query(
+                `
+                UPDATE tags_store_orders
+                SET
+                    shipping_status = 'pending',
+                    updated_at = NOW()
+                WHERE id = ?
+                AND store_id = ?
+                AND shipping_status = 'creating'
+                `,
+                [
+                    order.id,
+                    order.store_id
+                ]
+            );
+
+            throw error;
+        }
 
         await saveShipmentResult({
             order,

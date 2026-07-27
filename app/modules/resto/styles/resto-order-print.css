@@ -1,0 +1,229 @@
+:root {
+    color-scheme: light;
+}
+
+.resto_order_print_page {
+    min-height: 100vh;
+    padding: 24px 16px 48px;
+    background: #eef1f4;
+    color: #111;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.resto_order_print_toolbar {
+    display: flex;
+    width: min(100%, 520px);
+    margin: 0 auto 18px;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.resto_order_print_toolbar button {
+    display: inline-flex;
+    min-height: 42px;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    background: #fff;
+    color: #1e293b;
+    font-weight: 700;
+}
+
+.resto_order_print_toolbar button.is_primary {
+    border-color: #198754;
+    background: #198754;
+    color: #fff;
+}
+
+.resto_order_print_document {
+    width: min(100%, 80mm);
+    margin: 0 auto;
+    padding: 8mm 6mm;
+    background: #fff;
+    box-shadow: 0 12px 36px rgba(15, 23, 42, .16);
+}
+
+.resto_order_print_header {
+    text-align: center;
+}
+
+.resto_order_print_header img {
+    display: block;
+    width: auto;
+    max-width: 62mm;
+    height: auto;
+    max-height: 24mm;
+    margin: 0 auto 4mm;
+    object-fit: contain;
+}
+
+.resto_order_print_header h1 {
+    margin: 0;
+    font-size: 18px;
+    line-height: 1.2;
+}
+
+.resto_order_print_contact {
+    display: grid;
+    margin-top: 2mm;
+    gap: 1mm;
+    font-size: 10px;
+}
+
+.resto_order_print_contact span:empty {
+    display: none;
+}
+
+.resto_order_print_title {
+    display: grid;
+    margin: 5mm 0 4mm;
+    padding: 3mm 0;
+    border-block: 1px dashed #222;
+    gap: 1mm;
+    text-align: center;
+}
+
+.resto_order_print_title strong {
+    font-size: 16px;
+    letter-spacing: .04em;
+}
+
+.resto_order_print_title small {
+    font-size: 9px;
+}
+
+.resto_order_print_metadata {
+    display: grid;
+    margin: 0 0 4mm;
+    gap: 1.5mm;
+    font-size: 10px;
+}
+
+.resto_order_print_metadata div {
+    display: grid;
+    grid-template-columns: 25mm 1fr;
+    gap: 2mm;
+}
+
+.resto_order_print_metadata dt {
+    font-weight: 700;
+}
+
+.resto_order_print_metadata dd {
+    margin: 0;
+    text-align: right;
+}
+
+.resto_order_print_items {
+    border-top: 1px solid #111;
+}
+
+.resto_order_print_item {
+    padding: 3mm 0;
+    border-bottom: 1px dashed #aaa;
+}
+
+.resto_order_print_item_main {
+    display: flex;
+    justify-content: space-between;
+    gap: 4mm;
+    font-size: 11px;
+}
+
+.resto_order_print_item_main strong {
+    overflow-wrap: anywhere;
+}
+
+.resto_order_print_item small {
+    display: block;
+    margin-top: 1mm;
+    color: #333;
+    font-size: 9px;
+}
+
+.resto_order_print_item p,
+.resto_order_print_notes p {
+    margin: 1.5mm 0 0;
+    font-size: 10px;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+.resto_order_print_empty {
+    padding: 5mm 0;
+    text-align: center;
+    font-size: 10px;
+}
+
+.resto_order_print_notes {
+    margin-top: 4mm;
+    padding: 3mm;
+    border: 1px solid #111;
+    font-size: 10px;
+}
+
+.resto_order_print_totals {
+    display: grid;
+    margin-top: 5mm;
+    gap: 2mm;
+    font-size: 11px;
+}
+
+.resto_order_print_totals div {
+    display: flex;
+    justify-content: space-between;
+    gap: 4mm;
+}
+
+.resto_order_print_totals .is_total,
+.resto_order_print_totals .is_balance {
+    padding-top: 2mm;
+    border-top: 1px solid #111;
+    font-size: 14px;
+}
+
+.resto_order_print_footer {
+    margin-top: 7mm;
+    padding-top: 3mm;
+    border-top: 1px dashed #111;
+    text-align: center;
+    font-size: 9px;
+}
+
+.resto_order_print_page.is_kitchen .resto_order_print_document {
+    font-size: 12px;
+}
+
+.resto_order_print_page.is_kitchen .resto_order_print_item_main {
+    font-size: 15px;
+}
+
+.resto_order_print_page.is_kitchen .resto_order_print_item p {
+    font-size: 13px;
+}
+
+@page {
+    size: 80mm auto;
+    margin: 0;
+}
+
+@media print {
+    .resto_order_print_page {
+        min-height: 0;
+        padding: 0;
+        background: #fff;
+    }
+
+    .resto_order_print_toolbar {
+        display: none;
+    }
+
+    .resto_order_print_document {
+        width: 80mm;
+        margin: 0;
+        box-shadow: none;
+    }
+}

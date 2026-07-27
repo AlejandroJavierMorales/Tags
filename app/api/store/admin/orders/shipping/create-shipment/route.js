@@ -24,11 +24,11 @@ export async function POST(req) {
             businessId
         } = body;
 
-        if (!orderId) {
+        if (!orderId || !businessId) {
             return Response.json(
                 {
                     error:
-                        "orderId es requerido"
+                        "businessId y orderId son requeridos"
                 },
                 {
                     status: 400

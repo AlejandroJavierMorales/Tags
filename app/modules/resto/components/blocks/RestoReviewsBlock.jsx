@@ -88,6 +88,10 @@ export default function RestoReviewsBlock({
     styles = {}
 }) {
 
+    if (!entity?.has_reviews) {
+        return null;
+    }
+
     const finalContent =
         Object.keys(
             content || {}

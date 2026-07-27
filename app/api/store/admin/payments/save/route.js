@@ -8,6 +8,10 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 import { db } from "@/app/lib/tags-db";
+import {
+    requireStoreBusinessAccess,
+    storeAccessResponse
+} from "@/app/modules/store/lib/storeAdminAccess";
 
 const validProviders = [
     "mercado_pago",
@@ -51,19 +55,16 @@ export async function POST(req) {
             );
         }
 
-        const [storeRows] =
-            await db.query(
-                `
-                SELECT id
-                FROM tags_stores
-                WHERE business_id = ?
-                LIMIT 1
-                `,
-                [businessId]
+        const access =
+            await requireStoreBusinessAccess(
+                businessId
             );
 
-        const store =
-            storeRows[0];
+        if (!access.allowed) {
+            return storeAccessResponse(access);
+        }
+
+        const store = access.store;
 
         if (!store) {
             return Response.json(
@@ -90,6 +91,40 @@ export async function POST(req) {
         const existing =
             existingRows[0];
 
+        let effectiveAccessToken =
+            access_token || null;
+
+        if (existing && !effectiveAccessToken) {
+            const [secretRows] =
+                await db.query(
+                    `
+                    SELECT access_token
+                    FROM tags_store_payment_settings
+                    WHERE id = ?
+                    LIMIT 1
+                    `,
+                    [existing.id]
+                );
+
+            effectiveAccessToken =
+                secretRows[0]?.access_token ||
+                null;
+        }
+
+        if (
+            provider === "mercado_pago" &&
+            Number(is_active) === 1 &&
+            !effectiveAccessToken
+        ) {
+            return Response.json(
+                {
+                    error:
+                        "Ingresá el Access Token de Mercado Pago antes de activarlo"
+                },
+                { status: 400 }
+            );
+        }
+
         if (existing) {
             await db.query(
                 `
@@ -97,7 +132,8 @@ export async function POST(req) {
                 SET
                     is_active = ?,
                     public_key = ?,
-                    access_token = ?,
+                    access_token =
+                        COALESCE(?, access_token),
                     account_email = ?,
                     account_name = ?,
                     settings_json = ?,

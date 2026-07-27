@@ -16,6 +16,10 @@ import {
     restoAccessResponse
 } from "@/app/modules/resto/lib/staff/getRestoAccess";
 
+import {
+    logRestoAudit
+} from "@/app/modules/resto/lib/staff/restoAudit";
+
 export async function POST(req) {
     try {
         const body =
@@ -85,17 +89,8 @@ export async function POST(req) {
                 .update(token)
                 .digest("hex");
 
-        await db.query(
-            `
-            UPDATE tags_resto_staff_auth_tokens
-            SET used_at = NOW()
-            WHERE staff_id = ?
-            AND used_at IS NULL
-            `,
-            [staff.id]
-        );
-
-        await db.query(
+        const [tokenResult] =
+            await db.query(
             `
             INSERT INTO tags_resto_staff_auth_tokens
             (
@@ -127,7 +122,7 @@ export async function POST(req) {
         const baseUrl =
             process.env.NODE_ENV ===
             "development"
-                ? "http://localhost:3000"
+                ? new URL(req.url).origin
                 : process.env
                     .NEXT_PUBLIC_APP_URL;
 
@@ -137,6 +132,38 @@ export async function POST(req) {
         await sendMagicLink(
             staff.email,
             link
+        );
+
+        await db.query(
+            `
+            UPDATE tags_resto_staff_auth_tokens
+            SET used_at = NOW()
+            WHERE staff_id = ?
+            AND id <> ?
+            AND used_at IS NULL
+            `,
+            [
+                staff.id,
+                tokenResult.insertId
+            ]
+        );
+
+        await logRestoAudit(
+            db,
+            {
+                storeId:
+                    staff.store_id,
+                access,
+                actionCode:
+                    "staff.access_link.sent",
+                entityType:
+                    "staff",
+                entityId:
+                    staff.id,
+                description:
+                    staff.email,
+                req
+            }
         );
 
         return Response.json({

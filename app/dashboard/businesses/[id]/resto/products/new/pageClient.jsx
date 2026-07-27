@@ -47,6 +47,8 @@ const emptyProduct = {
 
     is_featured: 0,
 
+    is_available: true,
+
     stock_control: 0,
 
     requires_preparation: 1,
@@ -164,6 +166,11 @@ export default function RestoProductEditorClient({
             setForm({
                 ...emptyProduct,
                 ...data.product,
+                is_available:
+                    data.product
+                        ?.settings_json
+                        ?.resto_available !==
+                    false,
                 image_url:
                     primaryImage?.image_url ||
                     ""
@@ -226,7 +233,16 @@ export default function RestoProductEditorClient({
                             appType: "resto",
                             productId:
                                 productId || null,
-                            ...form
+                            ...form,
+                            settings_json: {
+                                ...(
+                                    form.settings_json ||
+                                    {}
+                                ),
+                                resto_available:
+                                    form.is_available !==
+                                    false
+                            }
                         })
 
                     }
@@ -570,6 +586,33 @@ export default function RestoProductEditorClient({
                         />
 
                         Destacado
+
+                    </label>
+
+                    <label className="qr_page_checkbox">
+
+                        <input
+                            type="checkbox"
+                            checked={
+                                form.is_available !==
+                                false
+                            }
+                            onChange={e =>
+                                update(
+                                    "is_available",
+                                    e.target.checked
+                                )
+                            }
+                        />
+
+                        Disponible para pedidos
+
+                        <small
+                            className="d-block text-muted ms-4"
+                        >
+                            Desmarcar para mostrarlo como agotado
+                            sin quitarlo de la carta.
+                        </small>
 
                     </label>
 

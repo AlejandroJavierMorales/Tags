@@ -49,9 +49,13 @@ export default function RestoHeroBlock({
         "Descubrí nuestra carta y realizá tu pedido.";
 
     const serviceStatus =
-        entity?.service_status ||
-        entity?.status ||
-        "";
+        entity?.service_hours_configured === false
+            ? ""
+            : (
+                entity?.service_status ||
+                entity?.status ||
+                ""
+            );
 
     const isOpen =
         entity?.is_open === true ||
@@ -59,8 +63,7 @@ export default function RestoHeroBlock({
         entity?.is_open === "1" ||
         serviceStatus === "open" ||
         serviceStatus === "opened" ||
-        serviceStatus === "active" ||
-        serviceStatus === "published";
+        serviceStatus === "active";
 
     const showCover =
         content?.showCover !== false;

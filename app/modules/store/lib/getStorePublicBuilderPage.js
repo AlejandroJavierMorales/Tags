@@ -32,6 +32,7 @@ export async function getStorePublicBuilderPage(slug) {
         SELECT
             s.*,
             qrp.theme_id,
+            qrp.global_styles AS page_global_styles,
 
             t.code AS theme_code,
             t.name AS theme_name,

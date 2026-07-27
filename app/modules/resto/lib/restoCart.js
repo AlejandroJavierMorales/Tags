@@ -673,6 +673,11 @@ export function setActiveRestoSession(
     const sessions =
         getStoredSessions();
 
+    const previousSession =
+        sessions[
+            normalizedSlug
+        ] || {};
+
     const activeSession = {
 
         sessionToken,
@@ -681,40 +686,108 @@ export function setActiveRestoSession(
             session?.sessionId ??
             session?.session_id ??
             session?.id ??
+            previousSession.sessionId ??
             null,
 
         storeId:
             session?.storeId ??
             session?.store_id ??
+            previousSession.storeId ??
             null,
 
         locationId:
             session?.locationId ??
             session?.location_id ??
+            previousSession.locationId ??
             null,
 
         sourceQrCodeId:
             session?.sourceQrCodeId ??
             session?.source_qr_code_id ??
+            previousSession.sourceQrCodeId ??
             null,
 
         qrCode:
             session?.qrCode ??
             session?.qr_code ??
+            previousSession.qrCode ??
             null,
 
         qrLabel:
             session?.qrLabel ??
             session?.qr_label ??
+            previousSession.qrLabel ??
             null,
 
         serviceMode:
             session?.serviceMode ??
             session?.service_mode ??
+            previousSession.serviceMode ??
+            null,
+
+        customerName:
+            session?.customerName ??
+            session?.customer_name ??
+            previousSession.customerName ??
+            null,
+
+        customerPhone:
+            session?.customerPhone ??
+            session?.customer_phone ??
+            previousSession.customerPhone ??
+            null,
+
+        customerEmail:
+            session?.customerEmail ??
+            session?.customer_email ??
+            previousSession.customerEmail ??
+            null,
+
+        customerAddress:
+            session?.customerAddress ??
+            session?.customer_address ??
+            previousSession.customerAddress ??
+            null,
+
+        customerZip:
+            session?.customerZip ??
+            session?.customer_zip ??
+            previousSession.customerZip ??
+            null,
+
+        customerCity:
+            session?.customerCity ??
+            session?.customer_city ??
+            previousSession.customerCity ??
+            null,
+
+        customerState:
+            session?.customerState ??
+            session?.customer_state ??
+            previousSession.customerState ??
+            null,
+
+        customerStreetNumber:
+            session?.customerStreetNumber ??
+            session?.customer_street_number ??
+            previousSession.customerStreetNumber ??
+            null,
+
+        customerStreetExtras:
+            session?.customerStreetExtras ??
+            session?.customer_street_extras ??
+            previousSession.customerStreetExtras ??
+            null,
+
+        customerDocument:
+            session?.customerDocument ??
+            session?.customer_document ??
+            previousSession.customerDocument ??
             null,
 
         status:
             session?.status ??
+            previousSession.status ??
             "open",
 
         updatedAt:

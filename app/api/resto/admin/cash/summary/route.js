@@ -4,10 +4,20 @@ export const dynamic = "force-dynamic";
 import {
     db,
     ensurePrimaryCashRegister,
+    getCashShiftById,
     getCashShiftSummary,
     getOpenCashShift,
     getRestoCashStore
 } from "@/app/modules/resto/lib/cash/restoCashService";
+
+import {
+    getRestoAccess,
+    restoAccessResponse
+} from "@/app/modules/resto/lib/staff/getRestoAccess";
+
+import {
+    getNormalizedOrders
+} from "@/app/modules/resto/lib/orders/getNormalizedOrders";
 
 export async function GET(req) {
 
@@ -26,6 +36,13 @@ export async function GET(req) {
                 ""
             ).trim();
 
+        const historyShiftId =
+            Number(
+                searchParams.get(
+                    "historyShiftId"
+                )
+            );
+
         if (!businessId) {
             return Response.json(
                 {
@@ -36,6 +53,19 @@ export async function GET(req) {
                     status:
                         400
                 }
+            );
+        }
+
+        const access =
+            await getRestoAccess({
+                businessId,
+                permission:
+                    "cash.view"
+            });
+
+        if (!access.allowed) {
+            return restoAccessResponse(
+                access
             );
         }
 
@@ -107,6 +137,69 @@ export async function GET(req) {
 
         }
 
+        let auditShift = null;
+        let auditMovements = [];
+
+        if (
+            Number.isInteger(
+                historyShiftId
+            ) &&
+            historyShiftId > 0
+        ) {
+
+            const selectedShift =
+                await getCashShiftById(
+                    db,
+                    store.id,
+                    historyShiftId
+                );
+
+            if (!selectedShift) {
+                return Response.json(
+                    {
+                        error:
+                            "El turno de caja no existe"
+                    },
+                    {
+                        status:
+                            404
+                    }
+                );
+            }
+
+            auditShift =
+                await getCashShiftSummary(
+                    db,
+                    selectedShift
+                );
+
+            const [
+                selectedMovements
+            ] =
+                await db.query(
+                    `
+                    SELECT
+                        cm.*,
+                        s.order_number
+                    FROM tags_resto_cash_movements cm
+                    LEFT JOIN tags_resto_sessions s
+                        ON s.id = cm.session_id
+                    WHERE cm.cash_shift_id = ?
+                    ORDER BY
+                        cm.occurred_at DESC,
+                        cm.id DESC
+                    LIMIT 500
+                    `,
+                    [
+                        selectedShift.id
+                    ]
+                );
+
+            auditMovements =
+                selectedMovements;
+
+        }
+
         const [
             history
         ] =
@@ -127,15 +220,38 @@ export async function GET(req) {
                 ]
             );
 
+        let pendingOrders = [];
+
+        if (shift) {
+            const normalized =
+                await getNormalizedOrders({
+                    businessId,
+                    paymentPendingOnly:
+                        true
+                });
+
+            pendingOrders =
+                normalized.orders;
+        }
+
         return Response.json({
             ok:
                 true,
             store,
+            currency:
+                store.currency ||
+                "ARS",
             register,
             shift:
                 summary,
             movements,
-            history
+            history,
+            pending_orders:
+                pendingOrders,
+            audit_shift:
+                auditShift,
+            audit_movements:
+                auditMovements
         });
 
     } catch (error) {

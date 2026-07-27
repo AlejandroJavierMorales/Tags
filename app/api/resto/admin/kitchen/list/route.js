@@ -15,6 +15,11 @@ import {
     parseRestoOrderMetadata
 } from "@/app/modules/resto/lib/orders";
 
+import {
+    getRestoAccess,
+    restoAccessResponse
+} from "@/app/modules/resto/lib/staff/getRestoAccess";
+
 function clean(value) {
 
     return String(
@@ -164,6 +169,19 @@ export async function GET(req) {
 
         }
 
+        const access =
+            await getRestoAccess({
+                businessId,
+                permission:
+                    "kitchen.view"
+            });
+
+        if (!access.allowed) {
+            return restoAccessResponse(
+                access
+            );
+        }
+
         const [
             storeRows
         ] =
@@ -210,32 +228,52 @@ export async function GET(req) {
                 store.settings_json
             );
 
+        const savedKitchenSettings =
+            storeSettings
+                ?.resto_kitchen ||
+            storeSettings
+                ?.kitchen ||
+            {};
+
         const kitchenSettings = {
+
+            autoRefreshSeconds:
+                positiveNumber(
+                    savedKitchenSettings
+                        ?.auto_refresh_seconds ??
+                    savedKitchenSettings
+                        ?.autoRefreshSeconds,
+                    10
+                ),
 
             warningMinutes:
                 positiveNumber(
-                    storeSettings?.kitchen
+                    savedKitchenSettings
+                        ?.preparation_warning_minutes ??
+                    savedKitchenSettings
                         ?.warningMinutes,
                     10
                 ),
 
             urgentMinutes:
                 positiveNumber(
-                    storeSettings?.kitchen
+                    savedKitchenSettings
+                        ?.preparation_critical_minutes ??
+                    savedKitchenSettings
                         ?.urgentMinutes,
                     20
                 ),
 
             cardWidth:
                 positiveNumber(
-                    storeSettings?.kitchen
+                    savedKitchenSettings
                         ?.cardWidth,
                     350
                 ),
 
             cardHeight:
                 positiveNumber(
-                    storeSettings?.kitchen
+                    savedKitchenSettings
                         ?.cardHeight,
                     620
                 )

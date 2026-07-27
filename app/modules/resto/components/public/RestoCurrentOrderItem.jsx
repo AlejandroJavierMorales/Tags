@@ -37,11 +37,21 @@ export default function RestoCurrentOrderItem({
         cancelled: "Cancelado"
     };
 
-    const canEdit =
+    const canIncrease =
+        isSessionOpen;
+
+    const canReduce =
         isSessionOpen &&
         Number(
             item.pending_quantity || 0
         ) > 0;
+
+    const activeQuantity =
+        Math.max(
+            0,
+            Number(item.quantity || 0) -
+            Number(item.cancelled_quantity || 0)
+        );
 
     return (
 
@@ -129,12 +139,12 @@ export default function RestoCurrentOrderItem({
                         className="tags_resto_current_order_quantity_button"
                         disabled={
                             sending ||
-                            !canEdit
+                            !canReduce
                         }
                         onClick={() =>
                             updateItem(
                                 item,
-                                Number(item.quantity) - 1
+                                activeQuantity - 1
                             )
                         }
                     >
@@ -143,7 +153,7 @@ export default function RestoCurrentOrderItem({
 
                     <span className="tags_resto_current_order_quantity_value">
 
-                        {item.quantity}
+                        {activeQuantity}
 
                     </span>
 
@@ -152,12 +162,12 @@ export default function RestoCurrentOrderItem({
                         className="tags_resto_current_order_quantity_button"
                         disabled={
                             sending ||
-                            !canEdit
+                            !canIncrease
                         }
                         onClick={() =>
                             updateItem(
                                 item,
-                                Number(item.quantity) + 1
+                                activeQuantity + 1
                             )
                         }
                     >
@@ -171,7 +181,7 @@ export default function RestoCurrentOrderItem({
                     className="tags_resto_current_order_remove_button"
                     disabled={
                         sending ||
-                        !canEdit
+                        !canReduce
                     }
                     onClick={() => removeItem(item)}
                 >

@@ -13,7 +13,27 @@ export const dynamic = "force-dynamic";
 import { db }
     from "@/app/lib/tags-db";
 
+import {
+    getRestoAccess,
+    restoAccessResponse
+} from "@/app/modules/resto/lib/staff/getRestoAccess";
+
 export async function POST(req) {
+
+    if (
+        process.env.NODE_ENV !==
+        "development"
+    ) {
+        return Response.json(
+            {
+                error:
+                    "Endpoint no disponible"
+            },
+            {
+                status: 404
+            }
+        );
+    }
 
     const conn =
         await db.getConnection();
@@ -36,6 +56,18 @@ export async function POST(req) {
                 }
             );
 
+        }
+
+        const access =
+            await getRestoAccess({
+                businessId,
+                ownerOnly: true
+            });
+
+        if (!access.allowed) {
+            return restoAccessResponse(
+                access
+            );
         }
 
         await conn.beginTransaction();

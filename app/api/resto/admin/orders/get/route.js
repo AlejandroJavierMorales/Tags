@@ -12,6 +12,11 @@ import {
     getNormalizedOrders
 } from "@/app/modules/resto/lib/orders/getNormalizedOrders";
 
+import {
+    getRestoAccess,
+    restoAccessResponse
+} from "@/app/modules/resto/lib/staff/getRestoAccess";
+
 function clean(value) {
 
     return String(
@@ -63,6 +68,19 @@ export async function GET(
                 }
             );
 
+        }
+
+        const access =
+            await getRestoAccess({
+                businessId,
+                permission:
+                    "orders.view"
+            });
+
+        if (!access.allowed) {
+            return restoAccessResponse(
+                access
+            );
         }
 
         const {

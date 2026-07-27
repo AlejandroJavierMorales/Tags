@@ -98,6 +98,7 @@ export async function GET(req) {
                     settings_json
                 FROM tags_stores
                 WHERE business_id = ?
+                AND app_type = 'store'
                 LIMIT 1
                 `,
                 [

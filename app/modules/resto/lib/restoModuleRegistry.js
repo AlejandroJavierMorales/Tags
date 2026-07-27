@@ -45,6 +45,10 @@ import RestoReviewsCTA
 import RestoReviewsBlock
     from "@/app/modules/resto/components/blocks/RestoReviewsBlock";
 
+import {
+    createDefaultEditorSchema
+} from "@/app/modules/store/lib/builder/storeBuilderSchema";
+
 const restoModules = {
 
     resto_topbar: {
@@ -549,6 +553,38 @@ export function getRestoModule(
         null
     );
 
+}
+
+function humanizeField(key) {
+    return String(key || "")
+        .replace(/([A-Z])/g, " $1")
+        .replace(/^./, value => value.toUpperCase());
+}
+
+function getPrimitiveContentFields(content = {}) {
+    return Object.entries(content)
+        .filter(([, value]) => ["string", "number", "boolean"].includes(typeof value))
+        .map(([key, value]) => ({
+            key,
+            label: humanizeField(key),
+            type: typeof value === "boolean" ? "checkbox" : typeof value === "number" ? "number" : "text",
+            checkboxLabel: typeof value === "boolean" ? `Mostrar ${humanizeField(key).toLowerCase()}` : undefined
+        }));
+}
+
+export function getRestoModuleDefinition(blockType) {
+    const module = getRestoModule(blockType);
+    if (!module) return null;
+    return {
+        ...module,
+        name: module.label,
+        editor: module.editor || createDefaultEditorSchema({
+            description: `Personalizá cómo se muestra ${String(module.label || "este bloque").toLowerCase()} en la página pública.`,
+            content: getPrimitiveContentFields(module.defaultContent || {}),
+            typography: ["title", "subtitle", "text", "button", "meta"],
+            animation: true
+        })
+    };
 }
 
 export function getRestoModules() {

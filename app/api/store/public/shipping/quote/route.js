@@ -2,6 +2,13 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 import { db } from "@/app/lib/tags-db";
+import {
+    signStoreShippingQuote
+} from "@/app/modules/store/lib/storeShippingQuoteSignature";
+import {
+    checkStorePublicRateLimit,
+    storeRequestIp
+} from "@/app/modules/store/lib/storePublicRateLimit";
 
 function safeNumber(value, fallback = 0) {
     const n = Number(value);
@@ -163,6 +170,38 @@ export async function POST(req) {
             items
                 .map(item => Number(item.product_id))
                 .filter(Boolean);
+
+        if (!productIds.length) {
+            return Response.json(
+                { error: "El carrito no contiene productos válidos" },
+                { status: 400 }
+            );
+        }
+
+        const rateLimit =
+            checkStorePublicRateLimit({
+                key:
+                    `quote:${storeId}:${storeRequestIp(req)}`,
+                limit: 20
+            });
+
+        if (!rateLimit.allowed) {
+            return Response.json(
+                {
+                    error:
+                        "Demasiadas cotizaciones. Intentá nuevamente en unos segundos."
+                },
+                {
+                    status: 429,
+                    headers: {
+                        "Retry-After":
+                            String(
+                                rateLimit.retryAfter
+                            )
+                    }
+                }
+            );
+        }
 
         const [productRows] =
             await db.query(
@@ -343,12 +382,33 @@ export async function POST(req) {
             );
         }
 
+        const expiresAt =
+            Date.now() + 10 * 60 * 1000;
+
+        const quotes =
+            normalizeZipnovaQuotes(
+                zipnovaData
+            ).map(quote => {
+                const signedQuote = {
+                    ...quote,
+                    expires_at: expiresAt
+                };
+
+                return {
+                    ...signedQuote,
+                    quote_signature:
+                        signStoreShippingQuote({
+                            storeId,
+                            zip,
+                            quote: signedQuote
+                        })
+                };
+            });
+
         return Response.json({
             ok: true,
             provider: "zipnova",
-            request: zipnovaBody,
-            quotes: normalizeZipnovaQuotes(zipnovaData),
-            raw: zipnovaData
+            quotes
         });
 
     } catch (err) {

@@ -10,6 +10,7 @@ import {
     roundCash
 } from "@/app/modules/resto/lib/cash/restoCashService";
 import { getRestoAccess, restoAccessResponse } from "@/app/modules/resto/lib/staff/getRestoAccess";
+import { logRestoAudit } from "@/app/modules/resto/lib/staff/restoAudit";
 
 export async function POST(req) {
 
@@ -154,6 +155,28 @@ export async function POST(req) {
                     actor.name
                 ]
             );
+
+        await logRestoAudit(
+            connection,
+            {
+                storeId:
+                    store.id,
+                access,
+                actionCode:
+                    "cash.opened",
+                entityType:
+                    "cash_shift",
+                entityId:
+                    result.insertId,
+                description:
+                    notes,
+                metadata: {
+                    opening_amount:
+                        openingAmount
+                },
+                req
+            }
+        );
 
         await connection.commit();
 

@@ -30,6 +30,13 @@ export async function GET(req) {
             expires: new Date(0)
         });
 
+        response.cookies.set({
+            name: "tags_session_sig",
+            value: "",
+            path: "/",
+            maxAge: 0
+        });
+
         return response;
 
     } catch (err) {

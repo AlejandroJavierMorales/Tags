@@ -7,6 +7,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 import { db } from "@/app/lib/tags-db";
+import {
+    createHash
+} from "node:crypto";
 
 import {
     ShippingEventProcessor
@@ -169,13 +172,21 @@ async function insertWebhookLog({
     eventType,
     payload
 }) {
+    const eventKey =
+        createHash("sha256")
+            .update(
+                JSON.stringify(payload || {})
+            )
+            .digest("hex");
+
     const [result] =
         await db.query(
             `
-            INSERT INTO tags_store_shipping_webhooks (
+            INSERT IGNORE INTO tags_store_shipping_webhooks (
                 store_id,
                 order_id,
                 provider,
+                event_key,
                 shipment_id,
                 external_id,
                 event_type,
@@ -183,12 +194,13 @@ async function insertWebhookLog({
                 status,
                 received_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, 'received', NOW())
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'received', NOW())
             `,
             [
                 storeId || 0,
                 orderId || null,
                 provider,
+                eventKey,
                 shipmentId ? String(shipmentId) : null,
                 externalId ? String(externalId) : null,
                 eventType || null,
@@ -247,19 +259,37 @@ export async function POST(req) {
         const secret =
             process.env.ZIPNOVA_WEBHOOK_SECRET;
 
-        if (secret) {
-            const received =
-                req.headers.get("x-zipnova-secret") ||
-                req.headers.get("x-webhook-secret") ||
-                req.headers.get("authorization") ||
-                "";
+        if (!secret) {
+            return Response.json(
+                {
+                    error:
+                        "Webhook Zipnova no configurado"
+                },
+                { status: 503 }
+            );
+        }
 
-            if (!received.includes(secret)) {
-                return Response.json(
-                    { error: "Webhook no autorizado" },
-                    { status: 401 }
-                );
-            }
+        const received =
+            (
+                req.headers.get(
+                    "x-zipnova-secret"
+                ) ||
+                req.headers.get(
+                    "x-webhook-secret"
+                ) ||
+                req.headers.get(
+                    "authorization"
+                ) ||
+                ""
+            )
+                .replace(/^Bearer\s+/i, "")
+                .trim();
+
+        if (received !== secret) {
+            return Response.json(
+                { error: "Webhook no autorizado" },
+                { status: 401 }
+            );
         }
 
         const payload =
@@ -294,6 +324,13 @@ export async function POST(req) {
                     event,
                 payload
             });
+
+        if (!webhookId) {
+            return Response.json({
+                ok: true,
+                duplicate: true
+            });
+        }
 
         const result =
             await ShippingEventProcessor.process({

@@ -995,6 +995,7 @@ async function getPublicResto(slug) {
                 p.slug AS page_slug,
                 p.status AS page_status,
                 p.page_type,
+                p.global_styles AS page_global_styles,
 
                 t.id AS theme_id,
                 t.code AS theme_code,
@@ -1131,6 +1132,7 @@ export default async function PublicQRPage({
                     p.slug AS page_slug,
                     p.status AS page_status,
                     p.page_type,
+                    p.global_styles AS page_global_styles,
 
                     t.id AS theme_id,
                     t.code AS theme_code,
@@ -1275,6 +1277,16 @@ export default async function PublicQRPage({
                 slug: storeBuilderData.store.page_slug || params.slug
             });
 
+        const storeHasThemeOverride =
+            hasPageThemeOverride(storeBuilderData.store.page_global_styles);
+
+        const renderedStore =
+            mergePortalTokensIntoStore(
+                storeBuilderData.store,
+                portalContext.portal?.theme?.css_tokens || {},
+                portalContext.hasPortal && !storeHasThemeOverride
+            );
+
         return (
             <>
                 <script
@@ -1296,7 +1308,7 @@ export default async function PublicQRPage({
                 )}
 
                 <StoreRenderer
-                    store={storeBuilderData.store}
+                    store={renderedStore}
                     sections={storeBuilderData.sections}
                     blocks={storeBuilderData.blocks}
                 />
@@ -1335,6 +1347,14 @@ export default async function PublicQRPage({
                 slug: storeData.store.page_slug || params.slug
             });
 
+        const renderedStore =
+            mergePortalTokensIntoStore(
+                storeData.store,
+                portalContext.portal?.theme?.css_tokens || {},
+                portalContext.hasPortal &&
+                !hasPageThemeOverride(storeData.store.page_global_styles)
+            );
+
         return (
             <>
                 {portalContext.hasPortal && (
@@ -1346,7 +1366,7 @@ export default async function PublicQRPage({
                 )}
 
                 <StorePublicRenderer
-                    store={storeData.store}
+                    store={renderedStore}
                     categories={storeData.categories}
                     products={storeData.products}
                 />
@@ -1389,6 +1409,11 @@ export default async function PublicQRPage({
                 <ClientReviewsPublicRenderer
                     slug={page.slug}
                     reviewToken={searchParams?.token || null}
+                    portalThemeTokens={portalContext.portal?.theme?.css_tokens || {}}
+                    inheritPortalTheme={
+                        portalContext.hasPortal &&
+                        !hasPageThemeOverride(page.global_styles)
+                    }
                 />
 
                 {portalContext.hasPortal && (
@@ -1417,6 +1442,14 @@ export default async function PublicQRPage({
                 slug: storeData.store.page_slug || params.slug
             });
 
+        const renderedStore =
+            mergePortalTokensIntoStore(
+                storeData.store,
+                portalContext.portal?.theme?.css_tokens || {},
+                portalContext.hasPortal &&
+                !hasPageThemeOverride(storeData.store.page_global_styles)
+            );
+
         return (
             <>
                 {portalContext.hasPortal && (
@@ -1428,7 +1461,7 @@ export default async function PublicQRPage({
                 )}
 
                 <StorePublicRenderer
-                    store={storeData.store}
+                    store={renderedStore}
                     categories={storeData.categories}
                     products={storeData.products}
                 />
@@ -1463,24 +1496,61 @@ export default async function PublicQRPage({
             notFound();
         }
 
+        const restoPortalContext =
+            await getPublicPortalContext({
+                businessId: page.business_id,
+                pageId: page.id,
+                slug: page.slug
+            });
 
+        const hasThemeOverride =
+            page.global_styles?.theme_override === true;
 
-        console.log({
-            sections: resto.sections?.length,
-            blocks: resto.blocks?.length,
-            sectionTypes: resto.sections?.map(s => s.section_type)
-        });
+        const portalThemeTokens =
+            restoPortalContext.portal?.theme?.css_tokens || {};
+
+        const restoStore =
+            restoPortalContext.hasPortal && !hasThemeOverride
+                ? {
+                    ...resto.store,
+                    theme_css_vars: {
+                        ...(resto.store?.theme_css_vars || {}),
+                        ...portalThemeTokens
+                    }
+                }
+                : resto.store;
+
 
         return (
-            <RestoPublicRenderer
-                page={page}
-                resto={resto.store}
-                sections={resto.sections}
-                blocks={resto.blocks}
-                categories={resto.categories}
-                products={resto.products}
-                location={resto.location}
-            />
+            <>
+                {restoPortalContext.hasPortal && (
+                    <PortalHeader
+                        portal={restoPortalContext.portal}
+                        routes={restoPortalContext.routes}
+                        currentRoute={restoPortalContext.currentRoute}
+                    />
+                )}
+
+                <RestoPublicRenderer
+                    page={page}
+                    resto={restoStore}
+                    sections={resto.sections}
+                    blocks={resto.blocks}
+                    categories={resto.categories}
+                    products={resto.products}
+                    location={resto.location}
+                    portal={restoPortalContext.portal}
+                    showOwnHeader={true}
+                    showOwnFooter={true}
+                />
+
+                {restoPortalContext.hasPortal && (
+                    <PortalFooter
+                        portal={restoPortalContext.portal}
+                        routes={restoPortalContext.routes}
+                    />
+                )}
+            </>
         );
 
     }
@@ -1490,6 +1560,24 @@ export default async function PublicQRPage({
             page,
             products
         });
+
+    const inheritPortalTheme =
+        portalContext.hasPortal &&
+        !hasPageThemeOverride(page.global_styles);
+
+    const renderedPage =
+        inheritPortalTheme
+            ? {
+                ...page,
+                theme: {
+                    ...(page.theme || {}),
+                    css_tokens: {
+                        ...(page.theme?.css_tokens || {}),
+                        ...(portalContext.portal?.theme?.css_tokens || {})
+                    }
+                }
+            }
+            : page;
 
 
 
@@ -1516,10 +1604,12 @@ export default async function PublicQRPage({
             )}
 
             <QRPageRenderer
-                page={page}
+                page={renderedPage}
                 sections={sections}
                 products={products}
                 portal={portalContext.portal}
+                showOwnHeader={!portalContext.portal?.hide_child_headers}
+                showOwnFooter={!portalContext.portal?.hide_child_footers}
             />
 
             {portalContext.hasPortal && (
@@ -1532,4 +1622,48 @@ export default async function PublicQRPage({
 
         </>
     );
+}
+
+function parsePageGlobalStyles(value) {
+    return safeParseJSON(value) || {};
+}
+
+function hasPageThemeOverride(value) {
+    return parsePageGlobalStyles(value).theme_override === true;
+}
+
+function mergePortalTokensIntoStore(store, portalTokens, inherit) {
+    if (!inherit || !portalTokens || !Object.keys(portalTokens).length) {
+        return store;
+    }
+
+    const styles = store?.styles_json || {};
+    const tokenMap = {
+        backgroundColor: "--qr-bg",
+        textColor: "--qr-text",
+        mutedColor: "--qr-muted",
+        borderColor: "--qr-border",
+        primaryColor: "--qr-primary",
+        primaryTextColor: "--qr-primary-text",
+        surfaceColor: "--qr-surface",
+        surfaceAltColor: "--qr-surface-alt",
+        borderRadius: "--qr-radius",
+        shadow: "--qr-shadow"
+    };
+
+    const mergedStyles = { ...styles };
+    Object.entries(tokenMap).forEach(([field, token]) => {
+        if (portalTokens[token] != null) {
+            mergedStyles[field] = portalTokens[token];
+        }
+    });
+
+    return {
+        ...store,
+        styles_json: mergedStyles,
+        theme_css_vars: {
+            ...(store?.theme_css_vars || {}),
+            ...portalTokens
+        }
+    };
 }

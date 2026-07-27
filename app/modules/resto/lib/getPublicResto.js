@@ -23,6 +23,163 @@ import { db }
 
 import { safeParseJSON }
     from "@/app/modules/qr-page/lib/safeParseJSON";
+import {
+    withRestoProductAvailability
+} from "@/app/modules/resto/lib/products/restoProductAvailability";
+
+const WEEK_DAYS = [
+    "sunday",
+    "monday",
+    "tuesday",
+    "wednesday",
+    "thursday",
+    "friday",
+    "saturday"
+];
+
+function minutesFromTime(value) {
+    const [hours, minutes] =
+        String(value || "")
+            .split(":")
+            .map(Number);
+
+    if (
+        !Number.isFinite(hours) ||
+        !Number.isFinite(minutes)
+    ) {
+        return null;
+    }
+
+    return hours * 60 + minutes;
+}
+
+function getServiceAvailability(operation = {}) {
+    const openingHours =
+        operation?.opening_hours || {};
+
+    const hasConfiguredHours =
+        Object.values(openingHours).some(
+            day => day?.enabled === true
+        );
+
+    if (!hasConfiguredHours) {
+        return {
+            configured: false,
+            isOpen: null,
+            status: ""
+        };
+    }
+
+    const timezone =
+        operation?.timezone ||
+        "America/Argentina/Buenos_Aires";
+
+    let parts;
+
+    try {
+        parts =
+            new Intl.DateTimeFormat(
+                "en-US",
+                {
+                    timeZone: timezone,
+                    weekday: "long",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    hourCycle: "h23"
+                }
+            ).formatToParts(new Date());
+    } catch {
+        parts =
+            new Intl.DateTimeFormat(
+                "en-US",
+                {
+                    timeZone:
+                        "America/Argentina/Buenos_Aires",
+                    weekday: "long",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    hourCycle: "h23"
+                }
+            ).formatToParts(new Date());
+    }
+
+    const partValue =
+        type =>
+            parts.find(part => part.type === type)
+                ?.value || "";
+
+    const day =
+        partValue("weekday").toLowerCase();
+
+    const currentMinutes =
+        Number(partValue("hour")) * 60 +
+        Number(partValue("minute"));
+
+    const currentDay =
+        openingHours[day] || {};
+
+    const currentOpen =
+        minutesFromTime(currentDay.open);
+
+    const currentClose =
+        minutesFromTime(currentDay.close);
+
+    let isOpen = false;
+
+    if (
+        currentDay.enabled === true &&
+        currentOpen !== null &&
+        currentClose !== null
+    ) {
+        isOpen =
+            currentOpen === currentClose ||
+            (
+                currentOpen < currentClose
+                    ? currentMinutes >= currentOpen &&
+                        currentMinutes < currentClose
+                    : currentMinutes >= currentOpen
+            );
+    }
+
+    if (!isOpen) {
+        const dayIndex =
+            WEEK_DAYS.indexOf(day);
+
+        const previousDayName =
+            WEEK_DAYS[
+                (
+                    dayIndex - 1 +
+                    WEEK_DAYS.length
+                ) %
+                WEEK_DAYS.length
+            ];
+
+        const previousDay =
+            openingHours[previousDayName] || {};
+
+        const previousOpen =
+            minutesFromTime(previousDay.open);
+
+        const previousClose =
+            minutesFromTime(previousDay.close);
+
+        isOpen =
+            previousDay.enabled === true &&
+            previousOpen !== null &&
+            previousClose !== null &&
+            previousOpen > previousClose &&
+            currentMinutes < previousClose;
+    }
+
+    return {
+        configured: true,
+        isOpen,
+        status:
+            isOpen
+                ? "open"
+                : "closed"
+    };
+}
 
 export async function getPublicResto(
     slug,
@@ -85,6 +242,21 @@ export async function getPublicResto(
     if (!store) {
         return null;
     }
+
+    const [reviewAddonRows] =
+        await db.query(
+            `
+            SELECT 1 AS active
+            FROM tags_business_addons
+            WHERE business_id = ?
+            AND addon_code = 'client_reviews'
+            AND status IN ('active', 'enabled')
+            LIMIT 1
+            `,
+            [store.business_id]
+        );
+
+    store.has_reviews = Boolean(reviewAddonRows?.length);
 
     store.settings_json =
         safeParseJSON(
@@ -174,10 +346,35 @@ export async function getPublicResto(
 
     store.businessHours = {
         ...(
+            store.settings_json
+                ?.resto_operation
+                ?.opening_hours ||
             store.settings_json?.businessHours ||
             {}
         )
     };
+
+    store.operation = {
+        ...(
+            store.settings_json
+                ?.resto_operation ||
+            {}
+        )
+    };
+
+    const serviceAvailability =
+        getServiceAvailability(
+            store.operation
+        );
+
+    store.is_open =
+        serviceAvailability.isOpen;
+
+    store.service_status =
+        serviceAvailability.status;
+
+    store.service_hours_configured =
+        serviceAvailability.configured;
 
     store.showOwnHeader =
         store.settings_json?.showOwnHeader !==
@@ -311,7 +508,8 @@ export async function getPublicResto(
 
     const products =
         productRows.map(
-            product => ({
+        product =>
+            withRestoProductAvailability({
                 ...product,
 
                 images_json:
@@ -347,7 +545,7 @@ export async function getPublicResto(
             ]
         );
 
-    const sections =
+    let sections =
         sectionRows.map(
             section => ({
                 ...section,
@@ -358,6 +556,15 @@ export async function getPublicResto(
                     )
             })
         );
+
+    if (!store.has_reviews) {
+        sections = sections.filter(
+            section =>
+                !["reviews", "reviews_cta"].includes(
+                    section.section_type
+                )
+        );
+    }
 
     // =====================================
     // BLOQUES DE LA PLANTILLA
@@ -416,6 +623,15 @@ export async function getPublicResto(
                         )
                 })
             );
+
+        if (!store.has_reviews) {
+            blocks = blocks.filter(
+                block =>
+                    !["resto_reviews", "resto_reviews_cta"].includes(
+                        block.block_type
+                    )
+            );
+        }
     }
 
     // =====================================

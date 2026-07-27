@@ -12,6 +12,7 @@ import {
 
 import {
     FaEnvelope,
+    FaHistory,
     FaHome,
     FaPlus,
     FaSave,
@@ -41,6 +42,16 @@ const EMPTY_STAFF = {
     overrides: {}
 };
 
+const AUDIT_PERIODS = [
+    ["today", "Hoy"],
+    ["7", "Últimos 7 días"],
+    ["30", "Últimos 30 días"],
+    ["90", "Últimos 90 días"],
+    ["365", "Último año"],
+    ["all", "Todo el historial"],
+    ["custom", "Período personalizado"]
+];
+
 export default function RestoStaffClient({
     businessId
 }) {
@@ -57,17 +68,57 @@ export default function RestoStaffClient({
         useState(null);
     const [roleForm, setRoleForm] =
         useState(null);
+    const [auditSearch, setAuditSearch] =
+        useState("");
+    const [auditPeriod, setAuditPeriod] =
+        useState("today");
+    const [auditFrom, setAuditFrom] =
+        useState("");
+    const [auditTo, setAuditTo] =
+        useState("");
 
     useEffect(() => {
         load();
         // eslint-disable-next-line
-    }, []);
+    }, [
+        auditPeriod,
+        auditFrom,
+        auditTo
+    ]);
 
     async function load() {
         try {
+            const params =
+                new URLSearchParams({
+                    businessId:
+                        String(
+                            businessId
+                        ),
+                    auditPeriod
+                });
+
+            if (
+                auditPeriod ===
+                "custom"
+            ) {
+                if (auditFrom) {
+                    params.set(
+                        "auditFrom",
+                        auditFrom
+                    );
+                }
+
+                if (auditTo) {
+                    params.set(
+                        "auditTo",
+                        auditTo
+                    );
+                }
+            }
+
             const response =
                 await fetch(
-                    `/api/resto/admin/staff?businessId=${encodeURIComponent(businessId)}`,
+                    `/api/resto/admin/staff?${params.toString()}`,
                     { cache: "no-store" }
                 );
             const result =
@@ -105,6 +156,47 @@ export default function RestoStaffClient({
             }
             return Object.entries(grouped);
         }, [data]);
+
+    const filteredAudit =
+        useMemo(
+            () =>
+                (data?.audit || [])
+                    .filter(
+                        item => {
+                            const search =
+                                auditSearch
+                                    .trim()
+                                    .toLowerCase();
+
+                            if (!search) {
+                                return true;
+                            }
+
+                            return [
+                                item.actor_name,
+                                item.staff_email,
+                                item.action_code,
+                                item.entity_type,
+                                item.entity_id,
+                                item.description
+                            ].some(
+                                value =>
+                                    String(
+                                        value ||
+                                        ""
+                                    )
+                                        .toLowerCase()
+                                        .includes(
+                                            search
+                                        )
+                            );
+                        }
+                    ),
+            [
+                auditSearch,
+                data
+            ]
+        );
 
     async function post(body) {
         setSaving(true);
@@ -303,6 +395,14 @@ export default function RestoStaffClient({
                 >
                     <FaShieldAlt /> Roles y permisos
                 </button>
+                {data?.canViewAudit && (
+                    <button
+                        className={tab === "audit" ? "active" : ""}
+                        onClick={() => setTab("audit")}
+                    >
+                        <FaHistory /> Actividad
+                    </button>
+                )}
             </nav>
 
             {tab === "staff" && (
@@ -381,6 +481,169 @@ export default function RestoStaffClient({
                 </section>
             )}
 
+            {tab === "audit" && data?.canViewAudit && (
+                <section className="tags_resto_staff_audit">
+                    <header>
+                        <div>
+                            <h2>Registro de actividad</h2>
+                            <p>
+                                Últimas acciones administrativas y operativas.
+                            </p>
+                        </div>
+                        <div className="tags_resto_staff_audit_filters">
+                            <label>
+                                <span>Período</span>
+                                <select
+                                    value={auditPeriod}
+                                    onChange={
+                                        event =>
+                                            setAuditPeriod(
+                                                event.target.value
+                                            )
+                                    }
+                                >
+                                    {
+                                        AUDIT_PERIODS.map(
+                                            option => (
+                                                <option
+                                                    key={option[0]}
+                                                    value={option[0]}
+                                                >
+                                                    {option[1]}
+                                                </option>
+                                            )
+                                        )
+                                    }
+                                </select>
+                            </label>
+
+                            {
+                                auditPeriod === "custom" && (
+                                    <>
+                                        <label>
+                                            <span>Desde</span>
+                                            <input
+                                                type="date"
+                                                value={auditFrom}
+                                                max={auditTo || undefined}
+                                                onChange={
+                                                    event =>
+                                                        setAuditFrom(
+                                                            event.target.value
+                                                        )
+                                                }
+                                            />
+                                        </label>
+
+                                        <label>
+                                            <span>Hasta</span>
+                                            <input
+                                                type="date"
+                                                value={auditTo}
+                                                min={auditFrom || undefined}
+                                                onChange={
+                                                    event =>
+                                                        setAuditTo(
+                                                            event.target.value
+                                                        )
+                                                }
+                                            />
+                                        </label>
+                                    </>
+                                )
+                            }
+                        </div>
+
+                        <input
+                            type="search"
+                            value={auditSearch}
+                            placeholder="Buscar persona, acción o entidad"
+                            onChange={
+                                event =>
+                                    setAuditSearch(
+                                        event.target.value
+                                    )
+                            }
+                        />
+                    </header>
+                    <div>
+                        {
+                            filteredAudit
+                                .filter(
+                                    item => {
+                                        const search =
+                                            auditSearch
+                                                .trim()
+                                                .toLowerCase();
+
+                                        if (!search) {
+                                            return true;
+                                        }
+
+                                        return [
+                                            item.actor_name,
+                                            item.staff_email,
+                                            item.action_code,
+                                            item.entity_type,
+                                            item.entity_id,
+                                            item.description
+                                        ].some(
+                                            value =>
+                                                String(
+                                                    value ||
+                                                    ""
+                                                )
+                                                    .toLowerCase()
+                                                    .includes(
+                                                        search
+                                                    )
+                                        );
+                                    }
+                                )
+                                .map(
+                                    item => (
+                                        <article key={item.id}>
+                                            <div>
+                                                <strong>
+                                                    {item.actor_name || "Sistema"}
+                                                </strong>
+                                                <span>
+                                                    {item.actor_type === "staff" ? "Personal" : "Propietario"}
+                                                </span>
+                                            </div>
+                                            <div>
+                                                <strong>{item.action_code}</strong>
+                                                <span>
+                                                    {
+                                                        item.entity_type
+                                                            ? `${item.entity_type}${item.entity_id ? ` #${item.entity_id}` : ""}`
+                                                            : "Acción general"
+                                                    }
+                                                </span>
+                                                {
+                                                    item.description && (
+                                                        <small>{item.description}</small>
+                                                    )
+                                                }
+                                            </div>
+                                            <time>
+                                                {formatAuditDate(item.created_at)}
+                                            </time>
+                                        </article>
+                                    )
+                                )
+                        }
+                        {
+                            filteredAudit.length === 0 && (
+                                <p className="tags_resto_staff_audit_empty">
+                                    Todavía no hay acciones registradas.
+                                </p>
+                            )
+                        }
+                    </div>
+                </section>
+            )}
+
             {staffForm && (
                 <Editor
                     title={staffForm.id ? "Editar empleado" : "Nuevo empleado"}
@@ -446,6 +709,36 @@ export default function RestoStaffClient({
             )}
         </main>
     );
+}
+
+function formatAuditDate(
+    value
+) {
+    if (!value) {
+        return "—";
+    }
+
+    const date =
+        new Date(
+            String(value).replace(
+                " ",
+                "T"
+            )
+        );
+
+    return Number.isNaN(
+        date.getTime()
+    )
+        ? String(value)
+        : new Intl.DateTimeFormat(
+            "es-AR",
+            {
+                dateStyle:
+                    "short",
+                timeStyle:
+                    "short"
+            }
+        ).format(date);
 }
 
 function Field({

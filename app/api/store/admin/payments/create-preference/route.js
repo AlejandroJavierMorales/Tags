@@ -8,6 +8,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 import { db } from "@/app/lib/tags-db";
+import {
+    verifyStoreCheckoutToken
+} from "@/app/modules/store/lib/storeCheckoutToken";
 
 import {
     MercadoPagoConfig,
@@ -28,8 +31,11 @@ function parseJson(value, fallback = {}) {
 function getBaseUrl(req) {
     return (
         process.env.NEXT_PUBLIC_BASE_URL ||
+        process.env.BASE_URL_PROD ||
+        process.env.NEXT_PUBLIC_BASE_URL_PROD ||
+        process.env.NEXT_PUBLIC_APP_URL ||
         new URL(req.url).origin
-    );
+    ).replace(/\/+$/, "");
 }
 
 export async function POST(req) {
@@ -41,7 +47,8 @@ export async function POST(req) {
             await req.json();
 
         const {
-            orderId
+            orderId,
+            checkoutToken
         } = body;
 
         if (!orderId) {
@@ -87,6 +94,63 @@ export async function POST(req) {
                     status: 404
                 }
             );
+        }
+
+        if (
+            order.payment_method !==
+                "mercado_pago" ||
+            order.payment_status === "paid" ||
+            !verifyStoreCheckoutToken(
+                {
+                    orderId: order.id,
+                    storeId: order.store_id,
+                    orderNumber:
+                        order.order_number
+                },
+                checkoutToken
+            )
+        ) {
+            return Response.json(
+                {
+                    error:
+                        "El pedido no está habilitado para iniciar este pago"
+                },
+                { status: 403 }
+            );
+        }
+
+        const [existingRows] =
+            await conn.query(
+                `
+                SELECT
+                    provider_preference_id,
+                    payment_url
+                FROM tags_store_payments
+                WHERE order_id = ?
+                AND store_id = ?
+                AND provider = 'mercado_pago'
+                AND payment_status = 'pending'
+                AND payment_url IS NOT NULL
+                ORDER BY id DESC
+                LIMIT 1
+                `,
+                [
+                    order.id,
+                    order.store_id
+                ]
+            );
+
+        if (existingRows[0]) {
+            return Response.json({
+                ok: true,
+                reused: true,
+                preferenceId:
+                    existingRows[0]
+                        .provider_preference_id,
+                initPoint:
+                    existingRows[0]
+                        .payment_url
+            });
         }
 
         const [paymentRows] =
@@ -186,11 +250,24 @@ export async function POST(req) {
             });
         }
 
+        const paymentItems = [{
+            id:
+                String(order.id),
+            title:
+                `Pedido ${order.order_number} - ${order.store_name}`,
+            quantity:
+                1,
+            unit_price:
+                Number(order.total || 0),
+            currency_id:
+                order.currency || "ARS"
+        }];
+
         const preferenceResult =
             await preference.create({
                 body: {
                     items:
-                        mpItems,
+                        paymentItems,
                     statement_descriptor:
                         "TAGS TIENDA",
                     payer: {
@@ -217,7 +294,7 @@ export async function POST(req) {
                     },
 
                     notification_url:
-                        `${baseUrl}/api/store/payments/mercadopago/webhook`,
+                        `${baseUrl}/api/store/payments/mercadopago/webhook?storeId=${order.store_id}`,
 
                     back_urls: {
                         success:

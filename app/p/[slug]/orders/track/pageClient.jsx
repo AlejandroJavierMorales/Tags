@@ -74,12 +74,6 @@ export default function StoreOrderTrackClient({
     async function handleSearch(e) {
         e.preventDefault();
 
-        console.log("TRACK FRONT DEBUG:", {
-            slug,
-            orderNumber,
-            contact
-        });
-
         if (!orderNumber.trim() || !contact.trim()) {
             showAlert({
                 title: "Datos requeridos",
@@ -118,7 +112,6 @@ export default function StoreOrderTrackClient({
                     "No se pudo consultar el pedido."
                 );
             }
-            console.log("TRACK RESULT:", data);
             setResult(data);
 
         } catch (err) {

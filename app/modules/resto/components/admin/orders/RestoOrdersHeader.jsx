@@ -30,8 +30,6 @@ export default function RestoOrdersHeader({
     onRefresh
 }) {
 
-    console.log(JSON.stringify(store));
-
     /*  UI  */
     return (
 

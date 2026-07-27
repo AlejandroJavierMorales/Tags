@@ -72,6 +72,7 @@ export default function KitchenPageClient({
     ] =
         useState({
 
+            autoRefreshSeconds: 10,
             warningMinutes: 10,
             urgentMinutes: 20,
             cardWidth: 350,
@@ -165,6 +166,12 @@ export default function KitchenPageClient({
 
                     setKitchenSettings({
 
+                        autoRefreshSeconds:
+                            Number(
+                                data?.kitchenSettings
+                                    ?.autoRefreshSeconds
+                            ) || 10,
+
                         warningMinutes:
                             Number(
                                 data?.kitchenSettings
@@ -247,13 +254,20 @@ export default function KitchenPageClient({
                     silent: true
                 });
 
-            }, 10000);
+            }, Math.max(
+                5,
+                Number(
+                    kitchenSettings
+                        .autoRefreshSeconds
+                ) || 10
+            ) * 1000);
 
         return () =>
             clearInterval(timer);
 
     }, [
-        loadKitchen
+        loadKitchen,
+        kitchenSettings.autoRefreshSeconds
     ]);
 
     async function markReady(item) {
@@ -389,6 +403,16 @@ export default function KitchenPageClient({
 
     }
 
+    function printKitchenOrder(
+        order
+    ) {
+        window.open(
+            `/dashboard/businesses/${businessId}/resto/orders/${order.id}/print?document=kitchen`,
+            "_blank",
+            "noopener,noreferrer"
+        );
+    }
+
     if (loading) {
 
         return (
@@ -448,6 +472,10 @@ export default function KitchenPageClient({
                     permissions.includes(
                         "kitchen.ready"
                     )
+                }
+
+                onPrintOrder={
+                    printKitchenOrder
                 }
 
             />

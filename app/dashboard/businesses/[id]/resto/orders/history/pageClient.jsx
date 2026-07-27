@@ -80,6 +80,7 @@ const SERVICE_MODES = [
 ];
 
 const PERIODS = [
+    ["today", "Hoy"],
     ["7", "Últimos 7 días"],
     ["30", "Últimos 30 días"],
     ["90", "Últimos 90 días"],
@@ -284,7 +285,7 @@ export default function RestoOrdersHistoryClient({
     const [
         period,
         setPeriod
-    ] = useState("30");
+    ] = useState("today");
 
     const [
         customFrom,
@@ -444,11 +445,16 @@ export default function RestoOrdersHistoryClient({
                         new Date();
 
                     start.setHours(0, 0, 0, 0);
-                    start.setDate(
-                        start.getDate() -
-                        Number(period) +
-                        1
-                    );
+                    if (
+                        period !==
+                        "today"
+                    ) {
+                        start.setDate(
+                            start.getDate() -
+                            Number(period) +
+                            1
+                        );
+                    }
 
                 }
 

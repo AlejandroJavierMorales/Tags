@@ -771,6 +771,15 @@ export default function RestoMenuBlock({
         product
     ) {
 
+        if (
+            product?.is_available ===
+            false
+        ) {
+
+            return;
+
+        }
+
         window.dispatchEvent(
             new CustomEvent(
                 "resto:add-product",
@@ -866,14 +875,33 @@ export default function RestoMenuBlock({
                                         product.price
                                     );
 
+                                const isAvailable =
+                                    product.is_available !==
+                                    false;
+
                                 return (
 
                                     <article
                                         key={
                                             product.id
                                         }
-                                        className="resto_product_card"
+                                        className={
+                                            [
+                                                "resto_product_card",
+                                                !isAvailable
+                                                    ? "is_sold_out"
+                                                    : ""
+                                            ]
+                                                .filter(Boolean)
+                                                .join(" ")
+                                        }
                                     >
+
+                                        {!isAvailable && (
+                                            <span className="resto_product_sold_out_badge">
+                                                Agotado
+                                            </span>
+                                        )}
 
                                         <ProductSlider
                                             product={
@@ -980,8 +1008,15 @@ export default function RestoMenuBlock({
                                                                 product
                                                             )
                                                     }
+                                                    disabled={
+                                                        !isAvailable
+                                                    }
                                                 >
-                                                    Agregar
+                                                    {
+                                                        isAvailable
+                                                            ? "Agregar"
+                                                            : "Agotado"
+                                                    }
                                                 </button>
 
                                             </div>
@@ -1124,8 +1159,19 @@ export default function RestoMenuBlock({
                                 onClick={
                                     handleAddFromDetail
                                 }
+                                disabled={
+                                    selectedProduct
+                                        ?.is_available ===
+                                    false
+                                }
                             >
-                                Agregar al pedido
+                                {
+                                    selectedProduct
+                                        ?.is_available ===
+                                    false
+                                        ? "Producto agotado"
+                                        : "Agregar al pedido"
+                                }
                             </button>
 
                         </div>

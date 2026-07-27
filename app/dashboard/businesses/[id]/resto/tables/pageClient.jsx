@@ -1007,7 +1007,9 @@ export default function RestoTablesClient({
                                                                                     ].includes(
                                                                                         item.preparation_status
                                                                                     )
-                                                                            )
+                                                                            ) ||
+                                                                            order.bill_requested ||
+                                                                            order.staff_requested
                                                                         }
                                                                         onClick={async () => {
                                                                             const confirmed =

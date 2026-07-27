@@ -34,6 +34,10 @@ export default function RestoOrdersGrid({
 
     onConfirmSession,
 
+    onResolveServiceRequest,
+
+    onPrintBill,
+
     capabilities
 
 }) {
@@ -149,6 +153,14 @@ export default function RestoOrdersGrid({
 
                                     onConfirmSession={
                                         onConfirmSession
+                                    }
+
+                                    onResolveServiceRequest={
+                                        onResolveServiceRequest
+                                    }
+
+                                    onPrintBill={
+                                        onPrintBill
                                     }
 
                                     capabilities={

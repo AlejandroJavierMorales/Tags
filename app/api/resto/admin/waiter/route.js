@@ -11,6 +11,10 @@ import {
     db
 } from "@/app/lib/tags-db";
 import { getRestoAccess, restoAccessResponse } from "@/app/modules/resto/lib/staff/getRestoAccess";
+import { logRestoAudit } from "@/app/modules/resto/lib/staff/restoAudit";
+import {
+    assertRestoSessionCanClose
+} from "@/app/modules/resto/lib/orders/restoSessionClose";
 
 import {
     getNormalizedOrders
@@ -72,6 +76,19 @@ export async function GET(
                 }
             );
 
+        }
+
+        const access =
+            await getRestoAccess({
+                businessId,
+                permission:
+                    "waiter.view"
+            });
+
+        if (!access.allowed) {
+            return restoAccessResponse(
+                access
+            );
         }
 
         const {
@@ -160,6 +177,26 @@ export async function GET(
                     order.bill_requested
             );
 
+        const closableOrders =
+            activeOrders.filter(
+                order =>
+                    safeNumber(
+                        order.pending_amount
+                    ) <= 0 &&
+                    !order.bill_requested &&
+                    !order.staff_requested &&
+                    !order.items.some(
+                        item =>
+                            [
+                                "pending",
+                                "sent",
+                                "ready"
+                            ].includes(
+                                item.preparation_status
+                            )
+                    )
+            );
+
         return Response.json({
             ok:
                 true,
@@ -173,6 +210,8 @@ export async function GET(
                 kitchenOrders,
             calls,
             bills,
+            closable_orders:
+                closableOrders,
             stats: {
                 deliveries:
                     deliveries.length,
@@ -200,6 +239,8 @@ export async function GET(
                     calls.length,
                 bills:
                     bills.length,
+                closable:
+                    closableOrders.length,
                 table_requests:
                     tableRequests.length,
                 online_orders:
@@ -222,6 +263,7 @@ export async function GET(
             },
             {
                 status:
+                    err.status ||
                     500
             }
         );
@@ -284,6 +326,7 @@ export async function POST(
         if (
             ![
                 "serve_ready",
+                "serve_item",
                 "resolve_call",
                 "resolve_bill",
                 "activate_session",
@@ -309,8 +352,14 @@ export async function POST(
         }
 
         const requiredPermission =
-            action === "serve_ready"
-                ? "waiter.serve"
+            [
+                "serve_ready",
+                "serve_item"
+            ].includes(action)
+                ? [
+                    "waiter.serve",
+                    "orders.deliver"
+                ]
                 : [
                     "resolve_call",
                     "resolve_bill"
@@ -368,8 +417,10 @@ export async function POST(
                 `
                 SELECT
                     id,
+                    order_number,
                     status,
-                    payment_status
+                    payment_status,
+                    service_mode
                 FROM tags_resto_sessions
                 WHERE id = ?
                 AND store_id = ?
@@ -407,6 +458,8 @@ export async function POST(
 
         let affected =
             0;
+        let autoClosed =
+            false;
 
         if (
             action ===
@@ -468,6 +521,11 @@ export async function POST(
             action ===
             "close_session"
         ) {
+
+            await assertRestoSessionCanClose(
+                connection,
+                session.id
+            );
 
             const [
                 blockingItemRows
@@ -678,6 +736,64 @@ export async function POST(
 
         } else if (
             action ===
+            "serve_item"
+        ) {
+
+            const itemId =
+                Number(
+                    body?.itemId
+                );
+
+            if (
+                !Number.isInteger(
+                    itemId
+                ) ||
+                itemId <= 0
+            ) {
+
+                throw new Error(
+                    "Producto invÃ¡lido"
+                );
+
+            }
+
+            const [
+                result
+            ] =
+                await connection.query(
+                    `
+                    UPDATE tags_resto_session_items
+                    SET preparation_status = 'served'
+                    WHERE id = ?
+                    AND session_id = ?
+                    AND (
+                        preparation_status = 'ready'
+                        OR (
+                            requires_preparation = 0
+                            AND preparation_status = 'pending'
+                        )
+                    )
+                    `,
+                    [
+                        itemId,
+                        session.id
+                    ]
+                );
+
+            affected =
+                result.affectedRows ||
+                0;
+
+            if (!affected) {
+
+                throw new Error(
+                    "El producto ya no estÃ¡ disponible para entregar"
+                );
+
+            }
+
+        } else if (
+            action ===
             "serve_ready"
         ) {
 
@@ -720,7 +836,9 @@ export async function POST(
                 await connection.query(
                     `
                     UPDATE tags_resto_service_requests
-                    SET status = 'resolved'
+                    SET
+                        status = 'resolved',
+                        resolved_at = NOW()
                     WHERE session_id = ?
                     AND request_type = ?
                     AND status IN (
@@ -752,11 +870,16 @@ export async function POST(
         );
 
         if (
-            action ===
-            "serve_ready"
+            [
+                "serve_ready",
+                "serve_item"
+            ].includes(action)
         ) {
 
-            await connection.query(
+            const [
+                autoCloseResult
+            ] =
+                await connection.query(
                 `
                 UPDATE tags_resto_sessions s
                 SET
@@ -773,7 +896,6 @@ export async function POST(
                     SELECT 1
                     FROM tags_resto_session_items i
                     WHERE i.session_id = s.id
-                    AND i.requires_preparation = 1
                     AND i.preparation_status IN (
                         'pending',
                         'sent',
@@ -784,6 +906,82 @@ export async function POST(
                 [
                     session.id
                 ]
+            );
+
+            autoClosed =
+                Number(
+                    autoCloseResult?.affectedRows ||
+                    0
+                ) > 0;
+
+        }
+
+        const auditActions = {
+            activate_session:
+                "table.session.activated",
+            confirm_order:
+                "order.confirmed",
+            close_session:
+                "table.session.closed",
+            cancel_session:
+                "table.session.cancelled",
+            serve_ready:
+                "order.ready_items.served",
+            serve_item:
+                "order.item.served",
+            resolve_call:
+                "service.call.resolved",
+            resolve_bill:
+                "service.bill.resolved"
+        };
+
+        await logRestoAudit(
+            connection,
+            {
+                storeId:
+                    store.id,
+                access,
+                actionCode:
+                    auditActions[action],
+                entityType:
+                    "session",
+                entityId:
+                    session.id,
+                description:
+                    `Acción operativa: ${action}`,
+                metadata: {
+                    affected,
+                    previousStatus:
+                        session.status
+                },
+                req
+            }
+        );
+
+        if (autoClosed) {
+
+            await logRestoAudit(
+                connection,
+                {
+                    storeId:
+                        store.id,
+                    access,
+                    actionCode:
+                        "session.auto_closed",
+                    entityType:
+                        "session",
+                    entityId:
+                        session.id,
+                    description:
+                        session.order_number,
+                    metadata: {
+                        reason:
+                            "paid_and_fully_delivered",
+                        service_mode:
+                            session.service_mode
+                    },
+                    req
+                }
             );
 
         }

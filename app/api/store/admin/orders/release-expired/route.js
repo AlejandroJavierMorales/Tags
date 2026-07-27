@@ -43,6 +43,7 @@ export async function POST(req) {
                     name
                 FROM tags_stores
                 WHERE business_id = ?
+                AND app_type = 'store'
                 LIMIT 1
                 `,
                 [

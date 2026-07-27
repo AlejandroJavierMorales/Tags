@@ -20,20 +20,16 @@ export async function POST(
     try {
 
         const {
-            sessionId,
             sessionToken
         } =
             await req.json();
 
-        if (
-            !sessionId &&
-            !sessionToken
-        ) {
+        if (!sessionToken) {
 
             return Response.json(
                 {
                     error:
-                        "sessionId o sessionToken es requerido."
+                        "sessionToken es requerido."
                 },
                 {
                     status:
@@ -46,11 +42,6 @@ export async function POST(
         connection =
             await db.getConnection();
 
-        const where =
-            sessionId
-                ? "id = ?"
-                : "session_token = ?";
-
         const [
             sessionRows
         ] =
@@ -59,13 +50,14 @@ export async function POST(
                 SELECT
                     id,
                     store_id,
-                    status
+                    status,
+                    service_mode,
+                    payment_status
                 FROM tags_resto_sessions
-                WHERE ${where}
+                WHERE session_token = ?
                 LIMIT 1
                 `,
                 [
-                    sessionId ||
                     sessionToken
                 ]
             );
@@ -89,18 +81,18 @@ export async function POST(
         }
 
         if (
-            [
-                "closed",
-                "cancelled"
-            ].includes(
-                session.status
-            )
+            ![
+                "open",
+                "bill_requested"
+            ].includes(session.status) ||
+            session.service_mode !== "table" ||
+            session.payment_status === "paid"
         ) {
 
             return Response.json(
                 {
                     error:
-                        "La sesión ya no está disponible."
+                        "La cuenta solamente puede solicitarse desde una atención en mesa activa."
                 },
                 {
                     status:

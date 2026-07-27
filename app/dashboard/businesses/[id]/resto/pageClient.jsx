@@ -25,8 +25,16 @@ import {
     FaCog,
     FaChartBar,
     FaCashRegister,
+    FaCheckCircle,
+    FaChevronDown,
+    FaChevronRight,
+    FaChevronUp,
+    FaCircle,
     FaTags,
-    FaHistory
+    FaHistory,
+    FaTruck
+    ,FaPaintBrush,
+    FaStar
 } from "react-icons/fa";
 
 import "@/app/styles/qr-page.css";
@@ -56,9 +64,25 @@ export default function RestoDashboardClient({
     const [publishing, setPublishing] =
         useState(false);
 
+    const [setup, setSetup] =
+        useState(null);
+
+    const [setupExpanded, setSetupExpanded] =
+        useState(false);
+
+    const canReadSettings =
+        permissions.includes("*") ||
+        permissions.includes(
+            "settings.view"
+        );
+
     useEffect(() => {
 
-        load();
+        if (canReadSettings) {
+            load();
+        } else {
+            setLoading(false);
+        }
 
         // eslint-disable-next-line
     }, []);
@@ -96,6 +120,10 @@ export default function RestoDashboardClient({
                 data.store?.status ||
                 "draft"
             );
+
+            if (!isStaff) {
+                await loadSetup();
+            }
 
         } catch (err) {
 
@@ -167,6 +195,8 @@ export default function RestoDashboardClient({
 
             setStatus(result.status);
 
+            await loadSetup();
+
             showAlert({
                 icon: "success",
                 title:
@@ -189,6 +219,46 @@ export default function RestoDashboardClient({
             setPublishing(false);
         }
 
+    }
+
+    async function loadSetup() {
+        try {
+            const response =
+                await fetch(
+                    `/api/resto/admin/setup/status?businessId=${encodeURIComponent(
+                        businessId
+                    )}`,
+                    {
+                        cache:
+                            "no-store"
+                    }
+                );
+
+            const data =
+                await response
+                    .json()
+                    .catch(
+                        () => null
+                    );
+
+            if (!response.ok) {
+                throw new Error(
+                    data?.error ||
+                    "No se pudo calcular la configuración"
+                );
+            }
+
+            setSetup(
+                data
+            );
+
+            setSetupExpanded(false);
+        } catch (error) {
+            console.error(
+                "RESTO SETUP LOAD ERROR:",
+                error
+            );
+        }
     }
 
     if (loading) {
@@ -250,10 +320,33 @@ export default function RestoDashboardClient({
             route: "waiter",
             step: "5",
             permission: "waiter.view"
+        },
+        {
+            icon: FaTruck,
+            title: "Delivery",
+            text: "Despachos, repartidores y rendiciones",
+            route: "delivery",
+            step: "6",
+            permission: "delivery.view"
         }
     ];
 
     const administrationModules = [
+        {
+            icon: FaStar,
+            title: "Opiniones",
+            text: "Encuestas, respuestas y métricas",
+            route: "reviews",
+            permission: "reviews.view",
+            requiresReviews: true
+        },
+        {
+            icon: FaPaintBrush,
+            title: "Diseño de la página",
+            text: "Ordenar y personalizar la página pública",
+            route: "builder",
+            permission: "builder.view"
+        },
         {
             icon: FaUtensils,
             title: "Productos",
@@ -292,9 +385,10 @@ export default function RestoDashboardClient({
 
         {
             icon: FaChartBar,
-            title: "Estadísticas",
-            text: "Próximamente",
-            disabled: true
+            title: "Reportes",
+            text: "Ventas, productos y modalidades",
+            route: "reports",
+            permission: "history.view"
         },
 
         {
@@ -324,11 +418,12 @@ export default function RestoDashboardClient({
     const visibleAdministrationModules =
         administrationModules.filter(
             item =>
-                !isStaff ||
+                (!item.requiresReviews || Boolean(store?.has_reviews)) &&
                 (
-                    item.permission &&
-                    hasPermission(
-                        item.permission
+                    !isStaff ||
+                    (
+                        item.permission &&
+                        hasPermission(item.permission)
                     )
                 )
         );
@@ -371,7 +466,11 @@ export default function RestoDashboardClient({
                         <div>
 
                             <h1 className="qr_page_title">
-                                {store?.name || "Restaurante"}
+                                {
+                                    store?.name ||
+                                    session?.businessName ||
+                                    "Restaurante"
+                                }
                             </h1>
 
                             <span className="resto_dashboard_brand">
@@ -470,6 +569,159 @@ export default function RestoDashboardClient({
                 </strong>
 
             </div>}
+
+            {
+                !isStaff &&
+                setup && (
+                    <section
+                        className={[
+                            "resto_dashboard_setup",
+                            setup.ready
+                                ? "is_ready"
+                                : ""
+                        ]
+                            .filter(Boolean)
+                            .join(" ")}
+                    >
+                        <header className="resto_dashboard_setup_header">
+                            <div className="resto_dashboard_setup_heading">
+                                <span className="resto_dashboard_setup_icon">
+                                    <FaCheckCircle />
+                                </span>
+
+                                <div>
+                                    <span className="resto_dashboard_setup_eyebrow">
+                                        Configuración guiada
+                                    </span>
+                                    <h2>
+                                        {
+                                            setup.ready
+                                                ? "Restaurante listo para operar"
+                                                : "Prepará el restaurante para comenzar"
+                                        }
+                                    </h2>
+                                    <p>
+                                        {setup.completed} de {setup.total} puntos completados
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="resto_dashboard_setup_header_actions">
+                                <strong>
+                                    {setup.progress}%
+                                </strong>
+
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        setSetupExpanded(
+                                            current =>
+                                                !current
+                                        )
+                                    }
+                                    aria-expanded={
+                                        setupExpanded
+                                    }
+                                >
+                                    {
+                                        setupExpanded
+                                            ? <FaChevronUp />
+                                            : <FaChevronDown />
+                                    }
+                                    {
+                                        setupExpanded
+                                            ? "Ocultar"
+                                            : "Revisar"
+                                    }
+                                </button>
+                            </div>
+                        </header>
+
+                        <div className="resto_dashboard_setup_progress">
+                            <span
+                                style={{
+                                    width:
+                                        `${setup.progress}%`
+                                }}
+                            />
+                        </div>
+
+                        {
+                            setupExpanded && (
+                                <div className="resto_dashboard_setup_steps">
+                                    {
+                                        setup.steps.map(
+                                            step => (
+                                                <article
+                                                    key={step.key}
+                                                    className={
+                                                        step.complete
+                                                            ? "is_complete"
+                                                            : ""
+                                                    }
+                                                >
+                                                    <span className="resto_dashboard_setup_step_state">
+                                                        {
+                                                            step.complete
+                                                                ? <FaCheckCircle />
+                                                                : <FaCircle />
+                                                        }
+                                                    </span>
+
+                                                    <div>
+                                                        <h3>
+                                                            {step.title}
+                                                        </h3>
+                                                        <p>
+                                                            {step.description}
+                                                        </p>
+                                                    </div>
+
+                                                    {
+                                                        !step.complete && (
+                                                            <button
+                                                                type="button"
+                                                                disabled={
+                                                                    publishing &&
+                                                                    step.key ===
+                                                                    "publication"
+                                                                }
+                                                                onClick={() => {
+                                                                    if (
+                                                                        step.key ===
+                                                                        "publication"
+                                                                    ) {
+                                                                        publish(
+                                                                            "published"
+                                                                        );
+                                                                        return;
+                                                                    }
+
+                                                                    go(
+                                                                        step.route
+                                                                    );
+                                                                }}
+                                                            >
+                                                                {
+                                                                    step.key ===
+                                                                    "publication"
+                                                                        ? "Publicar"
+                                                                        : "Completar"
+                                                                }
+                                                                <FaChevronRight />
+                                                            </button>
+                                                        )
+                                                    }
+                                                </article>
+                                            )
+                                        )
+                                    }
+                                </div>
+                            )
+                        }
+                    </section>
+                )
+            }
 
             <section className="resto_dashboard_operation">
                 <header>

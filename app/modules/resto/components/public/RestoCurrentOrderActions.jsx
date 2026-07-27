@@ -33,6 +33,8 @@ export default function RestoCurrentOrderActions({
 
     isSessionOpen,
 
+    canRequestService,
+
     canCancelSession,
 
     session,
@@ -84,7 +86,8 @@ export default function RestoCurrentOrderActions({
 
             {
 
-                isSessionOpen && (
+                isSessionOpen &&
+                canRequestService && (
 
                     <Button
                         type="button"
@@ -144,7 +147,8 @@ export default function RestoCurrentOrderActions({
 
             {
 
-                isSessionOpen && (
+                isSessionOpen &&
+                canRequestService && (
 
                     <Button
                         type="button"

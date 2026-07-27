@@ -12,6 +12,11 @@ export const dynamic = "force-dynamic";
 import { db }
     from "@/app/lib/tags-db";
 
+import {
+    getRestoAccess,
+    restoAccessResponse
+} from "@/app/modules/resto/lib/staff/getRestoAccess";
+
 function safe(value) {
 
     return (
@@ -78,6 +83,19 @@ export async function POST(req) {
                 }
             );
 
+        }
+
+        const access =
+            await getRestoAccess({
+                businessId,
+                permission:
+                    "locations.manage"
+            });
+
+        if (!access.allowed) {
+            return restoAccessResponse(
+                access
+            );
         }
 
         if (!name?.trim()) {

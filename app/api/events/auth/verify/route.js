@@ -3,6 +3,8 @@ import { db }
 
 import { NextResponse }
     from "next/server";
+import { signTagsSession }
+    from "@/app/lib/signTagsSession";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -190,13 +192,28 @@ export async function GET(req) {
                 /* `${baseUrl}/dashboard/events/${staff.event_id}` */
             );
 
-        console.log('Cookie a setear desde Verify: ' + JSON.stringify(session, 2, null))
+        const sessionValue =
+            JSON.stringify(session);
 
         response.cookies.set(
             "tags_session",
-            JSON.stringify(session),
+            sessionValue,
             {
-                httpOnly: false,
+                httpOnly: true,
+                sameSite: "lax",
+                secure:
+                    process.env.NODE_ENV === "production",
+                path: "/",
+                maxAge:
+                    60 * 60 * 24 * 7
+            }
+        );
+
+        response.cookies.set(
+            "tags_session_sig",
+            signTagsSession(sessionValue),
+            {
+                httpOnly: true,
                 sameSite: "lax",
                 secure:
                     process.env.NODE_ENV === "production",

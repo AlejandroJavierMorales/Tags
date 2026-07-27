@@ -5,7 +5,8 @@ import {
     useState
 } from "react";
 import {
-    useRouter
+    useRouter,
+    useSearchParams
 } from "next/navigation";
 import {
     FaArrowLeft,
@@ -73,7 +74,8 @@ const EMPTY = {
         },
         operation: {
             timezone: "America/Argentina/Buenos_Aires",
-            opening_hours: {}
+            opening_hours: {},
+            staff_alerts_enabled: true
         },
         order_rules: {
             table_requires_activation: true,
@@ -175,11 +177,27 @@ function mergeLoaded(result) {
 }
 
 export default function RestoSettingsClient({
-    businessId
+    businessId,
+    canManage = false
 }) {
     const router = useRouter();
+    const searchParams =
+        useSearchParams();
     const [activeTab, setActiveTab] =
-        useState("identity");
+        useState(() => {
+            const requestedTab =
+                searchParams.get(
+                    "tab"
+                );
+
+            return TABS.some(
+                ([key]) =>
+                    key ===
+                    requestedTab
+            )
+                ? requestedTab
+                : "identity";
+        });
     const [form, setForm] =
         useState(EMPTY);
     const [loading, setLoading] =
@@ -354,6 +372,7 @@ export default function RestoSettingsClient({
                 text: "Los cambios operativos ya están disponibles.",
                 timer: 1400
             });
+            router.refresh();
         } catch (error) {
             showAlert({
                 icon: "error",
@@ -395,14 +414,16 @@ export default function RestoSettingsClient({
                     >
                         <FaArrowLeft /> Volver
                     </button>
-                    <button
-                        type="button"
-                        className="tags_resto_btn tags_resto_btn_success"
-                        disabled={saving}
-                        onClick={save}
-                    >
-                        <FaSave /> Guardar cambios
-                    </button>
+                    {canManage && (
+                        <button
+                            type="button"
+                            className="tags_resto_btn tags_resto_btn_success"
+                            disabled={saving}
+                            onClick={save}
+                        >
+                            <FaSave /> Guardar cambios
+                        </button>
+                    )}
                 </div>
             </header>
 
@@ -507,6 +528,7 @@ export default function RestoSettingsClient({
                     <>
                         <PanelTitle title="Reglas de pedidos y cocina" text="Comportamiento operativo compartido por cliente, mozo, pedidos y cocina." />
                         <div className="tags_resto_settings_checks">
+                            <Check label="Alertas internas para el personal" checked={form.configuration.operation.staff_alerts_enabled !== false} onChange={value => setSection("operation", "staff_alerts_enabled", value)} />
                             <Check label="Las mesas requieren habilitación del personal" checked={form.configuration.order_rules.table_requires_activation !== false} onChange={value => setSection("order_rules", "table_requires_activation", value)} />
                             <Check label="Retiro y delivery requieren confirmación" checked={form.configuration.order_rules.online_requires_confirmation !== false} onChange={value => setSection("order_rules", "online_requires_confirmation", value)} />
                             <Check label="Solicitar nombre del cliente" checked={form.configuration.order_rules.require_customer_name !== false} onChange={value => setSection("order_rules", "require_customer_name", value)} />

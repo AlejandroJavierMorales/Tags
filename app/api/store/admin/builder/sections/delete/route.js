@@ -12,6 +12,8 @@ export const dynamic = "force-dynamic";
 
 import { db }
     from "@/app/lib/tags-db";
+import { requireStoreResourceAccess, storeAccessResponse }
+    from "@/app/modules/store/lib/storeAdminAccess";
 
 export async function POST(req) {
     const conn =
@@ -32,6 +34,15 @@ export async function POST(req) {
                     status: 400
                 }
             );
+        }
+
+        const access =
+            await requireStoreResourceAccess({
+                storeId,
+                sectionId
+            });
+        if (!access.allowed) {
+            return storeAccessResponse(access);
         }
 
         await conn.beginTransaction();

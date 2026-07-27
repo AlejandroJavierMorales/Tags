@@ -24,6 +24,63 @@ import {
     confirmOrderStock
 }
     from "@/app/modules/store/lib/updateOrderStock";
+import {
+    createHmac,
+    timingSafeEqual
+} from "node:crypto";
+
+function validateMercadoPagoSignature(
+    req,
+    paymentId
+) {
+    const secret =
+        process.env.MERCADOPAGO_WEBHOOK_KEY;
+
+    if (!secret) return false;
+
+    const signature =
+        req.headers.get("x-signature") ||
+        "";
+
+    const requestId =
+        req.headers.get("x-request-id") ||
+        "";
+
+    const parts =
+        Object.fromEntries(
+            signature
+                .split(",")
+                .map(part =>
+                    part.trim().split("=")
+                )
+                .filter(part =>
+                    part.length === 2
+                )
+        );
+
+    if (!parts.ts || !parts.v1) {
+        return false;
+    }
+
+    const manifest =
+        `id:${String(paymentId).toLowerCase()};request-id:${requestId};ts:${parts.ts};`;
+
+    const expected =
+        createHmac("sha256", secret)
+            .update(manifest)
+            .digest("hex");
+
+    const received =
+        Buffer.from(parts.v1, "hex");
+
+    const valid =
+        Buffer.from(expected, "hex");
+
+    return (
+        received.length === valid.length &&
+        timingSafeEqual(received, valid)
+    );
+}
 
 function mapMPStatusToStore(status) {
     if (status === "approved") {
@@ -34,7 +91,7 @@ function mapMPStatusToStore(status) {
         status === "rejected" ||
         status === "cancelled"
     ) {
-        return "cancelled";
+        return "pending";
     }
 
     if (status === "refunded") {
@@ -55,12 +112,17 @@ export async function POST(req) {
         const body =
             await req.json().catch(() => ({}));
 
+        const storeId =
+            new URL(req.url)
+                .searchParams
+                .get("storeId");
+
         const paymentId =
             body?.data?.id ||
             body?.id ||
             null;
 
-        if (!paymentId) {
+        if (!paymentId || !storeId) {
             return Response.json({
                 ok: true,
                 ignored: true
@@ -73,46 +135,47 @@ export async function POST(req) {
                 SELECT *
                 FROM tags_store_payment_settings
                 WHERE provider = 'mercado_pago'
+                AND store_id = ?
                 AND is_active = 1
                 AND access_token IS NOT NULL
+                LIMIT 1
                 `
+                ,
+                [storeId]
             );
 
         let mpPayment =
             null;
 
-        let matchedSettings =
-            null;
+        const matchedSettings =
+            settingsRows[0] || null;
 
-        for (const settings of settingsRows) {
-            try {
-                const client =
-                    new MercadoPagoConfig({
-                        accessToken:
-                            settings.access_token
-                    });
+        if (matchedSettings) {
+            const client =
+                new MercadoPagoConfig({
+                    accessToken:
+                        matchedSettings.access_token
+                });
 
-                const payment =
-                    new Payment(client);
+            const payment =
+                new Payment(client);
 
-                const result =
-                    await payment.get({
-                        id: paymentId
-                    });
+            mpPayment =
+                await payment.get({
+                    id: paymentId
+                });
+        }
 
-                if (result?.id) {
-                    mpPayment =
-                        result;
-
-                    matchedSettings =
-                        settings;
-
-                    break;
-                }
-
-            } catch {
-                // Este token no corresponde a ese pago.
-            }
+        if (
+            !validateMercadoPagoSignature(
+                req,
+                paymentId
+            )
+        ) {
+            return Response.json(
+                { error: "Webhook no autorizado" },
+                { status: 401 }
+            );
         }
 
         if (!mpPayment || !matchedSettings) {
@@ -138,6 +201,16 @@ export async function POST(req) {
             mapMPStatusToStore(
                 mpPayment.status
             );
+
+        const paymentRecordStatus =
+            paymentStatus === "paid"
+                ? "approved"
+                : (
+                    mpPayment.status === "rejected" ||
+                    mpPayment.status === "cancelled"
+                )
+                    ? "rejected"
+                    : paymentStatus;
 
         await conn.beginTransaction();
 
@@ -175,7 +248,68 @@ export async function POST(req) {
             });
         }
 
-        await conn.query(
+        const paidAmount =
+            Number(
+                mpPayment.transaction_amount ||
+                0
+            );
+
+        const paidCurrency =
+            String(
+                mpPayment.currency_id ||
+                ""
+            ).toUpperCase();
+
+        const orderCurrency =
+            String(
+                order.currency ||
+                "ARS"
+            ).toUpperCase();
+
+        if (
+            paymentStatus === "paid" &&
+            (
+                Math.abs(
+                    paidAmount -
+                    Number(order.total || 0)
+                ) > 0.01 ||
+                paidCurrency !== orderCurrency
+            )
+        ) {
+            await conn.rollback();
+
+            return Response.json(
+                {
+                    error:
+                        "El importe o la moneda del pago no coinciden con el pedido"
+                },
+                { status: 409 }
+            );
+        }
+
+        const [paymentRows] =
+            await conn.query(
+                `
+                SELECT id
+                FROM tags_store_payments
+                WHERE order_id = ?
+                AND store_id = ?
+                AND provider = 'mercado_pago'
+                ORDER BY id DESC
+                LIMIT 1
+                FOR UPDATE
+                `,
+                [
+                    order.id,
+                    order.store_id
+                ]
+            );
+
+        const paymentRow =
+            paymentRows[0] || null;
+
+        const [paymentUpdate] =
+            await conn.query(
             `
             UPDATE tags_store_payments
             SET
@@ -184,19 +318,51 @@ export async function POST(req) {
                 payment_status = ?,
                 raw_response_json = ?,
                 updated_at = NOW()
-            WHERE order_id = ?
-            AND store_id = ?
-            AND provider = 'mercado_pago'
+            WHERE id = ?
             `,
             [
                 String(mpPayment.id),
                 mpPayment.status || null,
-                paymentStatus,
+                paymentRecordStatus,
                 JSON.stringify(mpPayment),
-                order.id,
-                order.store_id
+                paymentRow?.id || 0
             ]
         );
+
+        if (paymentUpdate.affectedRows === 0) {
+            await conn.query(
+                `
+                INSERT INTO tags_store_payments (
+                    store_id,
+                    order_id,
+                    provider,
+                    provider_payment_id,
+                    provider_status,
+                    amount,
+                    currency,
+                    payment_status,
+                    raw_response_json,
+                    created_at,
+                    updated_at
+                )
+                VALUES (
+                    ?, ?, 'mercado_pago',
+                    ?, ?, ?, ?, ?, ?,
+                    NOW(), NOW()
+                )
+                `,
+                [
+                    order.store_id,
+                    order.id,
+                    String(mpPayment.id),
+                    mpPayment.status || null,
+                    paidAmount,
+                    paidCurrency || orderCurrency,
+                    paymentRecordStatus,
+                    JSON.stringify(mpPayment)
+                ]
+            );
+        }
 
         if (
             paymentStatus === "paid" &&
@@ -264,7 +430,18 @@ export async function POST(req) {
                     slug: order.slug,
                     logo_url: order.logo_url
                 },
-                order: emailOrder
+                order: emailOrder,
+                items: (
+                    await conn.query(
+                        `
+                        SELECT *
+                        FROM tags_store_order_items
+                        WHERE order_id = ?
+                        ORDER BY id ASC
+                        `,
+                        [order.id]
+                    )
+                )[0]
             };
         }
 
@@ -275,7 +452,7 @@ export async function POST(req) {
                 await sendStoreOrderEmail({
                     store: emailPayload.store,
                     order: emailPayload.order,
-                    items: [],
+                    items: emailPayload.items,
                     type: "payment_paid"
                 });
 

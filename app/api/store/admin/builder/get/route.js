@@ -28,6 +28,8 @@ export const dynamic = "force-dynamic";
 
 import { db }
     from "@/app/lib/tags-db";
+import { requireStoreResourceAccess, storeAccessResponse }
+    from "@/app/modules/store/lib/storeAdminAccess";
 
 export async function GET(req) {
 
@@ -53,6 +55,12 @@ export async function GET(req) {
                 }
             );
 
+        }
+
+        const access =
+            await requireStoreResourceAccess({ storeId });
+        if (!access.allowed) {
+            return storeAccessResponse(access);
         }
 
         // -----------------------------

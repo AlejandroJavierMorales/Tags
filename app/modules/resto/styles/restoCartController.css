@@ -4,7 +4,7 @@
 
 .resto_cart_floating_button {
     position: fixed;
-    right: 20px;
+    right: max(20px, calc((100vw - min(var(--resto-page-width, 1320px), 100vw)) / 2 + 20px));
     bottom: 20px;
     z-index: 5500;
 
@@ -99,4 +99,97 @@
             calc(100vw - 24px);
     }
 
+}
+
+.resto_order_welcome_backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 6500;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    background: rgba(15, 23, 42, .58);
+    backdrop-filter: blur(4px);
+    animation: resto_order_welcome_fade .2s ease-out;
+}
+
+.resto_order_welcome {
+    position: relative;
+    width: min(100%, 460px);
+    padding: 36px 30px 30px;
+    border: 1px solid color-mix(
+        in srgb,
+        var(--qr-primary) 22%,
+        var(--qr-border)
+    );
+    border-radius: 24px;
+    background: var(--qr-surface);
+    color: var(--qr-text);
+    box-shadow: 0 24px 70px rgba(15, 23, 42, .3);
+    text-align: center;
+    animation: resto_order_welcome_enter .24s ease-out;
+}
+
+.resto_order_welcome_close {
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--qr-muted);
+    font-size: 1.65rem;
+    line-height: 1;
+}
+
+.resto_order_welcome_icon {
+    display: block;
+    margin-bottom: 12px;
+    font-size: 2.75rem;
+    line-height: 1;
+}
+
+.resto_order_welcome h2 {
+    margin: 0;
+    color: var(--qr-text);
+    font-size: clamp(1.6rem, 5vw, 2rem);
+    font-weight: 900;
+}
+
+.resto_order_welcome p {
+    max-width: 350px;
+    margin: 12px auto 24px;
+    color: var(--qr-muted);
+    font-size: 1rem;
+    line-height: 1.55;
+}
+
+.resto_order_welcome_action {
+    min-height: 48px;
+    padding: 11px 24px;
+    border: 0;
+    border-radius: 14px;
+    background: var(--qr-primary);
+    color: var(--qr-primary-text);
+    font-weight: 800;
+}
+
+.resto_order_recover_link{display:block;margin:14px auto 0;border:0;background:transparent;color:var(--qr-primary);font-size:13px;text-decoration:underline;cursor:pointer}.resto_order_recover_form{display:grid;gap:10px;margin-top:18px}.resto_order_recover_form input{width:100%;padding:11px 12px;border:1px solid var(--qr-border);border-radius:10px;background:var(--qr-surface);color:var(--qr-text)}.resto_order_welcome_error{margin:0;color:#b91c1c;font-size:13px}.tags_resto_cart_recover{width:100%;padding:8px 0;margin:0 0 12px;border:0;background:transparent;color:var(--qr-primary);text-align:right;text-decoration:underline;cursor:pointer}
+
+@keyframes resto_order_welcome_fade {
+    from {
+        opacity: 0;
+    }
+}
+
+@keyframes resto_order_welcome_enter {
+    from {
+        opacity: 0;
+        transform: translateY(12px) scale(.98);
+    }
 }

@@ -8,6 +8,10 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 import { db } from "@/app/lib/tags-db";
+import {
+    checkStorePublicRateLimit,
+    storeRequestIp
+} from "@/app/modules/store/lib/storePublicRateLimit";
 
 function clean(value) {
     return String(value || "").trim();
@@ -57,6 +61,46 @@ export async function POST(req) {
         const cleanOrder = clean(orderNumber);
         const cleanContact = clean(contact);
         const contactDigits = onlyDigits(cleanContact);
+        const isEmail =
+            cleanContact.includes("@");
+
+        if (
+            !isEmail &&
+            contactDigits.length < 6
+        ) {
+            return Response.json(
+                {
+                    error:
+                        "Ingresá un email o teléfono válido."
+                },
+                { status: 400 }
+            );
+        }
+
+        const rateLimit =
+            checkStorePublicRateLimit({
+                key:
+                    `tracking:${slug}:${storeRequestIp(req)}`,
+                limit: 15
+            });
+
+        if (!rateLimit.allowed) {
+            return Response.json(
+                {
+                    error:
+                        "Demasiados intentos. Probá nuevamente más tarde."
+                },
+                {
+                    status: 429,
+                    headers: {
+                        "Retry-After":
+                            String(
+                                rateLimit.retryAfter
+                            )
+                    }
+                }
+            );
+        }
 
         const [rows] = await db.query(
             `
@@ -99,7 +143,7 @@ export async function POST(req) {
             AND o.order_number = ?
             AND (
                 LOWER(o.customer_email) = LOWER(?)
-                OR REPLACE(REPLACE(REPLACE(REPLACE(o.customer_phone, ' ', ''), '-', ''), '(', ''), ')', '') LIKE ?
+                OR REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(o.customer_phone, ' ', ''), '-', ''), '(', ''), ')', ''), '+', '') = ?
             )
             LIMIT 1
             `,
@@ -107,7 +151,7 @@ export async function POST(req) {
                 slug,
                 cleanOrder,
                 cleanContact,
-                `%${contactDigits}%`
+                contactDigits
             ]
         );
 

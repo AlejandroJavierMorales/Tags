@@ -52,7 +52,9 @@ function styleValue(value, fallback) {
 
 export default function ClientReviewsPublicRenderer({
     slug,
-    reviewToken = null
+    reviewToken = null,
+    portalThemeTokens = {},
+    inheritPortalTheme = false
 }) {
     const [loading, setLoading] =
         useState(true);
@@ -83,6 +85,18 @@ export default function ClientReviewsPublicRenderer({
 
     const [result, setResult] =
         useState(null);
+
+    const [returnTo, setReturnTo] =
+        useState("");
+
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            const candidate =
+                new URLSearchParams(window.location.search).get("returnTo") ||
+                "";
+            setReturnTo(candidate.startsWith("/") ? candidate : "");
+        }
+    }, []);
 
     const [reviewerImages, setReviewerImages] =
         useState([]);
@@ -183,9 +197,10 @@ export default function ClientReviewsPublicRenderer({
                 "--qr-surface": "#ffffff",
                 "--qr-surface-alt": "#f1f5f9",
                 "--qr-primary-text": "#ffffff",
-                ...(form?.theme_tokens || {})
+                ...(form?.theme_tokens || {}),
+                ...(inheritPortalTheme ? portalThemeTokens : {})
             }),
-            [form]
+            [form, inheritPortalTheme, portalThemeTokens]
         );
 
     const showGoogleLogo =
@@ -618,6 +633,18 @@ export default function ClientReviewsPublicRenderer({
                         {form?.success_message ||
                             "Valoramos mucho tu tiempo y tus comentarios."}
                     </p>
+
+                    {returnTo && (
+                        <button
+                            type="button"
+                            className="qr_page_btn"
+                            onClick={() => {
+                                window.location.href = returnTo;
+                            }}
+                        >
+                            Volver a mi pedido
+                        </button>
+                    )}
 
                     {thankContent.showPhotoUpload !== false && (
                         <div

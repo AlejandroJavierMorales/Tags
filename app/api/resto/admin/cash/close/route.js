@@ -10,6 +10,7 @@ import {
     roundCash
 } from "@/app/modules/resto/lib/cash/restoCashService";
 import { getRestoAccess, restoAccessResponse } from "@/app/modules/resto/lib/staff/getRestoAccess";
+import { logRestoAudit } from "@/app/modules/resto/lib/staff/restoAudit";
 
 export async function POST(req) {
 
@@ -106,6 +107,21 @@ export async function POST(req) {
                 summary.expected_cash
             );
 
+        if (
+            difference !== 0 &&
+            !notes
+        ) {
+            throw Object.assign(
+                new Error(
+                    "Indicá el motivo de la diferencia de caja"
+                ),
+                {
+                    status:
+                        400
+                }
+            );
+        }
+
         const actor =
             getCashActor(req);
 
@@ -136,6 +152,32 @@ export async function POST(req) {
                 shift.id,
                 store.id
             ]
+        );
+
+        await logRestoAudit(
+            connection,
+            {
+                storeId:
+                    store.id,
+                access,
+                actionCode:
+                    "cash.closed",
+                entityType:
+                    "cash_shift",
+                entityId:
+                    shift.id,
+                description:
+                    notes,
+                metadata: {
+                    expected_cash:
+                        summary.expected_cash,
+                    declared_cash:
+                        declaredCash,
+                    difference_amount:
+                        difference
+                },
+                req
+            }
         );
 
         await connection.commit();

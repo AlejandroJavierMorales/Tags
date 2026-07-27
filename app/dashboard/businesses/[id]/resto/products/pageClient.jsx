@@ -20,6 +20,8 @@ import TagsSpinner
 
 import {
     FaArrowLeft,
+    FaBan,
+    FaCheckCircle,
     FaEye,
     FaEyeSlash,
     FaHamburger,
@@ -41,7 +43,9 @@ export default function RestoProductsClient({
 
     session,
 
-    isAdmin
+    isAdmin,
+
+    permissions = []
 
 }) {
 
@@ -62,6 +66,19 @@ export default function RestoProductsClient({
 
     const [categoryId, setCategoryId] =
         useState("");
+
+    const [availability, setAvailability] =
+        useState("");
+
+    const [updatingProductId, setUpdatingProductId] =
+        useState(null);
+
+    const canManage =
+        isAdmin ||
+        permissions.includes("*") ||
+        permissions.includes(
+            "products.manage"
+        );
 
     useEffect(() => {
 
@@ -151,9 +168,21 @@ export default function RestoProductsClient({
                     String(product.category_id) ===
                     String(categoryId);
 
+                const matchAvailability =
+                    availability === "" ||
+                    (
+                        availability === "available" &&
+                        product.is_available !== false
+                    ) ||
+                    (
+                        availability === "sold_out" &&
+                        product.is_available === false
+                    );
+
                 return (
                     matchSearch &&
-                    matchCategory
+                    matchCategory &&
+                    matchAvailability
                 );
 
             });
@@ -164,7 +193,9 @@ export default function RestoProductsClient({
 
             search,
 
-            categoryId
+            categoryId,
+
+            availability
 
         ]);
 
@@ -174,6 +205,97 @@ export default function RestoProductsClient({
             `/dashboard/businesses/${businessId}/resto/products/new`
         );
 
+    }
+
+    async function updateAvailability(
+        product
+    ) {
+        const nextAvailable =
+            product.is_available ===
+            false;
+
+        setUpdatingProductId(
+            product.id
+        );
+
+        try {
+            const response =
+                await fetch(
+                    "/api/resto/admin/products/availability",
+                    {
+                        method:
+                            "POST",
+                        headers: {
+                            "Content-Type":
+                                "application/json"
+                        },
+                        body:
+                            JSON.stringify({
+                                businessId:
+                                    Number(
+                                        businessId
+                                    ),
+                                productId:
+                                    product.id,
+                                isAvailable:
+                                    nextAvailable
+                            })
+                    }
+                );
+
+            const data =
+                await response
+                    .json()
+                    .catch(
+                        () => null
+                    );
+
+            if (!response.ok) {
+                throw new Error(
+                    data?.error ||
+                    "No se pudo cambiar la disponibilidad"
+                );
+            }
+
+            setProducts(
+                current =>
+                    current.map(
+                        item =>
+                            Number(item.id) ===
+                            Number(product.id)
+                                ? {
+                                    ...item,
+                                    is_available:
+                                        nextAvailable
+                                }
+                                : item
+                    )
+            );
+
+            showAlert({
+                icon:
+                    "success",
+                title:
+                    nextAvailable
+                        ? "Producto disponible"
+                        : "Producto agotado",
+                timer:
+                    1200
+            });
+        } catch (err) {
+            showAlert({
+                icon:
+                    "error",
+                title:
+                    "Disponibilidad",
+                text:
+                    err.message
+            });
+        } finally {
+            setUpdatingProductId(
+                null
+            );
+        }
     }
 
     function editProduct(id) {
@@ -336,7 +458,7 @@ export default function RestoProductsClient({
 
                     </button>
 
-                    <button
+                    {canManage && <button
 
                         className="qr_page_btn success"
 
@@ -348,7 +470,7 @@ export default function RestoProductsClient({
 
                         Nuevo producto
 
-                    </button>
+                    </button>}
 
                 </div>
 
@@ -426,6 +548,25 @@ export default function RestoProductsClient({
                         ))
                     }
 
+                </select>
+
+                <select
+                    value={availability}
+                    onChange={event =>
+                        setAvailability(
+                            event.target.value
+                        )
+                    }
+                >
+                    <option value="">
+                        Toda disponibilidad
+                    </option>
+                    <option value="available">
+                        Disponibles
+                    </option>
+                    <option value="sold_out">
+                        Agotados
+                    </option>
                 </select>
 
             </div>
@@ -557,11 +698,59 @@ export default function RestoProductsClient({
 
                                     }
 
+                                    {
+                                        product.is_available ===
+                                        false
+                                            ? (
+                                                <span className="sold_out">
+                                                    <FaBan />
+                                                    Agotado
+                                                </span>
+                                            )
+                                            : (
+                                                <span className="available">
+                                                    <FaCheckCircle />
+                                                    Disponible
+                                                </span>
+                                            )
+                                    }
+
                                 </div>
 
                                 <div className="resto_product_actions">
 
-                                    <button
+                                    {canManage && <button
+                                        className={
+                                            product.is_available ===
+                                            false
+                                                ? "qr_page_btn success"
+                                                : "qr_page_btn danger"
+                                        }
+                                        disabled={
+                                            Number(updatingProductId) ===
+                                            Number(product.id)
+                                        }
+                                        onClick={() =>
+                                            updateAvailability(
+                                                product
+                                            )
+                                        }
+                                    >
+                                        {
+                                            product.is_available ===
+                                            false
+                                                ? <FaCheckCircle />
+                                                : <FaBan />
+                                        }
+                                        {
+                                            product.is_available ===
+                                            false
+                                                ? "Marcar disponible"
+                                                : "Marcar agotado"
+                                        }
+                                    </button>}
+
+                                    {canManage && <button
                                         className="qr_page_btn secondary"
                                         onClick={() =>
                                             editProduct(
@@ -571,9 +760,9 @@ export default function RestoProductsClient({
                                     >
                                         <FaPen />
                                         Editar
-                                    </button>
+                                    </button>}
 
-                                    <button
+                                    {canManage && <button
                                         className="qr_page_btn danger"
                                         onClick={() =>
                                             deleteProduct(
@@ -583,7 +772,7 @@ export default function RestoProductsClient({
                                     >
                                         <FaTrash />
                                         Eliminar
-                                    </button>
+                                    </button>}
 
                                 </div>
 

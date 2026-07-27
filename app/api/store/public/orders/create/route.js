@@ -8,12 +8,26 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 import { db } from "@/app/lib/tags-db";
+import { randomBytes } from "node:crypto";
 import { sendStoreOrderEmail } from "@/app/modules/store/lib/sendStoreOrderEmail";
 import {
     getReservedStockForProduct,
     getReservedStockForVariant
 }
     from "@/app/modules/store/lib/updateOrderStock";
+import {
+    canonicalizeStoreOrderItems
+} from "@/app/modules/store/lib/canonicalizeStoreOrderItems";
+import {
+    verifyStoreShippingQuote
+} from "@/app/modules/store/lib/storeShippingQuoteSignature";
+import {
+    createStoreCheckoutToken
+} from "@/app/modules/store/lib/storeCheckoutToken";
+import {
+    checkStorePublicRateLimit,
+    storeRequestIp
+} from "@/app/modules/store/lib/storePublicRateLimit";
 
 function safe(value) {
     return value === undefined || value === ""
@@ -23,11 +37,15 @@ function safe(value) {
 
 function generateOrderNumber(storeId) {
     const timestamp =
-        Date.now()
-            .toString()
-            .slice(-8);
+        Date.now().toString(36)
+            .toUpperCase();
 
-    return `ST${storeId}-${timestamp}`;
+    const random =
+        randomBytes(3)
+            .toString("hex")
+            .toUpperCase();
+
+    return `ST${storeId}-${timestamp}-${random}`;
 }
 
 function normalizePaymentMethod(value) {
@@ -94,6 +112,7 @@ export async function POST(req) {
                 SELECT *
                 FROM tags_stores
                 WHERE id = ?
+                AND app_type = 'store'
                 AND status = 'published'
                 LIMIT 1
                 `,
@@ -110,8 +129,46 @@ export async function POST(req) {
             );
         }
 
+        const rateLimit =
+            checkStorePublicRateLimit({
+                key:
+                    `order:${storeId}:${storeRequestIp(req)}`,
+                limit: 10,
+                windowMs:
+                    5 * 60 * 1000
+            });
+
+        if (!rateLimit.allowed) {
+            return Response.json(
+                {
+                    error:
+                        "Demasiados pedidos. Intentá nuevamente en unos minutos."
+                },
+                {
+                    status: 429,
+                    headers: {
+                        "Retry-After":
+                            String(
+                                rateLimit.retryAfter
+                            )
+                    }
+                }
+            );
+        }
+
+        await conn.beginTransaction();
+
+        const orderItems =
+            await canonicalizeStoreOrderItems(
+                conn,
+                {
+                    storeId,
+                    items
+                }
+            );
+
         const subtotal =
-            items.reduce(
+            orderItems.reduce(
                 (acc, item) =>
                     acc + Number(item.total_price || 0),
                 0
@@ -137,6 +194,7 @@ export async function POST(req) {
                     AND UPPER(code) = ?
                     AND is_active = 1
                     LIMIT 1
+                    FOR UPDATE
                     `,
                     [
                         coupon.id,
@@ -162,6 +220,44 @@ export async function POST(req) {
             ) {
                 return Response.json(
                     { error: "Este cupón ya alcanzó su límite de usos" },
+                    { status: 400 }
+                );
+            }
+
+            const now = new Date();
+
+            if (
+                dbCoupon.starts_at &&
+                new Date(dbCoupon.starts_at) > now
+            ) {
+                return Response.json(
+                    { error: "Este cupón todavía no está disponible" },
+                    { status: 400 }
+                );
+            }
+
+            if (
+                dbCoupon.ends_at &&
+                new Date(dbCoupon.ends_at) < now
+            ) {
+                return Response.json(
+                    { error: "Este cupón está vencido" },
+                    { status: 400 }
+                );
+            }
+
+            if (
+                dbCoupon.min_order_total &&
+                subtotal <
+                    Number(
+                        dbCoupon.min_order_total
+                    )
+            ) {
+                return Response.json(
+                    {
+                        error:
+                            "El pedido no alcanza el mínimo requerido por el cupón"
+                    },
                     { status: 400 }
                 );
             }
@@ -203,6 +299,22 @@ export async function POST(req) {
 
         /* Si estoy Cutizando con Zipnova */
         if (shippingQuote?.provider === "zipnova") {
+
+            if (
+                !verifyStoreShippingQuote({
+                    storeId,
+                    zip: customer.zip,
+                    quote: shippingQuote
+                })
+            ) {
+                return Response.json(
+                    {
+                        error:
+                            "La cotización de envío venció o fue modificada. Volvé a cotizar."
+                    },
+                    { status: 409 }
+                );
+            }
 
             shippingMethodId = null;
 
@@ -320,7 +432,7 @@ export async function POST(req) {
         // Modelo: stock real - reservas pendientes
         // =====================================
 
-        for (const item of items) {
+        for (const item of orderItems) {
 
             const quantity =
                 Number(item.quantity || 1);
@@ -464,8 +576,6 @@ export async function POST(req) {
             }
         }
 
-        await conn.beginTransaction();
-
         const [orderResult] =
             await conn.query(
                 `
@@ -602,7 +712,41 @@ export async function POST(req) {
         const orderId =
             orderResult.insertId;
 
-        for (const item of items) {
+        if (couponId) {
+            const [couponUpdate] =
+                await conn.query(
+                    `
+                    UPDATE tags_store_coupons
+                    SET
+                        used_count =
+                            used_count + 1,
+                        updated_at = NOW()
+                    WHERE id = ?
+                    AND store_id = ?
+                    AND (
+                        max_uses IS NULL
+                        OR used_count < max_uses
+                    )
+                    `,
+                    [
+                        couponId,
+                        storeId
+                    ]
+                );
+
+            if (
+                couponUpdate.affectedRows !== 1
+            ) {
+                throw Object.assign(
+                    new Error(
+                        "El cupón ya alcanzó su límite de usos"
+                    ),
+                    { status: 409 }
+                );
+            }
+        }
+
+        for (const item of orderItems) {
             await conn.query(
                 `
         INSERT INTO tags_store_order_items (
@@ -641,7 +785,7 @@ export async function POST(req) {
 
             try {
 
-                const emailResult = await sendStoreOrderEmail({
+                await sendStoreOrderEmail({
                     store,
                     order: {
                         order_number: orderNumber,
@@ -649,14 +793,9 @@ export async function POST(req) {
                         customer_email: customer.email,
                         total
                     },
-                    items,
+                    items: orderItems,
                     type: "order_created"
                 });
-
-                console.log(
-                    "STORE EMAIL RESULT:",
-                    emailResult
-                );
 
             } catch (err) {
 
@@ -679,7 +818,13 @@ export async function POST(req) {
             shippingMethodName,
             carrierId,
             carrierName,
-            paymentMethod: finalPaymentMethod
+            paymentMethod: finalPaymentMethod,
+            checkoutToken:
+                createStoreCheckoutToken({
+                    orderId,
+                    storeId,
+                    orderNumber
+                })
         });
 
     } catch (err) {
@@ -691,8 +836,13 @@ export async function POST(req) {
         );
 
         return Response.json(
-            { error: "Error creando pedido" },
-            { status: 500 }
+            {
+                error:
+                    err?.status
+                        ? err.message
+                        : "Error creando pedido"
+            },
+            { status: err?.status || 500 }
         );
 
     } finally {

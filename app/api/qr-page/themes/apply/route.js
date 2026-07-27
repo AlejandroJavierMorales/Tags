@@ -80,6 +80,11 @@ export async function POST(req) {
             UPDATE tags_qr_pages
             SET
                 theme_id = ?,
+                global_styles = JSON_SET(
+                    COALESCE(global_styles, JSON_OBJECT()),
+                    '$.theme_override',
+                    true
+                ),
                 header_config = JSON_REMOVE(
                     COALESCE(header_config, JSON_OBJECT()),
                     '$.backgroundColor',

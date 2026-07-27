@@ -80,7 +80,8 @@ export async function getRestoCashStore(
                 id,
                 business_id,
                 name,
-                status
+                status,
+                currency
             FROM tags_stores
             WHERE business_id = ?
             AND app_type = 'resto'
@@ -203,6 +204,38 @@ export async function getOpenCashShift(
 
 }
 
+export async function getCashShiftById(
+    connection,
+    storeId,
+    shiftId
+) {
+
+    const [
+        rows
+    ] =
+        await connection.query(
+            `
+            SELECT
+                cs.*,
+                cr.name AS cash_register_name,
+                cr.code AS cash_register_code
+            FROM tags_resto_cash_shifts cs
+            INNER JOIN tags_resto_cash_registers cr
+                ON cr.id = cs.cash_register_id
+            WHERE cs.store_id = ?
+            AND cs.id = ?
+            LIMIT 1
+            `,
+            [
+                storeId,
+                shiftId
+            ]
+        );
+
+    return rows[0] || null;
+
+}
+
 export async function getCashShiftSummary(
     connection,
     shift
@@ -252,6 +285,28 @@ export async function getCashShiftSummary(
                     ),
                     0
                 ) AS cash_movement_total,
+                COALESCE(
+                    SUM(
+                        CASE
+                            WHEN movement_type = 'order_payment'
+                            AND direction = 'income'
+                            THEN amount
+                            ELSE 0
+                        END
+                    ),
+                    0
+                ) AS order_income,
+                COALESCE(
+                    SUM(
+                        CASE
+                            WHEN movement_type = 'order_refund'
+                            AND direction = 'expense'
+                            THEN amount
+                            ELSE 0
+                        END
+                    ),
+                    0
+                ) AS order_refunds,
                 COUNT(*) AS movement_count
             FROM tags_resto_cash_movements
             WHERE cash_shift_id = ?
@@ -268,6 +323,26 @@ export async function getCashShiftSummary(
             `
             SELECT
                 payment_method,
+                COALESCE(
+                    SUM(
+                        CASE
+                            WHEN direction = 'income'
+                            THEN amount
+                            ELSE 0
+                        END
+                    ),
+                    0
+                ) AS income_total,
+                COALESCE(
+                    SUM(
+                        CASE
+                            WHEN direction = 'expense'
+                            THEN amount
+                            ELSE 0
+                        END
+                    ),
+                    0
+                ) AS expense_total,
                 COALESCE(
                     SUM(
                         CASE
@@ -321,6 +396,14 @@ export async function getCashShiftSummary(
                 roundCash(totals.total_income) -
                 roundCash(totals.total_expense)
             ),
+        order_income:
+            roundCash(
+                totals.order_income
+            ),
+        order_refunds:
+            roundCash(
+                totals.order_refunds
+            ),
         expected_cash:
             expectedCash,
         movement_count:
@@ -334,6 +417,28 @@ export async function getCashShiftSummary(
                     row => [
                         row.payment_method,
                         roundCash(row.net_total)
+                    ]
+                )
+            ),
+        payment_method_details:
+            Object.fromEntries(
+                methodRows.map(
+                    row => [
+                        row.payment_method,
+                        {
+                            income:
+                                roundCash(
+                                    row.income_total
+                                ),
+                            expense:
+                                roundCash(
+                                    row.expense_total
+                                ),
+                            net:
+                                roundCash(
+                                    row.net_total
+                                )
+                        }
                     ]
                 )
             )

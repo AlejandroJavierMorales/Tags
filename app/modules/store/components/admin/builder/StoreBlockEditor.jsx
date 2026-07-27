@@ -170,10 +170,13 @@ export default function StoreBlockEditor({
     section,
     block,
     onClose,
-    onBlockUpdated
+    onBlockUpdated,
+    moduleDefinition = null,
+    updateEndpoint = "/api/store/admin/builder/blocks/update"
 }) {
 
     const module =
+        moduleDefinition ||
         getStoreModuleDefinition(block.block_type);
 
     const editor =
@@ -398,7 +401,7 @@ export default function StoreBlockEditor({
 
             const res =
                 await fetch(
-                    "/api/store/admin/builder/blocks/update",
+                    updateEndpoint,
                     {
                         method: "POST",
                         headers: {

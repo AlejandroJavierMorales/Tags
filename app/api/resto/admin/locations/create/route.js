@@ -17,6 +17,11 @@ import { db }
 import { canCreateQR }
     from "@/app/modules/qr-page/lib/canCreateQR";
 
+import {
+    getRestoAccess,
+    restoAccessResponse
+} from "@/app/modules/resto/lib/staff/getRestoAccess";
+
 function generateCode() {
 
     return Math.random()
@@ -88,6 +93,19 @@ export async function POST(req) {
                 }
             );
 
+        }
+
+        const access =
+            await getRestoAccess({
+                businessId,
+                permission:
+                    "locations.manage"
+            });
+
+        if (!access.allowed) {
+            return restoAccessResponse(
+                access
+            );
         }
 
         if (!name?.trim()) {

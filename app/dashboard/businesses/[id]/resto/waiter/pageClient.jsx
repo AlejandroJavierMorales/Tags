@@ -150,6 +150,9 @@ export default function RestoWaiterPageClient({
             []
         );
 
+    const [closableOrders, setClosableOrders] =
+        useState([]);
+
     const [stats, setStats] =
         useState({
             deliveries:
@@ -261,6 +264,14 @@ export default function RestoWaiterPageClient({
                             data?.bills
                         )
                             ? data.bills
+                            : []
+                    );
+
+                    setClosableOrders(
+                        Array.isArray(
+                            data?.closable_orders
+                        )
+                            ? data.closable_orders
                             : []
                     );
 
@@ -476,6 +487,40 @@ export default function RestoWaiterPageClient({
                         result.value
                     ).trim()
             }
+        );
+
+    }
+
+    async function closeOrder(
+        order
+    ) {
+
+        const confirmed =
+            await showAlert({
+                icon:
+                    "question",
+                title:
+                    "Cerrar pedido",
+                text:
+                    "¿Confirmás el cierre del pedido? La mesa quedará libre.",
+                showCancelButton:
+                    true,
+                confirmButtonText:
+                    "Sí, cerrar",
+                cancelButtonText:
+                    "Volver"
+            });
+
+        if (!confirmed) {
+
+            return;
+
+        }
+
+        await runAction(
+            order,
+            "close_session",
+            "El pedido fue cerrado y la mesa quedó libre."
         );
 
     }
@@ -1159,7 +1204,7 @@ export default function RestoWaiterPageClient({
 
                                         {can("tables.open") && <button
                                             type="button"
-                                            className="tags_resto_btn tags_resto_btn_success tags_resto_btn_sm"
+                                            className="tags_resto_btn tags_resto_btn_danger tags_resto_btn_sm"
                                             disabled={
                                                 Number(updatingOrderId) ===
                                                 Number(order.id)
@@ -1419,6 +1464,74 @@ export default function RestoWaiterPageClient({
                     }
                 </div>
             </section>
+
+            {
+                can("tables.close") && (
+                    <section>
+                        <h2 className="h4 mb-3">
+                            <FaCheck className="me-2 text-success" />
+                            Pagadas para cerrar
+                        </h2>
+
+                        <div className="row g-3">
+                            {
+                                closableOrders.map(
+                                    order => (
+                                        <div
+                                            key={order.id}
+                                            className="col-12 col-lg-6"
+                                        >
+                                            <article className="tags_resto_order_card h-100">
+                                                <OrderIdentity order={order} />
+
+                                                <div className="d-flex flex-wrap gap-2 mt-3">
+                                                    <button
+                                                        type="button"
+                                                        className="tags_resto_btn tags_resto_btn_secondary"
+                                                        onClick={() =>
+                                                            router.push(
+                                                                `/dashboard/businesses/${businessId}/resto/orders/${order.id}`
+                                                            )
+                                                        }
+                                                    >
+                                                        <FaEye />
+                                                        Ver detalle
+                                                    </button>
+
+                                                    <button
+                                                        type="button"
+                                                        className="tags_resto_btn tags_resto_btn_secondary"
+                                                        disabled={
+                                                            Number(updatingOrderId) ===
+                                                            Number(order.id)
+                                                        }
+                                                        onClick={() =>
+                                                            closeOrder(
+                                                                order
+                                                            )
+                                                        }
+                                                    >
+                                                        <FaCheck />
+                                                        Cerrar pedido
+                                                    </button>
+                                                </div>
+                                            </article>
+                                        </div>
+                                    )
+                                )
+                            }
+
+                            {
+                                closableOrders.length === 0 && (
+                                    <p className="text-muted">
+                                        No hay mesas pagadas pendientes de cierre.
+                                    </p>
+                                )
+                            }
+                        </div>
+                    </section>
+                )
+            }
         </main>
     );
 

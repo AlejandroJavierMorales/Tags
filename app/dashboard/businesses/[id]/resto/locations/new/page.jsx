@@ -1,16 +1,12 @@
-// =====================================
-// FILE: /dashboard/businesses/[id]/resto/locations/new/page.jsx
-// Descripción:
-// Alta de sectores, mesas y ubicaciones
-// para Tags Resto.
-// Acceso: admin o cliente dueño del business.
-// =====================================
-
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
+import {
+    redirect
+} from "next/navigation";
 
 import HeaderSwitcher
     from "@/app/components/HeaderSwitcher";
+import {
+    getRestoAccess
+} from "@/app/modules/resto/lib/staff/getRestoAccess";
 
 import RestoLocationEditorClient
     from "./pageClient";
@@ -29,73 +25,23 @@ export const metadata = {
 export default async function Page({
     params
 }) {
-
     const {
-        id
+        id: businessId
     } = await params;
 
-    const businessId =
-        id;
+    const access =
+        await getRestoAccess({
+            businessId,
+            permission:
+                "locations.manage"
+        });
 
-    const cookieStore =
-        await cookies();
-
-    const cookie =
-        cookieStore.get(
-            "tags_session"
+    if (!access.allowed) {
+        redirect(
+            access.status === 401
+                ? "/login"
+                : `/dashboard/businesses/${businessId}/resto/locations`
         );
-
-    if (!cookie) {
-
-        return redirect(
-            "/login"
-        );
-
-    }
-
-    let session;
-
-    try {
-
-        session =
-            JSON.parse(
-                cookie.value
-            );
-
-    } catch (err) {
-
-        console.error(
-            "INVALID SESSION:",
-            err
-        );
-
-        return redirect(
-            "/login"
-        );
-
-    }
-
-    const isAdmin =
-        session?.role === "admin";
-
-    const isOwner =
-        String(
-            session?.business_id ||
-            session?.businessId ||
-            ""
-        ) === String(
-            businessId
-        );
-
-    if (
-        !isAdmin &&
-        !isOwner
-    ) {
-
-        return redirect(
-            "/dashboard"
-        );
-
     }
 
     return (
@@ -105,10 +51,9 @@ export default async function Page({
             <RestoLocationEditorClient
                 businessId={businessId}
                 locationId={null}
-                session={session}
-                isAdmin={isAdmin}
+                session={access.session}
+                isAdmin={access.isOwner}
             />
         </>
     );
-
 }

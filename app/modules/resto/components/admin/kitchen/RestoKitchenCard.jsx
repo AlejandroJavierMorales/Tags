@@ -14,6 +14,7 @@ import {
     FaClock,
     FaCommentDots,
     FaFire,
+    FaPrint,
     FaShoppingBag,
     FaUsers
 } from "react-icons/fa";
@@ -25,7 +26,8 @@ export default function RestoKitchenCard({
     kitchenSettings = {},
     updatingItemId = null,
     onMarkReady,
-    canMarkReady = true
+    canMarkReady = true,
+    onPrintOrder
 }) {
 
 
@@ -345,6 +347,26 @@ export default function RestoKitchenCard({
                         {totalPendingQuantity}
 
                     </span>
+
+                    {
+                        onPrintOrder && (
+                            <button
+                                type="button"
+                                className="tags_resto_kitchen_print_btn"
+                                onClick={() =>
+                                    onPrintOrder(
+                                        order
+                                    )
+                                }
+                                title="Imprimir comanda"
+                            >
+                                <FaPrint />
+                                <span>
+                                    Comanda
+                                </span>
+                            </button>
+                        )
+                    }
 
                 </div>
 

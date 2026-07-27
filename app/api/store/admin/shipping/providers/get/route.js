@@ -2,6 +2,10 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 import { db } from "@/app/lib/tags-db";
+import {
+    requireStoreBusinessAccess,
+    storeAccessResponse
+} from "@/app/modules/store/lib/storeAdminAccess";
 
 export async function GET(req) {
     try {
@@ -21,19 +25,16 @@ export async function GET(req) {
             );
         }
 
-        const [storeRows] =
-            await db.query(
-                `
-                SELECT id
-                FROM tags_stores
-                WHERE business_id = ?
-                LIMIT 1
-                `,
-                [businessId]
+        const access =
+            await requireStoreBusinessAccess(
+                businessId
             );
 
-        const store =
-            storeRows[0];
+        if (!access.allowed) {
+            return storeAccessResponse(access);
+        }
+
+        const store = access.store;
 
         if (!store) {
             return Response.json(
@@ -53,7 +54,12 @@ export async function GET(req) {
                     auth_type,
                     account_id,
                     origin_id,
-                    api_token,
+                    CASE
+                        WHEN api_token IS NOT NULL
+                        AND api_token != ''
+                        THEN 1
+                        ELSE 0
+                    END AS has_api_token,
                     is_active,
                     is_connected,
                     settings_json,

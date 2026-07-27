@@ -39,10 +39,16 @@ export async function POST(req) {
 
         const {
             itemId,
+            sessionToken,
             quantity
         } = body;
 
-        if (!itemId) {
+        if (
+            !itemId ||
+            !String(
+                sessionToken || ""
+            ).trim()
+        ) {
 
             return Response.json(
                 {
@@ -98,26 +104,25 @@ export async function POST(req) {
         const [itemRows] =
             await conn.query(
                 `
-                SELECT *
-                FROM tags_resto_session_items
-                WHERE id=?
+                SELECT i.*
+                FROM tags_resto_session_items i
+                INNER JOIN tags_resto_sessions s
+                    ON s.id = i.session_id
+                WHERE i.id=?
+                AND s.session_token=?
                 LIMIT 1
                 FOR UPDATE
                 `,
                 [
-                    itemId
+                    itemId,
+                    String(
+                        sessionToken
+                    ).trim()
                 ]
             );
 
         const sessionItem =
             itemRows[0];
-
-        const optionsJson =
-            typeof sessionItem.options_json === "string"
-                ? sessionItem.options_json
-                : JSON.stringify(
-                    sessionItem.options_json || {}
-                );
 
         if (!sessionItem) {
 
@@ -137,6 +142,13 @@ export async function POST(req) {
             );
 
         }
+
+        const optionsJson =
+            typeof sessionItem.options_json === "string"
+                ? sessionItem.options_json
+                : JSON.stringify(
+                    sessionItem.options_json || {}
+                );
 
         let requiresPreparation =
             Number(
@@ -303,25 +315,20 @@ export async function POST(req) {
         const sentItems =
             groupedItems.filter(
                 (item) =>
-                    Number(
-                        item.requires_preparation ||
-                        0
-                    ) === 1 &&
-                    item.preparation_status ===
-                    "sent"
+                    [
+                        "sent",
+                        "ready",
+                        "served"
+                    ].includes(
+                        item.preparation_status
+                    )
             );
 
         const pendingItems =
             groupedItems.filter(
                 (item) =>
-                    !(
-                        Number(
-                            item.requires_preparation ||
-                            0
-                        ) === 1 &&
-                        item.preparation_status ===
-                        "sent"
-                    )
+                    item.preparation_status ===
+                    "pending"
             );
 
         const sentQuantity =
@@ -599,8 +606,11 @@ export async function POST(req) {
             );
 
         const discountTotal =
-            money(
-                session.discount_total
+            Math.min(
+                subtotal,
+                money(
+                    session.discount_total
+                )
             );
 
         const total =

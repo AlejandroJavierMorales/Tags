@@ -56,6 +56,7 @@ export async function GET(req) {
                 LEFT JOIN tags_qr_pages p
                     ON p.id = s.page_id
                 WHERE s.business_id = ?
+                AND s.app_type = 'store'
                 LIMIT 1
                 `,
                 [

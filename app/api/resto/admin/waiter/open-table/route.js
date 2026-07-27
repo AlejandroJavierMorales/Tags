@@ -10,6 +10,7 @@ import {
     db
 } from "@/app/lib/tags-db";
 import { getRestoAccess, restoAccessResponse } from "@/app/modules/resto/lib/staff/getRestoAccess";
+import { logRestoAudit } from "@/app/modules/resto/lib/staff/restoAudit";
 
 function clean(value) {
 
@@ -211,6 +212,29 @@ export async function POST(req) {
                 orderNumber,
                 result.insertId
             ]
+        );
+
+        await logRestoAudit(
+            connection,
+            {
+                storeId:
+                    location.store_id,
+                access,
+                actionCode:
+                    "table.opened",
+                entityType:
+                    "session",
+                entityId:
+                    result.insertId,
+                description:
+                    `Mesa abierta: ${orderNumber}`,
+                metadata: {
+                    locationId:
+                        location.id,
+                    customerName
+                },
+                req
+            }
         );
 
         await connection.commit();

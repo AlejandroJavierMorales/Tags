@@ -397,8 +397,9 @@
 .tags_resto_kitchen_card_items_header {
 
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: center;
+    gap: .65rem;
 
 }
 
@@ -606,4 +607,25 @@
 
     }
 
+}
+
+.tags_resto_kitchen_print_btn {
+    display: inline-flex;
+    min-height: 34px;
+    margin-left: auto;
+    align-items: center;
+    justify-content: center;
+    gap: .4rem;
+    padding: .4rem .65rem;
+    border: 1px solid var(--resto-admin-border);
+    border-radius: 9px;
+    background: var(--resto-admin-surface);
+    color: var(--resto-admin-text);
+    font-size: .75rem;
+    font-weight: 800;
+}
+
+.tags_resto_kitchen_print_btn:hover {
+    border-color: var(--resto-admin-primary);
+    color: var(--resto-admin-primary);
 }

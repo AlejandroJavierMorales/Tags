@@ -57,6 +57,119 @@ import RestoCurrentOrderSummary
 import RestoCurrentOrderActions
     from "./RestoCurrentOrderActions";
 
+import RestoOrderChat
+    from "./RestoOrderChat";
+
+const DELIVERY_STEP_INDEX = {
+    pending_confirmation: 0,
+    preparing: 1,
+    ready_for_dispatch: 2,
+    assigned: 2,
+    picked_up: 3,
+    in_transit: 4,
+    delivered: 5
+};
+
+function DeliveryTracking({
+    delivery,
+    formatMoney
+}) {
+    if (!delivery) return null;
+
+    const steps = [
+        "Confirmación",
+        "Preparación",
+        "Despacho",
+        "Retirado",
+        "En camino",
+        "Entregado"
+    ];
+
+    const currentIndex =
+        DELIVERY_STEP_INDEX[
+            delivery.status
+        ] ?? 0;
+
+    const hasIssue =
+        [
+            "failed",
+            "cancelled"
+        ].includes(
+            delivery.status
+        );
+
+    return (
+        <div className="tags_resto_delivery_public_tracking">
+            <ol>
+                {
+                    steps.map(
+                        (step, index) => (
+                            <li
+                                key={step}
+                                className={[
+                                    index < currentIndex
+                                        ? "is-complete"
+                                        : "",
+                                    index === currentIndex &&
+                                    !hasIssue
+                                        ? "is-current"
+                                        : ""
+                                ]
+                                    .filter(Boolean)
+                                    .join(" ")}
+                            >
+                                <span>
+                                    {
+                                        index < currentIndex
+                                            ? "✓"
+                                            : index + 1
+                                    }
+                                </span>
+                                <small>{step}</small>
+                            </li>
+                        )
+                    )
+                }
+            </ol>
+
+            {delivery.driver_name && (
+                <div className="tags_resto_delivery_public_driver">
+                    <div>
+                        <span>Repartidor asignado</span>
+                        <strong>
+                            {delivery.driver_name}
+                        </strong>
+                    </div>
+
+                    {delivery.driver_phone && (
+                        <a
+                            href={`tel:${delivery.driver_phone}`}
+                        >
+                            Llamar
+                        </a>
+                    )}
+                </div>
+            )}
+
+            {
+                delivery.collection_required &&
+                Number(
+                    delivery.amount_to_collect
+                ) > 0 && (
+                    <div className="tags_resto_delivery_public_collection">
+                        Importe a pagar al recibir:
+                        <strong>
+                            ${formatMoney(
+                                delivery.amount_to_collect
+                            )}
+                        </strong>
+                    </div>
+                )
+            }
+        </div>
+    );
+}
+
 
 
 export default function RestoCurrentOrder({
@@ -75,6 +188,9 @@ export default function RestoCurrentOrder({
     const [sending, setSending] =
         useState(false);
 
+    const [reviewLoading, setReviewLoading] =
+        useState(false);
+
     const [
         actionLoading,
         setActionLoading
@@ -88,6 +204,9 @@ export default function RestoCurrentOrder({
         useState([]);
 
     const [tracking, setTracking] =
+        useState(null);
+
+    const [review, setReview] =
         useState(null);
 
     const [totals, setTotals] =
@@ -269,8 +388,6 @@ export default function RestoCurrentOrder({
                             );
 
                         } else {
-                            console.log("LOADED SESSION", loadedSession);
-
                             setActiveRestoSession(
                                 slug,
                                 {
@@ -304,6 +421,11 @@ export default function RestoCurrentOrder({
 
                     setTracking(
                         data.tracking ||
+                        null
+                    );
+
+                    setReview(
+                        data.review ||
                         null
                     );
 
@@ -542,6 +664,31 @@ export default function RestoCurrentOrder({
                     : "Retiro en el local"
             );
 
+    const canReview =
+        Boolean(
+            session &&
+            session.status !== "cancelled" &&
+            (
+                session.status === "closed" ||
+                session.payment_status === "paid" ||
+                Number(session.paid_total || 0) >= Number(session.total || 0) ||
+                Number(tracking?.quantities?.served || 0) > 0
+            )
+        );
+
+    async function requestReview() {
+        if (!canReview || reviewLoading) return;
+        try {
+            setReviewLoading(true);
+            const response = await fetch("/api/resto/public/reviews/session-validate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sessionToken }) });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || "No se pudo abrir la valoración");
+            window.location.href = result.reviewUrl;
+        } catch (error) {
+            await Swal.fire({ icon: "info", title: "Valoración", text: error.message, confirmButtonText: "Entendido" });
+        } finally { setReviewLoading(false); }
+    }
+
     /*
     =====================================
     ACTUALIZAR ITEM
@@ -602,6 +749,8 @@ export default function RestoCurrentOrder({
 
                                 itemId:
                                     item.id,
+
+                                sessionToken,
 
                                 quantity:
                                     finalQuantity
@@ -1286,6 +1435,11 @@ RENDER PRINCIPAL
                         qrCode ={qrCode}
 
                         totalItems={totalItems}
+                        orderNumber={session.order_number}
+                        canReview={canReview}
+                        reviewLoading={reviewLoading}
+                        onReview={requestReview}
+                        review={review}
 
                     />
 
@@ -1362,6 +1516,15 @@ RENDER PRINCIPAL
 
                                 }
 
+                                <DeliveryTracking
+                                    delivery={
+                                        tracking.delivery
+                                    }
+                                    formatMoney={
+                                        formatMoney
+                                    }
+                                />
+
                             </section>
 
                         )
@@ -1410,6 +1573,8 @@ RENDER PRINCIPAL
 
                                 isSessionOpen={isSessionOpen}
 
+                                canRequestService={isDineIn}
+
                                 canCancelSession={
                                     canCancelSession
                                 }
@@ -1431,6 +1596,11 @@ RENDER PRINCIPAL
                         </aside>
 
                     </div>
+
+                    <RestoOrderChat
+                        sessionToken={sessionToken}
+                        isSessionOpen={isSessionOpen}
+                    />
 
                 </div>
 

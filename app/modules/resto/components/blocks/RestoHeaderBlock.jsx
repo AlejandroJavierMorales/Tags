@@ -17,7 +17,6 @@
 
 import "../../styles/resto-public.css";
 import {
-    FaReceipt,
     FaSearch
 } from "react-icons/fa";
 
@@ -43,9 +42,13 @@ export default function RestoHeaderBlock({
         "";
 
     const serviceStatus =
-        entity?.service_status ||
-        entity?.status ||
-        "";
+        entity?.service_hours_configured === false
+            ? ""
+            : (
+                entity?.service_status ||
+                entity?.status ||
+                ""
+            );
 
     const isOpen =
         entity?.is_open === true ||
@@ -54,14 +57,6 @@ export default function RestoHeaderBlock({
         serviceStatus === "open" ||
         serviceStatus === "opened" ||
         serviceStatus === "active";
-
-    const orderCount =
-        Number(
-            entity?.resto_order_count ??
-            entity?.order_count ??
-            entity?.cart_count ??
-            0
-        );
 
     const showLogo =
         content?.showLogo !== false;
@@ -75,20 +70,12 @@ export default function RestoHeaderBlock({
     const showSearch =
         content?.showSearch !== false;
 
-    const showOrder =
-        content?.showOrder !== false &&
-        content?.showCart !== false;
-
     const showStatus =
         content?.showStatus !== false;
 
     const searchPlaceholder =
         content?.searchPlaceholder ||
         "Buscar en la carta";
-
-    const orderLabel =
-        content?.orderLabel ||
-        "Mi pedido";
 
     const openLabel =
         content?.openLabel ||
@@ -126,16 +113,6 @@ export default function RestoHeaderBlock({
                             event.target.value
                     }
                 }
-            )
-        );
-
-    }
-
-    function handleOpenOrder() {
-
-        window.dispatchEvent(
-            new CustomEvent(
-                "resto:open-order"
             )
         );
 
@@ -209,47 +186,6 @@ export default function RestoHeaderBlock({
                         </div>
 
                     </div>
-
-                    {showOrder && (
-
-                        <button
-                            type="button"
-                            className="resto_header_order_btn flex-shrink-0"
-                            onClick={handleOpenOrder}
-                            aria-label={orderLabel}
-                            style={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: "10px",
-                                padding: "7px 14px 7px 7px",
-                                background: "var(--qr-surface)",
-                                color: "var(--qr-text)",
-                                border: "1px solid var(--qr-border)",
-                                borderRadius: "var(--qr-radius)",
-                                boxShadow: "var(--qr-shadow)"
-                            }}
-                        >
-                            <span
-                                className="resto_header_order_icon"
-                                aria-hidden="true"
-                            >
-                                <FaReceipt />
-                            </span>
-
-                            <span className="resto_header_order_label">
-                                {orderLabel}
-                            </span>
-
-                            {orderCount > 0 && (
-
-                                <span className="resto_header_order_count">
-                                    {orderCount}
-                                </span>
-
-                            )}
-                        </button>
-
-                    )}
 
                 </div>
 

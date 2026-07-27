@@ -78,7 +78,6 @@ export default function StoreCheckoutPageClient({
     settings = {}
 }) {
 
-    console.log("CHECKOUT SETTINGS", settings);
     const [items, setItems] =
         useState([]);
 
@@ -872,14 +871,16 @@ export default function StoreCheckoutPageClient({
             if (paymentMethod === "mercado_pago") {
                 const mpRes =
                     await fetch(
-                        "/api/store/admin/payments/create-preference",
+                        "/api/store/public/payments/create-preference",
                         {
                             method: "POST",
                             headers: {
                                 "Content-Type": "application/json"
                             },
                             body: JSON.stringify({
-                                orderId: data.orderId
+                                orderId: data.orderId,
+                                checkoutToken:
+                                    data.checkoutToken
                             })
                         }
                     );

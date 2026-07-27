@@ -88,6 +88,7 @@ export async function POST(req) {
                 SELECT id
                 FROM tags_stores
                 WHERE business_id = ?
+                AND app_type = 'store'
                 LIMIT 1
                 `,
                 [businessId]
@@ -112,7 +113,8 @@ export async function POST(req) {
                     id,
                     order_status,
                     payment_status,
-                    stock_reserved
+                    stock_reserved,
+                    coupon_id
                 FROM tags_store_orders
                 WHERE id = ?
                 AND store_id = ?
@@ -197,6 +199,31 @@ export async function POST(req) {
             await restoreConfirmedOrderStock(
                 conn,
                 order.id
+            );
+        }
+
+        if (
+            currentOrderStatus !== "cancelled" &&
+            nextOrderStatus === "cancelled" &&
+            order.coupon_id
+        ) {
+            await conn.query(
+                `
+                UPDATE tags_store_coupons
+                SET
+                    used_count =
+                        GREATEST(
+                            0,
+                            used_count - 1
+                        ),
+                    updated_at = NOW()
+                WHERE id = ?
+                AND store_id = ?
+                `,
+                [
+                    order.coupon_id,
+                    store.id
+                ]
             );
         }
 

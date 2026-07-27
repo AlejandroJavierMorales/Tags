@@ -11,6 +11,11 @@ export const dynamic = "force-dynamic";
 
 import { db } from "@/app/lib/tags-db";
 
+import {
+    getRestoAccess,
+    restoAccessResponse
+} from "@/app/modules/resto/lib/staff/getRestoAccess";
+
 export async function DELETE(req) {
 
     const conn =
@@ -53,6 +58,19 @@ export async function DELETE(req) {
                 }
             );
 
+        }
+
+        const access =
+            await getRestoAccess({
+                businessId,
+                permission:
+                    "locations.manage"
+            });
+
+        if (!access.allowed) {
+            return restoAccessResponse(
+                access
+            );
         }
 
         const [storeRows] =

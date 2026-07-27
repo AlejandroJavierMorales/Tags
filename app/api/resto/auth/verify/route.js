@@ -10,6 +10,13 @@ import {
 import {
     db
 } from "@/app/lib/tags-db";
+import {
+    signTagsSession
+} from "@/app/lib/signTagsSession";
+
+import {
+    logRestoAudit
+} from "@/app/modules/resto/lib/staff/restoAudit";
 
 export async function GET(req) {
     let connection;
@@ -104,12 +111,35 @@ export async function GET(req) {
             ]
         );
 
+        await logRestoAudit(
+            connection,
+            {
+                storeId:
+                    staff.store_id,
+                actionCode:
+                    "staff.login",
+                entityType:
+                    "staff",
+                entityId:
+                    staff.staff_id,
+                description:
+                    staff.email,
+                req,
+                staffId:
+                    staff.staff_id,
+                actorType:
+                    "staff",
+                actorName:
+                    staff.name
+            }
+        );
+
         await connection.commit();
 
         const baseUrl =
             process.env.NODE_ENV ===
             "development"
-                ? "http://localhost:3000"
+                ? new URL(req.url).origin
                 : process.env
                     .NEXT_PUBLIC_APP_URL;
 
@@ -118,8 +148,7 @@ export async function GET(req) {
                 `${baseUrl}/dashboard/businesses/${staff.business_id}/resto`
             );
 
-        response.cookies.set(
-            "tags_session",
+        const sessionValue =
             JSON.stringify({
                 type: "resto_staff",
                 staffId: staff.staff_id,
@@ -134,7 +163,26 @@ export async function GET(req) {
                     "Personal",
                 name: staff.name,
                 email: staff.email
-            }),
+            });
+
+        response.cookies.set(
+            "tags_session",
+            sessionValue,
+            {
+                httpOnly: true,
+                sameSite: "lax",
+                secure:
+                    process.env.NODE_ENV ===
+                    "production",
+                path: "/",
+                maxAge:
+                    60 * 60 * 12
+            }
+        );
+
+        response.cookies.set(
+            "tags_session_sig",
+            signTagsSession(sessionValue),
             {
                 httpOnly: true,
                 sameSite: "lax",

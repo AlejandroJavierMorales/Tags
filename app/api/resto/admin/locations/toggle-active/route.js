@@ -10,6 +10,11 @@ export const dynamic = "force-dynamic";
 
 import { db } from "@/app/lib/tags-db";
 
+import {
+    getRestoAccess,
+    restoAccessResponse
+} from "@/app/modules/resto/lib/staff/getRestoAccess";
+
 export async function POST(req) {
 
     const conn =
@@ -50,12 +55,26 @@ export async function POST(req) {
 
         }
 
+        const access =
+            await getRestoAccess({
+                businessId,
+                permission:
+                    "locations.manage"
+            });
+
+        if (!access.allowed) {
+            return restoAccessResponse(
+                access
+            );
+        }
+
         const [storeRows] =
             await conn.query(
                 `
                 SELECT id
                 FROM tags_stores
                 WHERE business_id=?
+                AND app_type='resto'
                 LIMIT 1
                 `,
                 [

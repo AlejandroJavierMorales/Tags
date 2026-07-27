@@ -12,10 +12,12 @@ import {
     FaBell,
     FaCashRegister,
     FaCheck,
+    FaComments,
     FaClock,
     FaEye,
     FaFire,
     FaPen,
+    FaPrint,
     FaReceipt,
     FaShoppingBag,
     FaUser,
@@ -139,6 +141,8 @@ export default function RestoOrderCard({
     onSendToKitchen,
     onMarkAsPaid,
     onConfirmSession,
+    onResolveServiceRequest,
+    onPrintBill,
     capabilities = {}
 }) {
 
@@ -264,7 +268,9 @@ export default function RestoOrderCard({
         safeNumber(
             order?.pending_amount
         ) <= 0 &&
-        !hasBlockingItems;
+        !hasBlockingItems &&
+        !order?.bill_requested &&
+        !order?.staff_requested;
 
     const kitchen =
         order?.kitchen || {};
@@ -701,6 +707,47 @@ export default function RestoOrderCard({
             <div className="tags_resto_order_card_badges">
 
                 {
+                    Number(order?.message_count || 0) > 0 && (
+
+                        <div className={
+                            `tags_resto_order_alert tags_resto_order_alert_messages ` +
+                            (
+                                Number(order?.unread_message_count || 0) > 0
+                                    ? "tags_resto_order_alert_messages_unread"
+                                    : ""
+                            )
+                        }>
+
+                            <div className="tags_resto_order_alert_icon">
+                                <FaComments />
+                            </div>
+
+                            <div className="tags_resto_order_alert_content">
+                                <strong>
+                                    {
+                                        Number(order?.unread_message_count || 0) > 0
+                                            ? `${order.unread_message_count} mensaje${Number(order.unread_message_count) === 1 ? "" : "s"} nuevo${Number(order.unread_message_count) === 1 ? "" : "s"}`
+                                            : order?.has_unanswered_messages
+                                                ? "Mensaje sin responder"
+                                                : "Conversación activa"
+                                    }
+                                </strong>
+
+                                {
+                                    order?.last_message_preview && (
+                                        <span>
+                                            {String(order.last_message_preview).slice(0, 80)}
+                                        </span>
+                                    )
+                                }
+                            </div>
+
+                        </div>
+
+                    )
+                }
+
+                {
                     billRequested && (
 
                         <div className="tags_resto_order_alert tags_resto_order_alert_bill">
@@ -735,6 +782,25 @@ export default function RestoOrderCard({
 
                                         </span>
 
+                                    )
+                                }
+
+                                {
+                                    capabilities.resolveService &&
+                                    onResolveServiceRequest && (
+                                        <button
+                                            type="button"
+                                            className="tags_resto_order_alert_action"
+                                            disabled={updating}
+                                            onClick={() =>
+                                                onResolveServiceRequest(
+                                                    order,
+                                                    "resolve_bill"
+                                                )
+                                            }
+                                        >
+                                            Marcar atendida
+                                        </button>
                                     )
                                 }
 
@@ -780,6 +846,25 @@ export default function RestoOrderCard({
 
                                         </span>
 
+                                    )
+                                }
+
+                                {
+                                    capabilities.resolveService &&
+                                    onResolveServiceRequest && (
+                                        <button
+                                            type="button"
+                                            className="tags_resto_order_alert_action"
+                                            disabled={updating}
+                                            onClick={() =>
+                                                onResolveServiceRequest(
+                                                    order,
+                                                    "resolve_call"
+                                                )
+                                            }
+                                        >
+                                            Marcar atendido
+                                        </button>
                                     )
                                 }
 
@@ -903,7 +988,32 @@ export default function RestoOrderCard({
 
                     </button>}
 
-                    {capabilities.edit !== false && <button
+                    {
+                        capabilities.view !== false &&
+                        onPrintBill && (
+                            <button
+                                type="button"
+                                className="tags_resto_btn tags_resto_btn_secondary"
+                                disabled={updating}
+                                onClick={() =>
+                                    onPrintBill(
+                                        order
+                                    )
+                                }
+                            >
+                                <FaPrint />
+                                <span>
+                                    Imprimir cuenta
+                                </span>
+                            </button>
+                        )
+                    }
+
+                    {
+                        capabilities.edit !== false &&
+                        !isClosed &&
+                        order?.payment_status !==
+                            "paid" && <button
                         type="button"
                         className="tags_resto_btn tags_resto_btn_secondary"
                         disabled={updating}
@@ -922,7 +1032,8 @@ export default function RestoOrderCard({
 
                         </span>
 
-                    </button>}
+                    </button>
+                    }
 
                 </div>
 
@@ -934,7 +1045,13 @@ export default function RestoOrderCard({
 
                             <button
                                 type="button"
-                                className="tags_resto_btn tags_resto_btn_success"
+                                className={[
+                                    "tags_resto_btn",
+                                    order.session_status ===
+                                        "pending_confirmation"
+                                        ? "tags_resto_btn_danger"
+                                        : "tags_resto_btn_success"
+                                ].join(" ")}
                                 disabled={updating}
                                 onClick={() =>
                                     onConfirmSession(

@@ -10,6 +10,10 @@ import {
     restoAccessResponse
 } from "@/app/modules/resto/lib/staff/getRestoAccess";
 
+import {
+    logRestoAudit
+} from "@/app/modules/resto/lib/staff/restoAudit";
+
 function clean(value) {
     return String(value || "").trim();
 }
@@ -35,10 +39,37 @@ async function getStoreId(
 
 export async function GET(req) {
     try {
+        const {
+            searchParams
+        } =
+            new URL(req.url);
+
         const businessId =
-            new URL(req.url)
-                .searchParams
-                .get("businessId");
+            searchParams.get(
+                "businessId"
+            );
+
+        const auditPeriod =
+            clean(
+                searchParams.get(
+                    "auditPeriod"
+                ) ||
+                "today"
+            ).toLowerCase();
+
+        const auditFrom =
+            clean(
+                searchParams.get(
+                    "auditFrom"
+                )
+            );
+
+        const auditTo =
+            clean(
+                searchParams.get(
+                    "auditTo"
+                )
+            );
 
         const access =
             await getRestoAccess({
@@ -68,12 +99,62 @@ export async function GET(req) {
             );
         }
 
+        const canViewAudit =
+            access.isOwner ||
+            access.permissions.includes(
+                "audit.view"
+            );
+
+        let auditDateClause =
+            "AND al.created_at >= CURDATE() AND al.created_at < DATE_ADD(CURDATE(), INTERVAL 1 DAY)";
+        let auditDateParams =
+            [];
+
+        if (
+            [
+                "7",
+                "30",
+                "90",
+                "365"
+            ].includes(
+                auditPeriod
+            )
+        ) {
+            auditDateClause =
+                "AND al.created_at >= DATE_SUB(CURDATE(), INTERVAL ? DAY)";
+            auditDateParams = [
+                Number(auditPeriod) -
+                    1
+            ];
+        } else if (
+            auditPeriod === "all"
+        ) {
+            auditDateClause =
+                "";
+        } else if (
+            auditPeriod === "custom" &&
+            /^\d{4}-\d{2}-\d{2}$/.test(
+                auditFrom
+            ) &&
+            /^\d{4}-\d{2}-\d{2}$/.test(
+                auditTo
+            )
+        ) {
+            auditDateClause =
+                "AND al.created_at >= ? AND al.created_at < DATE_ADD(?, INTERVAL 1 DAY)";
+            auditDateParams = [
+                auditFrom,
+                auditTo
+            ];
+        }
+
         const [
             [permissions],
             [roles],
             [rolePermissions],
             [staff],
-            [overrides]
+            [overrides],
+            [audit]
         ] = await Promise.all([
             db.query(
                 `
@@ -138,7 +219,34 @@ export async function GET(req) {
                 WHERE st.store_id = ?
                 `,
                 [storeId]
-            )
+            ),
+            canViewAudit
+                ? db.query(
+                    `
+                    SELECT
+                        al.*,
+                        st.email AS staff_email
+                    FROM tags_resto_audit_log al
+                    LEFT JOIN tags_resto_staff st
+                        ON st.id = al.staff_id
+                        AND st.store_id = al.store_id
+                    WHERE al.store_id = ?
+                    ${auditDateClause}
+                    ORDER BY
+                        al.created_at DESC,
+                        al.id DESC
+                    LIMIT 1000
+                    `,
+                    [
+                        storeId,
+                        ...auditDateParams
+                    ]
+                )
+                : Promise.resolve(
+                    [
+                        []
+                    ]
+                )
         ]);
 
         return Response.json({
@@ -148,6 +256,7 @@ export async function GET(req) {
                 access.permissions.includes(
                     "staff.manage"
                 ),
+            canViewAudit,
             permissions,
             roles: roles.map(role => ({
                 ...role,
@@ -188,7 +297,8 @@ export async function GET(req) {
                             }),
                             {}
                         )
-            }))
+            })),
+            audit
         });
     } catch (error) {
         console.error(
@@ -426,7 +536,7 @@ export async function POST(req) {
                 );
             }
 
-            await logAction(
+            await logRestoAudit(
                 connection,
                 {
                     storeId,
@@ -437,7 +547,8 @@ export async function POST(req) {
                             : "staff.created",
                     entityType: "staff",
                     entityId: staffId,
-                    description: name
+                    description: name,
+                    req
                 }
             );
         } else if (
@@ -534,7 +645,7 @@ export async function POST(req) {
                     result.insertId;
             }
 
-            await logAction(
+            await logRestoAudit(
                 connection,
                 {
                     storeId,
@@ -545,7 +656,8 @@ export async function POST(req) {
                             : "role.created",
                     entityType: "role",
                     entityId: roleId,
-                    description: name
+                    description: name,
+                    req
                 }
             );
         } else if (
@@ -611,7 +723,7 @@ export async function POST(req) {
                 );
             }
 
-            await logAction(
+            await logRestoAudit(
                 connection,
                 {
                     storeId,
@@ -619,7 +731,8 @@ export async function POST(req) {
                     actionCode:
                         "role.permissions.updated",
                     entityType: "role",
-                    entityId: roleId
+                    entityId: roleId,
+                    req
                 }
             );
         } else {
@@ -665,47 +778,4 @@ export async function POST(req) {
     } finally {
         connection?.release();
     }
-}
-
-async function logAction(
-    connection,
-    {
-        storeId,
-        access,
-        actionCode,
-        entityType,
-        entityId,
-        description = null
-    }
-) {
-    await connection.query(
-        `
-        INSERT INTO tags_resto_audit_log
-        (
-            store_id,
-            staff_id,
-            actor_type,
-            actor_name,
-            action_code,
-            entity_type,
-            entity_id,
-            description
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        `,
-        [
-            storeId,
-            access.staff?.id || null,
-            access.isStaff
-                ? "staff"
-                : "owner",
-            access.session?.name ||
-            access.session?.email ||
-            null,
-            actionCode,
-            entityType,
-            entityId || null,
-            description
-        ]
-    );
 }

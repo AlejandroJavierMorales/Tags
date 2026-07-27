@@ -18,6 +18,7 @@ import {
     requireOpenCashShift
 } from "@/app/modules/resto/lib/cash/restoCashService";
 import { getRestoAccess, restoAccessResponse } from "@/app/modules/resto/lib/staff/getRestoAccess";
+import { logRestoAudit } from "@/app/modules/resto/lib/staff/restoAudit";
 
 
 function clean(
@@ -175,8 +176,36 @@ export async function POST(
 
         }
 
-        const access = await getRestoAccess({ businessId, permission: "orders.payment" });
-        if (!access.allowed) return restoAccessResponse(access);
+        const orderPaymentAccess =
+            await getRestoAccess({
+                businessId,
+                permission:
+                    "orders.payment"
+            });
+
+        let auditAccess =
+            orderPaymentAccess;
+
+        if (!orderPaymentAccess.allowed) {
+            const cashChargeAccess =
+                await getRestoAccess({
+                    businessId,
+                    permission:
+                        "cash.charge"
+                });
+
+            if (!cashChargeAccess.allowed) {
+                return restoAccessResponse(
+                    orderPaymentAccess.status ===
+                        401
+                        ? orderPaymentAccess
+                        : cashChargeAccess
+                );
+            }
+
+            auditAccess =
+                cashChargeAccess;
+        }
 
         if (
             !Number.isInteger(
@@ -314,6 +343,7 @@ export async function POST(
                         order_number,
                         store_id,
                         status,
+                        service_mode,
                         total,
                         payment_status,
                         paid_total,
@@ -360,8 +390,14 @@ export async function POST(
             );
 
         if (
-            sessionStatus ===
-            "cancelled"
+            [
+                "cancelled",
+                "closed",
+                "pending_activation",
+                "pending_confirmation"
+            ].includes(
+                sessionStatus
+            )
         ) {
 
             await connection.rollback();
@@ -369,7 +405,14 @@ export async function POST(
             return Response.json(
                 {
                     error:
-                        "No se puede registrar un cobro en un pedido cancelado"
+                        [
+                            "pending_activation",
+                            "pending_confirmation"
+                        ].includes(
+                            sessionStatus
+                        )
+                            ? "El pedido todavía no está habilitado para registrar cobros"
+                            : "No se puede registrar un cobro en un pedido finalizado"
                 },
                 {
                     status:
@@ -643,6 +686,27 @@ export async function POST(
 
             await connection.query(
                 `
+                UPDATE tags_resto_service_requests
+                SET
+                    status = 'resolved',
+                    resolved_at = NOW()
+                WHERE session_id = ?
+                AND request_type = 'request_bill'
+                AND status IN (
+                    'pending',
+                    'acknowledged'
+                )
+                `,
+                [
+                    session.id
+                ]
+            );
+
+            const [
+                autoCloseResult
+            ] =
+                await connection.query(
+                `
                 UPDATE tags_resto_sessions s
                 SET
                     s.status = 'closed',
@@ -658,7 +722,6 @@ export async function POST(
                     SELECT 1
                     FROM tags_resto_session_items i
                     WHERE i.session_id = s.id
-                    AND i.requires_preparation = 1
                     AND i.preparation_status IN (
                         'pending',
                         'sent',
@@ -671,6 +734,40 @@ export async function POST(
                     store.id
                 ]
             );
+
+            if (
+                Number(
+                    autoCloseResult?.affectedRows ||
+                    0
+                ) > 0
+            ) {
+
+                await logRestoAudit(
+                    connection,
+                    {
+                        storeId:
+                            store.id,
+                        access:
+                            auditAccess,
+                        actionCode:
+                            "session.auto_closed",
+                        entityType:
+                            "session",
+                        entityId:
+                            session.id,
+                        description:
+                            session.order_number,
+                        metadata: {
+                            reason:
+                                "paid_and_fully_delivered",
+                            service_mode:
+                                session.service_mode
+                        },
+                        req
+                    }
+                );
+
+            }
 
         }
 
@@ -703,6 +800,36 @@ export async function POST(
         const payment =
             paymentRows[0] ||
             null;
+
+        await logRestoAudit(
+            connection,
+            {
+                storeId:
+                    store.id,
+                access:
+                    auditAccess,
+                actionCode:
+                    "order.payment.created",
+                entityType:
+                    "order",
+                entityId:
+                    session.id,
+                description:
+                    session.order_number,
+                metadata: {
+                    payment_id:
+                        paymentId,
+                    amount,
+                    payment_method:
+                        paymentMethod,
+                    payment_status:
+                        paymentStatus,
+                    paid_total:
+                        paidTotal
+                },
+                req
+            }
+        );
 
         await connection.commit();
 
@@ -788,6 +915,7 @@ export async function POST(
             },
             {
                 status:
+                    err.status ||
                     500
             }
         );

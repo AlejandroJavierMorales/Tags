@@ -8,6 +8,10 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 import { db } from "@/app/lib/tags-db";
+import {
+    requireStoreBusinessAccess,
+    storeAccessResponse
+} from "@/app/modules/store/lib/storeAdminAccess";
 
 function parseJson(value, fallback = {}) {
     if (!value) return fallback;
@@ -35,19 +39,16 @@ export async function GET(req) {
             );
         }
 
-        const [storeRows] =
-            await db.query(
-                `
-                SELECT id
-                FROM tags_stores
-                WHERE business_id = ?
-                LIMIT 1
-                `,
-                [businessId]
+        const access =
+            await requireStoreBusinessAccess(
+                businessId
             );
 
-        const store =
-            storeRows[0];
+        if (!access.allowed) {
+            return storeAccessResponse(access);
+        }
+
+        const store = access.store;
 
         if (!store) {
             return Response.json({
@@ -60,7 +61,17 @@ export async function GET(req) {
         const [settings] =
             await db.query(
                 `
-                SELECT *
+                SELECT
+                    id,
+                    store_id,
+                    provider,
+                    is_active,
+                    public_key,
+                    account_email,
+                    account_name,
+                    settings_json,
+                    created_at,
+                    updated_at
                 FROM tags_store_payment_settings
                 WHERE store_id = ?
                 ORDER BY provider ASC

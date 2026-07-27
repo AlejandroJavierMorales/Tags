@@ -6,7 +6,6 @@
 // Acceso: admin o cliente dueño del business.
 // =====================================
 
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import HeaderSwitcher
@@ -14,6 +13,9 @@ import HeaderSwitcher
 
 import RestoProductsClient
     from "./pageClient";
+import {
+    getRestoAccess
+} from "@/app/modules/resto/lib/staff/getRestoAccess";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -37,65 +39,19 @@ export default async function Page({
     const businessId =
         id;
 
-    const cookieStore =
-        await cookies();
+    const access =
+        await getRestoAccess({
+            businessId,
+            permission:
+                "products.view"
+        });
 
-    const cookie =
-        cookieStore.get(
-            "tags_session"
-        );
-
-    if (!cookie) {
-
+    if (!access.allowed) {
         return redirect(
-            "/login"
+            access.status === 401
+                ? "/login"
+                : `/dashboard/businesses/${businessId}/resto`
         );
-
-    }
-
-    let session;
-
-    try {
-
-        session =
-            JSON.parse(
-                cookie.value
-            );
-
-    } catch (err) {
-
-        console.error(
-            "INVALID SESSION:",
-            err
-        );
-
-        return redirect(
-            "/login"
-        );
-
-    }
-
-    const isAdmin =
-        session?.role === "admin";
-
-    const isOwner =
-        String(
-            session?.business_id ||
-            session?.businessId ||
-            ""
-        ) === String(
-            businessId
-        );
-
-    if (
-        !isAdmin &&
-        !isOwner
-    ) {
-
-        return redirect(
-            "/dashboard"
-        );
-
     }
 
     return (
@@ -104,8 +60,9 @@ export default async function Page({
 
             <RestoProductsClient
                 businessId={businessId}
-                session={session}
-                isAdmin={isAdmin}
+                session={access.session}
+                isAdmin={access.isOwner}
+                permissions={access.permissions}
             />
         </>
     );

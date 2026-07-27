@@ -517,6 +517,197 @@
     margin-top:30px;
 }
 
+.resto_dashboard_setup {
+    margin-top: 24px;
+    overflow: hidden;
+    border: 1px solid #bfdbfe;
+    border-radius: 20px;
+    background: #fff;
+    box-shadow: var(--resto-admin-shadow);
+}
+
+.resto_dashboard_setup.is_ready {
+    border-color: #b9dfca;
+    background: linear-gradient(135deg, #fff, #f0fdf4);
+}
+
+.resto_dashboard_setup_header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 20px 22px 16px;
+}
+
+.resto_dashboard_setup_heading {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 14px;
+}
+
+.resto_dashboard_setup_icon {
+    display: flex;
+    width: 48px;
+    height: 48px;
+    flex: 0 0 48px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+    background: var(--resto-admin-info-soft);
+    color: var(--resto-admin-info);
+    font-size: 1.35rem;
+}
+
+.resto_dashboard_setup.is_ready .resto_dashboard_setup_icon {
+    background: var(--resto-admin-success-soft);
+    color: var(--resto-admin-success);
+}
+
+.resto_dashboard_setup_eyebrow {
+    color: var(--resto-admin-info);
+    font-size: .7rem;
+    font-weight: 850;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.resto_dashboard_setup.is_ready .resto_dashboard_setup_eyebrow {
+    color: var(--resto-admin-success);
+}
+
+.resto_dashboard_setup_heading h2 {
+    margin: 2px 0 3px;
+    color: var(--resto-admin-text);
+    font-size: 1.15rem;
+}
+
+.resto_dashboard_setup_heading p {
+    margin: 0;
+    color: var(--resto-admin-text-muted);
+    font-size: .82rem;
+}
+
+.resto_dashboard_setup_header_actions {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 12px;
+}
+
+.resto_dashboard_setup_header_actions > strong {
+    color: var(--resto-admin-info);
+    font-size: 1.15rem;
+}
+
+.resto_dashboard_setup.is_ready .resto_dashboard_setup_header_actions > strong {
+    color: var(--resto-admin-success);
+}
+
+.resto_dashboard_setup_header_actions button,
+.resto_dashboard_setup_steps article > button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border: 1px solid var(--resto-admin-border-strong);
+    border-radius: 9px;
+    background: #fff;
+    color: var(--resto-admin-text);
+    font-size: .76rem;
+    font-weight: 800;
+}
+
+.resto_dashboard_setup_header_actions button {
+    min-height: 36px;
+    padding: 7px 11px;
+}
+
+.resto_dashboard_setup_progress {
+    height: 6px;
+    overflow: hidden;
+    background: #dbeafe;
+}
+
+.resto_dashboard_setup_progress span {
+    display: block;
+    height: 100%;
+    border-radius: 0 99px 99px 0;
+    background: var(--resto-admin-info);
+    transition: width .35s ease;
+}
+
+.resto_dashboard_setup.is_ready .resto_dashboard_setup_progress {
+    background: #dcfce7;
+}
+
+.resto_dashboard_setup.is_ready .resto_dashboard_setup_progress span {
+    background: var(--resto-admin-success);
+}
+
+.resto_dashboard_setup_steps {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1px;
+    border-top: 1px solid var(--resto-admin-border);
+    background: var(--resto-admin-border);
+}
+
+.resto_dashboard_setup_steps article {
+    display: grid;
+    min-width: 0;
+    min-height: 82px;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    background: #fff;
+}
+
+.resto_dashboard_setup_steps article.is_complete {
+    background: #fbfefc;
+}
+
+.resto_dashboard_setup_step_state {
+    display: flex;
+    color: #94a3b8;
+    font-size: 1rem;
+}
+
+.resto_dashboard_setup_steps article.is_complete .resto_dashboard_setup_step_state {
+    color: var(--resto-admin-success);
+}
+
+.resto_dashboard_setup_steps h3 {
+    margin: 0;
+    color: var(--resto-admin-text);
+    font-size: .88rem;
+}
+
+.resto_dashboard_setup_steps p {
+    margin: 3px 0 0;
+    color: var(--resto-admin-text-muted);
+    font-size: .74rem;
+    line-height: 1.35;
+}
+
+.resto_dashboard_setup_steps article > button {
+    min-height: 34px;
+    padding: 7px 10px;
+    border-color: #bfdbfe;
+    color: var(--resto-admin-info);
+}
+
+.resto_dashboard_setup_steps article > button:hover {
+    border-color: var(--resto-admin-info);
+    background: var(--resto-admin-info-soft);
+}
+
+.resto_dashboard_setup_steps article > button:disabled {
+    cursor: wait;
+    opacity: .55;
+}
+
 .resto_dashboard_admin .resto_dashboard_grid{
     margin-top:18px;
 }
@@ -533,5 +724,28 @@
     }
     .resto_dashboard_operation_grid{
         grid-template-columns:1fr;
+    }
+
+    .resto_dashboard_setup_header {
+        align-items: flex-start;
+        padding: 17px;
+    }
+
+    .resto_dashboard_setup_icon {
+        display: none;
+    }
+
+    .resto_dashboard_setup_header_actions {
+        align-items: flex-end;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .resto_dashboard_setup_steps {
+        grid-template-columns: 1fr;
+    }
+
+    .resto_dashboard_setup_steps article {
+        padding: 13px 15px;
     }
 }

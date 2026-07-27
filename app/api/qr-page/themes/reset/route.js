@@ -53,6 +53,10 @@ export async function POST(req) {
             UPDATE tags_qr_pages
             SET
                 theme_id = NULL,
+                global_styles = JSON_REMOVE(
+                    COALESCE(global_styles, JSON_OBJECT()),
+                    '$.theme_override'
+                ),
                 updated_at = NOW()
             WHERE id = ?
             AND business_id = ?

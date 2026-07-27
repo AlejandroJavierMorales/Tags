@@ -19,6 +19,10 @@ import StoreProductDetailClient
 import StoreFeaturedProductsBlock
     from "@/app/modules/store/components/blocks/StoreFeaturedProductsBlock";
 
+import { getPublicPortalContext } from "@/app/modules/portal/lib/getPublicPortalContext";
+import PortalHeader from "@/app/modules/portal/components/PortalHeader";
+import PortalFooter from "@/app/modules/portal/components/PortalFooter";
+
 import {
     getStorePublicProductDetail
 }
@@ -138,7 +142,23 @@ export default async function Page({
     const productUrl =
         `${storeUrl}/products/${params.productId}`;
 
-    console.log("PRODUCT DETAIL THEME:", data.store?.theme_css_vars);
+    const portalContext = await getPublicPortalContext({
+        businessId: data.store.business_id,
+        pageId: data.store.public_page_id || data.store.page_id,
+        slug: params.slug
+    });
+
+    const pageStyles = data.store.page_global_styles || {};
+    const hasThemeOverride = pageStyles.theme_override === true;
+    const renderedStore = portalContext.hasPortal && !hasThemeOverride
+        ? {
+            ...data.store,
+            theme_css_vars: {
+                ...(data.store.theme_css_vars || {}),
+                ...(portalContext.portal?.theme?.css_tokens || {})
+            }
+        }
+        : data.store;
 
     /*  UI  */
 
@@ -259,12 +279,13 @@ export default async function Page({
                 }}
             />
 
+            {portalContext.hasPortal && <PortalHeader portal={portalContext.portal} routes={portalContext.routes} currentRoute={portalContext.currentRoute} />}
             <div
                 className="store_public_page"
-                style={data.store?.theme_css_vars || {}}
+                style={renderedStore?.theme_css_vars || {}}
             >
                 <StoreProductDetailClient
-                    store={data.store}
+                    store={renderedStore}
                     product={data.product}
                     images={data.images}
                     variants={data.variants}
@@ -275,7 +296,7 @@ export default async function Page({
                 />
 
                 <StoreFeaturedProductsBlock
-                    entity={data.store}
+                    entity={renderedStore}
                     content={{
                         mode: "related",
                         productId: data.product.id,
@@ -321,6 +342,7 @@ export default async function Page({
                     }}
                 />
             </div>
+            {portalContext.hasPortal && <PortalFooter portal={portalContext.portal} routes={portalContext.routes} currentRoute={portalContext.currentRoute} />}
         </>
     );
 }

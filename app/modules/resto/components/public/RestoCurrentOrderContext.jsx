@@ -31,7 +31,12 @@ export default function RestoCurrentOrderContext({
     qrLabel,
     qrCode,
 
-    totalItems
+    totalItems,
+    orderNumber,
+    canReview = false,
+    reviewLoading = false,
+    onReview,
+    review = null
 
 }) {
 
@@ -56,6 +61,11 @@ export default function RestoCurrentOrderContext({
             </div>
 
             <div className="tags_resto_current_order_context_grid">
+
+                <div className="tags_resto_current_order_context_item tags_resto_current_order_order_number">
+                    <span className="tags_resto_current_order_summary_label">Número de pedido</span>
+                    <strong className="tags_resto_current_order_summary_value">{orderNumber || "Pendiente de confirmar"}</strong>
+                </div>
 
                 <div className="tags_resto_current_order_context_item tags_resto_current_order_context_item_primary">
 
@@ -179,6 +189,12 @@ export default function RestoCurrentOrderContext({
 
                 </div>
 
+            </div>
+
+            <div className={`tags_resto_current_order_review_cta ${review ? "is-complete" : ""}`}>
+                <div className="tags_resto_current_order_review_stars" aria-label={`${review ? Number(review.average_rating).toFixed(1) : 5} estrellas`}>{review ? `${"★".repeat(Math.max(0, Math.min(5, Math.round(Number(review.average_rating || 0)))))}${"☆".repeat(Math.max(0, 5 - Math.round(Number(review.average_rating || 0))))}` : "★★★★★"}</div>
+                <div>{review ? <><strong>¡Muchas gracias!</strong><span>Tu calificación: ({Number(review.average_rating || 0).toFixed(1)}/5)</span></> : <><strong>¿Cómo fue tu experiencia?</strong><span>Tu opinión nos ayuda a mejorar.</span></>}</div>
+                {!review && <button type="button" onClick={onReview} disabled={!canReview || reviewLoading}>{reviewLoading ? "Preparando…" : "Calificar mi experiencia"}</button>}
             </div>
 
         </section>

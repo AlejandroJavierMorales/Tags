@@ -15,7 +15,8 @@ export default function RestoKitchenGrid({
     kitchenSettings = {},
     updatingItemId = null,
     onMarkReady,
-    canMarkReady = true
+    canMarkReady = true,
+    onPrintOrder
 }) {
 
     if (!orders.length) {
@@ -76,6 +77,7 @@ export default function RestoKitchenGrid({
                                 updatingItemId={updatingItemId}
                                 onMarkReady={onMarkReady}
                                 canMarkReady={canMarkReady}
+                                onPrintOrder={onPrintOrder}
                             />
 
                         </div>

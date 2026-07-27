@@ -6,13 +6,35 @@ import {
     db
 } from "@/app/lib/tags-db";
 
+import {
+    verifyTagsSession
+} from "@/app/lib/signTagsSession";
+
 export async function getRestoSession() {
+    const cookieStore =
+        await cookies();
+
     const cookie =
-        (await cookies()).get(
+        cookieStore.get(
             "tags_session"
         );
 
     if (!cookie) return null;
+
+    const signature =
+        cookieStore.get(
+            "tags_session_sig"
+        )?.value ||
+        "";
+
+    if (
+        !verifyTagsSession(
+            cookie.value,
+            signature
+        )
+    ) {
+        return null;
+    }
 
     try {
         return JSON.parse(
@@ -87,7 +109,8 @@ export async function getRestoAccess({
                 st.email,
                 st.status,
                 s.business_id,
-                r.name AS role_name
+                r.name AS role_name,
+                r.code AS role_code
             FROM tags_resto_staff st
             INNER JOIN tags_stores s
                 ON s.id = st.store_id
@@ -155,13 +178,25 @@ export async function getRestoAccess({
             )
             .map(item => item.code);
 
+    const requestedPermissions =
+        Array.isArray(permission)
+            ? permission
+            : permission
+                ? [permission]
+                : [];
+
+    const isAllowed =
+        requestedPermissions.length === 0 ||
+        requestedPermissions.some(
+            code =>
+                permissions.includes(code)
+        );
+
     return {
         allowed:
-            !permission ||
-            permissions.includes(permission),
+            isAllowed,
         status:
-            !permission ||
-            permissions.includes(permission)
+            isAllowed
                 ? 200
                 : 403,
         isOwner: false,

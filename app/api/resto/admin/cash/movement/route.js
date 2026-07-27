@@ -9,6 +9,7 @@ import {
     roundCash
 } from "@/app/modules/resto/lib/cash/restoCashService";
 import { getRestoAccess, restoAccessResponse } from "@/app/modules/resto/lib/staff/getRestoAccess";
+import { logRestoAudit } from "@/app/modules/resto/lib/staff/restoAudit";
 
 const VALID_TYPES = [
     "manual_income",
@@ -53,6 +54,16 @@ export async function POST(req) {
                 ""
             ).trim().toLowerCase();
 
+        const expectedDirection =
+            [
+                "manual_income",
+                "tip"
+            ].includes(
+                movementType
+            )
+                ? "income"
+                : "expense";
+
         const paymentMethod =
             String(
                 body?.payment_method ||
@@ -73,10 +84,8 @@ export async function POST(req) {
         if (
             !businessId ||
             !VALID_TYPES.includes(movementType) ||
-            ![
-                "income",
-                "expense"
-            ].includes(direction) ||
+            direction !==
+                expectedDirection ||
             !VALID_METHODS.includes(paymentMethod) ||
             amount <= 0 ||
             !notes
@@ -136,7 +145,10 @@ export async function POST(req) {
         const actor =
             getCashActor(req);
 
-        await connection.query(
+        const [
+            movementResult
+        ] =
+            await connection.query(
             `
             INSERT INTO tags_resto_cash_movements (
                 store_id,
@@ -176,6 +188,32 @@ export async function POST(req) {
                 actor.id,
                 actor.name
             ]
+            );
+
+        await logRestoAudit(
+            connection,
+            {
+                storeId:
+                    store.id,
+                access,
+                actionCode:
+                    "cash.movement.created",
+                entityType:
+                    "cash_movement",
+                entityId:
+                    movementResult.insertId,
+                description:
+                    notes,
+                metadata: {
+                    movement_type:
+                        movementType,
+                    direction,
+                    payment_method:
+                        paymentMethod,
+                    amount
+                },
+                req
+            }
         );
 
         await connection.commit();

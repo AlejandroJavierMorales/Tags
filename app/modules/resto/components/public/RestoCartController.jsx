@@ -52,6 +52,14 @@ export default function RestoCartController({
     const [cartOpen, setCartOpen] =
         useState(false);
 
+    const [welcomeOpen, setWelcomeOpen] =
+        useState(false);
+    const [recoverOpen, setRecoverOpen] = useState(false);
+    const [recoverOrderNumber, setRecoverOrderNumber] = useState("");
+    const [recoverContact, setRecoverContact] = useState("");
+    const [recoverError, setRecoverError] = useState("");
+    const [recovering, setRecovering] = useState(false);
+
     const [cartCount, setCartCount] =
         useState(0);
 
@@ -218,6 +226,22 @@ export default function RestoCartController({
                     event?.detail?.product;
 
                 if (!product) {
+                    return;
+                }
+
+                if (
+                    product.is_available ===
+                    false
+                ) {
+                    showAlert({
+                        icon:
+                            "warning",
+                        title:
+                            "Producto agotado",
+                        text:
+                            "Este producto no está disponible por el momento."
+                    });
+
                     return;
                 }
 
@@ -430,6 +454,16 @@ export default function RestoCartController({
 
     async function handleFloatingButtonClick() {
 
+        if (cartCount > 0) {
+
+            setCartOpen(
+                true
+            );
+
+            return;
+
+        }
+
         /*
         Si ya hay una sesión activa, abre
         la pantalla del pedido actual.
@@ -447,10 +481,57 @@ export default function RestoCartController({
 
         }
 
-        setCartOpen(
+        setWelcomeOpen(
             true
         );
 
+    }
+
+    function handleStartOrder() {
+
+        setWelcomeOpen(
+            false
+        );
+
+        const menuSection =
+            document.querySelector(
+                '[data-section-type="categories"], ' +
+                '[data-section-type="products"], ' +
+                '[data-section-type="menu"]'
+            );
+
+        if (menuSection) {
+
+            menuSection.scrollIntoView({
+                behavior:
+                    "smooth",
+
+                block:
+                    "start"
+            });
+
+            return;
+
+        }
+
+        window.dispatchEvent(
+            new CustomEvent(
+                "resto:view-menu"
+            )
+        );
+
+    }
+
+    async function recoverOrder(event) {
+        event.preventDefault();
+        setRecovering(true); setRecoverError("");
+        try {
+            const response = await fetch("/api/resto/public/orders/recover", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: restoSlug, orderNumber: recoverOrderNumber, contact: recoverContact }) });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || "No se pudo recuperar el pedido.");
+            window.location.href = `/p/${restoSlug}/order/${data.sessionToken}`;
+        } catch (error) { setRecoverError(error.message); }
+        finally { setRecovering(false); }
     }
 
     /*
@@ -540,6 +621,91 @@ export default function RestoCartController({
 
     return (
         <>
+
+            {
+                welcomeOpen && (
+
+                    <div
+                        className="resto_order_welcome_backdrop"
+                        role="presentation"
+                        onMouseDown={
+                            event => {
+                                if (
+                                    event.target ===
+                                    event.currentTarget
+                                ) {
+                                    setWelcomeOpen(false);
+                                }
+                            }
+                        }
+                    >
+
+                        <section
+                            className="resto_order_welcome"
+                            role="dialog"
+                            aria-modal="true"
+                            aria-labelledby="resto-order-welcome-title"
+                        >
+
+                            <button
+                                type="button"
+                                className="resto_order_welcome_close"
+                                aria-label="Cerrar"
+                                onClick={() => setWelcomeOpen(false)}
+                            >
+                                ×
+                            </button>
+
+                            <span
+                                className="resto_order_welcome_icon"
+                                aria-hidden="true"
+                            >
+                                🍽️
+                            </span>
+
+                            <h2 id="resto-order-welcome-title">
+                                ¡Bienvenido!
+                            </h2>
+
+                            <p>
+                                Ya podés iniciar tu pedido agregando
+                                productos de nuestra carta.
+                            </p>
+
+                            <button
+                                type="button"
+                                className="resto_order_welcome_action"
+                                onClick={handleStartOrder}
+                            >
+                                Ver la carta
+                            </button>
+
+                            <button type="button" className="resto_order_recover_link" onClick={() => { setWelcomeOpen(false); setRecoverOpen(true); }}>
+                                ¿Ya tenés un pedido? Recuperarlo
+                            </button>
+
+                        </section>
+
+                    </div>
+
+                )
+            }
+
+            {recoverOpen && (
+                <div className="resto_order_welcome_backdrop" role="presentation" onMouseDown={event => event.target === event.currentTarget && setRecoverOpen(false)}>
+                    <section className="resto_order_welcome" role="dialog" aria-modal="true">
+                        <button type="button" className="resto_order_welcome_close" aria-label="Cerrar" onClick={() => setRecoverOpen(false)}>×</button>
+                        <h2>Recuperar pedido</h2>
+                        <p>Ingresá el número de pedido y el email o teléfono usado al realizarlo.</p>
+                        <form onSubmit={recoverOrder} className="resto_order_recover_form">
+                            <input value={recoverOrderNumber} onChange={event => setRecoverOrderNumber(event.target.value)} placeholder="Número de pedido" required />
+                            <input value={recoverContact} onChange={event => setRecoverContact(event.target.value)} placeholder="Email o teléfono" required />
+                            {recoverError && <p className="resto_order_welcome_error">{recoverError}</p>}
+                            <button type="submit" className="resto_order_welcome_action" disabled={recovering}>{recovering ? "Buscando..." : "Recuperar pedido"}</button>
+                        </form>
+                    </section>
+                </div>
+            )}
 
             <button
                 type="button"
@@ -645,6 +811,7 @@ export default function RestoCartController({
                 themeCssVars={
                     themeCssVars
                 }
+                onRecoverOrder={() => { setCartOpen(false); setRecoverOpen(true); }}
             />
 
         </>

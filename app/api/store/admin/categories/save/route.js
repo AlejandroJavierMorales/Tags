@@ -10,6 +10,10 @@ export const dynamic = "force-dynamic";
 
 import { db }
     from "@/app/lib/tags-db";
+import {
+    getRestoAccess,
+    restoAccessResponse
+} from "@/app/modules/resto/lib/staff/getRestoAccess";
 
 const VALID_APP_TYPES = [
     "store",
@@ -97,6 +101,19 @@ export async function POST(req) {
                 }
             );
 
+        }
+
+        if (appType === "resto") {
+            const access =
+                await getRestoAccess({
+                    businessId,
+                    permission:
+                        "categories.manage"
+                });
+
+            if (!access.allowed) {
+                return restoAccessResponse(access);
+            }
         }
 
         if (!name?.trim()) {

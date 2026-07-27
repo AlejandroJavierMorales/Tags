@@ -11,6 +11,10 @@ import {
     db
 } from "@/app/lib/tags-db";
 import { getRestoAccess, restoAccessResponse } from "@/app/modules/resto/lib/staff/getRestoAccess";
+import { logRestoAudit } from "@/app/modules/resto/lib/staff/restoAudit";
+import {
+    getRestoProductAvailability
+} from "@/app/modules/resto/lib/products/restoProductAvailability";
 
 const VALID_ACTIONS = [
     "add_item",
@@ -317,7 +321,11 @@ export async function POST(
                 clean(
                     session.status
                 ).toLowerCase()
-            )
+            ) ||
+            clean(
+                session.payment_status
+            ).toLowerCase() ===
+                "paid"
         ) {
 
             await connection.rollback();
@@ -533,6 +541,28 @@ export async function POST(
                     }
                 );
 
+            }
+
+            if (
+                !getRestoProductAvailability(
+                    product
+                ).isAvailable
+            ) {
+                await connection.rollback();
+
+                transactionStarted =
+                    false;
+
+                return Response.json(
+                    {
+                        error:
+                            `"${product.title}" está agotado por el momento`
+                    },
+                    {
+                        status:
+                            409
+                    }
+                );
             }
 
             let variant =
@@ -798,6 +828,28 @@ export async function POST(
                 session,
                 discountTotal
             );
+
+        await logRestoAudit(
+            connection,
+            {
+                storeId:
+                    session.store_id,
+                access,
+                actionCode:
+                    `order.items.${action}`,
+                entityType:
+                    "session",
+                entityId:
+                    session.id,
+                description:
+                    `Productos del pedido actualizados: ${action}`,
+                metadata: {
+                    result,
+                    totals
+                },
+                req
+            }
+        );
 
         await connection.commit();
 

@@ -32,6 +32,7 @@ export async function DELETE(req) {
                 SELECT id
                 FROM tags_stores
                 WHERE business_id = ?
+                AND app_type = 'store'
                 LIMIT 1
                 `,
                 [businessId]

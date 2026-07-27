@@ -38,6 +38,29 @@ function safeNumber(value) {
 
 }
 
+function parseJson(
+    value
+) {
+
+    if (
+        value &&
+        typeof value === "object"
+    ) {
+        return value;
+    }
+
+    if (!value) {
+        return {};
+    }
+
+    try {
+        return JSON.parse(value);
+    } catch {
+        return {};
+    }
+
+}
+
 function mapSessionStatusToOrderStatus(
     session
 ) {
@@ -64,17 +87,17 @@ function mapSessionStatusToOrderStatus(
                 ) === 1
         );
 
-    if (!kitchenItems.length) {
+    const activeItems =
+        (
+            session?.items ||
+            []
+        ).filter(
+            item =>
+                item.preparation_status !==
+                "cancelled"
+        );
 
-        const activeItems =
-            (
-                session?.items ||
-                []
-            ).filter(
-                item =>
-                    item.preparation_status !==
-                    "cancelled"
-            );
+    if (!kitchenItems.length) {
 
         if (
             activeItems.length &&
@@ -85,7 +108,7 @@ function mapSessionStatusToOrderStatus(
             )
         ) {
 
-            return "served";
+            return "shipped";
 
         }
 
@@ -163,12 +186,15 @@ function mapSessionStatusToOrderStatus(
     ) {
 
         if (
-            served +
-            cancelled ===
-            kitchenItems.length
+            activeItems.length &&
+            activeItems.every(
+                item =>
+                    item.preparation_status ===
+                    "served"
+            )
         ) {
 
-            return "served";
+            return "shipped";
 
         }
 
@@ -276,6 +302,23 @@ function normalizeSession(
 
     return {
         ...session,
+
+        message_count:
+            safeNumber(
+                session.message_count
+            ),
+
+        unread_message_count:
+            safeNumber(
+                session.unread_message_count
+            ),
+
+        has_unanswered_messages:
+            safeNumber(
+                session.message_count
+            ) > 0 &&
+            session.last_message_sender ===
+                "customer",
 
         id:
             session.id,
@@ -493,7 +536,8 @@ function buildKitchen(
 }
 
 export async function getNormalizedOrders({
-    businessId
+    businessId,
+    paymentPendingOnly = false
 }) {
 
     const [
@@ -507,8 +551,15 @@ export async function getNormalizedOrders({
                 page_id,
                 slug,
                 name,
+                description,
+                logo_url,
+                email,
+                whatsapp,
+                address,
                 status,
-                app_type
+                app_type,
+                currency,
+                settings_json
             FROM tags_stores
             WHERE business_id = ?
             AND app_type = 'resto'
@@ -519,9 +570,29 @@ export async function getNormalizedOrders({
             ]
         );
 
-    const store =
+    const rawStore =
         storeRows[0] ||
         null;
+
+    const storeSettings =
+        parseJson(
+            rawStore?.settings_json
+        );
+
+    const store =
+        rawStore
+            ? {
+                ...rawStore,
+                settings_json:
+                    storeSettings,
+                contact:
+                    storeSettings.resto_contact ||
+                    {},
+                location:
+                    storeSettings.resto_location ||
+                    {}
+            }
+            : null;
 
     if (!store) {
 
@@ -550,6 +621,22 @@ export async function getNormalizedOrders({
     const hasRefundsTable =
         refundTableRows.length > 0;
 
+    const [
+        messageTableRows
+    ] =
+        await db.query(
+            `
+            SELECT 1
+            FROM information_schema.TABLES
+            WHERE TABLE_SCHEMA = DATABASE()
+            AND TABLE_NAME = 'tags_resto_order_messages'
+            LIMIT 1
+            `
+        );
+
+    const hasMessagesTable =
+        messageTableRows.length > 0;
+
     const refundSelect =
         hasRefundsTable
             ? `
@@ -573,6 +660,54 @@ export async function getNormalizedOrders({
                     GROUP BY session_id
                 ) refunds
                     ON refunds.session_id = s.id
+            `
+            : "";
+
+    const messageSelect =
+        hasMessagesTable
+            ? `
+                COALESCE(
+                    messages.message_count,
+                    0
+                ) AS message_count,
+                COALESCE(
+                    messages.unread_message_count,
+                    0
+                ) AS unread_message_count,
+                messages.last_message_at,
+                last_message.sender_type
+                    AS last_message_sender,
+                last_message.message
+                    AS last_message_preview
+            `
+            : `
+                0 AS message_count,
+                0 AS unread_message_count,
+                NULL AS last_message_at,
+                NULL AS last_message_sender,
+                NULL AS last_message_preview
+            `;
+
+    const messageJoin =
+        hasMessagesTable
+            ? `
+                LEFT JOIN (
+                    SELECT
+                        session_id,
+                        COUNT(*) AS message_count,
+                        SUM(
+                            sender_type = 'customer'
+                            AND read_by_staff_at IS NULL
+                        ) AS unread_message_count,
+                        MAX(id) AS last_message_id,
+                        MAX(created_at) AS last_message_at
+                    FROM tags_resto_order_messages
+                    GROUP BY session_id
+                ) messages
+                    ON messages.session_id = s.id
+
+                LEFT JOIN tags_resto_order_messages last_message
+                    ON last_message.id = messages.last_message_id
             `
             : "";
 
@@ -605,7 +740,9 @@ export async function getNormalizedOrders({
                 requests.staff_request_status,
                 requests.staff_request_notes,
 
-                ${refundSelect}
+                ${refundSelect},
+
+                ${messageSelect}
 
             FROM tags_resto_sessions s
 
@@ -712,7 +849,39 @@ export async function getNormalizedOrders({
 
             ${refundJoin}
 
+            ${messageJoin}
+
             WHERE s.store_id = ?
+            ${
+                paymentPendingOnly
+                    ? `
+                        AND s.status IN (
+                            'open',
+                            'active',
+                            'preparing',
+                            'ready',
+                            'delivered',
+                            'bill_requested'
+                        )
+                        AND COALESCE(
+                            s.payment_status,
+                            'pending'
+                        ) NOT IN (
+                            'paid',
+                            'refunded',
+                            'cancelled'
+                        )
+                        AND COALESCE(
+                            s.total,
+                            0
+                        ) >
+                        COALESCE(
+                            s.paid_total,
+                            0
+                        )
+                    `
+                    : ""
+            }
 
             ORDER BY
                 s.created_at DESC,
@@ -812,6 +981,11 @@ export async function getNormalizedOrders({
 
                 order.items =
                     items;
+
+                order.currency =
+                    order.currency ||
+                    store.currency ||
+                    "ARS";
 
                 order.kitchen =
                     buildKitchen(

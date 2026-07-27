@@ -48,25 +48,190 @@
     align-items: center;
     justify-content: center;
     flex: 0 0 auto;
-    width: 64px;
-    height: 64px;
-    overflow: hidden;
-    border: 1px solid color-mix(in srgb, var(--qr-primary) 24%, var(--qr-border));
-    border-radius: var(--qr-radius-lg);
-    background: var(--qr-surface);
-    box-shadow: var(--qr-shadow-sm);
+    width: auto;
+    height: auto;
+    max-width: 180px;
+    max-height: 76px;
 }
 
 .tags_resto_current_order_brand_logo img {
-    width: 100%;
-    height: 100%;
-    padding: 7px;
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 76px;
     object-fit: contain;
 }
 
 .tags_resto_current_order_brand_logo span {
     font-size: 30px;
     line-height: 1;
+}
+
+.tags_resto_order_chat {
+    margin-top: 20px;
+    padding: 22px;
+    border: 1px solid var(--qr-border);
+    border-radius: var(--qr-radius-lg);
+    background: var(--qr-surface);
+    box-shadow: var(--qr-shadow-sm);
+}
+
+.tags_resto_order_chat_header {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.tags_resto_order_chat_header > svg {
+    flex: 0 0 auto;
+    margin-top: 4px;
+    color: var(--qr-primary);
+    font-size: 1.4rem;
+}
+
+.tags_resto_order_chat_header h2,
+.tags_resto_order_chat_header p {
+    margin: 0;
+}
+
+.tags_resto_order_chat_header h2 {
+    color: var(--qr-text);
+    font-size: 1.05rem;
+    font-weight: 800;
+}
+
+.tags_resto_order_chat_header p {
+    margin-top: 3px;
+    color: var(--qr-text-muted);
+    font-size: .88rem;
+}
+
+.tags_resto_order_chat_messages {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 360px;
+    min-height: 92px;
+    padding: 14px;
+    overflow-y: auto;
+    border-radius: calc(var(--qr-radius-lg) - 6px);
+    background: color-mix(in srgb, var(--qr-primary) 4%, var(--qr-background));
+}
+
+.tags_resto_order_chat_message {
+    align-self: flex-start;
+    width: fit-content;
+    max-width: min(78%, 620px);
+    padding: 10px 12px;
+    border: 1px solid var(--qr-border);
+    border-radius: 4px 16px 16px;
+    background: var(--qr-surface);
+}
+
+.tags_resto_order_chat_message_customer {
+    align-self: flex-end;
+    border-color: color-mix(in srgb, var(--qr-primary) 28%, var(--qr-border));
+    border-radius: 16px 4px 16px 16px;
+    background: color-mix(in srgb, var(--qr-primary) 12%, var(--qr-surface));
+}
+
+.tags_resto_order_chat_message strong,
+.tags_resto_order_chat_message p,
+.tags_resto_order_chat_message time {
+    display: block;
+    margin: 0;
+}
+
+.tags_resto_order_chat_message strong {
+    margin-bottom: 2px;
+    color: var(--qr-text);
+    font-size: .78rem;
+}
+
+.tags_resto_order_chat_message p {
+    color: var(--qr-text);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.tags_resto_order_chat_message time {
+    margin-top: 5px;
+    color: var(--qr-text-muted);
+    font-size: .68rem;
+    text-align: right;
+}
+
+.tags_resto_order_chat_empty,
+.tags_resto_order_chat_error {
+    margin: auto;
+    color: var(--qr-text-muted);
+    font-size: .88rem;
+    text-align: center;
+}
+
+.tags_resto_order_chat_error {
+    margin-top: 10px;
+    color: #b42318;
+}
+
+.tags_resto_order_chat_form {
+    display: flex;
+    align-items: stretch;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.tags_resto_order_chat_form textarea {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 11px 13px;
+    resize: vertical;
+    border: 1px solid var(--qr-border);
+    border-radius: 12px;
+    background: var(--qr-surface);
+    color: var(--qr-text);
+}
+
+.tags_resto_order_chat_form textarea:focus {
+    border-color: var(--qr-primary);
+    outline: 3px solid color-mix(in srgb, var(--qr-primary) 14%, transparent);
+}
+
+.tags_resto_order_chat_form button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-width: 112px;
+    padding: 0 18px;
+    border: 0;
+    border-radius: 12px;
+    background: var(--qr-primary);
+    color: #fff;
+    font-weight: 800;
+}
+
+.tags_resto_order_chat_form button:disabled {
+    opacity: .55;
+}
+
+@media (max-width: 576px) {
+    .tags_resto_order_chat {
+        padding: 16px;
+    }
+
+    .tags_resto_order_chat_message {
+        max-width: 88%;
+    }
+
+    .tags_resto_order_chat_form {
+        flex-direction: column;
+    }
+
+    .tags_resto_order_chat_form button {
+        min-height: 46px;
+    }
 }
 
 .tags_resto_current_order_brand_text {
@@ -320,6 +485,121 @@
     color: var(--qr-primary);
     font-size: .82rem;
     font-weight: 750;
+}
+
+.tags_resto_delivery_public_tracking {
+    grid-column: 1 / -1;
+    margin-top: 2px;
+}
+
+.tags_resto_delivery_public_tracking ol {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    list-style: none;
+    margin: 0;
+    padding: 10px 0 0;
+}
+
+.tags_resto_delivery_public_tracking li {
+    align-items: center;
+    color: var(--qr-muted);
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    position: relative;
+    text-align: center;
+}
+
+.tags_resto_delivery_public_tracking li::before {
+    background: color-mix(in srgb, var(--qr-primary) 15%, var(--qr-border));
+    content: "";
+    height: 3px;
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: 15px;
+}
+
+.tags_resto_delivery_public_tracking li:first-child::before {
+    left: 50%;
+}
+
+.tags_resto_delivery_public_tracking li:last-child::before {
+    right: 50%;
+}
+
+.tags_resto_delivery_public_tracking li > span {
+    align-items: center;
+    background: var(--qr-surface);
+    border: 2px solid color-mix(in srgb, var(--qr-primary) 18%, var(--qr-border));
+    border-radius: 50%;
+    display: flex;
+    font-size: .72rem;
+    font-weight: 850;
+    height: 32px;
+    justify-content: center;
+    position: relative;
+    width: 32px;
+    z-index: 1;
+}
+
+.tags_resto_delivery_public_tracking li.is-complete::before,
+.tags_resto_delivery_public_tracking li.is-current::before {
+    background: var(--qr-primary);
+}
+
+.tags_resto_delivery_public_tracking li.is-complete > span,
+.tags_resto_delivery_public_tracking li.is-current > span {
+    background: var(--qr-primary);
+    border-color: var(--qr-primary);
+    color: #fff;
+}
+
+.tags_resto_delivery_public_tracking li.is-current small {
+    color: var(--qr-text);
+    font-weight: 800;
+}
+
+.tags_resto_delivery_public_driver,
+.tags_resto_delivery_public_collection {
+    align-items: center;
+    background: color-mix(in srgb, var(--qr-primary) 7%, var(--qr-surface));
+    border-radius: var(--qr-radius-md);
+    display: flex;
+    justify-content: space-between;
+    margin-top: 14px;
+    padding: 11px 13px;
+}
+
+.tags_resto_delivery_public_driver span {
+    color: var(--qr-muted);
+    display: block;
+    font-size: .72rem;
+}
+
+.tags_resto_delivery_public_driver strong {
+    color: var(--qr-text);
+    display: block;
+}
+
+.tags_resto_delivery_public_driver a {
+    background: var(--qr-primary);
+    border-radius: 999px;
+    color: #fff;
+    font-size: .78rem;
+    font-weight: 800;
+    padding: 7px 12px;
+    text-decoration: none;
+}
+
+.tags_resto_delivery_public_collection {
+    color: var(--qr-muted);
+    font-size: .83rem;
+}
+
+.tags_resto_delivery_public_collection strong {
+    color: var(--qr-text);
+    font-size: 1rem;
 }
 
 .tags_resto_current_order_products,
@@ -911,8 +1191,10 @@
     }
 
     .tags_resto_current_order_brand_logo {
-        width: 52px;
-        height: 52px;
+        width: auto;
+        height: auto;
+        max-width: 120px;
+        max-height: 58px;
     }
 
     .tags_resto_current_order_context {
@@ -1002,6 +1284,24 @@
 
 }
 
+@media (max-width: 575px) {
+    .tags_resto_delivery_public_tracking {
+        overflow-x: auto;
+        padding-bottom: 4px;
+    }
+
+    .tags_resto_delivery_public_tracking ol {
+        min-width: 540px;
+    }
+
+    .tags_resto_delivery_public_driver,
+    .tags_resto_delivery_public_collection {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 8px;
+    }
+}
+
 .tags_resto_current_order_item_status {
     display: inline-flex;
     margin-top: 7px;
@@ -1027,3 +1327,4 @@
     background: color-mix(in srgb, var(--qr-primary) 13%, var(--qr-surface));
     color: var(--qr-primary);
 }
+.tags_resto_current_order_review_cta{display:flex;align-items:center;gap:14px;margin-top:18px;padding:15px 16px;border:1px solid #f1d36b;border-radius:12px;background:#fffaf0}.tags_resto_current_order_review_stars{color:#f4bd24;font-size:1.45rem;letter-spacing:2px}.tags_resto_current_order_review_cta div:nth-child(2){display:grid;gap:2px;flex:1}.tags_resto_current_order_review_cta span{color:#667085;font-size:.86rem}.tags_resto_current_order_review_cta button{border:0;border-radius:8px;padding:9px 13px;background:#f4bd24;color:#332400;font-weight:700;cursor:pointer}.tags_resto_current_order_review_cta button:disabled{opacity:.55;cursor:not-allowed}@media(max-width:640px){.tags_resto_current_order_review_cta{align-items:flex-start;flex-wrap:wrap}.tags_resto_current_order_review_cta button{width:100%}}

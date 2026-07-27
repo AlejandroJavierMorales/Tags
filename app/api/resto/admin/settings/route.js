@@ -5,6 +5,14 @@ import {
     db
 } from "@/app/lib/tags-db";
 
+import {
+    getRestoAccess,
+    restoAccessResponse
+} from "@/app/modules/resto/lib/staff/getRestoAccess";
+import {
+    logRestoAudit
+} from "@/app/modules/resto/lib/staff/restoAudit";
+
 function parseJson(value) {
     if (!value) return {};
     if (typeof value === "object") return value;
@@ -53,6 +61,19 @@ export async function GET(req) {
             );
         }
 
+        const access =
+            await getRestoAccess({
+                businessId,
+                permission:
+                    "settings.view"
+            });
+
+        if (!access.allowed) {
+            return restoAccessResponse(
+                access
+            );
+        }
+
         const store =
             await getStore(
                 db,
@@ -65,6 +86,16 @@ export async function GET(req) {
                 { status: 404 }
             );
         }
+
+        const [reviewAddonRows] =
+            await db.query(
+                `SELECT 1 FROM tags_business_addons
+                 WHERE business_id = ?
+                 AND addon_code = 'client_reviews'
+                 AND status = 'active'
+                 LIMIT 1`,
+                [businessId]
+            );
 
         const settings =
             parseJson(
@@ -83,7 +114,8 @@ export async function GET(req) {
                 address: store.address,
                 currency: store.currency || "ARS",
                 slug: store.slug,
-                status: store.status
+                status: store.status,
+                has_reviews: Boolean(reviewAddonRows?.length)
             },
             configuration: {
                 contact:
@@ -150,6 +182,19 @@ export async function POST(req) {
                         "El nombre del restaurante es requerido"
                 },
                 { status: 400 }
+            );
+        }
+
+        const access =
+            await getRestoAccess({
+                businessId,
+                permission:
+                    "settings.manage"
+            });
+
+        if (!access.allowed) {
+            return restoAccessResponse(
+                access
             );
         }
 
@@ -276,6 +321,24 @@ export async function POST(req) {
                 store.id,
                 businessId
             ]
+        );
+
+        await logRestoAudit(
+            connection,
+            {
+                storeId:
+                    store.id,
+                access,
+                actionCode:
+                    "settings.updated",
+                entityType:
+                    "store",
+                entityId:
+                    store.id,
+                description:
+                    "Configuración operativa actualizada",
+                req
+            }
         );
 
         await connection.commit();

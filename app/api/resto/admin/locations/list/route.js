@@ -10,6 +10,11 @@ export const dynamic = "force-dynamic";
 
 import { db } from "@/app/lib/tags-db";
 
+import {
+    getRestoAccess,
+    restoAccessResponse
+} from "@/app/modules/resto/lib/staff/getRestoAccess";
+
 export async function GET(req) {
 
     try {
@@ -34,6 +39,22 @@ export async function GET(req) {
                 }
             );
 
+        }
+
+        const access =
+            await getRestoAccess({
+                businessId,
+                permission:
+                    [
+                        "locations.view",
+                        "tables.view"
+                    ]
+            });
+
+        if (!access.allowed) {
+            return restoAccessResponse(
+                access
+            );
         }
 
         const [storeRows] =

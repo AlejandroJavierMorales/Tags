@@ -27,7 +27,10 @@ export default function RestoPublicRenderer({
     categories = [],
     products = [],
     session = null,
-    location = null
+    location = null,
+    portal = null,
+    showOwnHeader = true,
+    showOwnFooter = true
 }) {
 
     const orderedSections =
@@ -51,12 +54,28 @@ export default function RestoPublicRenderer({
             location
     };
 
+    const visibleBlocks =
+        blocks
+            .filter(block =>
+                showOwnHeader ||
+                !["resto_topbar", "resto_header"].includes(block.block_type)
+            )
+            .filter(block =>
+                showOwnFooter ||
+                block.block_type !== "resto_footer"
+            );
+
     return (
         <div
             className="resto_public_page"
             style={
-                resto?.theme_css_vars ||
-                {}
+                {
+                    ...(resto?.theme_css_vars || {}),
+                    "--resto-page-width":
+                        resto?.theme_css_vars?.["--qr-container-width"] ||
+                        resto?.theme_css_vars?.["--page-width"] ||
+                        "1320px"
+                }
             }
         >
 
@@ -64,7 +83,7 @@ export default function RestoPublicRenderer({
                 context="resto"
                 entity={entity}
                 sections={orderedSections}
-                blocks={blocks}
+                blocks={visibleBlocks}
             />
 
             <RestoCartController

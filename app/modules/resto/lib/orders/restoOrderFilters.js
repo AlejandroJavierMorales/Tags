@@ -234,7 +234,7 @@ export function getAvailableRestoOrderStatuses() {
 
         {
             value:
-                "served",
+                "shipped",
             label:
                 "Entregado"
         }

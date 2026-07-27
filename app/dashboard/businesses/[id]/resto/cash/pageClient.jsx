@@ -14,6 +14,7 @@ import {
     FaArrowDown,
     FaArrowUp,
     FaCashRegister,
+    FaEye,
     FaHistory,
     FaHome,
     FaLock,
@@ -32,6 +33,10 @@ import showAlert
 import {
     formatRestoOrderPrice
 } from "@/app/modules/resto/lib/orders";
+
+import {
+    requestRestoPayment
+} from "@/app/modules/resto/lib/cash/requestRestoPayment";
 
 import "@/app/styles/qr-page.css";
 import "@/app/styles/tags_dashboard.css";
@@ -65,7 +70,13 @@ const TYPE_LABELS = {
     tip:
         "Propina",
     adjustment:
-        "Ajuste"
+        "Ajuste",
+    delivery_collection:
+        "Rendición de delivery",
+    delivery_settlement_payment:
+        "Comisión de repartidor",
+    delivery_adjustment:
+        "Ajuste de delivery"
 };
 
 function formatDate(value) {
@@ -158,6 +169,16 @@ export default function RestoCashClient({
         setClosingNotes
     ] = useState("");
 
+    const [
+        selectedHistoryId,
+        setSelectedHistoryId
+    ] = useState(null);
+
+    const [
+        auditLoading,
+        setAuditLoading
+    ] = useState(false);
+
     const load =
         useCallback(
             async ({
@@ -191,19 +212,17 @@ export default function RestoCashClient({
                         );
                     }
 
-                    setData(result);
-
-                    if (result.shift) {
-                        setDeclaredCash(
-                            current =>
-                                current === ""
-                                    ? String(
-                                        result.shift.expected_cash ??
-                                        ""
-                                    )
-                                    : current
-                        );
-                    }
+                    setData(
+                        current => ({
+                            ...result,
+                            audit_shift:
+                                current?.audit_shift ||
+                                null,
+                            audit_movements:
+                                current?.audit_movements ||
+                                []
+                        })
+                    );
 
                 } catch (error) {
 
@@ -234,6 +253,96 @@ export default function RestoCashClient({
             load
         ]
     );
+
+    useEffect(
+        () => {
+
+            const interval =
+                window.setInterval(
+                    () => {
+                        load({
+                            silent:
+                                true
+                        });
+                    },
+                    15000
+                );
+
+            return () =>
+                window.clearInterval(
+                    interval
+                );
+
+        },
+        [
+            load
+        ]
+    );
+
+    async function viewShift(
+        shiftId
+    ) {
+
+        setSelectedHistoryId(
+            shiftId
+        );
+        setAuditLoading(true);
+
+        try {
+
+            const response =
+                await fetch(
+                    `/api/resto/admin/cash/summary?businessId=${encodeURIComponent(
+                        businessId
+                    )}&historyShiftId=${encodeURIComponent(
+                        shiftId
+                    )}`,
+                    {
+                        cache:
+                            "no-store"
+                    }
+                );
+
+            const result =
+                await response.json();
+
+            if (!response.ok) {
+                throw new Error(
+                    result?.error ||
+                    "No se pudo cargar el turno"
+                );
+            }
+
+            setData(
+                current => ({
+                    ...current,
+                    audit_shift:
+                        result.audit_shift,
+                    audit_movements:
+                        result.audit_movements
+                })
+            );
+
+        } catch (error) {
+
+            setSelectedHistoryId(
+                null
+            );
+
+            showAlert({
+                icon:
+                    "error",
+                title:
+                    "Historial de caja",
+                text:
+                    error.message
+            });
+
+        } finally {
+            setAuditLoading(false);
+        }
+
+    }
 
     async function post(
         url,
@@ -414,6 +523,39 @@ export default function RestoCashClient({
 
     }
 
+    async function collectPayment(
+        order
+    ) {
+
+        const payment =
+            await requestRestoPayment(
+                order,
+                {
+                    currency
+                }
+            );
+
+        if (!payment) {
+            return;
+        }
+
+        await post(
+            "/api/resto/admin/orders/payment",
+            {
+                orderId:
+                    order.id,
+                amount:
+                    payment.amount,
+                payment_method:
+                    payment.payment_method,
+                notes:
+                    payment.notes
+            },
+            `El cobro de ${order.order_number || "pedido"} quedó registrado.`
+        );
+
+    }
+
     async function closeCash() {
 
         const declared =
@@ -432,6 +574,36 @@ export default function RestoCashClient({
                     "Arqueo",
                 text:
                     "Ingresá el efectivo contado."
+            });
+            return;
+        }
+
+        const difference =
+            Math.round(
+                (
+                    declared -
+                    Number(
+                        data?.shift
+                            ?.expected_cash ||
+                        0
+                    ) +
+                    Number.EPSILON
+                ) *
+                100
+            ) /
+            100;
+
+        if (
+            difference !== 0 &&
+            !closingNotes.trim()
+        ) {
+            showAlert({
+                icon:
+                    "info",
+                title:
+                    "Diferencia de caja",
+                text:
+                    "Indicá en observaciones el motivo del sobrante o faltante."
             });
             return;
         }
@@ -485,6 +657,11 @@ export default function RestoCashClient({
 
     const shift =
         data?.shift;
+
+    const currency =
+        data?.currency ||
+        data?.store?.currency ||
+        "ARS";
 
     return (
         <main className="tags_resto_orders_page tags_resto_cash_page">
@@ -608,27 +785,27 @@ export default function RestoCashClient({
                                 <article>
                                     <FaWallet />
                                     <span>Fondo inicial</span>
-                                    <strong>{formatRestoOrderPrice(shift.opening_amount, "ARS")}</strong>
+                                    <strong>{formatRestoOrderPrice(shift.opening_amount, currency)}</strong>
                                 </article>
                                 <article className="is-income">
                                     <FaArrowUp />
                                     <span>Ingresos</span>
-                                    <strong>{formatRestoOrderPrice(shift.total_income, "ARS")}</strong>
+                                    <strong>{formatRestoOrderPrice(shift.total_income, currency)}</strong>
                                 </article>
                                 <article className="is-expense">
                                     <FaArrowDown />
                                     <span>Egresos</span>
-                                    <strong>{formatRestoOrderPrice(shift.total_expense, "ARS")}</strong>
+                                    <strong>{formatRestoOrderPrice(shift.total_expense, currency)}</strong>
                                 </article>
                                 <article className="is-net">
                                     <FaMoneyBillWave />
                                     <span>Neto del turno</span>
-                                    <strong>{formatRestoOrderPrice(shift.net_total, "ARS")}</strong>
+                                    <strong>{formatRestoOrderPrice(shift.net_total, currency)}</strong>
                                 </article>
                                 <article className="is-cash">
                                     <FaCashRegister />
                                     <span>Efectivo esperado</span>
-                                    <strong>{formatRestoOrderPrice(shift.expected_cash, "ARS")}</strong>
+                                    <strong>{formatRestoOrderPrice(shift.expected_cash, currency)}</strong>
                                 </article>
                             </section>
 
@@ -644,15 +821,110 @@ export default function RestoCashClient({
                                                     {
                                                         formatRestoOrderPrice(
                                                             shift.payment_methods?.[entry[0]] || 0,
-                                                            "ARS"
+                                                            currency
                                                         )
                                                     }
                                                 </strong>
+                                                <small>
+                                                    Ingresos {
+                                                        formatRestoOrderPrice(
+                                                            shift.payment_method_details?.[entry[0]]?.income || 0,
+                                                            currency
+                                                        )
+                                                    }
+                                                    {" · "}
+                                                    Egresos {
+                                                        formatRestoOrderPrice(
+                                                            shift.payment_method_details?.[entry[0]]?.expense || 0,
+                                                            currency
+                                                        )
+                                                    }
+                                                </small>
                                             </div>
                                         )
                                     )
                                 }
                             </section>
+
+                            {
+                                (
+                                    can("orders.payment") ||
+                                    can("cash.charge")
+                                ) && (
+                                    <section className="tags_resto_cash_panel">
+                                        <header>
+                                            <FaMoneyBillWave />
+                                            <div>
+                                                <h2>Cuentas pendientes</h2>
+                                                <p>
+                                                    Pedidos activos con saldo por cobrar.
+                                                </p>
+                                            </div>
+                                        </header>
+                                        <div className="tags_resto_cash_pending">
+                                            {
+                                                (data?.pending_orders || []).map(
+                                                    order => (
+                                                        <article key={order.id}>
+                                                            <div>
+                                                                <strong>
+                                                                    {order.order_number || `Pedido #${order.id}`}
+                                                                </strong>
+                                                                <span>
+                                                                    {
+                                                                        order.location_name ||
+                                                                        order.customer_name ||
+                                                                        (
+                                                                            order.service_mode === "delivery"
+                                                                                ? "Delivery"
+                                                                                : order.service_mode === "takeaway"
+                                                                                    ? "Retiro"
+                                                                                    : "Consumo en el lugar"
+                                                                        )
+                                                                    }
+                                                                </span>
+                                                                <small>
+                                                                    {order.products_text || `${order.items_count || 0} productos`}
+                                                                </small>
+                                                            </div>
+                                                            <div>
+                                                                <small>Saldo</small>
+                                                                <strong>
+                                                                    {
+                                                                        formatRestoOrderPrice(
+                                                                            order.pending_amount,
+                                                                            currency
+                                                                        )
+                                                                    }
+                                                                </strong>
+                                                            </div>
+                                                            <button
+                                                                type="button"
+                                                                className="tags_resto_btn tags_resto_btn_success"
+                                                                disabled={saving}
+                                                                onClick={() =>
+                                                                    collectPayment(
+                                                                        order
+                                                                    )
+                                                                }
+                                                            >
+                                                                Cobrar
+                                                            </button>
+                                                        </article>
+                                                    )
+                                                )
+                                            }
+                                            {
+                                                (data?.pending_orders || []).length === 0 && (
+                                                    <p className="tags_resto_cash_empty">
+                                                        No hay cuentas pendientes de cobro.
+                                                    </p>
+                                                )
+                                            }
+                                        </div>
+                                    </section>
+                                )
+                            }
 
                             <div className="tags_resto_cash_columns">
                                 {can("cash.movement") && <section className="tags_resto_cash_panel">
@@ -763,7 +1035,7 @@ export default function RestoCashClient({
                                             <input
                                                 type="text"
                                                 disabled
-                                                value={formatRestoOrderPrice(shift.expected_cash, "ARS")}
+                                                value={formatRestoOrderPrice(shift.expected_cash, currency)}
                                             />
                                         </label>
                                         <label>
@@ -834,11 +1106,16 @@ export default function RestoCashClient({
                                         </span>
                                         <small>
                                             {item.notes || "Sin observaciones"} · {formatDate(item.occurred_at)}
+                                            {
+                                                item.created_by_name
+                                                    ? ` · ${item.created_by_name}`
+                                                    : ""
+                                            }
                                         </small>
                                     </div>
                                     <strong className={item.direction === "income" ? "is-income" : "is-expense"}>
                                         {item.direction === "income" ? "+" : "-"}
-                                        {formatRestoOrderPrice(item.amount, "ARS")}
+                                        {formatRestoOrderPrice(item.amount, currency)}
                                     </strong>
                                 </article>
                             )
@@ -884,16 +1161,169 @@ export default function RestoCashClient({
                                             {
                                                 item.difference_amount == null
                                                     ? "—"
-                                                    : formatRestoOrderPrice(item.difference_amount, "ARS")
+                                                    : formatRestoOrderPrice(item.difference_amount, currency)
                                             }
                                         </strong>
                                     </div>
+                                    <button
+                                        type="button"
+                                        className="tags_resto_cash_history_action"
+                                        disabled={auditLoading}
+                                        onClick={() =>
+                                            viewShift(
+                                                item.id
+                                            )
+                                        }
+                                    >
+                                        <FaEye />
+                                        {
+                                            selectedHistoryId ===
+                                                item.id
+                                                ? "Viendo"
+                                                : "Ver detalle"
+                                        }
+                                    </button>
                                 </article>
                             )
                         )
                     }
                 </div>
             </section>
+
+            {
+                data?.audit_shift && (
+                    <section className="tags_resto_cash_panel tags_resto_cash_audit">
+                        <header>
+                            <FaHistory />
+                            <div>
+                                <h2>
+                                    Detalle del turno #{data.audit_shift.id}
+                                </h2>
+                                <p>
+                                    {formatDate(data.audit_shift.opened_at)}
+                                    {" — "}
+                                    {
+                                        data.audit_shift.closed_at
+                                            ? formatDate(data.audit_shift.closed_at)
+                                            : "En curso"
+                                    }
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                className="tags_resto_cash_history_action"
+                                onClick={() => {
+                                    setSelectedHistoryId(null);
+                                    setData(
+                                        current => ({
+                                            ...current,
+                                            audit_shift:
+                                                null,
+                                            audit_movements:
+                                                []
+                                        })
+                                    );
+                                }}
+                            >
+                                Cerrar detalle
+                            </button>
+                        </header>
+
+                        <div className="tags_resto_cash_audit_totals">
+                            <div>
+                                <span>Fondo inicial</span>
+                                <strong>{formatRestoOrderPrice(data.audit_shift.opening_amount, currency)}</strong>
+                            </div>
+                            <div>
+                                <span>Cobros de pedidos</span>
+                                <strong>{formatRestoOrderPrice(data.audit_shift.order_income, currency)}</strong>
+                            </div>
+                            <div>
+                                <span>Devoluciones</span>
+                                <strong>{formatRestoOrderPrice(data.audit_shift.order_refunds, currency)}</strong>
+                            </div>
+                            <div>
+                                <span>Neto del turno</span>
+                                <strong>{formatRestoOrderPrice(data.audit_shift.net_total, currency)}</strong>
+                            </div>
+                            <div>
+                                <span>Efectivo esperado</span>
+                                <strong>{formatRestoOrderPrice(data.audit_shift.expected_cash, currency)}</strong>
+                            </div>
+                            <div>
+                                <span>Efectivo declarado</span>
+                                <strong>
+                                    {
+                                        data.audit_shift.declared_cash == null
+                                            ? "—"
+                                            : formatRestoOrderPrice(
+                                                data.audit_shift.declared_cash,
+                                                currency
+                                            )
+                                    }
+                                </strong>
+                            </div>
+                            <div>
+                                <span>Diferencia</span>
+                                <strong>
+                                    {
+                                        data.audit_shift.difference_amount == null
+                                            ? "—"
+                                            : formatRestoOrderPrice(
+                                                data.audit_shift.difference_amount,
+                                                currency
+                                            )
+                                    }
+                                </strong>
+                            </div>
+                        </div>
+
+                        <div className="tags_resto_cash_movements">
+                            {
+                                (data.audit_movements || []).map(
+                                    item => (
+                                        <article key={item.id}>
+                                            <div className={item.direction === "income" ? "is-income" : "is-expense"}>
+                                                {
+                                                    item.direction === "income"
+                                                        ? <FaArrowUp />
+                                                        : <FaArrowDown />
+                                                }
+                                            </div>
+                                            <div>
+                                                <strong>{TYPE_LABELS[item.movement_type] || item.movement_type}</strong>
+                                                <span>
+                                                    {item.order_number ? `${item.order_number} · ` : ""}
+                                                    {METHOD_LABELS[item.payment_method] || item.payment_method}
+                                                </span>
+                                                <small>
+                                                    {item.notes || "Sin observaciones"} · {formatDate(item.occurred_at)}
+                                                    {
+                                                        item.created_by_name
+                                                            ? ` · ${item.created_by_name}`
+                                                            : ""
+                                                    }
+                                                </small>
+                                            </div>
+                                            <strong className={item.direction === "income" ? "is-income" : "is-expense"}>
+                                                {item.direction === "income" ? "+" : "-"}
+                                                {formatRestoOrderPrice(item.amount, currency)}
+                                            </strong>
+                                        </article>
+                                    )
+                                )
+                            }
+                            {
+                                (data.audit_movements || []).length === 0 && (
+                                    <p className="tags_resto_cash_empty">
+                                        El turno no tiene movimientos.
+                                    </p>
+                                )
+                            }
+                        </div>
+                    </section>
+                )
+            }
         </main>
     );
 

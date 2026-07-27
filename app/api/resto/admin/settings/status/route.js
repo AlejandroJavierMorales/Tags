@@ -5,6 +5,14 @@ import {
     db
 } from "@/app/lib/tags-db";
 
+import {
+    getRestoAccess,
+    restoAccessResponse
+} from "@/app/modules/resto/lib/staff/getRestoAccess";
+import {
+    logRestoAudit
+} from "@/app/modules/resto/lib/staff/restoAudit";
+
 export async function POST(req) {
     let connection;
 
@@ -26,6 +34,19 @@ export async function POST(req) {
                         "businessId y status son requeridos"
                 },
                 { status: 400 }
+            );
+        }
+
+        const access =
+            await getRestoAccess({
+                businessId,
+                permission:
+                    "publish.manage"
+            });
+
+        if (!access.allowed) {
+            return restoAccessResponse(
+                access
             );
         }
 
@@ -82,6 +103,29 @@ export async function POST(req) {
                 [status, store.page_id, businessId]
             );
         }
+
+        await logRestoAudit(
+            connection,
+            {
+                storeId:
+                    store.id,
+                access,
+                actionCode:
+                    "store.status.updated",
+                entityType:
+                    "store",
+                entityId:
+                    store.id,
+                description:
+                    status === "published"
+                        ? "Restaurante publicado"
+                        : "Restaurante despublicado",
+                metadata: {
+                    status
+                },
+                req
+            }
+        );
 
         await connection.commit();
 

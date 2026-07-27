@@ -1,13 +1,14 @@
 import {
-    cookies
-} from "next/headers";
-import {
     redirect
 } from "next/navigation";
 import HeaderSwitcher
     from "@/app/components/HeaderSwitcher";
 import RestoSettingsClient
     from "./pageClient";
+
+import {
+    getRestoAccess
+} from "@/app/modules/resto/lib/staff/getRestoAccess";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -25,35 +26,33 @@ export default async function Page({
 }) {
     const { id } =
         await params;
-    const cookie =
-        (await cookies()).get(
-            "tags_session"
+    const access =
+        await getRestoAccess({
+            businessId:
+                id,
+            permission:
+                "settings.view"
+        });
+
+    if (!access.allowed) {
+        redirect(
+            access.status === 401
+                ? "/login"
+                : `/dashboard/businesses/${id}/resto`
         );
-    if (!cookie) redirect("/login");
-
-    let session;
-    try {
-        session =
-            JSON.parse(cookie.value);
-    } catch {
-        redirect("/login");
     }
-
-    const allowed =
-        session?.role === "admin" ||
-        String(
-            session?.business_id ||
-            session?.businessId ||
-            ""
-        ) === String(id);
-
-    if (!allowed) redirect("/dashboard");
 
     return (
         <>
             <HeaderSwitcher />
             <RestoSettingsClient
                 businessId={id}
+                canManage={
+                    access.isOwner ||
+                    access.permissions.includes(
+                        "settings.manage"
+                    )
+                }
             />
         </>
     );

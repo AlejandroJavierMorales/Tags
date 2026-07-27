@@ -49,6 +49,8 @@ export async function getStorePublicProductDetail({
         SELECT
             s.*,
             qrp.theme_id,
+            qrp.id AS public_page_id,
+            qrp.global_styles AS page_global_styles,
             t.code AS theme_code,
             t.name AS theme_name,
             t.css_tokens AS theme_css_tokens
@@ -75,8 +77,6 @@ export async function getStorePublicProductDetail({
     const store =
         storeRows?.[0];
 
-    console.log("STORE ROWS DETAIL:", storeRows);
-
     if (!store) {
         return null;
     }
@@ -90,6 +90,9 @@ export async function getStorePublicProductDetail({
         safeParse(
             store.styles_json
         );
+
+    store.page_global_styles =
+        safeParse(store.page_global_styles);
 
     const themeTokens =
         safeParse(

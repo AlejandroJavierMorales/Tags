@@ -199,8 +199,14 @@ export default function StoreBlockEditor({
     const [isVisible, setIsVisible] =
         useState(!!block.is_visible);
 
+    const defaultContent =
+        module?.defaultContent || {};
+
     const [content, setContent] =
-        useState(block.content_json || {});
+        useState({
+            ...defaultContent,
+            ...(block.content_json || {})
+        });
 
     const [styles, setStyles] =
         useState(block.styles_json || {});
@@ -218,7 +224,10 @@ export default function StoreBlockEditor({
 
         content:
             structuredClone(
-                block.content_json || {}
+                {
+                    ...defaultContent,
+                    ...(block.content_json || {})
+                }
             ),
 
         styles:
@@ -231,7 +240,7 @@ export default function StoreBlockEditor({
                 block.animation_json || {}
             )
 
-    }), [block]);
+    }), [block, defaultContent]);
 
     const [saving, setSaving] =
         useState(false);

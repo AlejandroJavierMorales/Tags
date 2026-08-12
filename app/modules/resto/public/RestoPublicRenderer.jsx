@@ -13,8 +13,8 @@
 // resto
 // =====================================
 
-import BuilderRenderer
-    from "@/app/modules/builder/components/BuilderRenderer";
+import RestoBuilderRenderer
+    from "@/app/modules/resto/public/RestoBuilderRenderer";
 
 import RestoCartController
     from "@/app/modules/resto/components/public/RestoCartController";
@@ -42,6 +42,11 @@ export default function RestoPublicRenderer({
 
     const entity = {
         ...resto,
+
+        page_global_styles:
+            resto?.page_global_styles ||
+            page?.global_styles ||
+            {},
 
         categories,
 
@@ -71,6 +76,8 @@ export default function RestoPublicRenderer({
             style={
                 {
                     ...(resto?.theme_css_vars || {}),
+                    background: "var(--qr-bg)",
+                    color: "var(--qr-text)",
                     "--resto-page-width":
                         resto?.theme_css_vars?.["--qr-container-width"] ||
                         resto?.theme_css_vars?.["--page-width"] ||
@@ -79,8 +86,7 @@ export default function RestoPublicRenderer({
             }
         >
 
-            <BuilderRenderer
-                context="resto"
+            <RestoBuilderRenderer
                 entity={entity}
                 sections={orderedSections}
                 blocks={visibleBlocks}

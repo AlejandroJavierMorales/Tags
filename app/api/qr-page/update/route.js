@@ -114,7 +114,9 @@ export async function POST(req) {
                 SELECT
                     id,
                     slug,
-                    slug_locked
+                    slug_locked,
+                    page_type,
+                    title
                 FROM
                     tags_qr_pages
                 WHERE
@@ -313,6 +315,23 @@ export async function POST(req) {
                 businessId
             ]
         );
+
+        if (page.page_type === "directory") {
+            await db.query(
+                `UPDATE tags_directory_listings SET display_name=?,short_description=?,description=?,email=?,phone=?,whatsapp=?,website_url=?,address=?,social_config=?,updated_at=NOW() WHERE qr_page_id=? AND business_id=?`,
+                [title || page.title, description || null, description || null, email || null, phone || null, normalizedWhatsapp, normalizedWebsite, address || null, JSON.stringify({ instagram: normalizedInstagram, facebook: normalizedFacebook, tiktok: normalizedTiktok, youtube: normalizedYoutube, linkedin: normalizedLinkedin }), pageId, businessId]
+            );
+            if (logo_url) {
+                const [logos] = await db.query("SELECT id FROM tags_directory_media WHERE listing_id=(SELECT id FROM tags_directory_listings WHERE qr_page_id=? AND business_id=? LIMIT 1) AND media_type='logo' ORDER BY id LIMIT 1", [pageId, businessId]);
+                if (logos.length) await db.query("UPDATE tags_directory_media SET url=?,is_active=1,updated_at=NOW() WHERE id=?", [logo_url, logos[0].id]);
+                else await db.query("INSERT INTO tags_directory_media (listing_id,media_type,url,sort_order,is_active) SELECT id,'logo',?,0,1 FROM tags_directory_listings WHERE qr_page_id=? AND business_id=? LIMIT 1", [logo_url, pageId, businessId]);
+            }
+            if (cover_image_url) {
+                const [covers] = await db.query("SELECT id FROM tags_directory_media WHERE listing_id=(SELECT id FROM tags_directory_listings WHERE qr_page_id=? AND business_id=? LIMIT 1) AND media_type='cover' ORDER BY id LIMIT 1", [pageId, businessId]);
+                if (covers.length) await db.query("UPDATE tags_directory_media SET url=?,is_active=1,updated_at=NOW() WHERE id=?", [cover_image_url, covers[0].id]);
+                else await db.query("INSERT INTO tags_directory_media (listing_id,media_type,url,sort_order,is_active) SELECT id,'cover',?,0,1 FROM tags_directory_listings WHERE qr_page_id=? AND business_id=? LIMIT 1", [cover_image_url, pageId, businessId]);
+            }
+        }
 
         return Response.json({
             ok: true

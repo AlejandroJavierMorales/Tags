@@ -35,6 +35,7 @@ import {
     formatStorePrice
 }
     from "../../lib/formatStorePrice";
+import { withStoreReturnUrl } from "../../lib/storePublicContext";
 
 import StoreFavoriteButton
     from "../public/StoreFavoriteButton";
@@ -46,8 +47,11 @@ export default async function StoreFeaturedProductsBlock({
     entity,
     content = {},
     styles = {},
-    typography = {}
+    typography: typographyOverride = {}
 }) {
+
+    const typography =
+        styles?.typography || typographyOverride;
 
     const products =
         await getStoreFeaturedProducts(
@@ -122,7 +126,9 @@ export default async function StoreFeaturedProductsBlock({
                 : undefined,
 
         borderRadius:
-            content.cardRadius || undefined,
+            !content.cardRadius || content.cardRadius === "20px"
+                ? "12px"
+                : content.cardRadius,
 
         background:
             content.cardBackgroundColor || undefined
@@ -163,7 +169,9 @@ export default async function StoreFeaturedProductsBlock({
             content.infoAlignment || undefined,
 
         padding:
-            content.infoPadding || undefined
+            !content.infoPadding || content.infoPadding === "16px"
+                ? "12px"
+                : content.infoPadding
     };
 
     const priceStyle = {
@@ -463,7 +471,7 @@ export default async function StoreFeaturedProductsBlock({
                                 >
                                     <Link
                                         href={
-                                            `/p/${entity.slug}/products/${product.id}`
+                                            withStoreReturnUrl(`/p/${entity.slug}/products/${product.id}`, entity)
                                         }
                                         className="store_product_card_link"
                                     >

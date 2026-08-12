@@ -21,6 +21,8 @@ import StoreCheckoutPageClient
     from "@/app/modules/store/components/public/StoreCheckoutPageClient";
 
 import "@/app/modules/store/styles/store-public.css";
+import { normalizeStoreReturnUrl } from "@/app/modules/store/lib/storePublicContext";
+import { getDirectoryThemeStyleForBusiness } from "@/app/modules/directory/lib/getDirectoryThemeStyleForBusiness";
 
 export const runtime =
     "nodejs";
@@ -64,8 +66,18 @@ async function getStore(slug) {
                 ON t.id = qrp.theme_id
             WHERE qrp.slug = ?
             AND qrp.page_type = 'store'
-            AND qrp.status = 'published'
-            AND s.status = 'published'
+            AND (
+                (qrp.status = 'published' AND s.status = 'published')
+                OR (
+                    EXISTS (SELECT 1 FROM tags_business_addons ba_store WHERE ba_store.business_id=s.business_id AND ba_store.addon_code='store' AND ba_store.status='active' AND (ba_store.expires_at IS NULL OR ba_store.expires_at>=NOW()))
+                    AND EXISTS (
+                        SELECT 1 FROM tags_directory_listings dl
+                        INNER JOIN tags_directory_site_listings dsl ON dsl.listing_id=dl.id AND dsl.publication_status='published' AND dsl.is_free=0
+                        INNER JOIN tags_qr_pages dp ON dp.id=dl.qr_page_id AND dp.page_type='directory' AND dp.status='published'
+                        WHERE dl.business_id=s.business_id AND dl.status='published'
+                    )
+                )
+            )
             LIMIT 1
             `,
             [
@@ -102,8 +114,12 @@ async function getStore(slug) {
 }
 
 export default async function Page({
-    params
+    params,
+    searchParams
 }) {
+
+    const query = await Promise.resolve(searchParams || {});
+    const returnUrl = normalizeStoreReturnUrl(query.returnTo);
 
     const store =
         await getStore(
@@ -112,6 +128,17 @@ export default async function Page({
 
     if (!store) {
         notFound();
+    }
+
+    if (returnUrl) {
+        const directoryThemeStyle =
+            await getDirectoryThemeStyleForBusiness(store.business_id);
+        store.embedded_mode = "directory";
+        store.embedded_return_url = returnUrl;
+        store.theme_css_vars = {
+            ...directoryThemeStyle,
+            ...(store.theme_css_vars || {})
+        };
     }
 
     return (

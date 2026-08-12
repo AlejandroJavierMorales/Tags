@@ -23,6 +23,7 @@ import StoreShareButton from "./StoreShareButton";
 
 import "../../styles/store-public.css";
 import TagsSelect from "@/app/components/ui/TagsSelect";
+import { withStoreReturnUrl } from "../../lib/storePublicContext";
 
 export default function StoreProductGridClient({
     store,
@@ -64,14 +65,14 @@ const imageStyle = {
 
     /* Define Paginacion - Productos por Página */
     const allowedPageSizes =
-        [12, 24, 36];
+        [6, 12, 24, 36];
 
     const pageSize =
         allowedPageSizes.includes(
             Number(settings?.productsPerPage)
         )
             ? Number(settings.productsPerPage)
-            : 12;
+            : 6;
     /*  const pageSize = 1; */
 
     const showInfoArea =
@@ -91,6 +92,12 @@ const imageStyle = {
 
     const showButton =
         settings.showButton !== false;
+
+    const showProductTitle =
+        settings.showTitle !== false;
+
+    const typography =
+        settings.typography || {};
     /* ---------------------------------------------- */
 
 
@@ -375,7 +382,9 @@ const imageStyle = {
                 : undefined,
 
         borderRadius:
-            settings.cardRadius || undefined,
+            !settings.cardRadius || settings.cardRadius === "20px"
+                ? "12px"
+                : settings.cardRadius,
 
         background:
             settings.cardBackgroundColor || undefined
@@ -465,12 +474,14 @@ const imageStyle = {
 
     const priceStyle = {
         color: settings.priceColor || undefined,
-        fontSize: settings.priceSize || undefined
+        fontSize: settings.priceSize || undefined,
+        ...(typography.price || {})
     };
 
     const oldPriceStyle = {
         color: settings.oldPriceColor || undefined,
-        fontSize: settings.oldPriceSize || undefined
+        fontSize: settings.oldPriceSize || undefined,
+        ...(typography.oldPrice || {})
     };
 
     const discountStyle = {
@@ -493,7 +504,8 @@ const imageStyle = {
         paddingTop: settings.buttonPaddingY || undefined,
         paddingBottom: settings.buttonPaddingY || undefined,
         paddingLeft: settings.buttonPaddingX || undefined,
-        paddingRight: settings.buttonPaddingX || undefined
+        paddingRight: settings.buttonPaddingX || undefined,
+        ...(typography.button || {})
     };
 
     const buttonText =
@@ -565,7 +577,8 @@ const imageStyle = {
                             { value: "name_desc", label: "Z-A" },
                             { value: "featured", label: "Destacados" }
                         ]}
-                        maxWidth="180px"
+                        maxWidth="150px"
+                        size="sm"
                     />
 
                 </div>
@@ -635,15 +648,15 @@ const imageStyle = {
                         No encontramos productos con ese filtro.
                     </div>
                 ) : (
-                    <div className="row g-4">
+                <div className="store_product_grid_layout">
                         {
                             paginatedProducts.map(product => (
                                 <div
-                                    className="col-12 col-sm-6 col-md-4 col-lg-3"
+                                    className="store_product_grid_item"
                                     key={product.id}
                                 >
                                     <Link
-                                        href={`/p/${store.slug}/products/${product.id}`}
+                                        href={withStoreReturnUrl(`/p/${store.slug}/products/${product.id}`, store)}
                                         className="store_product_card_link"
                                     >
                                         <div
@@ -712,7 +725,7 @@ const imageStyle = {
                                                             showCategory &&
                                                             product.category_name && (
 
-                                                                <div className="store_product_category">
+                                                                <div className="store_product_category" style={typography.meta || {}}>
 
                                                                     {product.category_name}
 
@@ -724,7 +737,7 @@ const imageStyle = {
                                                             showSku &&
                                                             product.sku && (
 
-                                                                <div className="store_product_sku">
+                                                                <div className="store_product_sku" style={typography.meta || {}}>
 
                                                                     {product.sku}
 
@@ -733,9 +746,11 @@ const imageStyle = {
                                                             )
                                                         }
 
-                                                        <h3 className="store_product_card_title">
-                                                            {product.title}
-                                                        </h3>
+                                                        {showProductTitle && (
+                                                            <h3 className="store_product_card_title" style={typography.title || {}}>
+                                                                {product.title}
+                                                            </h3>
+                                                        )}
 
                                                         <div className="store_product_card_footer">
 
@@ -775,7 +790,7 @@ const imageStyle = {
                                                                     showPrice &&
                                                                     !product.sale_price && (
 
-                                                                        <div className="fw-bold">
+                                                                        <div className="store_product_price" style={priceStyle}>
                                                                             {formatStorePrice(
                                                                                 product.price,
                                                                                 product.currency

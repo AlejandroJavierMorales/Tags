@@ -98,11 +98,11 @@ export async function GET(req) {
                     r.average_rating,
                     r.created_at,
 
-                    f.logo_url,
+                    COALESCE(NULLIF(b.logo_url, ''), f.logo_url) AS logo_url,
                     f.styles_json,
                     f.title AS form_title,
 
-                    b.name AS business_name
+                    COALESCE(NULLIF(b.display_name, ''), b.name) AS business_name
                 FROM tags_client_review_responses r
 
                 LEFT JOIN tags_client_review_forms f

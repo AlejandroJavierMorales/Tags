@@ -7,6 +7,7 @@
 
 import { useMemo, useState } from "react";
 import showAlert from "@/app/components/showAlert";
+import TagsSpinner from "@/app/components/TagsSpinner";
 
 function makeSlug(value) {
     return String(value || "")
@@ -29,18 +30,24 @@ export default function WorkspaceAppCreateModal({
     createButtonLabel,
     successTitle,
     successMessage,
+    allowCustomSlug = false,
+    allowEmptySlug = false,
+    hidePublicPathPreview = false,
+    businessProfileOptions = [],
 }) {
     const [pageName, setPageName] = useState("");
     const [menuName, setMenuName] = useState("");
+    const [customSlug, setCustomSlug] = useState("");
+    const [businessProfileCode, setBusinessProfileCode] = useState("");
     const [saving, setSaving] = useState(false);
 
     const cleanSlug = useMemo(
-        () => makeSlug(pageName),
-        [pageName]
+        () => makeSlug(allowCustomSlug ? customSlug : pageName),
+        [allowCustomSlug, customSlug, pageName]
     );
 
     async function createPage() {
-        if (!pageName.trim() || !cleanSlug) {
+        if (!pageName.trim() || (!cleanSlug && !allowEmptySlug)) {
             showAlert({
                 title: "Nombre requerido",
                 text: "Ingresá un nombre válido para la página.",
@@ -61,7 +68,8 @@ export default function WorkspaceAppCreateModal({
                     businessId,
                     name: pageName.trim(),
                     title: pageName.trim(),
-                    slug: cleanSlug,
+                    slug: cleanSlug || null,
+                    businessProfileCode: businessProfileCode || businessProfileOptions[0]?.value || "generic",
                     navLabel: menuName.trim() || pageName.trim()
                 })
             });
@@ -80,6 +88,8 @@ export default function WorkspaceAppCreateModal({
 
             setPageName("");
             setMenuName("");
+            setCustomSlug("");
+            setBusinessProfileCode("");
 
             if (onCreated) {
                 onCreated(data);
@@ -105,6 +115,7 @@ export default function WorkspaceAppCreateModal({
     return (
         <div className="tags_modal_overlay">
             <div className="tags_modal_card tags_text_normal">
+                {saving && <TagsSpinner size={100} logoSize={52} borderSize={4} background="rgba(255,255,255,.72)" />}
 
                 <button
                     type="button"
@@ -152,12 +163,28 @@ export default function WorkspaceAppCreateModal({
                         />
                     </div>
 
-                    <div className="qr_page_status mt-3">
+                    {allowCustomSlug && (
+                        <div className="tags_modal_group">
+                            <label className="tags_modal_label">Slug público</label>
+                            <input className="tags_modal_input" value={customSlug} onChange={(e) => setCustomSlug(e.target.value)} placeholder="spa-mi-negocio" />
+                        </div>
+                    )}
+
+                    {businessProfileOptions.length > 0 && (
+                        <div className="tags_modal_group">
+                            <label className="tags_modal_label">Tipo de negocio</label>
+                            <select className="tags_modal_input" value={businessProfileCode || businessProfileOptions[0]?.value || ""} onChange={(e) => setBusinessProfileCode(e.target.value)}>
+                                {businessProfileOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+                            </select>
+                        </div>
+                    )}
+
+                    {!hidePublicPathPreview && <div className="qr_page_status mt-3">
                         Dirección pública:{" "}
                         <strong>
                             /p/{cleanSlug || "nombre-de-la-pagina"}
                         </strong>
-                    </div>
+                    </div>}
 
                 </div>
 

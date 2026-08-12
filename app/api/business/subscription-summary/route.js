@@ -217,6 +217,17 @@ export async function GET(req) {
                 ]
             );
 
+        const [turnosUsageRows] =
+            await db.query(
+                `
+                SELECT COUNT(*) AS turnos_used
+                FROM tags_turnos_apps
+                WHERE business_id = ?
+                AND status <> 'deleted'
+                `,
+                [id]
+            );
+
         const [addonRows] =
             await db.query(
                 `
@@ -285,6 +296,11 @@ export async function GET(req) {
         const portalPublicUsed =
             Number(
                 portalUsageRows[0]?.portal_public_used || 0
+            );
+
+        const turnosUsed =
+            Number(
+                turnosUsageRows[0]?.turnos_used || 0
             );
 
         return Response.json({
@@ -405,7 +421,13 @@ export async function GET(req) {
                     0,
 
                 booking_total:
-                    getAddonTotal("booking")
+                    getAddonTotal("booking"),
+
+                turnos_used:
+                    turnosUsed,
+
+                turnos_total:
+                    getAddonTotal("turnos")
             },
 
             addons:

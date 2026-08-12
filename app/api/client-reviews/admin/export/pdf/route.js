@@ -49,7 +49,8 @@ export async function GET(req) {
             `
             SELECT
                 f.*,
-                b.name AS business_name
+                COALESCE(NULLIF(b.display_name, ''), b.name) AS business_name,
+                COALESCE(NULLIF(b.logo_url, ''), f.logo_url) AS logo_url
             FROM tags_client_review_forms f
             LEFT JOIN tags_businesses b
                 ON b.id = f.business_id

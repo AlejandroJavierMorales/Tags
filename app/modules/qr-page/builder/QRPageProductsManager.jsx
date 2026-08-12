@@ -9,6 +9,14 @@ import showAlert
 import MediaUploader
     from "@/app/components/MediaUploader";
 
+const MAX_PRODUCT_IMAGES = 12;
+const DEFAULT_CATALOG_CATEGORIES = [
+    ["products", "Productos"],
+    ["services", "Servicios"],
+    ["featured", "Destacados"],
+    ["offers", "Ofertas"]
+];
+
 export default function QRPageProductsManager({
     businessId,
     pageId,
@@ -44,6 +52,17 @@ export default function QRPageProductsManager({
 
     const [saving, setSaving] =
         useState(false);
+
+    const categoryOptions = [
+        ...DEFAULT_CATALOG_CATEGORIES,
+        ...products
+            .map((product) => String(product.category || "").trim())
+            .filter(Boolean)
+            .map((category) => [category, category])
+    ].filter(
+        ([value], index, options) =>
+            options.findIndex(([candidate]) => candidate === value) === index
+    );
 
     function updateField(field, value) {
         setForm((prev) => ({
@@ -309,6 +328,7 @@ export default function QRPageProductsManager({
 
         setForm({
             id: product.id,
+            category: product.category || "products",
             title: product.title || "",
             description: product.description || "",
             price: product.price || "",
@@ -440,8 +460,9 @@ export default function QRPageProductsManager({
                     <div className="qr_page_field">
                         <label>Categoría</label>
 
-                        <select
-                            className="qr_page_select"
+                        <input
+                            className="qr_page_input"
+                            list={`qr_page_product_categories_${pageId}`}
                             value={form.category}
                             onChange={(e) =>
                                 updateField(
@@ -449,23 +470,13 @@ export default function QRPageProductsManager({
                                     e.target.value
                                 )
                             }
-                        >
-                            <option value="products">
-                                Productos
-                            </option>
-
-                            <option value="services">
-                                Servicios
-                            </option>
-
-                            <option value="featured">
-                                Destacados
-                            </option>
-
-                            <option value="offers">
-                                Ofertas
-                            </option>
-                        </select>
+                            placeholder="Ej.: Cabañas, Servicios, Productos"
+                        />
+                        <datalist id={`qr_page_product_categories_${pageId}`}>
+                            {categoryOptions.map(([value, label]) => (
+                                <option key={value} value={value}>{label}</option>
+                            ))}
+                        </datalist>
                     </div>
 
                     <div className="qr_page_field">
@@ -503,11 +514,11 @@ export default function QRPageProductsManager({
                         </label>
 
                         <small>
-                            Máximo 4 imágenes
+                            Máximo {MAX_PRODUCT_IMAGES} imágenes
                         </small>
 
                         {
-                            form.images_json.length < 4 && (
+                            form.images_json.length < MAX_PRODUCT_IMAGES && (
                                 <MediaUploader
                                     businessId={businessId}
                                     value=""

@@ -40,6 +40,9 @@ export default function QRPageFooter({
             page?.footer_config
         );
 
+    const themeControlsColors =
+        Number(page?.global_styles?.theme_override) === 0;
+
     if (footer.showFooter === false) {
         return null;
     }
@@ -56,9 +59,9 @@ export default function QRPageFooter({
             "title"
         ),
         color:
-            footer.titleColor ||
-            footer.textColor ||
-            "var(--qr-text)"
+            themeControlsColors
+                ? "var(--qr-text)"
+                : footer.titleColor || footer.textColor || "var(--qr-text)"
     };
 
     const textStyle = {
@@ -67,8 +70,9 @@ export default function QRPageFooter({
             "text"
         ),
         color:
-            footer.textColor ||
-            "var(--qr-text)"
+            themeControlsColors
+                ? "var(--qr-text)"
+                : footer.textColor || "var(--qr-text)"
     };
 
     const linkStyle = {
@@ -77,9 +81,9 @@ export default function QRPageFooter({
             "links"
         ),
         color:
-            footer.linkColor ||
-            footer.textColor ||
-            "var(--qr-text)"
+            themeControlsColors
+                ? "var(--qr-primary)"
+                : footer.linkColor || footer.textColor || "var(--qr-text)"
     };
 
     const copyStyle = {
@@ -88,20 +92,22 @@ export default function QRPageFooter({
             "copy"
         ),
         color:
-            footer.copyColor ||
-            footer.textColor ||
-            "var(--qr-muted)"
+            themeControlsColors
+                ? "var(--qr-muted)"
+                : footer.copyColor || footer.textColor || "var(--qr-muted)"
     };
 
     const footerStyle = {
         backgroundColor:
-            footer.backgroundColor ||
-            "var(--qr-surface-alt)",
+            themeControlsColors
+                ? "var(--qr-surface-alt)"
+                : footer.backgroundColor || "var(--qr-surface-alt)",
         color:
-            footer.textColor ||
-            "var(--qr-text)",
+            themeControlsColors
+                ? "var(--qr-text)"
+                : footer.textColor || "var(--qr-text)",
         borderTop:
-            `1px solid ${footer.borderColor || "var(--qr-border)"}`,
+            `1px solid ${themeControlsColors ? "var(--qr-border)" : footer.borderColor || "var(--qr-border)"}`,
         textAlign:
             footer.alignment ||
             "center"

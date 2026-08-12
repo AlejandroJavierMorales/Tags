@@ -41,6 +41,11 @@ export default function PortalFeatures({
                                 >
                                     {feature.actionLabel}
                                 </button>
+                                {feature.secondaryActionLabel && feature.onSecondaryClick && (
+                                    <button type="button" className="tags_portal_feature_btn secondary" onClick={feature.onSecondaryClick}>
+                                        {feature.secondaryActionLabel}
+                                    </button>
+                                )}
                             </div>
                         ))
                     ) : (
@@ -82,6 +87,11 @@ export default function PortalFeatures({
                             >
                                 {feature.actionLabel}
                             </button>
+                            {feature.secondaryActionLabel && feature.onSecondaryClick && (
+                                <button type="button" className="tags_portal_feature_btn secondary" onClick={feature.onSecondaryClick}>
+                                    {feature.secondaryActionLabel}
+                                </button>
+                            )}
                         </div>
                     ))}
                 </div>

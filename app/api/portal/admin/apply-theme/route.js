@@ -75,6 +75,11 @@ export async function POST(req) {
 
             SET
                 p.theme_id = ?,
+                p.global_styles = JSON_SET(
+                    COALESCE(p.global_styles, JSON_OBJECT()),
+                    '$.theme_override',
+                    0
+                ),
                 p.header_config = JSON_REMOVE(
                     COALESCE(p.header_config, JSON_OBJECT()),
                     '$.backgroundColor',
@@ -92,7 +97,6 @@ export async function POST(req) {
                 AND r.business_id = ?
                 AND r.page_id IS NOT NULL
                 AND r.is_visible = 1
-                AND COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p.global_styles, '$.theme_override')), '0') <> '1'
             `,
             [
                 themeId,
@@ -115,7 +119,6 @@ export async function POST(req) {
         AND r.business_id = ?
         AND r.is_visible = 1
         AND p.page_type = 'client_reviews'
-        AND COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p.global_styles, '$.theme_override')), '0') <> '1'
     `,
             [
                 themeId,

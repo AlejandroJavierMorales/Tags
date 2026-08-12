@@ -1,0 +1,30 @@
+.turnos_public_page { min-height: 70vh; padding: 4rem 1rem; background: var(--qr-bg, #f7f7f8); color: var(--qr-text, #202124); }
+.turnos_public_brand_header { max-width: 920px; margin: 0 auto 1.5rem; padding: 1rem 1.25rem; border: 1px solid var(--qr-border, #e5e7eb); border-radius: var(--qr-radius, 1rem); background: var(--qr-surface, #fff); color: var(--qr-text, #202124); box-shadow: var(--qr-shadow, 0 8px 24px rgba(0,0,0,.06)); }
+.turnos_public_brand_header div { display:flex; flex-direction:column; gap:.2rem; }
+.turnos_public_brand_header strong { font-size:1.05rem; }
+.turnos_public_brand_header span { color:var(--qr-muted,#667085); font-size:.82rem; }
+.turnos_public_hero, .turnos_public_card { max-width: 920px; margin: 0 auto 1.5rem; }
+.turnos_public_hero { padding: 1rem; text-align: center; }
+.turnos_public_kicker { text-transform: uppercase; letter-spacing: .12em; font-size: .75rem; opacity: .7; }
+.turnos_public_card { padding: 1.5rem; border-radius: 1rem; background: var(--qr-surface, #fff); box-shadow: 0 12px 36px rgba(0,0,0,.08); }
+.turnos_public_grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+.turnos_public_grid label, .turnos_public_customer { display: grid; gap: .4rem; }
+.turnos_public_grid select, .turnos_public_grid input, .turnos_public_customer input { padding: .75rem; border: 1px solid #d8dce2; border-radius: .6rem; background: #fff; }
+.turnos_public_primary { margin-top: 1rem; padding: .8rem 1.2rem; border: 0; border-radius: .6rem; background: var(--qr-primary, #111827); color: var(--qr-primary-text, #fff); cursor: pointer; }
+.turnos_public_slots { display: flex; flex-wrap: wrap; gap: .6rem; margin: 1.25rem 0; }
+.turnos_public_slots button { padding: .7rem 1rem; border: 1px solid var(--qr-primary, #111827); border-radius: .6rem; background: transparent; cursor: pointer; }
+.turnos_public_slot_legend { display:flex; flex-wrap:wrap; gap:.8rem; margin:1rem 0 .25rem; color:var(--qr-text-muted,#667085); font-size:.8rem; }
+.turnos_public_slot_legend span { display:inline-flex; align-items:center; gap:.35rem; }
+.turnos_public_slot_legend i { width:.7rem; height:.7rem; border-radius:50%; background:#32a852; }
+.turnos_public_slot_legend i.is-pending { background:#e8b12b; }
+.turnos_public_slot_legend i.is-confirmed { background:#e87825; }
+.turnos_public_slot_legend i.is-blocked { background:#cf3d3d; }
+.turnos_public_slot { color:var(--qr-text,#202124); }
+.turnos_public_slot.is-available { background:#e9f7ed; border-color:#32a852; }
+.turnos_public_slot.is-pending { background:#fff7dc; border-color:#e8b12b; color:#86620b; cursor:not-allowed; }
+.turnos_public_slot.is-confirmed { background:#fff0e7; border-color:#e87825; color:#a44a0c; cursor:not-allowed; }
+.turnos_public_slot.is-blocked { background:#fbeaea; border-color:#cf3d3d; color:#a52828; cursor:not-allowed; }
+.turnos_public_customer { gap: .7rem; margin-top: 1.5rem; }
+.turnos_public_message { margin-top: 1rem; padding: .75rem; border-radius: .5rem; background: #eef4ff; }
+@media (max-width: 700px) { .turnos_public_grid { grid-template-columns: 1fr; } }
+.turnos_public_slot.is-selected{outline:3px solid var(--tags-turnos-selection,#172f25);outline-offset:2px}.turnos_public_confirmation,.turnos_public_receipt{margin-top:18px;padding:18px;border:1px solid #dce7e1;border-radius:16px;background:#f5faf7}.turnos_public_confirmation h3,.turnos_public_receipt h3{margin:0 0 8px}.turnos_public_receipt>a{display:inline-flex;margin-top:8px;padding:10px 14px;border-radius:10px;background:#173d2d;color:#fff;text-decoration:none;font-weight:800}

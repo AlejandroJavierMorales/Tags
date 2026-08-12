@@ -59,11 +59,14 @@ import showAlert
     from "@/app/components/showAlert";
 
 import "@/app/modules/store/styles/store-public.css";
+import { getStoreReturnUrl, withStoreReturnUrl } from "../../lib/storePublicContext";
 
 export default function StoreCartPageClient({
     store,
     settings = {}
 }) {
+
+    const storeReturnUrl = getStoreReturnUrl(store);
 
     const [items, setItems] =
         useState([]);
@@ -331,7 +334,7 @@ export default function StoreCartPageClient({
             }
 
             router.push(
-                `/p/${store.slug}/checkout`
+                withStoreReturnUrl(`/p/${store.slug}/checkout`, store)
             );
 
         } catch (err) {
@@ -357,9 +360,11 @@ export default function StoreCartPageClient({
             style={pageStyle}
         >
 
-            <StoreHeaderBlock
-                entity={store}
-            />
+            {!storeReturnUrl && (
+                <StoreHeaderBlock
+                    entity={store}
+                />
+            )}
 
             <section className="store_cart_page_shell">
                 <div className="store_cart_page_inner">
@@ -372,7 +377,7 @@ export default function StoreCartPageClient({
                                 style={continueShoppingButtonWrapperStyle}
                             >
                                 <Link
-                                    href={`/p/${store.slug}`}
+                                    href={storeReturnUrl || `/p/${store.slug}`}
                                     className={[
                                         "store_detail_back_link",
                                         "store_cart_continue_shopping_button",

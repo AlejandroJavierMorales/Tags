@@ -8,10 +8,6 @@ export const dynamic = "force-dynamic";
 
 import { db } from "@/app/lib/tags-db";
 
-function normalizePath(slug) {
-    return `/${String(slug || "").replace(/^\/+/, "")}`;
-}
-
 export async function GET(req) {
     try {
         const { searchParams } =
@@ -95,11 +91,16 @@ export async function GET(req) {
                 SELECT
                     p.id,
                     p.business_id,
+                    p.qr_code_id,
                     p.page_type,
                     p.slug,
+                    p.slug_locked,
                     p.title,
                     p.status,
                     p.created_at,
+
+                    q.code AS qr_code,
+                    q.label AS qr_label,
 
                     a.code AS addon_code,
                     a.name AS addon_name,
@@ -107,6 +108,10 @@ export async function GET(req) {
                     a.page_type AS addon_page_type
 
                 FROM tags_qr_pages p
+
+                LEFT JOIN tags_qr_codes q
+                    ON q.id = p.qr_code_id
+                    AND q.business_id = p.business_id
 
                 LEFT JOIN tags_addons a
                     ON a.page_type = p.page_type
@@ -121,7 +126,9 @@ export async function GET(req) {
                 [businessId]
             );
 
-        for (const page of pages) {
+        /* Las rutas se incorporan al Portal de forma explícita desde el dashboard.
+           Consultar esta API no debe modificar la composición del sitio. */
+        /* for (const page of pages) {
             const path =
                 normalizePath(page.slug);
 
@@ -177,7 +184,7 @@ export async function GET(req) {
                     ]
                 );
             }
-        }
+        } */
 
         const [routes] =
             await db.query(
@@ -189,6 +196,9 @@ export async function GET(req) {
                     p.slug AS page_slug,
                     p.title AS page_title,
                     p.status AS page_status,
+
+                    q.code AS qr_code,
+                    q.label AS qr_label,
 
                     a.code AS addon_code,
                     a.name AS addon_name,
@@ -204,10 +214,13 @@ export async function GET(req) {
                     ON a.page_type = p.page_type
                     AND a.addon_type = 'page'
 
+                LEFT JOIN tags_qr_codes q
+                    ON q.id = p.qr_code_id
+                    AND q.business_id = r.business_id
+
                 WHERE r.portal_id = ?
 
                 ORDER BY
-                    r.is_home DESC,
                     r.sort_order ASC,
                     r.id ASC
                 `,
@@ -218,7 +231,8 @@ export async function GET(req) {
             ok: true,
             business,
             portal,
-            routes
+            routes,
+            pages
         });
 
     } catch (err) {

@@ -1,0 +1,3 @@
+.tags_dashboard_qr_inventory_toggle{border:1px solid #acd6bf;border-radius:10px;background:#fff;color:#087443;padding:9px 13px;font-weight:750;cursor:pointer;transition:.18s ease}
+.tags_dashboard_qr_inventory_toggle:hover{background:#eaf8f1;transform:translateY(-1px)}
+@media(max-width:640px){.tags_portal_section_header{align-items:flex-start;gap:12px}.tags_dashboard_qr_inventory_toggle{flex:0 0 auto;padding:8px 10px;font-size:.78rem}}

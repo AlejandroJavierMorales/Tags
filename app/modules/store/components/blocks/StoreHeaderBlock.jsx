@@ -12,6 +12,7 @@ import { getCartCount } from "../../lib/storeCart";
 import { getStoreSessionId } from "../../lib/storeSession";
 
 import { FiSearch } from "react-icons/fi";
+import { getStoreReturnUrl, withStoreReturnUrl } from "../../lib/storePublicContext";
 
 
 
@@ -63,6 +64,9 @@ export default function StoreHeaderBlock({
 
     const logoPosition =
         content.logoPosition || "left";
+
+    const embeddedReturnUrl = getStoreReturnUrl(entity);
+    const compactMode = entity?.embedded_mode === "directory";
 
 
 
@@ -201,6 +205,9 @@ export default function StoreHeaderBlock({
         <header
             className={[
                 "store_header_block",
+                compactMode
+                    ? "store_header_compact"
+                    : "",
                 sticky
                     ? "store_header_sticky"
                     : ""
@@ -218,7 +225,7 @@ export default function StoreHeaderBlock({
             >
 
                 <Link
-                    href={`/p/${entity?.slug}`}
+                    href={embeddedReturnUrl || `/p/${entity?.slug}`}
                     className="store_header_brand"
                 >
 
@@ -331,11 +338,9 @@ export default function StoreHeaderBlock({
                                 aria-label="Favoritos"
                                 style={getTextStyle("button")}
                                 onClick={() => {
-                                    window.history.replaceState(
-                                        null,
-                                        "",
-                                        `/p/${entity?.slug}#favorites`
-                                    );
+                                    if (!embeddedReturnUrl) {
+                                        window.history.replaceState(null, "", `/p/${entity?.slug}#favorites`);
+                                    }
 
                                     window.dispatchEvent(
                                         new CustomEvent(
@@ -361,7 +366,7 @@ export default function StoreHeaderBlock({
 
                         {showCart && (
                             <Link
-                                href={`/p/${entity?.slug}/cart`}
+                                href={withStoreReturnUrl(`/p/${entity?.slug}/cart`, entity)}
                                 className="store_header_cart_btn"
                                 style={getTextStyle("button")}
                             >

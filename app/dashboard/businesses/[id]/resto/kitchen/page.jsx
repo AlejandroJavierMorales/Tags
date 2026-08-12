@@ -32,7 +32,7 @@ export default async function RestoKitchenPage({
     if (!access.allowed) {
         redirect(
             access.status === 401
-                ? "/login"
+                ? "/resto/login"
                 : `/dashboard/businesses/${id}/resto`
         );
     }

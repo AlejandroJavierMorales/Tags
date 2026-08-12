@@ -69,12 +69,23 @@ export default function PortalFooter({
     const tokens =
         portal?.theme?.css_tokens || {};
 
+    const footerBackground =
+        tokens["--qr-footer-bg"] ||
+        `color-mix(in srgb, ${tokens["--qr-bg"] || "#f7f8fa"} 22%, #06100b)`;
+
+    const footerText =
+        tokens["--qr-footer-text"] ||
+        "#f4faf6";
+
+    const footerLink =
+        tokens["--qr-footer-link"] ||
+        tokens["--qr-primary"] ||
+        "#7ee2a8";
+
     const footerStyle = {
         ...tokens,
-        background:
-            config.backgroundColor || "var(--qr-surface)",
-        color:
-            config.textColor || "var(--qr-text)",
+        background: footerBackground,
+        color: footerText,
         textAlign:
             config.align || undefined,
         borderTop:
@@ -112,6 +123,7 @@ export default function PortalFooter({
         >
             <div
                 className={`tags_portal_public_footer_inner cols_${config.columns || "3"}`}
+                style={{ "--portal-footer-link": footerLink }}
             >
                 <div className="tags_portal_public_footer_col tags_portal_public_footer_identity">
                     {config.showLogo !== false && identity.logo_url && (
@@ -141,7 +153,7 @@ export default function PortalFooter({
                             <Link
                                 style={{
                                     color:
-                                        config.linkColor || "var(--qr-primary)"
+                                        footerLink
                                 }}
                                 key={route.id}
                                 href={`/p/${route.page_slug}`}

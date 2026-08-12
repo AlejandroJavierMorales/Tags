@@ -75,7 +75,7 @@ export const tagsSiteConfig = {
       "+543546562855",
 
     web:
-      "https://www.tags.com.ar",
+      "https://tags.com.ar",
 
     address:
       "Los Reartes, Valle de Calamuchita, Córdoba, Argentina",

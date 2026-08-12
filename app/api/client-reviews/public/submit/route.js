@@ -29,7 +29,14 @@ export async function POST(req) {
     let transactionStarted = false;
 
     try {
-        const body = await req.json();
+        const body = await req.json().catch(() => null);
+
+        if (!body) {
+            return Response.json(
+                { error: "Solicitud inválida" },
+                { status: 400 }
+            );
+        }
 
         const {
             formId,
@@ -73,6 +80,47 @@ export async function POST(req) {
                 { error: "Formulario no encontrado" },
                 { status: 404 }
             );
+        }
+
+        const cleanCustomerName = clean(customer_name);
+        const cleanCustomerEmail = clean(customer_email).toLowerCase();
+        const cleanCustomerPhone = clean(customer_phone).replace(/\D/g, "");
+        const cleanGeneralComment = clean(general_comment);
+
+        if (cleanCustomerName.length < 2) {
+            return Response.json({ error: "El nombre es obligatorio" }, { status: 400 });
+        }
+
+        if (!/^\S+@\S+\.\S+$/.test(cleanCustomerEmail)) {
+            return Response.json({ error: "Ingresá un email válido" }, { status: 400 });
+        }
+
+        if (cleanCustomerPhone && (cleanCustomerPhone.length < 8 || cleanCustomerPhone.length > 15)) {
+            return Response.json({ error: "El WhatsApp no tiene un formato válido" }, { status: 400 });
+        }
+
+        if (cleanGeneralComment.length < 10) {
+            return Response.json({ error: "La opinión general debe tener al menos 10 caracteres" }, { status: 400 });
+        }
+
+        const [visibleQuestions] = await conn.query(
+            `SELECT id,is_required
+             FROM tags_client_review_questions
+             WHERE form_id = ? AND is_visible = 1`,
+            [form.id]
+        );
+        const validQuestionIds = new Set(visibleQuestions.map(question => Number(question.id)));
+        const normalizedAnswers = answers
+            .map(answer => ({
+                question_id: Number(answer.question_id),
+                rating: Number(answer.rating),
+                comment: clean(answer.comment) || null
+            }))
+            .filter(answer => validQuestionIds.has(answer.question_id));
+        const answeredIds = new Set(normalizedAnswers.filter(answer => answer.rating >= 1 && answer.rating <= 5).map(answer => answer.question_id));
+        const missingRequired = visibleQuestions.some(question => Number(question.is_required) === 1 && !answeredIds.has(Number(question.id)));
+        if (missingRequired) {
+            return Response.json({ error: "Respondé todas las preguntas obligatorias" }, { status: 400 });
         }
 
         let verifiedPurchase = 0;
@@ -138,14 +186,14 @@ export async function POST(req) {
             reviewTokenId = tokenRow.id;
         }
 
-        const ratings = answers
+        const ratings = normalizedAnswers
             .map(answer => Number(answer.rating))
             .filter(value =>
                 value >= 1 &&
                 value <= 5
             );
 
-        if (ratings.length !== answers.length) {
+        if (!ratings.length || ratings.length !== normalizedAnswers.length) {
             return Response.json(
                 {
                     error:
@@ -268,10 +316,10 @@ export async function POST(req) {
                 form.business_id,
                 form.qr_code_id,
                 form.page_id,
-                customer_name,
-                customer_email,
-                customer_phone,
-                general_comment,
+                cleanCustomerName,
+                cleanCustomerEmail,
+                cleanCustomerPhone || null,
+                cleanGeneralComment,
                 average,
                 minRating,
                 maxRating,
@@ -291,7 +339,7 @@ export async function POST(req) {
         const responseId =
             responseResult.insertId;
 
-        for (const answer of answers) {
+        for (const answer of normalizedAnswers) {
             await conn.query(
                 `
                 INSERT INTO tags_client_review_answers (

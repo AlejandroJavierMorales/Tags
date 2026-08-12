@@ -122,48 +122,48 @@ export async function installStoreTemplate(
         const blocks =
             sectionData.blocks || [];
 
-        const module =
-            getStoreModule(
-                blockData.block_type
-            );
-
-        const content =
-            blockData.content ||
-            module?.defaultContent ||
-            {};
-
-        const styles =
-            blockData.styles ||
-            module?.defaultStyles ||
-            {};
-
-        const animation =
-            blockData.animation ||
-            module?.defaultAnimation ||
-            {};
-
         for (
             const blockData
             of blocks
         ) {
 
+            const module =
+                getStoreModule(
+                    blockData.block_type
+                );
+
+            const content =
+                blockData.content ??
+                module?.defaultContent ??
+                {};
+
+            const styles =
+                blockData.styles ??
+                module?.defaultStyles ??
+                {};
+
+            const animation =
+                blockData.animation ??
+                module?.defaultAnimation ??
+                {};
+
             await connection.execute(
                 `
-                INSERT INTO
-                tags_store_blocks
-                (
-                    section_id,
-                    block_type,
-                    title,
-                    content_json,
-                    styles_json,
-                    animation_json,
-                    is_visible,
-                    sort_order
-                )
-                VALUES
-                (?, ?, ?, ?, ?, ?, ?, ?)
-                `,
+        INSERT INTO
+        tags_store_blocks
+        (
+            section_id,
+            block_type,
+            title,
+            content_json,
+            styles_json,
+            animation_json,
+            is_visible,
+            sort_order
+        )
+        VALUES
+        (?, ?, ?, ?, ?, ?, ?, ?)
+        `,
                 [
                     sectionId,
                     blockData.block_type,

@@ -32,6 +32,19 @@ export async function GET(req) {
         const store = stores?.[0];
         if (!store) return Response.json({ error: "Resto no encontrado" }, { status: 404 });
 
+        const [categoryRows] = await db.query(`
+            SELECT id, name, slug
+            FROM tags_store_categories
+            WHERE store_id = ? AND is_visible = 1
+            ORDER BY sort_order ASC, name ASC
+        `, [store.id]);
+        const [productRows] = await db.query(`
+            SELECT id, title, category_id, is_featured, is_offer, is_recommended, is_new
+            FROM tags_store_products
+            WHERE store_id = ? AND is_visible = 1
+            ORDER BY title ASC
+        `, [store.id]);
+
         const [sections] = await db.query(`
             SELECT * FROM tags_store_sections
             WHERE store_id = ?
@@ -77,6 +90,8 @@ export async function GET(req) {
                 animation_json: parse(block.animation_json)
             })),
             hasReviews,
+            categories: categoryRows,
+            products: productRows,
             modules
         });
     } catch (error) {

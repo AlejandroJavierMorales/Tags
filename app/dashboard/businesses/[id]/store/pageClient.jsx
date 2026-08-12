@@ -317,7 +317,12 @@ export default function StoreAdminClient({
                             description: form.description,
 
                             logo_url: form.logo_url,
+                            logo_storage_path: form.logo_storage_path,
+                            logo_og_storage_path: form.logo_og_storage_path,
+
                             cover_url: form.cover_url,
+                            cover_storage_path: form.cover_storage_path,
+                            cover_og_storage_path: form.cover_og_storage_path,
 
                             whatsapp: form.whatsapp,
                             email: form.email,
@@ -329,11 +334,8 @@ export default function StoreAdminClient({
                             seo_title: form.seo_title,
                             seo_description: form.seo_description,
 
-                            settings_json:
-                                form.settings_json || {},
-
-                            styles_json:
-                                form.styles_json || {}
+                            settings_json: form.settings_json || {},
+                            styles_json: form.styles_json || {}
                         })
                     }
                 );
@@ -1010,19 +1012,44 @@ export default function StoreAdminClient({
                                     Se mostrará en el encabezado de la tienda.
                                 </small>
 
-                                <MediaUploader
-                                    businessId={businessId}
-                                    value={form.logo_url || ""}
-                                    folder="store/logo"
-                                    accept="image/*"
-                                    label="Subir logo"
-                                    onChange={(media) =>
-                                        updateFormField(
-                                            "logo_url",
-                                            media?.url || null
-                                        )
-                                    }
-                                />
+                                <div className="qr_page_field">
+                                    <label>Logo</label>
+
+                                    <small className="qr_page_help">
+                                        Se mostrará en el encabezado de la tienda.
+                                    </small>
+
+                                    <MediaUploader
+                                        businessId={businessId}
+                                        value={form.logo_url || ""}
+                                        module="store"
+                                        variant="logo"
+                                        fileName="logo"
+                                        replace
+                                        previousStoragePath={form.logo_storage_path || ""}
+                                        previousOgStoragePath={form.logo_og_storage_path || ""}
+                                        accept="image/*"
+                                        label="Subir logo"
+                                        onChange={(media) => {
+
+                                            updateFormField(
+                                                "logo_url",
+                                                media?.url || null
+                                            );
+
+                                            updateFormField(
+                                                "logo_storage_path",
+                                                media?.storagePath || null
+                                            );
+
+                                            updateFormField(
+                                                "logo_og_storage_path",
+                                                media?.ogStoragePath || null
+                                            );
+
+                                        }}
+                                    />
+                                </div>
                             </div>
 
                             <div className="qr_page_field">
@@ -1032,19 +1059,44 @@ export default function StoreAdminClient({
                                     Se mostrará como imagen principal de la tienda.
                                 </small>
 
-                                <MediaUploader
-                                    businessId={businessId}
-                                    value={form.cover_url || ""}
-                                    folder="store/cover"
-                                    accept="image/*"
-                                    label="Subir portada"
-                                    onChange={(media) =>
-                                        updateFormField(
-                                            "cover_url",
-                                            media?.url || null
-                                        )
-                                    }
-                                />
+                                <div className="qr_page_field">
+                                    <label>Imagen de portada</label>
+
+                                    <small className="qr_page_help">
+                                        Se mostrará como imagen principal de la tienda.
+                                    </small>
+
+                                    <MediaUploader
+                                        businessId={businessId}
+                                        value={form.cover_url || ""}
+                                        module="store"
+                                        variant="hero"
+                                        fileName="cover"
+                                        replace
+                                        previousStoragePath={form.cover_storage_path || ""}
+                                        previousOgStoragePath={form.cover_og_storage_path || ""}
+                                        accept="image/*"
+                                        label="Subir portada"
+                                        onChange={(media) => {
+
+                                            updateFormField(
+                                                "cover_url",
+                                                media?.url || null
+                                            );
+
+                                            updateFormField(
+                                                "cover_storage_path",
+                                                media?.storagePath || null
+                                            );
+
+                                            updateFormField(
+                                                "cover_og_storage_path",
+                                                media?.ogStoragePath || null
+                                            );
+
+                                        }}
+                                    />
+                                </div>
                             </div>
                             {/* permitir o No Stock Negativo */}
                             <label className="qr_page_checkbox">

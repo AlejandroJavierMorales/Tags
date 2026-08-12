@@ -15,6 +15,7 @@ import { notFound }
 
 import StoreProductDetailClient
     from "@/app/modules/store/components/public/StoreProductDetailClient";
+import RestoProductDetailClient from "@/app/modules/resto/components/public/RestoProductDetailClient";
 
 import StoreFeaturedProductsBlock
     from "@/app/modules/store/components/blocks/StoreFeaturedProductsBlock";
@@ -31,6 +32,8 @@ import {
 
 
 import "@/app/modules/store/styles/store-public.css";
+import { normalizeStoreReturnUrl } from "@/app/modules/store/lib/storePublicContext";
+import { getDirectoryThemeStyleForBusiness } from "@/app/modules/directory/lib/getDirectoryThemeStyleForBusiness";
 
 export const dynamic =
     "force-dynamic";
@@ -119,8 +122,11 @@ export async function generateMetadata({
 
 
 export default async function Page({
-    params
+    params,
+    searchParams
 }) {
+    const query = await Promise.resolve(searchParams || {});
+    const returnUrl = normalizeStoreReturnUrl(query.returnTo);
     const data =
         await getStorePublicProductDetail({
             slug: params.slug,
@@ -142,15 +148,17 @@ export default async function Page({
     const productUrl =
         `${storeUrl}/products/${params.productId}`;
 
-    const portalContext = await getPublicPortalContext({
-        businessId: data.store.business_id,
-        pageId: data.store.public_page_id || data.store.page_id,
-        slug: params.slug
-    });
+    const portalContext = returnUrl
+        ? { hasPortal: false, portal: null, routes: [], currentRoute: null }
+        : await getPublicPortalContext({
+            businessId: data.store.business_id,
+            pageId: data.store.public_page_id || data.store.page_id,
+            slug: params.slug
+        });
 
     const pageStyles = data.store.page_global_styles || {};
     const hasThemeOverride = pageStyles.theme_override === true;
-    const renderedStore = portalContext.hasPortal && !hasThemeOverride
+    const themedStore = portalContext.hasPortal && !hasThemeOverride
         ? {
             ...data.store,
             theme_css_vars: {
@@ -159,6 +167,21 @@ export default async function Page({
             }
         }
         : data.store;
+    const directoryThemeStyle = returnUrl
+        ? await getDirectoryThemeStyleForBusiness(data.store.business_id)
+        : {};
+    const renderedStore = returnUrl
+        ? {
+            ...data.store,
+            embedded_mode: "directory",
+            embedded_return_url: returnUrl,
+            theme_css_vars: {
+                ...directoryThemeStyle,
+                ...(data.store.theme_css_vars || {})
+            }
+        }
+        : themedStore;
+    const isResto = data.store.app_type === "resto";
 
     /*  UI  */
 
@@ -279,23 +302,30 @@ export default async function Page({
                 }}
             />
 
-            {portalContext.hasPortal && <PortalHeader portal={portalContext.portal} routes={portalContext.routes} currentRoute={portalContext.currentRoute} />}
+            {portalContext.hasPortal && !returnUrl && <PortalHeader portal={portalContext.portal} routes={portalContext.routes} currentRoute={portalContext.currentRoute} />}
             <div
-                className="store_public_page"
+                className={isResto ? "resto_public_page" : "store_public_page"}
                 style={renderedStore?.theme_css_vars || {}}
             >
-                <StoreProductDetailClient
-                    store={renderedStore}
-                    product={data.product}
-                    images={data.images}
-                    variants={data.variants}
-                    variantOptions={data.variantOptions}
-                    settings={
-                        data.store?.settings_json?.pageEditors?.product_detail || {}
-                    }
-                />
+                {isResto
+                    ? <RestoProductDetailClient
+                        resto={renderedStore}
+                        product={data.product}
+                        images={data.images}
+                        variants={data.variants}
+                        variantOptions={data.variantOptions}
+                        settings={data.store?.settings_json?.pageEditors?.product_detail || {}}
+                    />
+                    : <StoreProductDetailClient
+                        store={renderedStore}
+                        product={data.product}
+                        images={data.images}
+                        variants={data.variants}
+                        variantOptions={data.variantOptions}
+                        settings={data.store?.settings_json?.pageEditors?.product_detail || {}}
+                    />}
 
-                <StoreFeaturedProductsBlock
+                {!isResto && !returnUrl && <StoreFeaturedProductsBlock
                     entity={renderedStore}
                     content={{
                         mode: "related",
@@ -340,9 +370,9 @@ export default async function Page({
                         buttonIcon: false,
                         buttonFullWidth: false
                     }}
-                />
+                />}
             </div>
-            {portalContext.hasPortal && <PortalFooter portal={portalContext.portal} routes={portalContext.routes} currentRoute={portalContext.currentRoute} />}
+            {portalContext.hasPortal && !returnUrl && <PortalFooter portal={portalContext.portal} routes={portalContext.routes} currentRoute={portalContext.currentRoute} />}
         </>
     );
 }

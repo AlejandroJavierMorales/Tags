@@ -12,10 +12,13 @@ import { getPublicResto }
 
 import RestoCurrentOrder
     from "@/app/modules/resto/components/public/RestoCurrentOrder";
+import { normalizeRestoReturnUrl } from "@/app/modules/resto/lib/restoPublicContext";
+import { getDirectoryThemeStyleForBusiness } from "@/app/modules/directory/lib/getDirectoryThemeStyleForBusiness";
 
 export default async function Page({
 
-    params
+    params,
+    searchParams
 
 }) {
 
@@ -27,10 +30,13 @@ export default async function Page({
 
     } = await params;
 
+    const query = await Promise.resolve(searchParams || {});
+    const returnUrl = normalizeRestoReturnUrl(query.returnTo);
+
     const restoData =
         await getPublicResto(
             slug,
-            {}
+            { allowDirectoryEmbedding: Boolean(returnUrl) }
         );
 
     if (!restoData?.store) {
@@ -39,12 +45,27 @@ export default async function Page({
 
     }
 
+    const directoryThemeStyle = returnUrl
+        ? await getDirectoryThemeStyleForBusiness(restoData.store.business_id)
+        : {};
+    const renderedResto = returnUrl
+        ? {
+            ...restoData.store,
+            embedded_mode: "directory",
+            embedded_return_url: returnUrl,
+            theme_css_vars: {
+                ...directoryThemeStyle,
+                ...(restoData.store.theme_css_vars || {})
+            }
+        }
+        : restoData.store;
+
     return (
 
         <div
             className="resto_public_page"
             style={
-                restoData.store.theme_css_vars ||
+                renderedResto.theme_css_vars ||
                 {}
             }
         >
@@ -55,7 +76,7 @@ export default async function Page({
 
                 sessionToken={sessionToken}
 
-                resto={restoData.store}
+                resto={renderedResto}
 
             />
 

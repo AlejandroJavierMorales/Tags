@@ -1,0 +1,48 @@
+.tags_turnos_booking_customer_selector > button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-height: 44px;
+    margin: 0;
+    padding: 8px 13px;
+    border: 0;
+    border-radius: 9px;
+    background: #22a35a;
+    color: #fff;
+    font-weight: 800;
+    box-shadow: none;
+}
+
+.tags_turnos_booking_customer_modal {
+    width: min(760px, 100%);
+    color: #17231e;
+}
+
+.tags_turnos_booking_customer_modal .tags_turnos_booking_customer_close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    background: #edf3ef;
+    color: #355245;
+    box-shadow: none;
+}
+
+.tags_turnos_booking_customer_modal .tags_turnos_booking_customer_save {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    padding: 8px 13px;
+    border: 0;
+    border-radius: 9px;
+    background: #22a35a;
+    color: #fff;
+    font-weight: 800;
+}
+
+.tags_turnos_booking_customer_modal .tags_turnos_booking_customer_save:disabled {
+    background: #c7d3cc;
+    color: #6d7b73;
+}

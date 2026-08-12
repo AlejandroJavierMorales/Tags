@@ -127,7 +127,7 @@ export default function PortalHeader({
             >
 
                 <Link
-                    href={`/p/${portal?.slug}`}
+                    href={`/${portal?.slug}`}
                     className="tags_portal_public_brand"
                 >
                     {config.showLogo !== false && logoUrl && (
@@ -135,8 +135,8 @@ export default function PortalHeader({
                             <Image
                                 src={logoUrl}
                                 alt={title}
-                                width={52}
-                                height={52}
+                                width={150}
+                                height={76}
                             />
                         </span>
                     )}

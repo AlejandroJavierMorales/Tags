@@ -33,7 +33,9 @@ export default function QRPageBuilderClient({
     businessId,
     qrCodeId,
     business,
-    session
+    session,
+    editorTitle = "Editar QR-Page",
+    publicUrlOverride = null
 }) {
 
     const [loading, setLoading] =
@@ -569,7 +571,7 @@ export default function QRPageBuilderClient({
         qrPage.page;
 
     const publicUrl =
-        `/p/${page.slug}`;
+        publicUrlOverride || `/p/${page.slug}`;
 
     function updateFooterConfig(field, value) {
 
@@ -846,7 +848,7 @@ export default function QRPageBuilderClient({
 
                 <div>
                     <h1 className="qr_page_title">
-                        Editar QR-Page
+                        {editorTitle}
                     </h1>
 
                     <p className="qr_page_subtitle">
@@ -2684,6 +2686,7 @@ export default function QRPageBuilderClient({
                         businessId={businessId}
                         pageId={page.id}
                         sections={qrPage.sections || []}
+                        products={qrPage.products || []}
                         onReload={loadQRPage}
                     />
                 )

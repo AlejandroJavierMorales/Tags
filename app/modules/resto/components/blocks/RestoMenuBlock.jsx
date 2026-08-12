@@ -419,6 +419,17 @@ export default function RestoMenuBlock({
     styles = {}
 }) {
 
+    const showDescription = content?.showDescription !== false;
+    const showPrice = content?.showPrice !== false;
+    const sectionStyle = {
+        backgroundColor: styles?.backgroundColor || undefined,
+        color: styles?.textColor || undefined,
+        textAlign: styles?.alignment || undefined,
+        padding: styles?.padding || undefined,
+        marginTop: styles?.marginTop || undefined,
+        marginBottom: styles?.marginBottom || undefined
+    };
+
     const products =
         Array.isArray(
             entity?.products
@@ -813,7 +824,7 @@ export default function RestoMenuBlock({
 
         <>
 
-            <section className="resto_menu">
+            <section className="resto_menu" style={sectionStyle}>
 
                 <div className="container">
 
@@ -961,7 +972,7 @@ export default function RestoMenuBlock({
 
                                                 </button>
 
-                                                {product.description && (
+                                                {showDescription && product.description && (
 
                                                     <p className="resto_product_description">
                                                         {
@@ -975,7 +986,7 @@ export default function RestoMenuBlock({
 
                                             <div className="resto_product_footer">
 
-                                                <div className="resto_product_prices">
+                                                {showPrice && <div className="resto_product_prices">
 
                                                     {hasSalePrice && (
 
@@ -997,7 +1008,7 @@ export default function RestoMenuBlock({
                                                         }
                                                     </strong>
 
-                                                </div>
+                                                </div>}
 
                                                 <button
                                                     type="button"

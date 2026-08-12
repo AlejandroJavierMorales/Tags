@@ -10,6 +10,8 @@ import Image from "next/image";
 
 import "@/app/styles/qr-page.css";
 import TagsSpinner from "@/app/components/TagsSpinner";
+import showAlert from "@/app/components/showAlert";
+import "./ClientReviewsPublicRenderer.css";
 
 function parseJson(value, fallback = {}) {
     if (!value) return fallback;
@@ -54,7 +56,11 @@ export default function ClientReviewsPublicRenderer({
     slug,
     reviewToken = null,
     portalThemeTokens = {},
-    inheritPortalTheme = false
+    inheritPortalTheme = false,
+    initialCustomer = null,
+    onSubmitted = null,
+    embedded = false,
+    disableGoogleThreshold = false
 }) {
     const [loading, setLoading] =
         useState(true);
@@ -75,13 +81,19 @@ export default function ClientReviewsPublicRenderer({
         useState("");
 
     const [customerName, setCustomerName] =
-        useState("");
+        useState(initialCustomer?.name || "");
 
     const [customerEmail, setCustomerEmail] =
-        useState("");
+        useState(initialCustomer?.email || "");
+
+    const [customerPhone, setCustomerPhone] =
+        useState(initialCustomer?.phone || "");
 
     const [submitting, setSubmitting] =
         useState(false);
+
+    const [fieldErrors, setFieldErrors] =
+        useState({});
 
     const [result, setResult] =
         useState(null);
@@ -228,13 +240,13 @@ export default function ClientReviewsPublicRenderer({
         ...themeTokens,
         background: "var(--qr-bg)",
         color: "var(--qr-text)",
-        minHeight: "100vh"
+        minHeight: embedded ? "0" : "100vh"
     };
 
     const cardStyle = {
         maxWidth: 720,
-        margin: "40px auto",
-        padding: 28,
+        margin: embedded ? "0 auto" : "40px auto",
+        padding: embedded ? "clamp(16px, 4vw, 28px)" : 28,
         background: "var(--qr-surface)",
         color: "var(--qr-text)",
         border: "1px solid var(--qr-border)",
@@ -258,7 +270,7 @@ export default function ClientReviewsPublicRenderer({
                 question_id: question.id,
                 rating: answers[question.id]?.rating,
                 comment: answers[question.id]?.comment || null
-            }));
+            })).filter(answer => Number(answer.rating) >= 1);
 
         const missing =
             questions.some(question =>
@@ -267,7 +279,32 @@ export default function ClientReviewsPublicRenderer({
             );
 
         if (missing) {
-            alert("Respondé las preguntas obligatorias.");
+            await showAlert({
+                icon: "warning",
+                title: "Faltan calificaciones",
+                text: "Respondé todas las preguntas obligatorias marcadas con *."
+            });
+            return;
+        }
+
+        const errors = {};
+        const cleanName = customerName.trim();
+        const cleanEmail = customerEmail.trim().toLowerCase();
+        const cleanPhone = customerPhone.replace(/\D/g, "");
+        const cleanComment = generalComment.trim();
+        if (cleanName.length < 2) errors.customerName = "Ingresá tu nombre.";
+        if (!/^\S+@\S+\.\S+$/.test(cleanEmail)) errors.customerEmail = "Ingresá un email válido.";
+        if (cleanPhone && (cleanPhone.length < 8 || cleanPhone.length > 15)) errors.customerPhone = "Revisá el número de WhatsApp.";
+        if (cleanComment.length < 10) errors.generalComment = "Contanos tu experiencia en al menos 10 caracteres.";
+        setFieldErrors(errors);
+        if (Object.keys(errors).length) {
+            await showAlert({
+                icon: "warning",
+                title: "Revisá los datos de la reseña",
+                text: Object.values(errors).join(" ")
+            });
+            const firstField = document.querySelector(".client_reviews_required_error");
+            firstField?.scrollIntoView({ behavior: "smooth", block: "center" });
             return;
         }
 
@@ -284,9 +321,10 @@ export default function ClientReviewsPublicRenderer({
                         },
                         body: JSON.stringify({
                             formId: form.id,
-                            customer_name: customerName || null,
-                            customer_email: customerEmail || null,
-                            general_comment: generalComment || null,
+                            customer_name: cleanName,
+                            customer_email: cleanEmail,
+                            customer_phone: cleanPhone || null,
+                            general_comment: cleanComment,
                             answers: payloadAnswers,
                             reviewToken
                         })
@@ -308,13 +346,21 @@ export default function ClientReviewsPublicRenderer({
                 ...data
             });
 
+            if (typeof onSubmitted === "function") {
+                onSubmitted(Number(data.averageRating || 0));
+            }
+
             console.log(
                 "CLIENT REVIEWS SUBMIT RESULT:",
                 data
             );
 
         } catch (err) {
-            alert(err.message);
+            await showAlert({
+                icon: "error",
+                title: "No se pudo enviar la reseña",
+                text: err.message
+            });
 
         } finally {
             setSubmitting(false);
@@ -393,7 +439,11 @@ export default function ClientReviewsPublicRenderer({
             ]);
 
         } catch (err) {
-            alert(err.message);
+            await showAlert({
+                icon: "error",
+                title: "No se pudo subir la imagen",
+                text: err.message
+            });
 
         } finally {
             setUploadingReviewerImage(false);
@@ -728,7 +778,7 @@ export default function ClientReviewsPublicRenderer({
                     )}
 
                     {thankContent.showGoogleCTA !== false &&
-                        result.googlePromptShown &&
+                        (result.googlePromptShown || disableGoogleThreshold) &&
                         result.googleReviewUrl && (
                             <div
                                 className="mt-4 pt-4"
@@ -853,7 +903,7 @@ export default function ClientReviewsPublicRenderer({
                                     }}
                                 >
                                     <h3>
-                                        {question.question_text}
+                                        {question.question_text}{Number(question.is_required) === 1 && <span className="client_reviews_required_mark"> *</span>}
                                     </h3>
 
                                     {questionsContent.showQuestionHelper !== false &&
@@ -954,42 +1004,58 @@ export default function ClientReviewsPublicRenderer({
                 {customerFieldsBlock?.is_visible !== false && (
                     <>
                         {customerContent.showName !== false && (
-                            <div className="qr_page_field mt-4">
-                                <label>{customerContent.nameLabel || "Tu nombre"}</label>
+                            <div className={`qr_page_field mt-4${fieldErrors.customerName ? " client_reviews_required_error" : ""}`}>
+                                <label>{customerContent.nameLabel || "Tu nombre"} <span className="client_reviews_required_mark">*</span></label>
                                 <input
-                                    className="qr_page_input"
+                                    className={`qr_page_input${fieldErrors.customerName ? " is_invalid" : ""}`}
                                     value={customerName}
-                                    onChange={(e) =>
-                                        setCustomerName(e.target.value)
-                                    }
+                                    aria-invalid={Boolean(fieldErrors.customerName)}
+                                    onChange={(e) => { setCustomerName(e.target.value); setFieldErrors(current => ({ ...current, customerName: "" })); }}
                                 />
+                                {fieldErrors.customerName && <small className="client_reviews_field_error">{fieldErrors.customerName}</small>}
                             </div>
                         )}
 
                         {customerContent.showEmail !== false && (
-                            <div className="qr_page_field mt-3">
-                                <label>{customerContent.emailLabel || "Email"}</label>
+                            <div className={`qr_page_field mt-3${fieldErrors.customerEmail ? " client_reviews_required_error" : ""}`}>
+                                <label>{customerContent.emailLabel || "Email"} <span className="client_reviews_required_mark">*</span></label>
                                 <input
-                                    className="qr_page_input"
+                                    type="email"
+                                    className={`qr_page_input${fieldErrors.customerEmail ? " is_invalid" : ""}`}
                                     value={customerEmail}
-                                    onChange={(e) =>
-                                        setCustomerEmail(e.target.value)
-                                    }
+                                    aria-invalid={Boolean(fieldErrors.customerEmail)}
+                                    onChange={(e) => { setCustomerEmail(e.target.value); setFieldErrors(current => ({ ...current, customerEmail: "" })); }}
                                 />
+                                {fieldErrors.customerEmail && <small className="client_reviews_field_error">{fieldErrors.customerEmail}</small>}
                             </div>
                         )}
 
+                        <div className={`qr_page_field mt-3${fieldErrors.customerPhone ? " client_reviews_required_error" : ""}`}>
+                            <label>WhatsApp <small>(opcional)</small></label>
+                            <input
+                                inputMode="tel"
+                                className={`qr_page_input${fieldErrors.customerPhone ? " is_invalid" : ""}`}
+                                value={customerPhone}
+                                aria-invalid={Boolean(fieldErrors.customerPhone)}
+                                onChange={(e) => { setCustomerPhone(e.target.value); setFieldErrors(current => ({ ...current, customerPhone: "" })); }}
+                                placeholder="Ej.: 3546520243"
+                            />
+                            <small className="client_reviews_field_help">Dejanos tu WhatsApp si querés formar parte de nuestra comunidad y enterarte de novedades, actividades y sorteos.</small>
+                            {fieldErrors.customerPhone && <small className="client_reviews_field_error">{fieldErrors.customerPhone}</small>}
+                        </div>
+
                         {customerContent.showGeneralComment !== false && (
-                            <div className="qr_page_field mt-3">
-                                <label>{customerContent.commentLabel || "Comentario general"}</label>
+                            <div className={`qr_page_field mt-3${fieldErrors.generalComment ? " client_reviews_required_error" : ""}`}>
+                                <label>{customerContent.commentLabel || "Contanos tu experiencia"} <span className="client_reviews_required_mark">*</span></label>
                                 <textarea
-                                    className="qr_page_input"
+                                    className={`qr_page_input${fieldErrors.generalComment ? " is_invalid" : ""}`}
                                     rows={4}
                                     value={generalComment}
-                                    onChange={(e) =>
-                                        setGeneralComment(e.target.value)
-                                    }
+                                    aria-invalid={Boolean(fieldErrors.generalComment)}
+                                    placeholder="¿Qué fue lo que más te gustó? ¿Qué podríamos mejorar?"
+                                    onChange={(e) => { setGeneralComment(e.target.value); setFieldErrors(current => ({ ...current, generalComment: "" })); }}
                                 />
+                                {fieldErrors.generalComment && <small className="client_reviews_field_error">{fieldErrors.generalComment}</small>}
                             </div>
                         )}
                     </>

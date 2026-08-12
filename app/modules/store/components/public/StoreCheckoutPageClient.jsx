@@ -1274,9 +1274,11 @@ export default function StoreCheckoutPageClient({
             style={pageStyle}
         >
 
-            <StoreHeaderBlock
-                entity={store}
-            />
+            {!store?.embedded_return_url && (
+                <StoreHeaderBlock
+                    entity={store}
+                />
+            )}
 
             <section className="store_checkout_shell">
                 <div className="store_checkout_inner">

@@ -7,7 +7,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FaGoogle, FaStar } from "react-icons/fa";
+import { FaGoogle, FaLink, FaStar, FaTimes } from "react-icons/fa";
 
 import showAlert from "@/app/components/showAlert";
 
@@ -16,6 +16,7 @@ import "@/app/styles/qr-page.css";
 import TagsSpinner from "@/app/components/TagsSpinner";
 import MediaUploader from "@/app/components/MediaUploader";
 import Image from "next/image";
+import "./clientReviewsGoogleConnect.css";
 
 const emptyQuestion = {
     question_text: "",
@@ -52,6 +53,10 @@ export default function ClientReviewsAdminClient({
 
     const [saving, setSaving] =
         useState(false);
+
+    const [googleConnectOpen, setGoogleConnectOpen] = useState(false);
+    const [googleConnectUrl, setGoogleConnectUrl] = useState("");
+    const [googleConnecting, setGoogleConnecting] = useState(false);
 
     const [page, setPage] =
         useState(null);
@@ -196,6 +201,21 @@ export default function ClientReviewsAdminClient({
             ...prev,
             [field]: value
         }));
+    }
+
+    async function connectGooglePlace() {
+        if (!form?.id || !googleConnectUrl.trim()) return;
+        setGoogleConnecting(true);
+        try {
+            const response = await fetch("/api/client-reviews/admin/google-place", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ businessId, formId: form.id, url: googleConnectUrl }) });
+            const payload = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(payload.error || "No se pudo conectar con Google");
+            setForm(current => ({ ...current, google_review_url: payload.googleReviewUrl, settings_json: { ...(current.settings_json || {}), googlePlace: payload.place } }));
+            setGoogleConnectOpen(false);
+            setGoogleConnectUrl("");
+            showAlert({ title: "Google conectado", text: `Se identificó ${payload.place.name} y se generó el enlace para dejar reseñas.`, icon: "success" });
+        } catch (error) { showAlert({ title: "No se pudo conectar", text: error.message, icon: "error" }); }
+        finally { setGoogleConnecting(false); }
     }
 
     function updateResponseFilter(field, value) {
@@ -1557,6 +1577,13 @@ export default function ClientReviewsAdminClient({
                                                 }
                                                 placeholder="https://g.page/r/..."
                                             />
+                                            <div className="tags_reviews_google_connect">
+                                                <div>
+                                                    <button type="button" onClick={() => { setGoogleConnectUrl(form.google_review_url || ""); setGoogleConnectOpen(true); }}><FaLink /> Conectar con Google</button>
+                                                    <small>{form.settings_json?.googlePlace?.name ? `Conectado: ${form.settings_json.googlePlace.name}` : "Pegá una URL de Google Maps y Tags generará el enlace automáticamente."}</small>
+                                                </div>
+                                                {form.settings_json?.googlePlace?.photoName && <small>Google encontró una foto principal disponible para este negocio.</small>}
+                                            </div>
                                         </div>
 
 
@@ -1588,6 +1615,8 @@ export default function ClientReviewsAdminClient({
                                                 Guardar configuración
                                             </button>
                                         </div>
+
+                                        {googleConnectOpen && <div className="tags_reviews_google_connect_backdrop" onMouseDown={() => !googleConnecting && setGoogleConnectOpen(false)}><section className="tags_reviews_google_connect_modal" onMouseDown={event => event.stopPropagation()}><header><div><span>GOOGLE REVIEWS</span><h3>Conectar con Google</h3></div><button type="button" aria-label="Cerrar" onClick={() => !googleConnecting && setGoogleConnectOpen(false)}><FaTimes /></button></header><div className="tags_reviews_google_connect_body"><p>Buscá tu negocio en Google y pegá la URL de la ficha.</p><ol className="tags_reviews_google_connect_steps"><li>Buscá tu negocio en Google.</li><li>Abrí la ficha de tu negocio.</li><li>Copiá la URL del navegador.</li><li>Pegala acá.</li></ol><label>URL de Google Maps<input value={googleConnectUrl} onChange={event => setGoogleConnectUrl(event.target.value)} placeholder="https://www.google.com/search?q=..." autoFocus /></label><div className="tags_reviews_google_connect_actions"><button type="button" disabled={googleConnecting} onClick={() => setGoogleConnectOpen(false)}>Cancelar</button><button type="button" className="primary" disabled={googleConnecting || !googleConnectUrl.trim()} onClick={connectGooglePlace}>{googleConnecting ? "Conectando..." : "Conectar"}</button></div></div></section></div>}
 
                                     </div>
 

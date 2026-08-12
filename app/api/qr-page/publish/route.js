@@ -67,7 +67,8 @@ export async function POST(req) {
                     id,
                     business_id,
                     qr_code_id,
-                    slug
+                    slug,
+                    page_type
                 FROM tags_qr_pages
                 WHERE id = ?
                 AND business_id = ?
@@ -121,8 +122,18 @@ export async function POST(req) {
             );
         }
 
-        const publicUrl =
-            `${baseUrl}/p/${page.slug}`;
+        let publicUrl = `${baseUrl}/p/${page.slug}`;
+        if (page.page_type === "directory") {
+            const [routes] = await conn.query(
+                "SELECT sl.slug,s.primary_host FROM tags_directory_listings l INNER JOIN tags_directory_site_listings sl ON sl.listing_id=l.id INNER JOIN tags_directory_sites s ON s.id=sl.site_id WHERE l.qr_page_id=? AND l.business_id=? ORDER BY sl.id LIMIT 1",
+                [pageId, businessId]
+            );
+            if (routes.length) {
+                publicUrl = process.env.NODE_ENV === "development"
+                    ? `${baseUrl}/${routes[0].slug}`
+                    : `https://${routes[0].primary_host}/${routes[0].slug}`;
+            }
+        }
 
         await conn.beginTransaction();
 
@@ -158,6 +169,17 @@ export async function POST(req) {
                 businessId
             ]
         );
+
+        if (page.page_type === "directory") {
+            await conn.query(
+                "UPDATE tags_directory_listings SET status='published',updated_at=NOW() WHERE qr_page_id=? AND business_id=?",
+                [pageId, businessId]
+            );
+            await conn.query(
+                "UPDATE tags_directory_site_listings sl INNER JOIN tags_directory_listings l ON l.id=sl.listing_id SET sl.publication_status='published',sl.updated_at=NOW() WHERE l.qr_page_id=? AND l.business_id=?",
+                [pageId, businessId]
+            );
+        }
 
         await conn.commit();
 

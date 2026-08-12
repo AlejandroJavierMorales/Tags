@@ -187,7 +187,6 @@ export async function getPublicPortalContext({
             AND r.status = 'published'
 
             ORDER BY
-                r.is_home DESC,
                 r.sort_order ASC,
                 r.id ASC
             `,

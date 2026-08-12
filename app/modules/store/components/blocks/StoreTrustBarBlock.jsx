@@ -99,10 +99,14 @@ export default function StoreTrustBarBlock({
             content.cardBorderColor || undefined,
 
         borderRadius:
-            content.cardRadius || undefined,
+            !content.cardRadius || content.cardRadius === "20px"
+                ? "12px"
+                : content.cardRadius,
 
         padding:
-            content.cardPadding || undefined
+            !content.cardPadding || content.cardPadding === "24px"
+                ? "16px"
+                : content.cardPadding
     };
 
     const iconStyle = {

@@ -62,22 +62,19 @@ export default function RestoTopbarBlock({
             Boolean(sessionStatus)
         );
 
+    const sectionStyle = {
+        backgroundColor: styles?.backgroundColor || styles?.background || undefined,
+        color: styles?.textColor || styles?.color || undefined,
+        borderColor: styles?.borderColor || undefined,
+        padding: styles?.padding || undefined,
+        marginTop: styles?.marginTop || undefined,
+        marginBottom: styles?.marginBottom || undefined
+    };
+
     return (
         <div
             className="resto_topbar"
-            /* style={{
-                background:
-                    styles?.background ||
-                    "var(--qr-primary)",
-
-                color:
-                    styles?.color ||
-                    "var(--qr-primary-text)",
-
-                borderColor:
-                    styles?.borderColor ||
-                    "var(--qr-border)"
-            }} */
+            style={sectionStyle}
         >
             <div className="container">
 

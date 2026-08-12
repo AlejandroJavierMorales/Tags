@@ -35,10 +35,25 @@ async function getStore(
     const [rows] =
         await connection.query(
             `
-            SELECT *
-            FROM tags_stores
-            WHERE business_id = ?
-            AND app_type = 'resto'
+            SELECT
+                s.*,
+                b.logo_url AS business_logo_url,
+                b.cover_url AS business_cover_url,
+                b.email AS business_email,
+                b.phone AS business_phone,
+                b.whatsapp AS business_whatsapp,
+                b.address AS business_address,
+                b.postal_code AS business_postal_code,
+                b.website_url AS business_website_url,
+                b.instagram_url AS business_instagram_url,
+                b.facebook_url AS business_facebook_url,
+                b.latitude AS business_latitude,
+                b.longitude AS business_longitude
+            FROM tags_stores s
+            INNER JOIN tags_businesses b
+                ON b.id = s.business_id
+            WHERE s.business_id = ?
+            AND s.app_type = 'resto'
             LIMIT 1
             ${lock ? "FOR UPDATE" : ""}
             `,
@@ -102,26 +117,81 @@ export async function GET(req) {
                 store.settings_json
             );
 
+        const sharedContact = {
+            ...(settings.resto_contact || {}),
+            email:
+                store.business_email ||
+                settings.resto_contact?.email ||
+                store.email ||
+                "",
+            phone:
+                store.business_phone ||
+                settings.resto_contact?.phone ||
+                "",
+            whatsapp:
+                store.business_whatsapp ||
+                settings.resto_contact?.whatsapp ||
+                store.whatsapp ||
+                "",
+            website:
+                store.business_website_url ||
+                settings.resto_contact?.website ||
+                "",
+            instagram:
+                store.business_instagram_url ||
+                settings.resto_contact?.instagram ||
+                "",
+            facebook:
+                store.business_facebook_url ||
+                settings.resto_contact?.facebook ||
+                ""
+        };
+
+        const sharedLocation = {
+            ...(settings.resto_location || {}),
+            address:
+                store.business_address ||
+                settings.resto_location?.address ||
+                store.address ||
+                "",
+            postal_code:
+                store.business_postal_code ||
+                settings.resto_location?.postal_code ||
+                "",
+            latitude:
+                store.business_latitude ??
+                settings.resto_location?.latitude ??
+                null,
+            longitude:
+                store.business_longitude ??
+                settings.resto_location?.longitude ??
+                null
+        };
+
         return Response.json({
             ok: true,
             store: {
                 id: store.id,
                 name: store.name,
                 description: store.description,
-                logo_url: store.logo_url,
-                email: store.email,
-                whatsapp: store.whatsapp,
-                address: store.address,
+                logo_url:
+                    store.business_logo_url ||
+                    store.logo_url,
+                cover_url:
+                    store.business_cover_url ||
+                    store.cover_url,
+                email: sharedContact.email,
+                phone: sharedContact.phone,
+                whatsapp: sharedContact.whatsapp,
+                address: sharedLocation.address,
                 currency: store.currency || "ARS",
                 slug: store.slug,
                 status: store.status,
                 has_reviews: Boolean(reviewAddonRows?.length)
             },
             configuration: {
-                contact:
-                    settings.resto_contact || {},
-                location:
-                    settings.resto_location || {},
+                contact: sharedContact,
+                location: sharedLocation,
                 operation:
                     settings.resto_operation || {},
                 order_rules:
@@ -319,6 +389,56 @@ export async function POST(req) {
                 text(configuration.payment?.currency) || "ARS",
                 JSON.stringify(nextSettings),
                 store.id,
+                businessId
+            ]
+        );
+
+        await connection.query(
+            `
+            UPDATE tags_businesses
+            SET
+                logo_url = ?,
+                email = ?,
+                phone = ?,
+                whatsapp = ?,
+                address = ?,
+                postal_code = ?,
+                website_url = ?,
+                instagram_url = ?,
+                facebook_url = ?,
+                updated_at = NOW()
+            WHERE id = ?
+            `,
+            [
+                text(identity.logo_url) || null,
+                text(configuration.contact?.email) || null,
+                text(configuration.contact?.phone) || null,
+                text(configuration.contact?.whatsapp) || null,
+                text(configuration.location?.address) || null,
+                text(configuration.location?.postal_code) || null,
+                text(configuration.contact?.website) || null,
+                text(configuration.contact?.instagram) || null,
+                text(configuration.contact?.facebook) || null,
+                businessId
+            ]
+        );
+
+        await connection.query(
+            `
+            UPDATE tags_stores
+            SET
+                logo_url = ?,
+                email = ?,
+                whatsapp = ?,
+                address = ?,
+                updated_at = NOW()
+            WHERE business_id = ?
+            `,
+            [
+                text(identity.logo_url) || null,
+                text(configuration.contact?.email) || null,
+                text(configuration.contact?.whatsapp) || null,
+                text(configuration.location?.address) || null,
                 businessId
             ]
         );

@@ -28,6 +28,7 @@ import {
     checkStorePublicRateLimit,
     storeRequestIp
 } from "@/app/modules/store/lib/storePublicRateLimit";
+import { getGuestPublicSession } from "@/app/modules/guest-experience/lib/getGuestPublicSession";
 
 function safe(value) {
     return value === undefined || value === ""
@@ -72,7 +73,8 @@ export async function POST(req) {
             coupon = null,
             shippingMethod = null,
             shippingQuote = null,
-            paymentMethod = "whatsapp"
+            paymentMethod = "whatsapp",
+            guestExperience = null
         } = body;
 
         if (!storeId) {
@@ -113,7 +115,18 @@ export async function POST(req) {
                 FROM tags_stores
                 WHERE id = ?
                 AND app_type = 'store'
-                AND status = 'published'
+                AND (
+                    status = 'published'
+                    OR (
+                        EXISTS (SELECT 1 FROM tags_business_addons ba_store WHERE ba_store.business_id=tags_stores.business_id AND ba_store.addon_code='store' AND ba_store.status='active' AND (ba_store.expires_at IS NULL OR ba_store.expires_at>=NOW()))
+                        AND EXISTS (
+                            SELECT 1 FROM tags_directory_listings dl
+                            INNER JOIN tags_directory_site_listings dsl ON dsl.listing_id=dl.id AND dsl.publication_status='published' AND dsl.is_free=0
+                            INNER JOIN tags_qr_pages dp ON dp.id=dl.qr_page_id AND dp.page_type='directory' AND dp.status='published'
+                            WHERE dl.business_id=tags_stores.business_id AND dl.status='published'
+                        )
+                    )
+                )
                 LIMIT 1
                 `,
                 [storeId]
@@ -127,6 +140,17 @@ export async function POST(req) {
                 { error: "Tienda no encontrada" },
                 { status: 404 }
             );
+        }
+
+        let guestSession = null;
+        if (guestExperience?.slug) {
+            guestSession = await getGuestPublicSession(String(guestExperience.slug));
+            if (!guestSession || Number(guestSession.business_id) !== Number(store.business_id)) {
+                return Response.json({ error: "La estadía no es válida para esta tienda" }, { status: 403 });
+            }
+            const [integrations] = await conn.query("SELECT id,allow_room_charge FROM tags_guest_commerce_integrations WHERE guest_app_id=? AND module_type='store' AND store_id=? AND is_active=1 LIMIT 1", [guestSession.id, storeId]);
+            if (!integrations[0]) return Response.json({ error: "La tienda no está habilitada en Mi Estadía" }, { status: 403 });
+            guestSession.commerce_integration = integrations[0];
         }
 
         const rateLimit =
@@ -777,6 +801,18 @@ export async function POST(req) {
                     JSON.stringify(item.options || {})
                 ]
             );
+        }
+
+        if (guestSession) {
+            const chargeToStay = Boolean(guestExperience?.chargeToStay && Number(guestSession.commerce_integration.allow_room_charge));
+            let accountEntryId = null;
+            if (chargeToStay) {
+                const [accounts] = await conn.query("SELECT id,currency FROM tags_guest_accounts WHERE guest_app_id=? AND stay_id=? LIMIT 1", [guestSession.id, guestSession.stay_id]);
+                if (!accounts[0]) throw Object.assign(new Error("La cuenta de la estadía no está disponible"), { status: 409 });
+                const [entry] = await conn.query("INSERT INTO tags_guest_account_entries(account_id,entry_type,source_type,source_id,idempotency_key,description,quantity,unit_amount,total_amount,currency,status,created_by_type) VALUES(?,'charge','store',?,?,?,1,?,?,?,'confirmed','guest')", [accounts[0].id,String(orderId),`store:${orderId}`,`Tienda · Pedido ${orderNumber}`,total,total,store.currency||accounts[0].currency||"ARS"]);
+                accountEntryId = entry.insertId;
+            }
+            await conn.query("INSERT INTO tags_guest_commerce_orders(guest_app_id,stay_id,guest_id,module_type,store_id,external_order_id,account_entry_id,fulfillment_mode,charge_to_stay,total_amount,currency,status) VALUES(?,?,?,'store',?,?,?,'room_delivery',?,?,?,'created')", [guestSession.id,guestSession.stay_id,guestSession.guest_id,storeId,orderId,accountEntryId,chargeToStay?1:0,total,store.currency||"ARS"]);
         }
 
         await conn.commit();

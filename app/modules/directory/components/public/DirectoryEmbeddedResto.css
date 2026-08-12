@@ -1,0 +1,32 @@
+.tags_directory_embedded_resto {
+    width: 100%;
+    min-width: 0;
+    overflow: clip;
+}
+
+.tags_directory_embedded_resto_page,
+.tags_directory_embedded_resto_page .resto_public_page {
+    width: 100%;
+    min-width: 0;
+    background: var(--qr-background, var(--qr-bg, #f7faf8));
+    color: var(--qr-text, #17372d);
+}
+
+.tags_directory_embedded_resto_page .resto_header_identity {
+    display: none !important;
+}
+
+.tags_directory_embedded_resto_page .resto_header_main {
+    min-height: 0;
+    padding-block: 0 !important;
+}
+
+.tags_directory_embedded_resto_page .resto_header_search_wrap {
+    padding-top: 14px;
+}
+
+@media (max-width: 575.98px) {
+    .tags_directory_embedded_resto_page .container {
+        padding-inline: 10px;
+    }
+}

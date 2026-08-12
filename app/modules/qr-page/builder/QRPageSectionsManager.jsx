@@ -21,6 +21,7 @@ export default function QRPageSectionsManager({
     businessId,
     pageId,
     sections,
+    products = [],
     onReload
 }) {
 
@@ -285,6 +286,17 @@ export default function QRPageSectionsManager({
 
     function getDefaultBlockContent(type) {
 
+        if (type === "web_section") {
+            return {
+                title: "Nueva sección",
+                subtitle: "",
+                highlightedText: "",
+                paragraphs: [],
+                images: [],
+                imageLayout: "grid"
+            };
+        }
+
         if (type === "vcard") {
             return {
                 buttonLabel: "Guardar contacto"
@@ -400,6 +412,19 @@ export default function QRPageSectionsManager({
             return {
                 address: "",
                 embed_url: ""
+            };
+        }
+
+        if (type === "catalog") {
+            return {
+                eyebrow: "CATÁLOGO",
+                title: "Productos y servicios",
+                subtitle: "",
+                highlightedText: "",
+                paragraphs: [],
+                category: "all",
+                searchPlaceholder: "Buscar por producto o categoría",
+                allCategoriesLabel: "Todos"
             };
         }
 
@@ -1191,6 +1216,7 @@ export default function QRPageSectionsManager({
                         pageId={pageId}
                         section={editingBlock.section}
                         block={editingBlock.block}
+                        products={products}
                         onClose={() => setEditingBlock(null)}
                         onReload={onReload}
                     />

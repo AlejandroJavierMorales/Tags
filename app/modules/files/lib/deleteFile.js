@@ -20,7 +20,7 @@ export async function deleteFile(storagePath) {
             .delete({
                 ignoreNotFound: true
             });
-
+console.log("DELETE OK:", storagePath);
         return true;
 
     } catch (err) {

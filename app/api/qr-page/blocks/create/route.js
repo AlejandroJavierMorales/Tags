@@ -12,6 +12,7 @@ import { db }
 
 import { requireQRPageAccess }
     from "@/app/modules/qr-page/lib/requireQRPageAccess";
+import { normalizeWebSectionBlock } from "@/app/modules/qr-page/lib/normalizeWebSectionBlock";
 
 export async function POST(req) {
 
@@ -134,7 +135,7 @@ export async function POST(req) {
                     sectionId,
                     type,
                     sortOrder,
-                    JSON.stringify(content_json || {}),
+                    JSON.stringify(type === "web_section" ? normalizeWebSectionBlock(content_json) : (content_json || {})),
                     JSON.stringify(styles_json || {})
                 ]
             );

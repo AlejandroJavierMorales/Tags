@@ -5,7 +5,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { FaWhatsapp } from "react-icons/fa";
 import { SiMercadopago } from "react-icons/si";
@@ -32,6 +32,13 @@ import {
 } from "../lib/formatStorePrice";
 
 import "@/app/styles/tags_store_public.css";
+
+const STORE_PAYMENT_OPTIONS = [
+    { value: "whatsapp", label: "Coordinar por WhatsApp" },
+    { value: "mercado_pago", label: "Mercado Pago" },
+    { value: "manual_transfer", label: "Transferencia bancaria" },
+    { value: "cash", label: "Efectivo / a convenir" }
+];
 
 function normalizeWhatsappAR(phone) {
 
@@ -123,6 +130,30 @@ export default function StoreCartDrawer({
 
     const [paymentMethod, setPaymentMethod] =
         useState("whatsapp");
+
+    const paymentOptions = useMemo(() => {
+        const configuredPaymentMethods =
+            Array.isArray(store?.settings_json?.allowedPaymentMethods)
+                ? store.settings_json.allowedPaymentMethods
+                : null;
+        const configuredOptions = configuredPaymentMethods?.length
+            ? STORE_PAYMENT_OPTIONS.filter(option =>
+                configuredPaymentMethods.includes(option.value)
+            )
+            : STORE_PAYMENT_OPTIONS;
+        return configuredOptions.length
+            ? configuredOptions
+            : STORE_PAYMENT_OPTIONS;
+    }, [store?.settings_json?.allowedPaymentMethods]);
+
+    useEffect(() => {
+        if (
+            paymentOptions.length &&
+            !paymentOptions.some(option => option.value === paymentMethod)
+        ) {
+            setPaymentMethod(paymentOptions[0].value);
+        }
+    }, [paymentMethod, paymentOptions]);
 
     const [shippingQuotes, setShippingQuotes] =
         useState([]);
@@ -1572,21 +1603,14 @@ export default function StoreCartDrawer({
                                     setPaymentMethod(e.target.value)
                                 }
                             >
-                                <option value="whatsapp">
-                                    Coordinar por WhatsApp
-                                </option>
-
-                                <option value="mercado_pago">
-                                    Mercado Pago
-                                </option>
-
-                                <option value="manual_transfer">
-                                    Transferencia bancaria
-                                </option>
-
-                                <option value="cash">
-                                    Efectivo / a convenir
-                                </option>
+                                {paymentOptions.map(option => (
+                                    <option
+                                        value={option.value}
+                                        key={option.value}
+                                    >
+                                        {option.label}
+                                    </option>
+                                ))}
                             </select>
 
                         </div>

@@ -4,15 +4,43 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FaArrowDown, FaArrowUp, FaEye, FaEyeSlash, FaPlus, FaTrash, FaWandMagicSparkles } from "react-icons/fa6";
 import StoreBlockEditor from "@/app/modules/store/components/admin/builder/StoreBlockEditor";
+import RestoSectionEditor from "@/app/modules/resto/components/admin/builder/RestoSectionEditor";
 import "@/app/styles/qr-page.css";
 import "@/app/styles/tags_dashboard.css";
 import "@/app/modules/resto/styles/resto-builder.css";
+
+function getRestoModuleDefinition(module, data, content = {}) {
+    if (!module?.editor || module.type !== "resto_featured_products") return module;
+    const collectionOptions = [
+        { value: "featured", label: "Destacados" },
+        { value: "offer", label: "Ofertas" },
+        { value: "recommended", label: "Recomendados" },
+        { value: "new", label: "Novedades" },
+        ...(data.categories || []).map(category => ({ value: `category:${category.id}`, label: category.name }))
+    ];
+    return {
+        ...module,
+        editor: {
+            ...module.editor,
+            tabs: module.editor.tabs.map(tab => ({
+                ...tab,
+                groups: tab.groups.map(group => ({
+                    ...group,
+                    fields: group.fields.map(field => field.key === "mode"
+                        ? { ...field, options: collectionOptions }
+                        : field)
+                }))
+            }))
+        }
+    };
+}
 
 export default function RestoBuilderClient({ businessId, permissions = [] }) {
     const router = useRouter();
     const canManage = permissions.includes("*") || permissions.includes("builder.manage");
     const [data, setData] = useState({ sections: [], blocks: [], modules: [], hasReviews: false });
     const [selected, setSelected] = useState(null);
+    const [editingSection, setEditingSection] = useState(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState("");
@@ -68,9 +96,17 @@ export default function RestoBuilderClient({ businessId, permissions = [] }) {
     }
     if (loading) return <main className="resto_builder_page"><p>Cargando Builder de Resto…</p></main>;
     const sections = [...data.sections].sort((a, b) => Number(a.sort_order) - Number(b.sort_order));
-    return <main className="resto_builder_page">
+    function handleBuilderDoubleClick(event) {
+        if (!canManage) return;
+        const sectionNode = event.target.closest(".resto_builder_section");
+        if (!sectionNode) return;
+        const sectionNodes = [...document.querySelectorAll(".resto_builder_section")];
+        const index = sectionNodes.indexOf(sectionNode);
+        if (index >= 0) setEditingSection(sections[index]);
+    }
+    return <main className="resto_builder_page" onDoubleClick={handleBuilderDoubleClick}>
         <div className="resto_builder_header"><div><button className="resto_builder_back" type="button" onClick={() => router.push(`/dashboard/businesses/${businessId}/resto`)}>← Volver al dashboard Resto</button><h1>Diseño de la página pública</h1><p>Organizá las secciones y personalizá el contenido visible para tus clientes.</p></div>{canManage && <button className="resto_builder_primary" type="button" onClick={addSection}><FaPlus /> Agregar sección</button>}</div>
-        <div className="resto_builder_legend"><span><FaArrowUp /> / <FaArrowDown /> Ordenar</span><span><FaEye /> Visibilidad</span><span><FaWandMagicSparkles /> Editar contenido y estilos</span><span><FaTrash /> Eliminar</span></div>
+        <div className="resto_builder_legend"><span><FaArrowUp /> / <FaArrowDown /> Ordenar</span><span><FaEye /> Visibilidad</span><span><FaWandMagicSparkles /> Editar contenido y estilos</span><span>Doble click en una sección: diseño</span><span><FaTrash /> Eliminar</span></div>
         {message && <div className="resto_builder_notice" role="alert">{message}</div>}
         {!canManage && <div className="resto_builder_notice info">Tenés acceso de lectura. Se requiere <b>builder.manage</b> para editar.</div>}
         {!data.hasReviews && <div className="resto_builder_notice info">Tags Reviews no está asignado. Sus bloques permanecen guardados, pero no se muestran ni se pueden agregar.</div>}
@@ -87,7 +123,8 @@ export default function RestoBuilderClient({ businessId, permissions = [] }) {
             <div className="resto_builder_blocks">{(blocksBySection[section.id] || []).map((block, blockIndex) => <div className={`resto_builder_block ${Number(block.is_visible) ? "" : "is-hidden"}`} key={block.id}><span className="resto_builder_block_name"><strong>{block.title || block.block_type}</strong><small>{block.block_type}</small></span>{canManage && <div className="resto_builder_actions"><button className="resto_builder_action" type="button" title="Mover bloque hacia arriba" onClick={() => moveBlock(section.id, blockIndex, -1)}><FaArrowUp /><span>Subir</span></button><button className="resto_builder_action" type="button" title="Mover bloque hacia abajo" onClick={() => moveBlock(section.id, blockIndex, 1)}><FaArrowDown /><span>Bajar</span></button><button className="resto_builder_action" type="button" title={Number(block.is_visible) ? "Ocultar bloque" : "Mostrar bloque"} onClick={() => toggleBlock(block)}>{Number(block.is_visible) ? <FaEye /> : <FaEyeSlash />}<span>{Number(block.is_visible) ? "Ocultar" : "Mostrar"}</span></button><button className="resto_builder_action" type="button" title="Editar contenido, colores y estilos" onClick={() => setSelected(block)}><FaWandMagicSparkles /><span>Editar</span></button><button className="resto_builder_action danger" type="button" title="Eliminar bloque" onClick={() => removeBlock(block)}><FaTrash /><span>Eliminar</span></button></div>}</div>)}</div>
             {canManage && <select className="resto_builder_add" defaultValue="" onChange={event => { addBlock(section.id, event.target.value); event.target.value = ""; }}><option value="">+ Agregar bloque a esta sección…</option>{data.modules.map(module => <option key={module.type} value={module.type}>{module.label}</option>)}</select>}
         </section>)}
-        {selected && <StoreBlockEditor businessId={businessId} entity={{ name: data.store?.name || "Restaurante", description: data.store?.description || "" }} section={sections.find(section => Number(section.id) === Number(selected.section_id))} block={selected} moduleDefinition={data.modules.find(module => module.type === selected.block_type)} updateEndpoint="/api/resto/admin/builder/blocks/update" onClose={() => setSelected(null)} onBlockUpdated={(updated) => { setData(prev => ({ ...prev, blocks: prev.blocks.map(item => Number(item.id) === Number(updated.id) ? { ...item, ...updated } : item) })); setSelected(null); }} />}
+        {selected && <StoreBlockEditor businessId={businessId} entity={{ name: data.store?.name || "Restaurante", description: data.store?.description || "", categories: data.categories || [], products: data.products || [] }} section={sections.find(section => Number(section.id) === Number(selected.section_id))} block={selected} moduleDefinition={getRestoModuleDefinition(data.modules.find(module => module.type === selected.block_type), data, selected.content_json || {})} updateEndpoint="/api/resto/admin/builder/blocks/update" onClose={() => setSelected(null)} onBlockUpdated={(updated) => { setData(prev => ({ ...prev, blocks: prev.blocks.map(item => Number(item.id) === Number(updated.id) ? { ...item, ...updated } : item) })); setSelected(current => current ? { ...current, ...updated } : current); }} />}
         {saving && <p>Guardando cambios…</p>}
+        {editingSection && <RestoSectionEditor section={editingSection} onClose={() => setEditingSection(null)} onSaved={updated => { setData(prev => ({ ...prev, sections: prev.sections.map(item => Number(item.id) === Number(updated.id) ? updated : item) })); }} />}
     </main>;
 }

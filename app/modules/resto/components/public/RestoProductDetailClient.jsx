@@ -49,6 +49,7 @@ import {
 
 import RestoHeaderBlock
     from "../blocks/RestoHeaderBlock";
+import { getRestoBackUrl } from "../../lib/restoPublicContext";
 
 import {
     formatStorePrice,
@@ -67,6 +68,8 @@ export default function RestoProductDetailClient({
     variantOptions = [],
     settings = {}
 }) {
+
+    const backUrl = getRestoBackUrl(resto, `/p/${resto.slug}`);
 
     const [imageIndex, setImageIndex] = useState(0);
 
@@ -334,7 +337,7 @@ export default function RestoProductDetailClient({
 
         if (goToCart) {
             window.location.href =
-                `/p/${resto.slug}/cart`;
+                backUrl;
 
             return;
         }
@@ -349,7 +352,7 @@ export default function RestoProductDetailClient({
         }).then((result) => {
             if (result) {
                 window.location.href =
-                    `/p/${resto.slug}/cart`;
+                    backUrl;
             }
         });
 
@@ -587,6 +590,13 @@ const shareButtonWrapperStyle = createButtonWrapperStyle("share");
 
             <RestoHeaderBlock
                 entity={resto}
+                content={resto?.embedded_mode === "directory" ? {
+                    showLogo: false,
+                    showName: false,
+                    showDescription: false,
+                    showSearch: false,
+                    showStatus: false
+                } : {}}
             />
 
             <div className="store_detail_breadcrumb">
@@ -594,7 +604,7 @@ const shareButtonWrapperStyle = createButtonWrapperStyle("share");
                     settings.content?.showBreadcrumb !== false && (
                         <div className="container">
                             <Link
-                                href={`/p/${resto.slug}`}
+                                href={backUrl}
                                 className="store_detail_back_link"
                             >
                                 <FiArrowLeft />

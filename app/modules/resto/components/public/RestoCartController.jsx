@@ -27,6 +27,10 @@ import {
 }
     from "react";
 
+import {
+    FaReceipt
+} from "react-icons/fa";
+
 
 
 import "../../styles/restoCartController.css";
@@ -41,6 +45,7 @@ import {
 }
     from "../../lib/restoCart";
 import RestoCartDrawer from "./RestoCartDrawer";
+import { withRestoReturnUrl } from "../../lib/restoPublicContext";
 
 export default function RestoCartController({
     resto,
@@ -258,7 +263,7 @@ export default function RestoCartController({
                 ) {
 
                     window.location.href =
-                        `/p/${restoSlug}/products/${product.id}`;
+                        withRestoReturnUrl(`/p/${restoSlug}/products/${product.id}`, resto);
 
                     return;
 
@@ -475,7 +480,7 @@ export default function RestoCartController({
         ) {
 
             window.location.href =
-                `/p/${restoSlug}/order/${activeSessionToken}`;
+                withRestoReturnUrl(`/p/${restoSlug}/order/${activeSessionToken}`, resto);
 
             return;
 
@@ -529,7 +534,7 @@ export default function RestoCartController({
             const response = await fetch("/api/resto/public/orders/recover", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: restoSlug, orderNumber: recoverOrderNumber, contact: recoverContact }) });
             const data = await response.json();
             if (!response.ok) throw new Error(data.error || "No se pudo recuperar el pedido.");
-            window.location.href = `/p/${restoSlug}/order/${data.sessionToken}`;
+            window.location.href = withRestoReturnUrl(`/p/${restoSlug}/order/${data.sessionToken}`, resto);
         } catch (error) { setRecoverError(error.message); }
         finally { setRecovering(false); }
     }
@@ -590,7 +595,7 @@ export default function RestoCartController({
         );
 
         window.location.href =
-            `/p/${restoSlug}/order/${sessionToken}`;
+            withRestoReturnUrl(`/p/${restoSlug}/order/${sessionToken}`, resto);
 
     }
 
@@ -728,12 +733,12 @@ export default function RestoCartController({
                 aria-label={
                     hasActiveOrder
                         ? "Abrir mi pedido"
-                        : "Hacer pedido"
+                        : "Hacer Pedido"
                 }
                 title={
                     hasActiveOrder
                         ? "Abrir mi pedido"
-                        : "Hacer pedido"
+                        : "Hacer Pedido"
                 }
             >
 
@@ -748,13 +753,18 @@ export default function RestoCartController({
                     }
                 </span>
 
+                <FaReceipt
+                    className="resto_cart_floating_react_icon"
+                    aria-hidden="true"
+                />
+
                 <span className="resto_cart_floating_content">
 
                     <strong className="resto_cart_floating_title">
                         {
                             hasActiveOrder
                                 ? "Mi pedido"
-                                : "Hacer pedido"
+                                : "Hacer Pedido"
                         }
                     </strong>
 

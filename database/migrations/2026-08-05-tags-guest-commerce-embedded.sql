@@ -1,0 +1,42 @@
+CREATE TABLE IF NOT EXISTS tags_guest_commerce_integrations (
+ id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+ guest_app_id BIGINT UNSIGNED NOT NULL,
+ module_type ENUM('store','resto') NOT NULL,
+ store_id BIGINT UNSIGNED NOT NULL,
+ display_name VARCHAR(120) NULL,
+ is_active TINYINT(1) NOT NULL DEFAULT 1,
+ allow_room_charge TINYINT(1) NOT NULL DEFAULT 1,
+ delivery_instructions VARCHAR(500) NULL,
+ sort_order INT NOT NULL DEFAULT 0,
+ created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+ PRIMARY KEY(id),
+ UNIQUE KEY uq_tags_guest_commerce_integration(guest_app_id,module_type,store_id),
+ KEY idx_tags_guest_commerce_app(guest_app_id,is_active,sort_order),
+ KEY idx_tags_guest_commerce_store(store_id,module_type)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS tags_guest_commerce_orders (
+ id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+ guest_app_id BIGINT UNSIGNED NOT NULL,
+ stay_id BIGINT UNSIGNED NOT NULL,
+ guest_id BIGINT UNSIGNED NOT NULL,
+ module_type ENUM('store','resto') NOT NULL,
+ store_id BIGINT UNSIGNED NOT NULL,
+ external_order_id BIGINT UNSIGNED NULL,
+ external_session_id BIGINT UNSIGNED NULL,
+ account_entry_id BIGINT UNSIGNED NULL,
+ fulfillment_mode VARCHAR(40) NOT NULL DEFAULT 'room_delivery',
+ charge_to_stay TINYINT(1) NOT NULL DEFAULT 0,
+ total_amount DECIMAL(12,2) NOT NULL DEFAULT 0,
+ currency VARCHAR(10) NOT NULL DEFAULT 'ARS',
+ status VARCHAR(40) NOT NULL DEFAULT 'created',
+ created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+ PRIMARY KEY(id),
+ UNIQUE KEY uq_tags_guest_commerce_store_order(module_type,external_order_id),
+ UNIQUE KEY uq_tags_guest_commerce_resto_session(module_type,external_session_id),
+ KEY idx_tags_guest_commerce_stay(guest_app_id,stay_id,created_at),
+ KEY idx_tags_guest_commerce_guest(guest_id,created_at),
+ KEY idx_tags_guest_commerce_account(account_entry_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

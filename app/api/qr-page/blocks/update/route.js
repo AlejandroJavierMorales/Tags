@@ -12,6 +12,7 @@ import { db }
 
 import { requireQRPageAccess }
     from "@/app/modules/qr-page/lib/requireQRPageAccess";
+import { normalizeWebSectionBlock } from "@/app/modules/qr-page/lib/normalizeWebSectionBlock";
 
 export async function POST(req) {
 
@@ -75,7 +76,8 @@ export async function POST(req) {
             await db.query(
                 `
                 SELECT
-                    b.id
+                    b.id,
+                    p.page_type
                 FROM
                     tags_qr_page_blocks b
                 INNER JOIN
@@ -123,12 +125,23 @@ export async function POST(req) {
             [
                 type || null,
                 is_visible ? 1 : 0,
-                JSON.stringify(content_json || {}),
+                JSON.stringify(type === "web_section" ? normalizeWebSectionBlock(content_json) : (content_json || {})),
                 JSON.stringify(styles_json || {}),
                 blockId,
                 sectionId
             ]
         );
+
+        if (blocks[0].page_type === "directory" && type === "gallery" && Number(content_json?.maxImages) === 8) {
+            const images = (Array.isArray(content_json?.images) ? content_json.images : []).filter(item => item?.url).slice(0, 8);
+            const [listings] = await db.query("SELECT id FROM tags_directory_listings WHERE qr_page_id=? AND business_id=? LIMIT 1", [pageId, businessId]);
+            if (listings.length) {
+                await db.query("DELETE FROM tags_directory_media WHERE listing_id=? AND media_type='gallery'", [listings[0].id]);
+                for (let index = 0; index < images.length; index += 1) {
+                    await db.query("INSERT INTO tags_directory_media (listing_id,media_type,url,alt_text,sort_order,is_active) VALUES (?,'gallery',?,?,?,1)", [listings[0].id, String(images[index].url).slice(0, 2000), String(images[index].alt || "").slice(0, 255) || null, index]);
+                }
+            }
+        }
 
         return Response.json({
             ok: true

@@ -99,6 +99,8 @@ function buildAlerts(
             const base = {
                 orderId:
                     order.id,
+                locationId: Number(order.location_id || order.resto_location_id || 0),
+                serviceMode: order.service_mode || "",
                 order:
                     orderLabel(order),
                 location:
@@ -558,11 +560,35 @@ function buildAlerts(
         }
     );
 
-    return alerts.sort(
+    return alerts.map(alert => ({
+        ...alert,
+        notificationCode: alert.notificationCode || ({
+            confirmation: "order_status",
+            waiter: "waiter_calls",
+            bill: "bill_requests",
+            message: "customer_messages",
+            "new-items": "kitchen_orders",
+            kitchen: "kitchen_orders",
+            ready: "order_status",
+            delivery: "delivery"
+        }[alert.type] || "order_status")
+    })).sort(
         (left, right) =>
             left.priority -
             right.priority
     );
+}
+
+function filterAlertsByResponsibility(alerts, preferences, assignedLocationIds) {
+    if (!preferences || Object.keys(preferences).length === 0) return alerts;
+    const assigned = new Set((assignedLocationIds || []).map(Number));
+    return alerts.filter(alert => {
+        const scope = preferences?.[alert.notificationCode] || "none";
+        if (scope === "all") return true;
+        if (scope === "assigned") return assigned.has(Number(alert.locationId));
+        if (scope === "unassigned") return !alert.locationId || !assigned.has(Number(alert.locationId));
+        return false;
+    });
 }
 
 export default function RestoOperationalAlerts({
@@ -576,6 +602,8 @@ export default function RestoOperationalAlerts({
         useState([]);
     const [deliveries, setDeliveries] =
         useState([]);
+    const [responsibilities, setResponsibilities] =
+        useState({ isOwner: false, assignedLocationIds: [], notificationPreferences: {} });
     const [open, setOpen] =
         useState(false);
     const [loading, setLoading] =
@@ -605,15 +633,16 @@ export default function RestoOperationalAlerts({
     const alerts =
         useMemo(
             () =>
-                buildAlerts(
+                filterAlertsByResponsibility(buildAlerts(
                     orders,
                     deliveries,
                     can
-                ),
+                ), responsibilities.notificationPreferences, responsibilities.assignedLocationIds),
             [
                 orders,
                 deliveries,
-                can
+                can,
+                responsibilities
             ]
         );
 
@@ -724,7 +753,9 @@ export default function RestoOperationalAlerts({
         useCallback(
             async () => {
                 try {
-                    const requests = [];
+                    const requests = [
+                        ["responsibilities", fetch(`/api/resto/admin/staff/responsibilities?businessId=${encodeURIComponent(businessId)}`, { cache: "no-store" })]
+                    ];
 
                     if (
                         can(
@@ -835,6 +866,15 @@ export default function RestoOperationalAlerts({
                                     .deliveries
                                 : []
                         );
+
+                        const responsibilityResult = results.find(result => result.type === "responsibilities" && result.ok);
+                        if (responsibilityResult) {
+                            setResponsibilities({
+                                isOwner: Boolean(responsibilityResult.payload?.isOwner),
+                                assignedLocationIds: responsibilityResult.payload?.assignedLocationIds || [],
+                                notificationPreferences: responsibilityResult.payload?.notificationPreferences || {}
+                            });
+                        }
                     }
                 } finally {
                     if (mounted.current) {

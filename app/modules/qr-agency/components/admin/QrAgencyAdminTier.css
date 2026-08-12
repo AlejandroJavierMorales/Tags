@@ -1,0 +1,18 @@
+.tags_qr_agency_admin_activation label {
+    display: grid;
+    gap: 6px;
+    margin-top: 14px;
+    color: #53665c;
+    font-size: .74rem;
+    font-weight: 800;
+}
+
+.tags_qr_agency_admin_activation select {
+    width: min(100%, 520px);
+    min-height: 42px;
+    border: 1px solid #cbdad2;
+    border-radius: 9px;
+    background: #fff;
+    padding: 0 10px;
+    color: #20342a;
+}

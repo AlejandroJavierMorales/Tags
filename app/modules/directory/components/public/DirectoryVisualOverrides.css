@@ -1,0 +1,23 @@
+/* Ajustes visuales aislados del Directorio público. */
+.tags_directory_mobile_nav nav{position:fixed;inset:0 auto 0 0;z-index:1100;display:flex;flex-direction:column;width:min(310px,86vw);height:100dvh;padding:24px 0 18px;border:0;border-radius:0 18px 18px 0;transform:translateX(-105%);transition:transform .48s cubic-bezier(.22,.8,.25,1),visibility .48s ease;visibility:hidden;box-shadow:12px 0 35px #122d2240}
+.tags_directory_mobile_nav[open] nav{transform:translateX(0);visibility:visible}
+.tags_directory_mobile_nav[open] nav{z-index:1300}
+.tags_directory_topbar:has(.tags_directory_mobile_nav[open]){z-index:2000}
+.tags_directory_drawer_brand{display:grid;justify-items:center;gap:3px;padding:0 22px 22px;border-bottom:1px solid #e3ebe6;text-align:center}
+.tags_directory_drawer_brand img{width:min(210px,70vw);height:auto}
+.tags_directory_drawer_brand span{color:#293a32;font-size:.65rem;font-style:italic;font-weight:750}
+.tags_directory_drawer_links{display:grid;align-content:start;gap:2px;padding:18px 12px 8px}
+.tags_directory_mobile_nav nav .tags_directory_drawer_links a,.tags_directory_mobile_nav nav .tags_directory_drawer_login{display:flex;align-items:center;gap:10px;border:0;border-radius:8px;padding:13px 14px;color:#314a3f;font-size:.82rem;font-weight:750;text-decoration:none;transition:padding-left .25s ease,color .25s ease,background-color .25s ease}
+.tags_directory_mobile_nav nav .tags_directory_drawer_links a::before,.tags_directory_mobile_nav nav .tags_directory_drawer_login::before{content:"";width:4px;height:0;margin-right:-4px;border-radius:4px;background:#267451;transition:height .25s ease}
+.tags_directory_mobile_nav nav .tags_directory_drawer_links a:hover,.tags_directory_mobile_nav nav .tags_directory_drawer_login:hover{padding-left:22px;background:#edf5f0;color:#1e6d4a}
+.tags_directory_mobile_nav nav .tags_directory_drawer_links a:hover::before,.tags_directory_mobile_nav nav .tags_directory_drawer_login:hover::before{height:22px}
+.tags_directory_mobile_nav nav .tags_directory_drawer_login{margin:auto 12px 0;background:#267451;color:#fff}
+.tags_directory_mobile_nav nav .tags_directory_drawer_login:hover{background:#1e6044;color:#fff}
+.tags_directory_desktop_nav a:nth-child(3),.tags_directory_mobile_nav nav .tags_directory_drawer_links a:nth-child(3){background:#267451;color:#fff}
+.tags_directory_desktop_nav a:nth-child(3):hover,.tags_directory_mobile_nav nav .tags_directory_drawer_links a:nth-child(3):hover{background:#1e6044;color:#fff}
+.tags_directory_category_card:hover{border-color:#78c99a;box-shadow:0 0 0 1px #78c99a55,0 8px 22px #78c99a24}
+.tags_directory_category_card:hover .tags_directory_category_image{border-color:#cbe0d2;box-shadow:inset 2px 2px 5px #ffffffcc,inset -2px -2px 5px #8eb7a040}
+.tags_directory_category_card:hover .tags_directory_category_image img{filter:none}
+.tags_directory_category_image img{padding:3px;filter:grayscale(1) contrast(1.12) brightness(.82) drop-shadow(0 3px 2px #24302b44)}
+.tags_directory_footer_contact svg,.tags_directory_footer_social>a svg{width:1.28rem;height:1.28rem;flex:0 0 1.28rem}
+.tags_directory_identity span{font-size:clamp(.62rem,1.45vw,.74rem)}

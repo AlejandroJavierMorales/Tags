@@ -1,0 +1,35 @@
+﻿.tags_guest_occupancy{margin:18px 0}
+.tags_guest_occupancy>header{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;margin-bottom:12px}
+.tags_guest_occupancy>header span{color:#36805d;font-size:10px;font-weight:900;letter-spacing:.14em}
+.tags_guest_occupancy h3{margin:4px 0}
+.tags_guest_occupancy_views,.tags_guest_occupancy_navigation{display:flex;align-items:flex-end;gap:8px;flex-wrap:wrap}
+.tags_guest_occupancy label{display:grid;gap:4px;font-size:11px;font-weight:850;color:#5b6b62}
+.tags_guest_occupancy select,.tags_guest_occupancy input{min-height:38px;padding:7px 9px;border:1px solid #cfdbd4;border-radius:8px;background:#fff}
+.tags_guest_occupancy_navigation{margin-bottom:10px}
+.tags_guest_occupancy_navigation button{display:inline-flex;align-items:center;gap:6px;min-height:38px;padding:7px 11px;border:1px solid #d7e2dc;border-radius:8px;background:#fff;color:#28533d;font-weight:800}
+.tags_guest_occupancy_scroll{max-width:100%;overflow:auto;border:1px solid #dce6e0;border-radius:12px;background:#fff}
+.tags_guest_occupancy_grid{position:relative;display:grid;min-width:max-content}
+.tags_guest_occupancy_row_contents{display:contents}
+.tags_guest_occupancy_corner,.tags_guest_occupancy_month,.tags_guest_occupancy_day,.tags_guest_occupancy_unit{position:sticky;z-index:4;background:#f5f8f6}
+.tags_guest_occupancy_corner{left:0;top:0;z-index:9;display:flex;align-items:center;padding:10px;border-right:1px solid #dce6e0;border-bottom:1px solid #dce6e0;font-weight:900;grid-row:1/3}
+.tags_guest_occupancy_month{top:0;z-index:7;display:flex;align-items:center;padding:0 10px;border-right:1px solid #cbdad2;border-bottom:1px solid #dce6e0;background:#e9f3ed;color:#28533d;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.05em}
+.tags_guest_occupancy_day{top:38px;z-index:6;display:grid;place-content:center;text-align:center;border-right:1px solid #e5ece8;border-bottom:1px solid #dce6e0}
+.tags_guest_occupancy_day strong{font-size:15px}
+.tags_guest_occupancy_day small{text-transform:capitalize;color:#6d7972}
+.tags_guest_occupancy_day.is_weekend,.tags_guest_occupancy_cell.is_weekend{background:#faf5eb}
+.tags_guest_occupancy_day.is_today{box-shadow:inset 0 -3px #22a35a}
+.tags_guest_occupancy_unit{left:0;z-index:5;display:grid;align-content:center;padding:9px 12px;border-right:1px solid #dce6e0;border-bottom:1px solid #e5ece8}
+.tags_guest_occupancy_unit small{color:#718078}
+.tags_guest_occupancy_cell{z-index:1;border:0;border-right:1px solid #edf1ef;border-bottom:1px solid #e5ece8;background:#fff;cursor:pointer}
+.tags_guest_occupancy_cell:hover{background:#def3e7}
+.tags_guest_occupancy_booking{z-index:3;align-self:center;height:44px;margin:0 3px;padding:5px 8px;overflow:hidden;border:0;border-radius:8px;color:#fff;text-align:left;cursor:pointer;box-shadow:0 3px 8px #173f2d2e}
+.tags_guest_occupancy_booking strong,.tags_guest_occupancy_booking span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tags_guest_occupancy_booking strong{font-size:12px}
+.tags_guest_occupancy_booking span{font-size:10px;opacity:.9}
+@media(max-width:700px){.tags_guest_occupancy>header{align-items:stretch;flex-direction:column}.tags_guest_occupancy_views{display:grid;grid-template-columns:1fr 1fr}.tags_guest_occupancy_navigation button span{display:none}.tags_guest_occupancy_corner,.tags_guest_occupancy_unit{width:140px}}
+
+.tags_guest_occupancy{--tags-guest-unit-column:180px}
+@media(max-width:700px){.tags_guest_occupancy{--tags-guest-unit-column:94px;margin:12px 0}.tags_guest_occupancy h3{font-size:16px}.tags_guest_occupancy_navigation{display:grid;grid-template-columns:auto auto 1fr 76px auto auto}.tags_guest_occupancy_navigation button{justify-content:center;padding:6px}.tags_guest_occupancy_corner,.tags_guest_occupancy_unit{width:auto;padding:6px;font-size:11px;overflow:hidden}.tags_guest_occupancy_unit strong,.tags_guest_occupancy_unit small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tags_guest_occupancy select,.tags_guest_occupancy input{width:100%;max-width:100%;padding:6px;font-size:12px}}
+@media(max-width:430px){.tags_guest_occupancy_navigation{grid-template-columns:repeat(4,minmax(0,1fr))}.tags_guest_occupancy_navigation label:first-of-type{grid-column:1/3}.tags_guest_occupancy_navigation label:nth-of-type(2){grid-column:3/5}}
+
+

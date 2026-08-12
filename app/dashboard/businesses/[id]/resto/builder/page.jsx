@@ -9,6 +9,6 @@ export const dynamic = "force-dynamic";
 export default async function Page({ params }) {
     const { id: businessId } = await params;
     const access = await getRestoAccess({ businessId, permission: "builder.view" });
-    if (!access.allowed) return redirect(access.status === 401 ? "/login" : `/dashboard/businesses/${businessId}/resto`);
-    return <><HeaderSwitcher /><RestoBuilderClient businessId={businessId} permissions={access.permissions} /></>;
+if (!access.allowed) return redirect(access.status === 401 ? "/resto/login" : `/dashboard/businesses/${businessId}/resto`);
+return <><HeaderSwitcher context="resto" /><RestoBuilderClient businessId={businessId} permissions={access.permissions} /></>;
 }

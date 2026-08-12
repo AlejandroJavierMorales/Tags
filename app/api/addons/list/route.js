@@ -19,6 +19,8 @@ export async function GET() {
                 default_quantity,
                 price,
                 currency,
+                addon_type,
+                page_type,
                 is_active,
                 is_public,
                 sort_order,

@@ -6,9 +6,11 @@ import HeaderBusinesses from "./businesses/HeaderBusinesses";
 import TagsHeader from "./Header";
 import RestoStaffHeader
     from "@/app/modules/resto/components/admin/staff/RestoStaffHeader";
+import RestoOwnerHeader
+    from "@/app/modules/resto/components/admin/RestoOwnerHeader";
 import "@/app/modules/resto/styles/resto-staff.css";
 
-export default async function HeaderSwitcher() {
+export default async function HeaderSwitcher({ context = null }) {
 
     const cookieStore =
         await cookies();
@@ -41,6 +43,10 @@ export default async function HeaderSwitcher() {
                     }
                 />
             );
+        }
+
+        if (context === "resto" && session?.businessId) {
+            return <RestoOwnerHeader name={session.name || session.email} />;
         }
 
         // =====================================

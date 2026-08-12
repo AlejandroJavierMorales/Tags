@@ -46,6 +46,9 @@ const emptyProduct = {
     is_visible: 1,
 
     is_featured: 0,
+    is_offer: 0,
+    is_recommended: 0,
+    is_new: 0,
 
     is_available: true,
 
@@ -586,6 +589,45 @@ export default function RestoProductEditorClient({
                         />
 
                         Destacado
+
+                    </label>
+
+                    <label className="qr_page_checkbox">
+                        <input type="checkbox" checked={!!form.is_recommended} onChange={e => update("is_recommended", e.target.checked ? 1 : 0)} />
+                        Recomendado
+                    </label>
+
+                    <label className="qr_page_checkbox">
+
+                        <input
+                            type="checkbox"
+                            checked={!!form.is_offer}
+                            onChange={e =>
+                                update(
+                                    "is_offer",
+                                    e.target.checked ? 1 : 0
+                                )
+                            }
+                        />
+
+                        Oferta
+
+                    </label>
+
+                    <label className="qr_page_checkbox">
+
+                        <input
+                            type="checkbox"
+                            checked={!!form.is_new}
+                            onChange={e =>
+                                update(
+                                    "is_new",
+                                    e.target.checked ? 1 : 0
+                                )
+                            }
+                        />
+
+                        Novedad
 
                     </label>
 

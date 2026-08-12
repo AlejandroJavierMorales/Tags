@@ -39,14 +39,14 @@ export default async function Page({
     if (!access.allowed) {
         redirect(
             access.status === 401
-                ? "/login"
+                ? "/resto/login"
                 : `/dashboard/businesses/${businessId}/resto/locations`
         );
     }
 
     return (
         <>
-            <HeaderSwitcher />
+            <HeaderSwitcher context="resto" />
 
             <RestoLocationEditorClient
                 businessId={businessId}

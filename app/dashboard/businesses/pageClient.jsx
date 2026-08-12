@@ -15,9 +15,31 @@ import { formatDate } from "../../lib/formatDate";
 import { getSubscriptionStatusLabel } from "../../lib/helpers/getSubscriptionStatusLabel";
 import { isExpiring } from "../../lib/dateUtils";
 import showAlert from "@/app/components/showAlert";
+import MediaUploader from "@/app/components/MediaUploader";
+import BusinessLocationFields from "@/app/components/businesses/BusinessLocationFields";
 
 import { FiDownload } from "react-icons/fi";
 import { FaGoogle } from "react-icons/fa";
+
+const EMPTY_DETAILS = {
+    display_name: "", description: "", logo_url: "", cover_url: "", whatsapp: "", address: "",
+    postal_code: "", latitude: "", longitude: "", primary_place_id: "", country_place_id: "", province_place_id: "", region_place_id: "",
+    website_url: "", instagram_url: "", facebook_url: "", tiktok_url: "", youtube_url: "",
+    linkedin_url: "", google_reviews_url: "", maps_url: ""
+};
+
+function placeSelection(localityId, places) {
+    const result = { primary_place_id: localityId ? String(localityId) : "", region_place_id: "", province_place_id: "", country_place_id: "" };
+    const map = new Map(places.map(place => [Number(place.id), place]));
+    let current = map.get(Number(localityId));
+    while (current) {
+        if (["region"].includes(current.place_type)) result.region_place_id = String(current.id);
+        if (["province", "state"].includes(current.place_type)) result.province_place_id = String(current.id);
+        if (current.place_type === "country") result.country_place_id = String(current.id);
+        current = current.parent_id ? map.get(Number(current.parent_id)) : null;
+    }
+    return result;
+}
 
 export default function BusinessesPageClient({ session }) {
     const [list, setList] = useState([]);
@@ -26,16 +48,19 @@ export default function BusinessesPageClient({ session }) {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [phone, setPhone] = useState("");
+    const [details, setDetails] = useState(EMPTY_DETAILS);
 
     const [editOpen, setEditOpen] = useState(false);
     const [editId, setEditId] = useState(null);
     const [editName, setEditName] = useState("");
     const [editEmail, setEditEmail] = useState("");
     const [editPhone, setEditPhone] = useState("");
+    const [editDetails, setEditDetails] = useState(EMPTY_DETAILS);
 
     const [search, setSearch] = useState("");
 
     const [plans, setPlans] = useState([]);
+    const [geoPlaces, setGeoPlaces] = useState([]);
 
     const [planId, setPlanId] = useState("");
 
@@ -70,11 +95,18 @@ export default function BusinessesPageClient({ session }) {
         setPlans(Array.isArray(data) ? data : []);
     }
 
-    function openEdit(b) {
+    async function loadGeoPlaces() {
+        const res = await fetch("/api/business/profile/places", { cache: "no-store" });
+        const data = await res.json().catch(() => ({}));
+        setGeoPlaces(res.ok && Array.isArray(data.places) ? data.places : []);
+    }
+
+    async function openEdit(b) {
         setEditId(b.id);
         setEditName(b.name || "");
         setEditEmail(b.email || "");
         setEditPhone(b.phone || "");
+        setEditDetails(Object.fromEntries(Object.keys(EMPTY_DETAILS).map(key => [key, b[key] || ""])));
         setEditStartDate(
             b.subscription_started_at
                 ? new Date(b.subscription_started_at).toISOString().slice(0, 10)
@@ -90,12 +122,26 @@ export default function BusinessesPageClient({ session }) {
         setOriginalEmail(b.email || "");
 
         setEditOpen(true);
+
+        const response = await fetch(`/api/business/profile?businessId=${b.id}`, { cache: "no-store" });
+        const payload = await response.json().catch(() => ({}));
+        if (response.ok && payload.business) {
+            const primaryPlace = payload.selectedPlaces?.find(place => place.relation_type === "location" && Number(place.is_primary)) || payload.selectedPlaces?.find(place => place.relation_type === "location");
+            const sourcePlaces = Array.isArray(payload.places) ? payload.places : geoPlaces;
+            if (Array.isArray(payload.places)) setGeoPlaces(payload.places);
+            setEditDetails(current => ({
+                ...current,
+                ...Object.fromEntries(Object.keys(EMPTY_DETAILS).filter(key => Object.prototype.hasOwnProperty.call(payload.business, key)).map(key => [key, payload.business[key] ?? ""])),
+                ...placeSelection(primaryPlace?.place_id, sourcePlaces)
+            }));
+        }
     }
 
     useEffect(() => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
         load();
         loadPlans();
+        loadGeoPlaces();
     }, []);
 
     async function create() {
@@ -169,6 +215,7 @@ export default function BusinessesPageClient({ session }) {
             name: name.trim(),
             email: normalizeEmail(email),
             phone: phone?.trim() || null,
+            ...details,
             plan_id: planId,
             duration_months: Number(durationMonths),
             start_date: startDate
@@ -202,6 +249,7 @@ export default function BusinessesPageClient({ session }) {
         setName("");
         setEmail("");
         setPhone("");
+        setDetails(EMPTY_DETAILS);
         setPlanId("");
         setOpen(false);
 
@@ -354,6 +402,7 @@ export default function BusinessesPageClient({ session }) {
                 name: editName.trim(),
                 email: normalizeEmail(editEmail),
                 phone: editPhone?.trim() || null,
+                ...editDetails,
                 plan_id: editPlanId,
                 duration_months: Number(editDurationMonths),
                 start_date: editStartDate
@@ -633,6 +682,8 @@ export default function BusinessesPageClient({ session }) {
                                 />
                             </div>
 
+                            <BusinessDetailsFields values={details} onChange={setDetails} places={geoPlaces} />
+
                             {/* PLAN */}
                             <div className="tags_modal_group">
                                 <label className="tags_modal_label">Plan *</label>
@@ -755,6 +806,8 @@ export default function BusinessesPageClient({ session }) {
                                 />
                             </div>
 
+                            <BusinessDetailsFields values={editDetails} onChange={setEditDetails} businessId={editId} places={geoPlaces} />
+
                             {/* PLAN */}
                             <div className="tags_modal_group">
                                 <label className="tags_modal_label">Plan *</label>
@@ -821,4 +874,27 @@ export default function BusinessesPageClient({ session }) {
             )}
         </div>
     );
+}
+
+function BusinessDetailsFields({ values, onChange, businessId = null, places = [] }) {
+    const update = (field, value) => onChange(current => ({ ...current, [field]: value }));
+    const fields = [
+        ["display_name", "Nombre visible"], ["whatsapp", "WhatsApp"],
+        ["website_url", "Sitio web"], ["instagram_url", "Instagram"], ["facebook_url", "Facebook"],
+        ["tiktok_url", "TikTok"], ["youtube_url", "YouTube"], ["linkedin_url", "LinkedIn"],
+        ["google_reviews_url", "Google Reviews"], ["maps_url", "Google Maps"]
+    ];
+
+    return <>
+        <div className="tags_modal_group">
+            <label className="tags_modal_label">Descripción</label>
+            <textarea className="tags_modal_input tags_text_normal" value={values.description} onChange={event => update("description", event.target.value)} />
+        </div>
+        {businessId ? <>
+            <div className="tags_modal_group"><label className="tags_modal_label">Logo</label><MediaUploader businessId={businessId} value={values.logo_url} module="directory" variant="logo" entityId={businessId} accept="image/*" label="Cargar logo" onChange={media => update("logo_url", media?.url || "")} /></div>
+            <div className="tags_modal_group"><label className="tags_modal_label">Portada</label><MediaUploader businessId={businessId} value={values.cover_url} module="directory" variant="hero" entityId={businessId} accept="image/*" label="Cargar portada" onChange={media => update("cover_url", media?.url || "")} /></div>
+        </> : <p className="tags_modal_description">El logo y la portada se cargan con el gestor de medios después de crear el cliente.</p>}
+        <BusinessLocationFields values={values} onChange={onChange} places={places} />
+        {fields.map(([field, label]) => <div className="tags_modal_group" key={field}><label className="tags_modal_label">{label}</label><input className="tags_modal_input tags_text_normal" value={values[field]} onChange={event => update(field, event.target.value)} /></div>)}
+    </>;
 }

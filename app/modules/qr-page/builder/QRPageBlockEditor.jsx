@@ -16,6 +16,7 @@ export default function QRPageBlockEditor({
     pageId,
     section,
     block,
+    products = [],
     onClose,
     onReload
 }) {
@@ -28,6 +29,11 @@ export default function QRPageBlockEditor({
 
     const [saving, setSaving] =
         useState(false);
+
+    const catalogCategories = products
+        .map((product) => String(product.category || "").trim())
+        .filter(Boolean)
+        .filter((category, index, categories) => categories.indexOf(category) === index);
 
 
     /* const fontSizes = [
@@ -569,6 +575,26 @@ export default function QRPageBlockEditor({
                     />
                 </div>
             );
+        }
+
+        if (block.type === "web_section") {
+            const paragraphs = Array.isArray(content.paragraphs) ? content.paragraphs : [];
+            const images = Array.isArray(content.images) ? content.images.slice(0, 10) : [];
+            const move = (field, index, direction) => {
+                const values = [...(Array.isArray(content[field]) ? content[field] : [])];
+                const target = direction === "up" ? index - 1 : index + 1;
+                if (target < 0 || target >= values.length) return;
+                [values[index], values[target]] = [values[target], values[index]];
+                updateContent(field, values);
+            };
+            return <>
+                <div className="qr_page_field"><label>Título</label><input className="qr_page_input" value={content.title || ""} onChange={e => updateContent("title", e.target.value)} /></div>
+                <div className="qr_page_field"><label>Subtítulo</label><input className="qr_page_input" value={content.subtitle || ""} onChange={e => updateContent("subtitle", e.target.value)} /></div>
+                <div className="qr_page_field full"><label>Texto destacado</label><textarea className="qr_page_textarea" value={content.highlightedText || ""} onChange={e => updateContent("highlightedText", e.target.value)} /></div>
+                <div className="qr_page_field full"><label>Párrafos</label>{paragraphs.map((paragraph, index) => <div className="qr_page_repeater_item column" key={index}><textarea className="qr_page_textarea" value={paragraph} onChange={e => updateContent("paragraphs", paragraphs.map((item, itemIndex) => itemIndex === index ? e.target.value : item))} /><div className="qr_page_small_actions"><button type="button" onClick={() => move("paragraphs", index, "up")} disabled={index === 0}>↑</button><button type="button" onClick={() => move("paragraphs", index, "down")} disabled={index === paragraphs.length - 1}>↓</button><button type="button" className="danger" onClick={() => updateContent("paragraphs", paragraphs.filter((_, itemIndex) => itemIndex !== index))}>Eliminar</button></div></div>)}<button type="button" className="qr_page_btn secondary" onClick={() => updateContent("paragraphs", [...paragraphs, ""])}>+ Agregar párrafo</button></div>
+                <div className="qr_page_field"><label>Presentación de imágenes</label><select className="qr_page_select" value={content.imageLayout === "carousel" ? "carousel" : "grid"} onChange={e => updateContent("imageLayout", e.target.value)}><option value="grid">Grilla</option><option value="carousel">Carrusel</option></select></div>
+                <div className="qr_page_field full"><label>Imágenes ({images.length}/10)</label>{images.length < 10 && <MediaUploader businessId={businessId} value="" module="qr-page" variant="gallery" entityId={block.id} accept="image/*" label="Agregar imagen" onChange={media => { if (media?.url && images.length < 10) updateContent("images", [...images, { url: media.url, alt: "", storagePath: media.storagePath || "" }]); }} />}{images.map((image, index) => <div className="qr_page_gallery_editor_item" key={`${image.url}-${index}`}><img src={image.url} alt={image.alt || ""} /><div className="qr_page_gallery_editor_body"><input className="qr_page_input" value={image.alt || ""} placeholder="Texto alternativo" onChange={e => updateContent("images", images.map((item, itemIndex) => itemIndex === index ? { ...item, alt: e.target.value } : item))} /><div className="qr_page_small_actions"><button type="button" onClick={() => move("images", index, "up")} disabled={index === 0}>↑</button><button type="button" onClick={() => move("images", index, "down")} disabled={index === images.length - 1}>↓</button><button type="button" className="danger" onClick={() => updateContent("images", images.filter((_, itemIndex) => itemIndex !== index))}>Eliminar</button></div></div></div>)}</div>
+            </>;
         }
 
         if (block.type === "text") {
@@ -1853,6 +1879,31 @@ export default function QRPageBlockEditor({
             return (
                 <>
                     <div className="qr_page_field">
+                        <label>Texto superior</label>
+                        <input className="qr_page_input" value={content.eyebrow ?? "CATÁLOGO"} onChange={(e) => updateContent("eyebrow", e.target.value)} />
+                    </div>
+
+                    <div className="qr_page_field">
+                        <label>Título</label>
+                        <input className="qr_page_input" value={content.title ?? "Productos y servicios"} onChange={(e) => updateContent("title", e.target.value)} />
+                    </div>
+
+                    <div className="qr_page_field full">
+                        <label>Subtítulo</label>
+                        <input className="qr_page_input" value={content.subtitle || ""} onChange={(e) => updateContent("subtitle", e.target.value)} />
+                    </div>
+
+                    <div className="qr_page_field full">
+                        <label>Texto destacado</label>
+                        <textarea className="qr_page_textarea" value={content.highlightedText || ""} onChange={(e) => updateContent("highlightedText", e.target.value)} />
+                    </div>
+
+                    <div className="qr_page_field full">
+                        <label>Párrafos <small>Separalos con una línea vacía.</small></label>
+                        <textarea className="qr_page_textarea" value={(Array.isArray(content.paragraphs) ? content.paragraphs : []).join("\n\n")} onChange={(e) => updateContent("paragraphs", e.target.value.split(/\n\s*\n/))} />
+                    </div>
+
+                    <div className="qr_page_field">
                         <label>Mostrar</label>
 
                         <select
@@ -1884,7 +1935,25 @@ export default function QRPageBlockEditor({
                             <option value="offers">
                                 Ofertas
                             </option>
+
+                            {catalogCategories
+                                .filter((category) => !["products", "services", "featured", "offers"].includes(category))
+                                .map((category) => (
+                                    <option key={category} value={category}>
+                                        {category}
+                                    </option>
+                                ))}
                         </select>
+                    </div>
+
+                    <div className="qr_page_field">
+                        <label>Texto del buscador</label>
+                        <input className="qr_page_input" value={content.searchPlaceholder || ""} placeholder="Buscar por producto o categoría" onChange={(e) => updateContent("searchPlaceholder", e.target.value)} />
+                    </div>
+
+                    <div className="qr_page_field">
+                        <label>Opción para todas las categorías</label>
+                        <input className="qr_page_input" value={content.allCategoriesLabel || ""} placeholder="Todos" onChange={(e) => updateContent("allCategoriesLabel", e.target.value)} />
                     </div>
 
                     <div className="qr_page_empty small">
@@ -1900,10 +1969,22 @@ export default function QRPageBlockEditor({
                 Array.isArray(content.images)
                     ? content.images
                     : [];
+            const maxImages = Number(content.maxImages) > 0
+                ? Number(content.maxImages)
+                : null;
 
             function addGalleryImage(media) {
 
                 if (!media?.url) {
+                    return;
+                }
+
+                if (maxImages && images.length >= maxImages) {
+                    showAlert({
+                        type: "warning",
+                        title: "Límite alcanzado",
+                        text: `Esta galería admite hasta ${maxImages} imágenes.`
+                    });
                     return;
                 }
 
@@ -1987,14 +2068,20 @@ export default function QRPageBlockEditor({
 
                     <label>Galería</label>
 
-                    <MediaUploader
+                        {(!maxImages || images.length < maxImages) && <MediaUploader
                         businessId={businessId}
                         value=""
                         folder="blocks/gallery"
                         accept="image/*"
                         label="Agregar imagen"
                         onChange={addGalleryImage}
-                    />
+                        />}
+
+                        {maxImages && (
+                            <p className="qr_page_help">
+                                {images.length} de {maxImages} imágenes
+                            </p>
+                        )}
 
                     {
                         !images.length && (

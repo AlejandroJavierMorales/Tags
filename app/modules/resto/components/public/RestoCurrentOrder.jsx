@@ -24,6 +24,7 @@ import {
 
 import Link
     from "next/link";
+import { getRestoBackUrl } from "../../lib/restoPublicContext";
 
 import Swal
     from "sweetalert2";
@@ -181,6 +182,8 @@ export default function RestoCurrentOrder({
     resto = null
 
 }) {
+
+    const backUrl = getRestoBackUrl(resto, `/p/${slug}`);
 
     const [loading, setLoading] =
         useState(true);
@@ -880,7 +883,7 @@ export default function RestoCurrentOrder({
     function continueShopping() {
 
         window.location.href =
-            `/p/${slug}`;
+            backUrl;
 
     }
 
@@ -1282,7 +1285,7 @@ export default function RestoCurrentOrder({
             });
 
             window.location.href =
-                `/p/${slug}`;
+                backUrl;
 
         } catch (err) {
 
@@ -1369,7 +1372,7 @@ export default function RestoCurrentOrder({
 
                         <Link
 
-                            href={`/p/${slug}`}
+                            href={backUrl}
 
                             className="tags_resto_current_order_primary_link"
 
@@ -1564,6 +1567,8 @@ RENDER PRINCIPAL
                             <RestoCurrentOrderActions
 
                                 slug={slug}
+
+                                backUrl={backUrl}
 
                                 session={session}
 

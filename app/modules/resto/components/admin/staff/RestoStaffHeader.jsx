@@ -40,7 +40,7 @@ export default function RestoStaffHeader({
                         <FaHome /> Inicio
                     </Link>
                 )}
-                <Link href="/logout">
+                <Link href="/resto/logout">
                     <FaSignOutAlt />
                     Cerrar sesión
                 </Link>

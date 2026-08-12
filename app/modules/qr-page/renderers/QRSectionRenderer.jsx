@@ -51,11 +51,18 @@ export default function QRSectionRenderer({
     const sectionIndex =
         Number(section.sort_order || 0);
 
+    const themeControlsColors =
+        Number(page?.global_styles?.theme_override) === 0;
+
     const backgroundColor =
-        getThemeSectionBackground(
-            styles.backgroundColor,
-            sectionIndex
-        );
+        themeControlsColors
+            ? sectionIndex % 2 === 0
+                ? "var(--qr-bg)"
+                : "var(--qr-surface-alt)"
+            : getThemeSectionBackground(
+                styles.backgroundColor,
+                sectionIndex
+            );
 
     return (
         <section
@@ -64,7 +71,9 @@ export default function QRSectionRenderer({
             style={{
                 backgroundColor,
                 color:
-                    styles.textColor || "var(--qr-text)",
+                    themeControlsColors
+                        ? "var(--qr-text)"
+                        : styles.textColor || "var(--qr-text)",
                 textAlign:
                     styles.alignment || "center",
                 paddingTop:

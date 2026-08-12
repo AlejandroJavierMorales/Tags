@@ -51,8 +51,19 @@ export async function GET(req) {
                     s.*,
                     p.slug AS page_slug,
                     p.status AS page_status,
-                    p.page_type AS page_type
+                    p.page_type AS page_type,
+                    b.logo_url AS business_logo_url,
+                    b.cover_url AS business_cover_url,
+                    b.email AS business_email,
+                    b.phone AS business_phone,
+                    b.whatsapp AS business_whatsapp,
+                    b.address AS business_address,
+                    b.website_url AS business_website_url,
+                    b.instagram_url AS business_instagram_url,
+                    b.facebook_url AS business_facebook_url
                 FROM tags_stores s
+                INNER JOIN tags_businesses b
+                    ON b.id = s.business_id
                 LEFT JOIN tags_qr_pages p
                     ON p.id = s.page_id
                 WHERE s.business_id = ?
@@ -87,6 +98,25 @@ export async function GET(req) {
                 store.styles_json,
                 {}
             );
+
+        store.logo_url =
+            store.business_logo_url || store.logo_url;
+        store.cover_url =
+            store.business_cover_url || store.cover_url;
+        store.email =
+            store.business_email || store.email;
+        store.phone =
+            store.business_phone || store.phone;
+        store.whatsapp =
+            store.business_whatsapp || store.whatsapp;
+        store.address =
+            store.business_address || store.address;
+        store.website_url =
+            store.business_website_url || store.website_url;
+        store.instagram_url =
+            store.business_instagram_url || store.instagram_url;
+        store.facebook_url =
+            store.business_facebook_url || store.facebook_url;
 
         const [sectionRows] =
             await db.query(

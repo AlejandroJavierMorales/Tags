@@ -39,6 +39,9 @@ export default async function StoreProductGridBlock({
     const showBadge =
         content.showBadge !== false;
 
+    const showSectionTitle =
+        content.showSectionTitle !== false;
+
     const showDescription =
         content.showDescription !== false;
 
@@ -96,12 +99,14 @@ export default async function StoreProductGridBlock({
                             </span>
                         )}
 
-                        <h2
-                            className="store_products_title"
-                            style={getTextStyle("title")}
-                        >
-                            {title}
-                        </h2>
+                        {showSectionTitle && (
+                            <h2
+                                className="store_products_title"
+                                style={getTextStyle("title")}
+                            >
+                                {title}
+                            </h2>
+                        )}
 
                         {showDescription && (
                             <p
@@ -120,7 +125,8 @@ export default async function StoreProductGridBlock({
                     products={products}
                     settings={{
                         ...(content || {}),
-                        ...(entity?.settings_json || {})
+                        ...(entity?.settings_json || {}),
+                        typography: styles?.typography || {}
                     }}
                 />
 

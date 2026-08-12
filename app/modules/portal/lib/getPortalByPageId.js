@@ -73,7 +73,6 @@ export default async function getPortalByPageId(pageId) {
         AND r.is_visible = 1
 
         ORDER BY
-            r.is_home DESC,
             r.sort_order ASC,
             r.id ASC
         `,

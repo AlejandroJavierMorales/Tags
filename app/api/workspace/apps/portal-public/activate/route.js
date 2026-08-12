@@ -101,20 +101,21 @@ export async function POST(req) {
                     slug,
                     title,
                     status,
+                    theme_code,
                     header_config,
                     footer_config,
-                    theme_config,
-                    settings_json,
+                    navigation_config,
+                    hide_child_headers,
+                    hide_child_footers,
                     created_at,
                     updated_at
                 )
-                VALUES (?, ?, ?, 'draft', ?, ?, ?, ?, NOW(), NOW())
+                VALUES (?, ?, ?, 'draft', 'tags_default', ?, ?, ?, 1, 1, NOW(), NOW())
                 `,
                 [
                     businessId,
                     slug,
                     business.name || "Portal Público",
-                    JSON.stringify({}),
                     JSON.stringify({}),
                     JSON.stringify({}),
                     JSON.stringify({})

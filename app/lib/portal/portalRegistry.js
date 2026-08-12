@@ -4,6 +4,14 @@
 // =====================================
 
 export const portalRegistry = {
+    directory: {
+        key: "directory",
+        title: "Mi Web",
+        description: "Web principal del negocio publicada en los Directorios asignados.",
+        canHaveMultiple: false,
+        adminPath: ({ businessId }) =>
+            `/dashboard/businesses/${businessId}/directory`
+    },
     qr_page: {
         key: "qr_page",
         title: "QR-Page",
@@ -49,6 +57,33 @@ export const portalRegistry = {
         canHaveMultiple: false,
         adminPath: ({ businessId }) =>
             `/dashboard/businesses/${businessId}/resto`
+    },
+
+    turnos: {
+        key: "turnos",
+        title: "Tags Turnos",
+        description: "Reservas flexibles de servicios, profesionales y recursos.",
+        canHaveMultiple: true,
+        adminPath: ({ businessId }) =>
+            `/dashboard/businesses/${businessId}/turnos`
+    },
+
+    guest_experience: {
+        key: "guest_experience",
+        title: "Mi Estadía",
+        description: "Experiencia digital para huéspedes de alojamientos temporarios.",
+        canHaveMultiple: false,
+        adminPath: ({ businessId }) =>
+            `/dashboard/businesses/${businessId}/guest-experience`
+    },
+
+    qr_agency: {
+        key: "qr_agency",
+        title: "Tags QR Agency",
+        description: "Administración de clientes y códigos QR dinámicos para agencias.",
+        canHaveMultiple: false,
+        adminPath: ({ businessId }) =>
+            `/dashboard/businesses/${businessId}/qr-agency`
     },
 
     booking: {

@@ -121,6 +121,14 @@ export default function TagsHeader() {
                 label="Funcionalidades/Productos"
               />
               <Item
+                href="/dashboard/domains"
+                label="Dominios"
+              />
+              <Item
+                href="/dashboard/directory"
+                label="Directorios"
+              />
+              <Item
                 href="/dashboard/businesses/subscriptions"
                 label="Subscripciones"
               />

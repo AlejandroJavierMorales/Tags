@@ -175,60 +175,68 @@ export default function StoreHeroBlock({
 
                 <div className="store_hero_content">
 
-                    <span
-                        className="store_hero_badge"
-                        style={
-                            resolveTypography({
-                                styles,
-                                part: "meta"
-                            })
-                        }
-                    >
-                        {badgeText}
-                    </span>
-
-                    <h1
-                        className="store_hero_title"
-                        style={
-                            resolveTypography({
-                                styles,
-                                part: "title"
-                            })
-                        }
-                    >
-                        {title}
-                    </h1>
-
-                    <p
-                        className="store_hero_subtitle"
-                        style={
-                            resolveTypography({
-                                styles,
-                                part: "subtitle"
-                            })
-                        }
-                    >
-                        {subtitle}
-                    </p>
-
-                    <div className="store_hero_actions">
-
-                        <a
-                            href="#store-products"
-                            className="store_btn_primary"
+                    {content.showBadge !== false && (
+                        <span
+                            className="store_hero_badge"
                             style={
                                 resolveTypography({
                                     styles,
-                                    part: "button"
+                                    part: "meta"
                                 })
                             }
                         >
-                            {primaryButtonText}
-                        </a>
+                            {badgeText}
+                        </span>
+                    )}
+
+                    {content.showTitle !== false && (
+                        <h1
+                            className="store_hero_title"
+                            style={
+                                resolveTypography({
+                                    styles,
+                                    part: "title"
+                                })
+                            }
+                        >
+                            {title}
+                        </h1>
+                    )}
+
+                    {content.showSubtitle !== false && (
+                        <p
+                            className="store_hero_subtitle"
+                            style={
+                                resolveTypography({
+                                    styles,
+                                    part: "subtitle"
+                                })
+                            }
+                        >
+                            {subtitle}
+                        </p>
+                    )}
+
+                    <div className="store_hero_actions">
+
+                        {content.showPrimaryButton !== false && (
+                            <a
+                                href="#store-products"
+                                className="store_btn_primary"
+                                style={
+                                    resolveTypography({
+                                        styles,
+                                        part: "button"
+                                    })
+                                }
+                            >
+                                {primaryButtonText}
+                            </a>
+                        )}
 
                         {
 
-                            whatsapp && (
+                            content.showSecondaryButton !== false && whatsapp && (
 
                                 <a
                                     href={`https://wa.me/54${String(whatsapp).replace(/\D/g, "")}`}

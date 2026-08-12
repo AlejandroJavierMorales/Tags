@@ -1,0 +1,6 @@
+.resto_login_page .tags_login_wrapper { min-height: calc(100vh - 48px); }
+.resto_login_card { width: min(100%, 460px); text-align: center; }
+.resto_login_card > img { object-fit: contain; margin: 0 auto 8px; }
+.resto_login_card .tags_login_subtitle { margin-bottom: 24px; }
+.resto_login_label { display:block; margin:0 0 8px; text-align:left; font-weight:600; }
+.resto_login_error { margin-top:14px; color:#b42318; }

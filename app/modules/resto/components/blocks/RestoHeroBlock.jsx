@@ -24,6 +24,7 @@ export default function RestoHeroBlock({
 }) {
 
     const coverUrl =
+        content?.imageUrl ||
         entity?.cover_url ||
         entity?.cover_image_url ||
         entity?.coverUrl ||
@@ -95,6 +96,25 @@ export default function RestoHeroBlock({
         content?.closedLabel ||
         "Cerrado";
 
+    const sectionStyle = {
+        backgroundColor: styles?.backgroundColor || styles?.background || undefined,
+        color: styles?.textColor || styles?.color || undefined,
+        textAlign: styles?.alignment || undefined,
+        padding: styles?.padding || undefined,
+        marginTop: styles?.marginTop || undefined,
+        marginBottom: styles?.marginBottom || undefined,
+        borderColor: styles?.borderColor || undefined
+    };
+
+    const imageStyle = {
+        objectFit: content?.imageFit || "cover",
+        objectPosition: `${content?.imagePositionX || "center"} ${content?.imagePositionY || "center"}`
+    };
+
+    const overlayStyle = {
+        opacity: Math.min(0.9, Math.max(0, Number(content?.overlayOpacity ?? 40) / 100))
+    };
+
     function handleViewMenu() {
 
         const menuSection =
@@ -133,19 +153,7 @@ export default function RestoHeroBlock({
                         : "without_cover"
                 ].join(" ")
             }
-            /* style={{
-                background:
-                    styles?.background ||
-                    "var(--qr-surface)",
-
-                color:
-                    styles?.color ||
-                    "var(--qr-text)",
-
-                borderColor:
-                    styles?.borderColor ||
-                    "var(--qr-border)"
-            }} */
+            style={sectionStyle}
         >
 
             {showCover && coverUrl && (
@@ -156,11 +164,13 @@ export default function RestoHeroBlock({
                         src={coverUrl}
                         alt={title}
                         className="resto_hero_cover_image"
+                        style={imageStyle}
                     />
 
                     <div
                         className="resto_hero_cover_overlay"
                         aria-hidden="true"
+                        style={overlayStyle}
                     />
 
                 </div>

@@ -1,15 +1,21 @@
 // =====================================
 // API: /api/store/admin/products/delete
 // Descripción:
-// Elimina un producto.
+// Elimina un producto y sus imágenes almacenadas.
 // Compatible con Tags Store y Tags Resto.
 // =====================================
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-import { db }
-    from "@/app/lib/tags-db";
+import {
+    db
+} from "@/app/lib/tags-db";
+
+import {
+    deleteFile
+} from "@/app/modules/files/lib/deleteFile";
+
 import {
     getRestoAccess,
     restoAccessResponse
@@ -75,6 +81,7 @@ export async function POST(req) {
         }
 
         if (appType === "resto") {
+
             const access =
                 await getRestoAccess({
                     businessId,
@@ -83,8 +90,11 @@ export async function POST(req) {
                 });
 
             if (!access.allowed) {
-                return restoAccessResponse(access);
+                return restoAccessResponse(
+                    access
+                );
             }
+
         }
 
         const [storeRows] =
@@ -152,6 +162,23 @@ export async function POST(req) {
 
         }
 
+        /*
+         * Conservamos las rutas antes de borrar
+         * los registros de la base de datos.
+         */
+        const [imageRows] =
+            await conn.query(
+                `
+                SELECT
+                    storage_path
+                FROM tags_store_product_images
+                WHERE product_id = ?
+                `,
+                [
+                    productId
+                ]
+            );
+
         await conn.beginTransaction();
 
         transactionStarted =
@@ -186,11 +213,73 @@ export async function POST(req) {
         transactionStarted =
             false;
 
+        /*
+         * La eliminación del producto en base de datos
+         * ya fue confirmada. Limpiamos los archivos del
+         * bucket sin mantener abierta la transacción SQL.
+         */
+        const storagePaths =
+            [
+                ...new Set(
+                    imageRows
+                        .map(image =>
+                            image.storage_path
+                        )
+                        .filter(Boolean)
+                )
+            ];
+
+        const failedStoragePaths =
+            [];
+
+        for (
+            const storagePath
+            of storagePaths
+        ) {
+
+            const deleted =
+                await deleteFile(
+                    storagePath
+                );
+
+            if (!deleted) {
+
+                failedStoragePaths.push(
+                    storagePath
+                );
+
+            }
+
+        }
+
+        if (failedStoragePaths.length) {
+
+            console.error(
+                "STORE PRODUCT FILE CLEANUP ERROR:",
+                {
+                    productId,
+                    failedStoragePaths
+                }
+            );
+
+        }
+
         return Response.json({
             ok: true,
             appType,
             message:
-                "Producto eliminado correctamente"
+                failedStoragePaths.length
+                    ? "Producto eliminado. Algunas imágenes no pudieron eliminarse del almacenamiento."
+                    : "Producto eliminado correctamente",
+            storage_cleanup: {
+                total:
+                    storagePaths.length,
+                deleted:
+                    storagePaths.length -
+                    failedStoragePaths.length,
+                failed:
+                    failedStoragePaths.length
+            }
         });
 
     } catch (err) {

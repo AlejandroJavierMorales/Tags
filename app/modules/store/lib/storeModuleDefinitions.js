@@ -338,7 +338,7 @@ const featuredProductsEditor =
 const PRODUCT_CARD_DEFAULT_CONTENT = {
     cardStyle: "elevated",
     cardBorder: true,
-    cardRadius: "20px",
+    cardRadius: "12px",
     cardShadow: "soft",
     cardBackgroundColor: "",
     infoBackgroundColor: "",
@@ -362,7 +362,7 @@ const PRODUCT_CARD_DEFAULT_CONTENT = {
     showButton: true,
 
     infoAlignment: "left",
-    infoPadding: "16px",
+    infoPadding: "12px",
 
     priceColor: "",
     oldPriceColor: "",
@@ -1556,6 +1556,11 @@ export const storeModuleDefinitions = {
         category: "hero",
         isSystem: false,
         defaultContent: {
+            showBadge: true,
+            showTitle: true,
+            showSubtitle: true,
+            showPrimaryButton: true,
+            showSecondaryButton: true,
             title: "Tu tienda online",
             subtitle: "Comprá fácil, rápido y seguro.",
             primaryButtonText: "Ver productos",
@@ -1577,6 +1582,9 @@ export const storeModuleDefinitions = {
                     description: "Contá rápido qué vendés y por qué conviene comprar acá.",
                     icon: "text",
                     fields: [
+                        { key: "showBadge", type: "checkbox", label: "Etiqueta", checkboxLabel: "Mostrar etiqueta" },
+                        { key: "showTitle", type: "checkbox", label: "Título", checkboxLabel: "Mostrar título" },
+                        { key: "showSubtitle", type: "checkbox", label: "Texto", checkboxLabel: "Mostrar texto de presentación" },
                         { key: "title", type: "text", label: "Título principal" },
                         { key: "subtitle", type: "textarea", label: "Texto de presentación" }
                     ]
@@ -1586,6 +1594,8 @@ export const storeModuleDefinitions = {
                     description: "Configurá las llamadas a la acción principales de la portada.",
                     icon: "button",
                     fields: [
+                        { key: "showPrimaryButton", type: "checkbox", label: "Botón principal", checkboxLabel: "Mostrar botón principal" },
+                        { key: "showSecondaryButton", type: "checkbox", label: "Botón secundario", checkboxLabel: "Mostrar botón secundario" },
                         { key: "primaryButtonText", type: "text", label: "Texto del botón principal" },
                         { key: "secondaryButtonText", type: "text", label: "Texto del botón secundario" }
                     ]
@@ -1719,9 +1729,9 @@ export const storeModuleDefinitions = {
             cardBackgroundColor: "",
             cardBorder: true,
             cardBorderColor: "",
-            cardRadius: "20px",
+            cardRadius: "12px",
             cardShadow: "soft",
-            cardPadding: "24px",
+            cardPadding: "16px",
 
             iconColor: "",
             iconBackgroundColor: "",
@@ -2409,12 +2419,14 @@ export const storeModuleDefinitions = {
             description: "Elegí tus productos y consultá disponibilidad.",
             badgeText: "Catálogo",
             showBadge: true,
+            showSectionTitle: true,
+            showTitle: true,
             showDescription: true,
             showFilters: true,
             showSearch: true,
             onlyFeatured: false,
             limit: 24,
-            productsPerPage: 12,
+            productsPerPage: 6,
             defaultSort: "recent",
 
             ...PRODUCT_CARD_DEFAULT_CONTENT,
@@ -2422,8 +2434,8 @@ export const storeModuleDefinitions = {
             columnsDesktop: 4,
             columnsTablet: 3,
             columnsMobile: 2,
-            gapX: "24px",
-            gapY: "24px"
+            gapX: "12px",
+            gapY: "12px"
         },
 
         defaultStyles: {},
@@ -2447,11 +2459,13 @@ export const storeModuleDefinitions = {
                         { key: "description", type: "textarea", label: "Descripción" },
                         { key: "badgeText", type: "text", label: "Etiqueta superior" },
                         { key: "showBadge", type: "checkbox", label: "Etiqueta", checkboxLabel: "Mostrar etiqueta" },
+                        { key: "showSectionTitle", type: "checkbox", label: "Título del catálogo", checkboxLabel: "Mostrar título del catálogo" },
                         { key: "showDescription", type: "checkbox", label: "Descripción", checkboxLabel: "Mostrar descripción" },
                         { key: "onlyFeatured", type: "checkbox", label: "Productos", checkboxLabel: "Mostrar solo destacados" },
                         { key: "limit", type: "number", label: "Cantidad máxima de productos", min: 1, max: 100 },
                         {
                             key: "productsPerPage", type: "select", label: "Productos por página", options: [
+                                { value: 6, label: "6 productos" },
                                 { value: 12, label: "12 productos" },
                                 { value: 24, label: "24 productos" },
                                 { value: 36, label: "36 productos" }

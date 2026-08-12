@@ -13,10 +13,12 @@ export async function createQRPageFromTemplate({
     qrCodeId,
     slug,
     title = null,
-    status = "draft"
+    status = "draft",
+    pageType = "qr_page",
+    templateOverride = null
 }) {
     const template =
-        getDefaultQRPageTemplate({
+        templateOverride || getDefaultQRPageTemplate({
             ...business,
             name: title || business?.name
         });
@@ -42,6 +44,10 @@ export async function createQRPageFromTemplate({
                 whatsapp,
                 email,
                 phone,
+                address,
+                website_url,
+                instagram_url,
+                facebook_url,
                 global_styles,
                 header_config,
                 footer_config,
@@ -50,11 +56,12 @@ export async function createQRPageFromTemplate({
                 created_at,
                 updated_at
             )
-            VALUES (?, ?, 'qr_page', 'auto', ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+            VALUES (?, ?, ?, 'auto', ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
             `,
             [
                 businessId,
                 qrCodeId,
+                pageType,
                 slug,
                 pageTitle,
                 template.page.description,
@@ -64,6 +71,10 @@ export async function createQRPageFromTemplate({
                 template.page.whatsapp,
                 template.page.email,
                 template.page.phone,
+                template.page.address || null,
+                template.page.website_url || null,
+                template.page.instagram_url || null,
+                template.page.facebook_url || null,
                 JSON.stringify(template.page.global_styles || {}),
                 JSON.stringify(template.page.header_config || {}),
                 JSON.stringify(template.page.footer_config || {}),

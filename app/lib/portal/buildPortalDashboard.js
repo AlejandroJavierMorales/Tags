@@ -49,6 +49,7 @@ export function buildPortalDashboard({
     qrs = [],
     store = null,
     portal = null,
+    qrAgency = null,
     subscriptionSummary = null,
     businessAddons = [],
     businessId,
@@ -59,7 +60,9 @@ export function buildPortalDashboard({
     setReviewsActivateOpen,
     setTagsIdActivateOpen,
     setPortalActivateOpen,
-    setRestoActivateOpen
+    setRestoActivateOpen,
+    setTurnosActivateOpen,
+    setDirectoryActivateOpen
 }) {
     const qrPagesAvailable =
         Number(subscriptionSummary?.usage?.qr_pages_total || 0) -
@@ -81,11 +84,24 @@ export function buildPortalDashboard({
     const restoPage =
         qrs.find((qr) => qr.qr_page_type === "resto");
 
+    const turnosPages =
+        qrs.filter((qr) => qr.qr_page_type === "turnos");
+    const directoryPage =
+        qrs.find((qr) => qr.qr_page_type === "directory");
+
     const hasStoreAddon =
         businessHasAddon(businessAddons, "store");
 
     const hasRestoAddon =
         businessHasAddon(businessAddons, "resto");
+
+    const hasTurnosAddon =
+        businessHasAddon(businessAddons, "turnos");
+
+    const hasGuestExperienceAddon =
+        businessHasAddon(businessAddons, "guest_experience");
+    const hasDirectoryAddon =
+        businessHasAddon(businessAddons, "directory");
 
     const hasTagsIdAddon =
         businessHasAddon(businessAddons, "tagsid");
@@ -95,6 +111,9 @@ export function buildPortalDashboard({
 
     const hasPortalPublicAddon =
         businessHasAddon(businessAddons, "portal_public");
+
+    const hasQrAgencyAddon =
+        businessHasAddon(businessAddons, "qr_agency");
 
     const hasTagsIdAlready = qrs.some(isTagsIdPage);
 
@@ -124,6 +143,41 @@ export function buildPortalDashboard({
     }
 
     const portalFeatures = [
+        {
+            ...portalRegistry.qr_agency,
+            active: hasQrAgencyAddon,
+            status: getFeatureStatusLabel({
+                hasAddon: hasQrAgencyAddon,
+                exists: !!qrAgency,
+                status: qrAgency?.status
+            }),
+            actionLabel: qrAgency ? "Administrar Agencia" : "Activar Agencia",
+            onClick: () => {
+                if (!hasQrAgencyAddon) return;
+                router.push(portalRegistry.qr_agency.adminPath({ businessId }));
+            }
+        },
+        {
+            ...portalRegistry.directory,
+            active: hasDirectoryAddon,
+            status: getFeatureStatusLabel({ hasAddon: hasDirectoryAddon, exists: !!directoryPage, status: directoryPage?.qr_page_status }),
+            actionLabel: directoryPage ? "Administrar mi Web" : "Activar mi Web",
+            onClick: () => {
+                if (!hasDirectoryAddon) return;
+                if (directoryPage) router.push(portalRegistry.directory.adminPath({ businessId }));
+                else setDirectoryActivateOpen(true);
+            }
+        },
+        {
+            ...portalRegistry.guest_experience,
+            active: hasGuestExperienceAddon,
+            status: hasGuestExperienceAddon ? "Disponible" : null,
+            actionLabel: "Activar / Administrar",
+            onClick: () => {
+                if (!hasGuestExperienceAddon) return;
+                router.push(portalRegistry.guest_experience.adminPath({ businessId }));
+            }
+        },
         {
             ...portalRegistry.resto,
             active:
@@ -156,6 +210,26 @@ export function buildPortalDashboard({
                 }
                 setRestoActivateOpen(true);
             }
+        },
+        {
+            ...portalRegistry.turnos,
+            active: hasTurnosAddon,
+            status: getFeatureStatusLabel({
+                hasAddon: hasTurnosAddon,
+                exists: turnosPages.length > 0,
+                status: turnosPages[0]?.qr_page_status
+            }),
+            actionLabel: turnosPages.length > 0 ? "Administrar" : "Activar página",
+            secondaryActionLabel: turnosPages.length > 0 ? "Crear otra instancia" : null,
+            onClick: () => {
+                if (!hasTurnosAddon) return;
+                if (turnosPages.length > 0) {
+                    router.push(`${portalRegistry.turnos.adminPath({ businessId })}?turnosId=${turnosPages[0].turnos_id}`);
+                    return;
+                }
+                setTurnosActivateOpen(true);
+            },
+            onSecondaryClick: turnosPages.length > 0 ? () => setTurnosActivateOpen(true) : null
         },
         {
             ...portalRegistry.tags_id,
@@ -194,7 +268,7 @@ export function buildPortalDashboard({
                     : qrPages.length === 1
                         ? portalRegistry.qr_page.description
                         : "Tenés cupo disponible para activar una QR-Page.",
-            active: qrPages.length > 0,
+            active: canActivateQrPage || qrPages.length > 0,
             status: getFeatureStatusLabel({
                 hasAddon: canActivateQrPage || qrPages.length > 0,
                 exists: qrPages.length > 0,
@@ -247,9 +321,9 @@ export function buildPortalDashboard({
             ...portalRegistry.store,
             active: hasStoreAddon,
             status: getFeatureStatusLabel({
-                hasAddon: hasPortalPublicAddon,
-                exists: !!portal,
-                status: portal?.status
+                hasAddon: hasStoreAddon,
+                exists: !!store,
+                status: store?.status
             }),
             actionLabel:
                 store
@@ -303,6 +377,7 @@ export function buildPortalDashboard({
         qrPages,
         tagsIdPage,
         reviewsPage,
+        directoryPage,
         qrsAvailableForQrPage,
         canActivateQrPage,
         canActivateTagsId,

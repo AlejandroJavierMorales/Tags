@@ -41,6 +41,7 @@ export async function GET(req) {
     qrp.slug AS qr_page_slug,
     qrp.slug_locked,
     qrp.page_type AS qr_page_type,
+    ta.id AS turnos_id,
 
     p.id AS product_id,
     p.name AS product_name,
@@ -70,6 +71,10 @@ export async function GET(req) {
     ON qrp.qr_code_id = q.id
     AND qrp.business_id = q.business_id
 
+  LEFT JOIN tags_turnos_apps ta
+    ON ta.page_id = qrp.id
+    AND ta.business_id = q.business_id
+
   LEFT JOIN tags_qr_addon_usage qau
     ON qau.qr_code_id = q.id
     AND qau.status = 'active'
@@ -89,6 +94,7 @@ export async function GET(req) {
     qrp.slug,
     qrp.slug_locked,
     qrp.page_type,
+    ta.id,
     p.id,
     p.name,
     t.id,
@@ -127,9 +133,18 @@ export async function GET(req) {
     [id]
   );
 
+  const [agencyRows] = await db.execute(
+    `SELECT id,slug,status,qr_limit
+     FROM tags_qr_agencies
+     WHERE business_id=?
+     LIMIT 1`,
+    [id]
+  );
+
   return Response.json({
     business,
     qrs: qrRows,
-    addons: addonRows
+    addons: addonRows,
+    qrAgency: agencyRows[0] || null
   });
 }

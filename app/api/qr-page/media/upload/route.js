@@ -21,6 +21,9 @@ import { deleteFile }
 import { requireQRPageAccess }
     from "@/app/modules/qr-page/lib/requireQRPageAccess";
 
+import { requireDirectoryAdmin }
+    from "@/app/modules/directory/lib/requireDirectoryAdmin";
+
 function sanitizeFileName(name = "file") {
     return name
         .toString()
@@ -173,10 +176,49 @@ export async function POST(req) {
             );
         }
 
-        const access =
-            await requireQRPageAccess(
-                businessId
+        const workspaceMediaModules = [
+            "store",
+            "resto",
+            "turnos",
+            "reservas",
+            "directory"
+        ];
+
+        const normalizedModule =
+            String(module || "")
+                .trim()
+                .toLowerCase();
+
+        const normalizedFolder =
+            String(folder || "")
+                .trim()
+                .toLowerCase();
+
+        const skipQRPageValidation =
+            workspaceMediaModules.includes(
+                normalizedModule
+            ) ||
+            workspaceMediaModules.some(
+                workspaceModule =>
+                    normalizedFolder === workspaceModule ||
+                    normalizedFolder.startsWith(
+                        `${workspaceModule}/`
+                    )
             );
+
+        const isDirectoryPlatformMedia =
+            normalizedModule === "directory" &&
+            String(businessId).trim().toLowerCase() === "platform";
+
+        const access =
+            isDirectoryPlatformMedia
+                ? await requireDirectoryAdmin()
+                : await requireQRPageAccess(
+                    businessId,
+                    {
+                        skipQRPageValidation
+                    }
+                );
 
         if (!access.ok) {
             return Response.json(

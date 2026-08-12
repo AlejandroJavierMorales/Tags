@@ -136,9 +136,18 @@ export default function PortalAdminClient({
             columns: "3",
             align: "left",
             logoPosition: "top",
-            backgroundColor: tokens["--qr-surface"] || "#ffffff",
-            textColor: tokens["--qr-text"] || "#111827",
-            linkColor: tokens["--qr-primary"] || "#0F9D58",
+            backgroundColor:
+                tokens["--qr-footer-bg"] ||
+                tokens["--qr-text"] ||
+                "#183226",
+            textColor:
+                tokens["--qr-footer-text"] ||
+                tokens["--qr-bg"] ||
+                "#f4faf6",
+            linkColor:
+                tokens["--qr-footer-link"] ||
+                tokens["--qr-primary"] ||
+                "#7ee2a8",
             hoverColor: tokens["--qr-primary-hover"] || tokens["--qr-primary"] || "#0F9D58",
             typography: {
                 title: {
@@ -213,7 +222,7 @@ export default function PortalAdminClient({
             setStatus(portalData?.status || "draft");
 
             setDescription(portalData?.description || "");
-            setLogoUrl(portalData?.logo_url || "");
+            setLogoUrl(data.business?.logo_url || portalData?.logo_url || "");
 
             setHeaderConfig(portalData?.header_config || {});
             setFooterConfig(portalData?.footer_config || {});
@@ -283,10 +292,11 @@ export default function PortalAdminClient({
 
         setPortal(prev => ({
             ...prev,
-            theme_id: theme.id
+            theme_id: theme.id,
+            theme_code: theme.code
         }));
 
-        await fetch("/api/portal/admin/apply-theme", {
+        const response = await fetch("/api/portal/admin/apply-theme", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -296,6 +306,17 @@ export default function PortalAdminClient({
                 themeId: theme.id
             })
         });
+
+        const payload = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+            showAlert({
+                title: "No se pudo aplicar el tema",
+                text: payload.error || "La configuraciÃ³n no pudo actualizarse.",
+                icon: "error"
+            });
+            return;
+        }
 
         await loadPortal();
 
@@ -455,6 +476,10 @@ export default function PortalAdminClient({
         setLogoUrl(
             data.file_url
         );
+        setBusinessIdentity(prev => ({
+            ...prev,
+            logo_url: data.file_url
+        }));
     }
 
     async function handleLogoChange(e) {
@@ -613,7 +638,7 @@ export default function PortalAdminClient({
 
                         <div className="tags_modal_group mt-3">
                             <label className="tags_modal_label">
-                                Logo del Portal
+                                Logo del negocio
                             </label>
 
                             <div className="tags_portal_admin_logo_box">
@@ -621,7 +646,7 @@ export default function PortalAdminClient({
                                 {logoUrl ? (
                                     <img
                                         src={logoUrl}
-                                        alt="Logo del Portal"
+                                        alt="Logo del negocio"
                                         className="tags_portal_admin_logo_preview"
                                     />
                                 ) : (
@@ -870,7 +895,7 @@ export default function PortalAdminClient({
                                 }
 
                                 const selected =
-                                    Number(portal?.theme_id || 0) === Number(theme.id);
+                                    String(portal?.theme_code || "") === String(theme.code || "");
 
                                 return (
                                     <button

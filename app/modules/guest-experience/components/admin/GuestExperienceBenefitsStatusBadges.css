@@ -1,0 +1,18 @@
+.tags_guest_benefits_admin .is_published,
+.tags_guest_benefits_admin .is_redeemed,
+.tags_guest_benefits_admin .is_draft,
+.tags_guest_benefits_admin .is_issued,
+.tags_guest_benefits_admin .is_archived{
+    display:inline-flex;
+    width:max-content;
+    align-items:center;
+    padding:5px 9px;
+    border-radius:999px;
+    font-size:11px;
+    font-weight:900;
+}
+.tags_guest_benefits_admin .is_published,
+.tags_guest_benefits_admin .is_redeemed{background:#dff4e8;color:#177440}
+.tags_guest_benefits_admin .is_draft,
+.tags_guest_benefits_admin .is_issued{background:#fff0d7;color:#a15d17}
+.tags_guest_benefits_admin .is_archived{background:#e9edeb;color:#56635d}

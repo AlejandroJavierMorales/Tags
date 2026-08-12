@@ -48,14 +48,14 @@ export default async function Page({
     if (!access.allowed) {
         return redirect(
             access.status === 401
-                ? "/login"
+                ? "/resto/login"
                 : `/dashboard/businesses/${businessId}/resto/products`
         );
     }
 
     return (
         <>
-            <HeaderSwitcher />
+            <HeaderSwitcher context="resto" />
 
             <RestoProductEditorClient
                 businessId={businessId}

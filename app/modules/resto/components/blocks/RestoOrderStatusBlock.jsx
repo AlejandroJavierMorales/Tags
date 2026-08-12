@@ -282,22 +282,19 @@ export default function RestoOrderStatusBlock({
         content?.showProgress !==
         false;
 
+    const sectionStyle = {
+        backgroundColor: styles?.backgroundColor || styles?.background || undefined,
+        color: styles?.textColor || styles?.color || undefined,
+        borderColor: styles?.borderColor || undefined,
+        padding: styles?.padding || undefined,
+        marginTop: styles?.marginTop || undefined,
+        marginBottom: styles?.marginBottom || undefined
+    };
+
     return (
         <section
             className="resto_order_status"
-            /* style={{
-                background:
-                    styles?.background ||
-                    "var(--qr-surface)",
-
-                color:
-                    styles?.color ||
-                    "var(--qr-text)",
-
-                borderColor:
-                    styles?.borderColor ||
-                    "var(--qr-border)"
-            }} */
+            style={sectionStyle}
         >
             <div className="container">
 

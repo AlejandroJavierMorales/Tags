@@ -20,6 +20,7 @@ import {
 import {
     getRestoProductAvailability
 } from "@/app/modules/resto/lib/products/restoProductAvailability";
+import { getGuestPublicSession } from "@/app/modules/guest-experience/lib/getGuestPublicSession";
 
 function createToken() {
 
@@ -84,9 +85,19 @@ export async function POST(req) {
 
             notes = "",
 
-            items = []
+            items = [],
+
+            guestExperience = null
 
         } = body;
+
+        const guestSession = guestExperience?.slug
+            ? await getGuestPublicSession(String(guestExperience.slug))
+            : null;
+
+        if (guestExperience?.slug && !guestSession) {
+            return Response.json({ error: "La sesión de Mi Estadía no es válida" }, { status: 401 });
+        }
 
         const receivedServiceMode =
             service_mode ||
@@ -475,6 +486,8 @@ export async function POST(req) {
                         `
                         SELECT
                             id,
+                            business_id,
+                            currency,
                             settings_json
                         FROM tags_stores
                         WHERE id=?
@@ -499,6 +512,20 @@ export async function POST(req) {
                         }
                     );
 
+                }
+
+                if (guestSession) {
+                    if (Number(guestSession.business_id) !== Number(storeRows[0].business_id)) {
+                        await conn.rollback();
+                        return Response.json({ error: "La estadía no pertenece a este restaurante" }, { status: 403 });
+                    }
+                    const [integrations] = await conn.query("SELECT id,allow_room_charge FROM tags_guest_commerce_integrations WHERE guest_app_id=? AND module_type='resto' AND store_id=? AND is_active=1 LIMIT 1", [guestSession.id, storeId]);
+                    if (!integrations[0]) {
+                        await conn.rollback();
+                        return Response.json({ error: "El restaurante no está habilitado en Mi Estadía" }, { status: 403 });
+                    }
+                    guestSession.commerce_integration = integrations[0];
+                    guestSession.commerce_currency = storeRows[0].currency || "ARS";
                 }
 
                 const settings =
@@ -540,7 +567,7 @@ export async function POST(req) {
                             )
                         );
 
-                if (!modeEnabled) {
+                if (!modeEnabled && !guestSession) {
 
                     await conn.rollback();
 
@@ -1250,6 +1277,18 @@ RECALCULAR TOTALES DE LA SESIÓN
             ]
 
         );
+
+        if (guestSession) {
+            const chargeToStay = Boolean(guestExperience?.chargeToStay && Number(guestSession.commerce_integration.allow_room_charge));
+            let accountEntryId = null;
+            if (chargeToStay) {
+                const [accounts] = await conn.query("SELECT id,currency FROM tags_guest_accounts WHERE guest_app_id=? AND stay_id=? LIMIT 1", [guestSession.id,guestSession.stay_id]);
+                if (!accounts[0]) throw Object.assign(new Error("La cuenta de la estadía no está disponible"),{status:409});
+                const [entry] = await conn.query("INSERT INTO tags_guest_account_entries(account_id,entry_type,source_type,source_id,idempotency_key,description,quantity,unit_amount,total_amount,currency,status,created_by_type) VALUES(?,'charge','resto',?,?,?,1,?,?,?,'confirmed','guest')",[accounts[0].id,String(session.id),`resto:${session.id}`,`Gastronomía · Pedido #${session.id}`,total,total,guestSession.commerce_currency||accounts[0].currency||"ARS"]);
+                accountEntryId=entry.insertId;
+            }
+            await conn.query("INSERT INTO tags_guest_commerce_orders(guest_app_id,stay_id,guest_id,module_type,store_id,external_session_id,account_entry_id,fulfillment_mode,charge_to_stay,total_amount,currency,status) VALUES(?,?,?,'resto',?,?,?,'room_delivery',?,?,?,'created')",[guestSession.id,guestSession.stay_id,guestSession.guest_id,session.store_id,session.id,accountEntryId,chargeToStay?1:0,total,guestSession.commerce_currency||"ARS"]);
+        }
 
         await conn.commit();
 

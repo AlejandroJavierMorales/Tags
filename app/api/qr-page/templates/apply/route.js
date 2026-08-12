@@ -336,7 +336,7 @@ export async function POST(req) {
 
                         JSON.stringify(
                             Array.isArray(product.images_json)
-                                ? product.images_json
+                                ? product.images_json.slice(0, 12)
                                 : product.image_url
                                     ? [
                                         {

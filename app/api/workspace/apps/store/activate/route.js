@@ -1,313 +1,282 @@
 // =====================================
-// API: /api/resto/public/session/open/route.js
-// Descripción:
-// Abre o reutiliza una sesión pública de Tags
-// Resto a partir del QR escaneado.
+// API: /api/workspace/apps/store/activate
+// Descripción: Activa Tags Tienda desde el Workspace creando QR digital, página pública y tienda.
 // =====================================
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-import crypto from "crypto";
+import { db } from "@/app/lib/tags-db";
+import { createSlug } from "@/app/modules/qr-page/lib/createSlug";
+import { registerQRAddonUsage } from "@/app/modules/addons/lib/registerQRAddonUsage";
+import { createAppQRCode } from "@/app/modules/qr/lib/createAppQRCode";
+import {
+    installStoreTemplate
+} from "@/app/modules/store/lib/installStoreTemplate";
 
-import { db }
-    from "@/app/lib/tags-db";
+import {
+    installStoreDemoContent
+} from "@/app/modules/store/lib/installStoreDemoContent";
 
-function createToken() {
-
-    return crypto
-        .randomBytes(32)
-        .toString("hex");
-
+function getBaseUrl() {
+    return process.env.NODE_ENV === "development"
+        ? "http://localhost:3000"
+        : process.env.NEXT_PUBLIC_BASE_URL_PROD;
 }
 
 export async function POST(req) {
-
-    const conn =
-        await db.getConnection();
+    const conn = await db.getConnection();
 
     try {
-
         const {
-            code
+            businessId,
+            name,
+            slug
         } = await req.json();
 
-        if (!code) {
-
+        if (!businessId || !name || !slug) {
             return Response.json(
-                {
-                    error:
-                        "QR requerido"
-                },
-                {
-                    status:400
-                }
+                { error: "businessId, name y slug son requeridos" },
+                { status: 400 }
             );
-
         }
 
-        const [qrRows] =
-            await conn.query(
-                `
-                SELECT
-                    *
-                FROM tags_qr_codes
-                WHERE code=?
-                LIMIT 1
-                `,
-                [
-                    code
-                ]
-            );
+        const cleanSlug = createSlug(slug);
 
-        const qr =
-            qrRows[0];
-
-        if (!qr) {
-
+        if (!cleanSlug) {
             return Response.json(
-                {
-                    error:
-                        "QR inexistente"
-                },
-                {
-                    status:404
-                }
+                { error: "Slug inválido" },
+                { status: 400 }
             );
-
         }
 
-        if (
-            !qr.is_active ||
-            qr.status === "disabled" ||
-            qr.status === "stopped"
-        ) {
+        const [businessRows] = await conn.query(
+            `
+            SELECT *
+            FROM tags_businesses
+            WHERE id = ?
+            LIMIT 1
+            `,
+            [businessId]
+        );
 
+        const business = businessRows[0];
+
+        if (!business) {
             return Response.json(
-                {
-                    error:
-                        "QR no disponible"
-                },
-                {
-                    status:403
-                }
+                { error: "Cliente no encontrado" },
+                { status: 404 }
             );
-
         }
 
-        const [locationRows] =
-            await conn.query(
-                `
-                SELECT
-                    l.*,
+        const [addonRows] = await conn.query(
+            `
+            SELECT id
+            FROM tags_business_addons
+            WHERE business_id = ?
+            AND addon_code = 'store'
+            AND status = 'active'
+            AND (
+                expires_at IS NULL
+                OR expires_at >= NOW()
+            )
+            LIMIT 1
+            `,
+            [businessId]
+        );
 
-                    s.id           AS store_id,
-                    s.name         AS store_name,
-                    s.slug         AS store_slug,
-                    s.status       AS store_status,
-
-                    p.id           AS page_id,
-                    p.status       AS page_status
-
-                FROM tags_resto_locations l
-
-                INNER JOIN tags_stores s
-                    ON s.id=l.store_id
-                   AND s.app_type='resto'
-
-                LEFT JOIN tags_qr_pages p
-                    ON p.id=s.page_id
-
-                WHERE l.qr_code_id=?
-
-                LIMIT 1
-                `,
-                [
-                    qr.id
-                ]
-            );
-
-        const location =
-            locationRows[0];
-
-        if (!location) {
-
+        if (!addonRows.length) {
             return Response.json(
-                {
-                    error:
-                        "La ubicación no existe"
-                },
-                {
-                    status:404
-                }
+                { error: "El cliente no tiene Tags Tienda activo" },
+                { status: 403 }
             );
-
         }
 
-        if (
-            !location.is_active
-        ) {
+        const [existingStoreRows] = await conn.query(
+            `
+            SELECT id
+            FROM tags_stores
+            WHERE business_id = ?
+            AND (
+                    app_type = 'store'
+                    OR app_type IS NULL
+                )
+            LIMIT 1
+            `,
+            [businessId]
+        );
 
+        if (existingStoreRows.length) {
             return Response.json(
-                {
-                    error:
-                        "La ubicación está deshabilitada"
-                },
-                {
-                    status:403
-                }
+                { error: "Este cliente ya tiene una tienda creada" },
+                { status: 409 }
             );
-
         }
 
-        const [sessionRows] =
-            await conn.query(
-                `
-                SELECT *
-                FROM tags_resto_sessions
-                WHERE location_id=?
-                AND status='open'
-                LIMIT 1
-                `,
-                [
-                    location.id
-                ]
+        const [slugRows] = await conn.query(
+            `
+            SELECT id
+            FROM tags_qr_pages
+            WHERE slug = ?
+            LIMIT 1
+            `,
+            [cleanSlug]
+        );
+
+        if (slugRows.length) {
+            return Response.json(
+                { error: "Ese nombre público ya está en uso" },
+                { status: 409 }
             );
-
-        let session =
-            sessionRows[0];
-
-        let isNew =
-            false;
-
-        if (!session) {
-
-            isNew = true;
-
-            const token =
-                createToken();
-
-            const [result] =
-                await conn.query(
-                    `
-                    INSERT INTO tags_resto_sessions
-                    (
-                        store_id,
-                        location_id,
-                        source_qr_code_id,
-                        session_token,
-                        service_mode,
-                        guests,
-                        status,
-                        subtotal,
-                        discount_total,
-                        total,
-                        opened_at,
-                        created_at,
-                        updated_at
-                    )
-                    VALUES
-                    (
-                        ?,
-                        ?,
-                        ?,
-                        ?,
-                        'table',
-                        1,
-                        'open',
-                        0,
-                        0,
-                        0,
-                        NOW(),
-                        NOW(),
-                        NOW()
-                    )
-                    `,
-                    [
-                        location.store_id,
-                        location.id,
-                        qr.id,
-                        token
-                    ]
-                );
-
-            const [newRows] =
-                await conn.query(
-                    `
-                    SELECT *
-                    FROM tags_resto_sessions
-                    WHERE id=?
-                    LIMIT 1
-                    `,
-                    [
-                        result.insertId
-                    ]
-                );
-
-            session =
-                newRows[0];
-
         }
+
+        await conn.beginTransaction();
+
+        const publicUrl = `${getBaseUrl()}/p/${cleanSlug}`;
+
+        const qr = await createAppQRCode({
+            conn,
+            businessId,
+            label: name,
+            value: publicUrl,
+            finalUrl: publicUrl,
+            status: "active"
+        });
+
+        const [pageResult] = await conn.query(
+            `
+            INSERT INTO tags_qr_pages (
+                business_id,
+                qr_code_id,
+                page_type,
+                schema_type,
+                slug,
+                slug_locked,
+                title,
+                description,
+                status,
+                email,
+                phone,
+                whatsapp,
+                global_styles,
+                header_config,
+                footer_config,
+                seo_title,
+                seo_description,
+                created_at,
+                updated_at
+            )
+            VALUES (?, ?, 'store', 'store', ?, 1, ?, ?, 'published', ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+            `,
+            [
+                businessId,
+                qr.id,
+                cleanSlug,
+                name,
+                `Tienda online de ${name}`,
+                business.email || null,
+                business.phone || null,
+                business.phone || null,
+                JSON.stringify({}),
+                JSON.stringify({}),
+                JSON.stringify({}),
+                `${name} | Tienda Online`,
+                `Comprá productos de ${name} de forma simple.`
+            ]
+        );
+
+        const pageId = pageResult.insertId;
+
+        const [storeResult] = await conn.query(
+            `
+            INSERT INTO tags_stores (
+                business_id,
+                page_id,
+                slug,
+                name,
+                description,
+                whatsapp,
+                email,
+                currency,
+                status,
+                seo_title,
+                seo_description,
+                settings_json,
+                styles_json,
+                created_at,
+                updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'ARS', 'published', ?, ?, ?, ?, NOW(), NOW())
+            `,
+            [
+                businessId,
+                pageId,
+                cleanSlug,
+                name,
+                `Tienda online de ${name}`,
+                business.phone || null,
+                business.email || null,
+                `${name} | Tienda Online`,
+                `Comprá productos de ${name} de forma simple.`,
+                JSON.stringify({}),
+                JSON.stringify({})
+            ]
+        );
+
+        const storeId = storeResult.insertId;
+
+        await installStoreTemplate(
+            storeId,
+            conn
+        );
+
+        await installStoreDemoContent(
+            storeId,
+            conn
+        );
+
+        await registerQRAddonUsage({
+            conn,
+            qrCodeId: qr.id,
+            businessId,
+            addonCode: "store",
+            sourceTable: "tags_stores",
+            sourceId: storeId
+        });
+
+        await conn.query(
+            `
+            UPDATE tags_qr_codes
+            SET has_qr_page = 1
+            WHERE id = ?
+            AND business_id = ?
+            `,
+            [qr.id, businessId]
+        );
+
+        await conn.commit();
 
         return Response.json({
-
-            ok:true,
-
-            isNew,
-
-            qr:{
-                id:qr.id,
-                code:qr.code,
-                label:qr.label
-            },
-
-            store:{
-                id:location.store_id,
-                name:location.store_name,
-                slug:location.store_slug,
-                status:location.store_status
-            },
-
-            page:{
-                id:location.page_id,
-                status:location.page_status
-            },
-
-            location:{
-                id:location.id,
-                parent_id:location.parent_id,
-                type:location.type,
-                name:location.name,
-                code:location.code,
-                description:location.description,
-                capacity:location.capacity
-            },
-
-            session
-
+            ok: true,
+            qrId: qr.id,
+            qrCode: qr.code,
+            pageId,
+            storeId,
+            slug: cleanSlug,
+            publicUrl
         });
 
     } catch (err) {
+        await conn.rollback();
 
-        console.error(
-            "RESTO PUBLIC SESSION OPEN ERROR:",
-            err
-        );
+        console.error("WORKSPACE STORE ACTIVATE ERROR:", err);
 
         return Response.json(
-            {
-                error:
-                    "Error abriendo la sesión"
-            },
-            {
-                status:500
-            }
+            { error: err.message || "Error activando Tags Tienda" },
+            { status: err.status || 500 }
         );
 
     } finally {
-
         conn.release();
-
     }
-
 }

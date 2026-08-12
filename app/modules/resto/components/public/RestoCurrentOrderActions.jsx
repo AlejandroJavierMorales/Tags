@@ -31,6 +31,8 @@ export default function RestoCurrentOrderActions({
 
     slug,
 
+    backUrl,
+
     isSessionOpen,
 
     canRequestService,
@@ -254,7 +256,7 @@ export default function RestoCurrentOrderActions({
             }
 
             <Link
-                href={`/p/${slug}`}
+                href={backUrl || `/p/${slug}`}
                 className="tags_resto_current_order_back_link"
             >
                 Volver a la carta

@@ -121,7 +121,7 @@ function buildLayout({
                             <img
                                 src="${store.logo_url}"
                                 alt="${store.name}"
-                                style="width:64px;height:64px;object-fit:contain;border-radius:14px;background:#f9fafb;"
+                                style="display:block;max-width:180px;max-height:80px;width:auto;height:auto;object-fit:contain;border-radius:0;background:transparent;"
                             />
                             `
                             : ""

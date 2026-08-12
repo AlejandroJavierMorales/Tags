@@ -57,6 +57,7 @@ import {
     from "../../lib/formatStorePrice";
 
 import StoreProductActions from "./StoreProductActions";
+import { getStoreReturnUrl, withStoreReturnUrl } from "../../lib/storePublicContext";
 
 export default function StoreProductDetailClient({
     store,
@@ -66,6 +67,8 @@ export default function StoreProductDetailClient({
     variantOptions = [],
     settings = {}
 }) {
+
+    const storeReturnUrl = getStoreReturnUrl(store);
 
     const [imageIndex, setImageIndex] = useState(0);
 
@@ -326,7 +329,7 @@ export default function StoreProductDetailClient({
 
         if (goToCart) {
             window.location.href =
-                `/p/${store.slug}/cart`;
+                withStoreReturnUrl(`/p/${store.slug}/cart`, store);
 
             return;
         }
@@ -341,7 +344,7 @@ export default function StoreProductDetailClient({
         }).then((result) => {
             if (result) {
                 window.location.href =
-                    `/p/${store.slug}/cart`;
+                    withStoreReturnUrl(`/p/${store.slug}/cart`, store);
             }
         });
 
@@ -577,16 +580,18 @@ const shareButtonWrapperStyle = createButtonWrapperStyle("share");
     return (
         <main className="store_product_detail_page" style={pageStyle}>
 
-            <StoreHeaderBlock
-                entity={store}
-            />
+            {!storeReturnUrl && (
+                <StoreHeaderBlock
+                    entity={store}
+                />
+            )}
 
             <div className="store_detail_breadcrumb">
                 {
                     settings.content?.showBreadcrumb !== false && (
                         <div className="container">
                             <Link
-                                href={`/p/${store.slug}`}
+                                href={storeReturnUrl || `/p/${store.slug}`}
                                 className="store_detail_back_link"
                             >
                                 <FiArrowLeft />

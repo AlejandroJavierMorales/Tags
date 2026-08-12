@@ -188,6 +188,7 @@ export default function StoreProductEditorClient({
     }
 
     function addImage(media) {
+
         if (!media?.url) {
             return;
         }
@@ -195,22 +196,216 @@ export default function StoreProductEditorClient({
         setImages(prev => [
             ...prev,
             {
-                image_url: media.url,
-                storage_path: media.storage_path || null,
-                original_filename: media.original_filename || null,
-                width: media.width || null,
-                height: media.height || null,
-                size_bytes: media.size_bytes || null,
-                sort_order: prev.length,
-                is_primary: prev.length === 0 ? 1 : 0
+                image_url:
+                    media.url,
+
+                storage_path:
+                    media.storage_path ||
+                    media.storagePath ||
+                    null,
+
+                original_filename:
+                    media.original_filename ||
+                    media.originalFilename ||
+                    null,
+
+                width:
+                    media.width ||
+                    null,
+
+                height:
+                    media.height ||
+                    null,
+
+                size_bytes:
+                    media.size_bytes ||
+                    media.sizeBytes ||
+                    null,
+
+                sort_order:
+                    prev.length,
+
+                is_primary:
+                    prev.length === 0
+                        ? 1
+                        : 0
             }
         ]);
     }
 
-    function removeImage(index) {
-        setImages(prev =>
-            prev.filter((_, i) => i !== index)
-        );
+
+    async function removeImage(index) {
+
+        const image =
+            images[index];
+
+        if (!image) {
+            return;
+        }
+
+        const confirmed =
+            await showAlert({
+                title: "Eliminar imagen",
+                text:
+                    "¿Querés eliminar esta imagen del producto?",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonText:
+                    "Sí, eliminar",
+                cancelButtonText:
+                    "Cancelar"
+            });
+
+        if (!confirmed) {
+            return;
+        }
+
+        try {
+
+            /*
+             * Imagen ya guardada:
+             * elimina archivo y registro de la base.
+             */
+            if (image.id) {
+
+                const res =
+                    await fetch(
+                        "/api/store/admin/products/image/delete",
+                        {
+                            method: "POST",
+                            headers: {
+                                "Content-Type":
+                                    "application/json"
+                            },
+                            body: JSON.stringify({
+                                businessId,
+                                appType: "store",
+                                imageId:
+                                    image.id
+                            })
+                        }
+                    );
+
+                const data =
+                    await res
+                        .json()
+                        .catch(() => ({}));
+
+                if (!res.ok) {
+                    throw new Error(
+                        data.error ||
+                        "No se pudo eliminar la imagen"
+                    );
+                }
+
+            } else {
+
+                /*
+                 * Imagen recién subida y todavía
+                 * no guardada en la base:
+                 * elimina solamente el archivo.
+                 */
+                const storagePath =
+                    image.storage_path ||
+                    image.storagePath ||
+                    null;
+
+                if (storagePath) {
+
+                    const res =
+                        await fetch(
+                            "/api/files/delete",
+                            {
+                                method: "DELETE",
+                                headers: {
+                                    "Content-Type":
+                                        "application/json"
+                                },
+                                body: JSON.stringify({
+                                    businessId,
+                                    storage_path:
+                                        storagePath
+                                })
+                            }
+                        );
+
+                    const data =
+                        await res
+                            .json()
+                            .catch(() => ({}));
+
+                    if (!res.ok) {
+                        throw new Error(
+                            data.error ||
+                            "No se pudo eliminar el archivo"
+                        );
+                    }
+
+                }
+
+            }
+
+            setImages(prev => {
+
+                const nextImages =
+                    prev.filter(
+                        (_, currentIndex) =>
+                            currentIndex !== index
+                    );
+
+                const hasPrimary =
+                    nextImages.some(
+                        img =>
+                            Number(
+                                img.is_primary
+                            ) === 1
+                    );
+
+                if (
+                    nextImages.length &&
+                    !hasPrimary
+                ) {
+
+                    return nextImages.map(
+                        (img, currentIndex) => ({
+                            ...img,
+                            is_primary:
+                                currentIndex === 0
+                                    ? 1
+                                    : 0
+                        })
+                    );
+
+                }
+
+                return nextImages;
+
+            });
+
+            await showAlert({
+                title: "Imagen eliminada",
+                text:
+                    "La imagen se eliminó correctamente.",
+                icon: "success"
+            });
+
+        } catch (err) {
+
+            console.error(
+                "STORE PRODUCT IMAGE DELETE ERROR:",
+                err
+            );
+
+            await showAlert({
+                title: "Error",
+                text:
+                    err.message ||
+                    "No se pudo eliminar la imagen.",
+                icon: "error"
+            });
+
+        }
+
     }
 
     function setPrimaryImage(index) {

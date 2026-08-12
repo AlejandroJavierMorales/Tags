@@ -13,6 +13,8 @@ import { db }
 import { requireQRPageAccess }
     from "@/app/modules/qr-page/lib/requireQRPageAccess";
 
+const MAX_PRODUCT_IMAGES = 12;
+
 export async function POST(req) {
 
     try {
@@ -115,7 +117,7 @@ export async function POST(req) {
             Array.isArray(images_json)
                 ? images_json
                     .filter((image) => image?.url)
-                    .slice(0, 4)
+                    .slice(0, MAX_PRODUCT_IMAGES)
                 : [];
 
         const mainImage =

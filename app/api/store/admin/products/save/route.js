@@ -84,6 +84,7 @@ export async function POST(req) {
             stock_qty,
             is_featured,
             is_offer,
+            is_recommended,
             is_new,
             is_visible,
             status,
@@ -358,6 +359,7 @@ export async function POST(req) {
                     stock_qty = ?,
                     is_featured = ?,
                     is_offer = ?,
+                    is_recommended = ?,
                     is_new = ?,
                     is_visible = ?,
                     status = ?,
@@ -392,6 +394,9 @@ export async function POST(req) {
                         ? 1
                         : 0,
                     Number(is_offer) === 1
+                        ? 1
+                        : 0,
+                    Number(is_recommended) === 1
                         ? 1
                         : 0,
                     Number(is_new) === 1
@@ -435,6 +440,7 @@ export async function POST(req) {
                         stock_qty,
                         is_featured,
                         is_offer,
+                        is_recommended,
                         is_new,
                         is_visible,
                         status,
@@ -446,6 +452,7 @@ export async function POST(req) {
                         updated_at
                     )
                     VALUES (
+                        ?,
                         ?,
                         ?,
                         ?,
@@ -494,6 +501,9 @@ export async function POST(req) {
                             ? 1
                             : 0,
                         Number(is_offer) === 1
+                            ? 1
+                            : 0,
+                        Number(is_recommended) === 1
                             ? 1
                             : 0,
                         Number(is_new) === 1

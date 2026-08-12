@@ -6,9 +6,25 @@ import { requireRestoBuilderAccess, restoAccessResponse } from "@/app/modules/re
 export async function POST(req) {
     try {
         const payload = await req.json();
-        const { businessId, sectionId, blockId, title, content_json = {}, styles_json = {}, animation_json = {}, is_visible } = payload;
+        let { businessId, sectionId, blockId, title, content_json = {}, styles_json = {}, animation_json = {}, is_visible } = payload;
         const resolvedBlockType = payload.block_type || payload.blockType || payload.type;
-        if (!businessId || !sectionId || !blockId || !isRestoModule(resolvedBlockType)) return Response.json({ error: "Datos o bloque inválido" }, { status: 400 });
+        if (!sectionId || !blockId || !isRestoModule(resolvedBlockType)) return Response.json({ error: "Datos o bloque inválido" }, { status: 400 });
+
+        if (!businessId) {
+            const [ownerRows] = await db.query(`
+                SELECT st.business_id
+                FROM tags_store_blocks b
+                INNER JOIN tags_store_sections s ON s.id = b.section_id
+                INNER JOIN tags_stores st ON st.id = s.store_id
+                WHERE b.id = ?
+                AND b.section_id = ?
+                AND st.app_type = 'resto'
+                LIMIT 1
+            `, [blockId, sectionId]);
+            businessId = ownerRows?.[0]?.business_id || null;
+        }
+
+        if (!businessId) return Response.json({ error: "Bloque de Resto no encontrado" }, { status: 404 });
         const access = await requireRestoBuilderAccess({ businessId, permission: "builder.manage" });
         if (!access.allowed) return restoAccessResponse(access);
         await db.query(`UPDATE tags_store_blocks b INNER JOIN tags_store_sections s ON s.id=b.section_id INNER JOIN tags_stores st ON st.id=s.store_id SET b.block_type=?, b.title=?, b.content_json=?, b.styles_json=?, b.animation_json=?, b.is_visible=?, b.updated_at=NOW() WHERE b.id=? AND b.section_id=? AND st.business_id=? AND st.app_type='resto'`, [resolvedBlockType, title || null, JSON.stringify(content_json), JSON.stringify(styles_json), JSON.stringify(animation_json), is_visible ? 1 : 0, blockId, sectionId, businessId]);

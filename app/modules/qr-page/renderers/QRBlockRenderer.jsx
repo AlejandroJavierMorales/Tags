@@ -26,7 +26,21 @@ import ShareProfileBlock from "./blocks/ShareProfileBlock";
 import ProfileQRBlock from "./blocks/ProfileQRBlock";
 import CustomLinksBlock from "./blocks/CustomLinksBlock";
 import BulletListBlock from "./blocks/BulletListBlock";
+import WebSectionBlock from "./blocks/WebSectionBlock";
 
+function removeManualColors(styles = {}) {
+    if (Array.isArray(styles)) return styles.map(removeManualColors);
+    if (!styles || typeof styles !== "object") return styles;
+
+    return Object.fromEntries(
+        Object.entries(styles)
+            .filter(([key]) =>
+                !String(key).toLowerCase().includes("color") &&
+                !["background", "border"].includes(String(key).toLowerCase())
+            )
+            .map(([key, value]) => [key, removeManualColors(value)])
+    );
+}
 
 
 export default function QRBlockRenderer({
@@ -42,8 +56,13 @@ export default function QRBlockRenderer({
     const content =
         block.content_json || {};
 
-    const styles =
+    const savedStyles =
         block.styles_json || {};
+
+    const styles =
+        Number(page?.global_styles?.theme_override) === 0
+            ? removeManualColors(savedStyles)
+            : savedStyles;
 
     const wrapperStyle = {
         textAlign:
@@ -76,6 +95,11 @@ export default function QRBlockRenderer({
             className={`qr_public_block qr_public_block_${block.type}`}
             style={wrapperStyle}
         >
+            {
+                block.type === "web_section" && (
+                    <WebSectionBlock content={content} />
+                )
+            }
             {
                 block.type === "text" && (
                     <TextBlock
@@ -146,6 +170,7 @@ export default function QRBlockRenderer({
                     <CatalogBlock
                         products={products}
                         productCategory={content.productCategory}
+                        content={content}
                         page={page}
                         styles={styles}
                     />

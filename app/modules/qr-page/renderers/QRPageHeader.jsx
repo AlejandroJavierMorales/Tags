@@ -24,6 +24,9 @@ export default function QRPageHeader({
     const headerConfig =
         safeHeaderConfig(page?.header_config);
 
+    const themeControlsColors =
+        Number(page?.global_styles?.theme_override) === 0;
+
     const showLogo =
         headerConfig.showLogo !== false;
 
@@ -52,12 +55,14 @@ export default function QRPageHeader({
         headerConfig.typography || {};
 
     const headerTextColor =
-        headerConfig.textColor ||
-        "var(--qr-text)";
+        themeControlsColors
+            ? "var(--qr-text)"
+            : headerConfig.textColor || "var(--qr-text)";
 
     const menuTextColor =
-        headerConfig.menuTextColor ||
-        headerTextColor;
+        themeControlsColors
+            ? "var(--qr-text)"
+            : headerConfig.menuTextColor || headerTextColor;
 
     const logoTextStyle = {
         ...getTypographyStyle(
@@ -112,13 +117,15 @@ export default function QRPageHeader({
                 }
                 style={{
                     backgroundColor:
-                        headerConfig.backgroundColor ||
-                        "var(--qr-surface)",
+                        themeControlsColors
+                            ? "var(--qr-surface)"
+                            : headerConfig.backgroundColor || "var(--qr-surface)",
                     color:
                         headerTextColor,
                     borderBottomColor:
-                        headerConfig.borderColor ||
-                        "var(--qr-border)"
+                        themeControlsColors
+                            ? "var(--qr-border)"
+                            : headerConfig.borderColor || "var(--qr-border)"
                 }}
             >
                 <div className="qr_public_header_inner">

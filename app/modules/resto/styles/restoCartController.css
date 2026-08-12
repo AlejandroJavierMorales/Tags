@@ -5,19 +5,20 @@
 .resto_cart_floating_button {
     position: fixed;
     right: max(20px, calc((100vw - min(var(--resto-page-width, 1320px), 100vw)) / 2 + 20px));
-    bottom: 20px;
+    bottom: 100px;
     z-index: 5500;
 
     display: flex;
     align-items: center;
-    gap: 12px;
+    justify-content: center;
+    gap: 8px;
 
-    min-width: 190px;
-    min-height: 58px;
-    padding: 10px 16px;
+    min-width: 142px;
+    min-height: 42px;
+    padding: 7px 12px;
 
     border: 1px solid var(--qr-border);
-    border-radius: 18px;
+    border-radius: 12px;
 
     background: var(--qr-primary);
     color: var(--qr-primary-text);
@@ -38,26 +39,30 @@
 }
 
 .resto_cart_floating_button.has_active_order {
-    min-width: 230px;
+    min-width: 178px;
 }
 
 .resto_cart_floating_icon {
-    flex: 0 0 auto;
-    font-size: 26px;
-    line-height: 1;
+    display: none;
 }
 
 .resto_cart_floating_content {
     display: flex;
-    flex: 1;
+    flex: 0 0 auto;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
     min-width: 0;
 }
 
+.resto_cart_floating_react_icon {
+    flex: 0 0 auto;
+    font-size: 16px;
+}
+
 .resto_cart_floating_title {
-    font-size: 15px;
+    font-size: 13px;
     line-height: 1.2;
+    text-align: center;
 }
 
 .resto_cart_floating_details {
@@ -93,7 +98,7 @@
 
     .resto_cart_floating_button {
         right: 12px;
-        bottom: 12px;
+        bottom: 100px;
 
         max-width:
             calc(100vw - 24px);

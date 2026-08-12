@@ -1,5 +1,7 @@
-import { notFound }
+import { notFound, redirect }
     from "next/navigation";
+
+import { headers } from "next/headers";
 
 import "@/app/modules/resto/styles/resto-public.css";
 
@@ -39,6 +41,12 @@ import { getPublicResto as getPublicRestoBuilderData }
 import RestoPublicRenderer
     from "@/app/modules/resto/public/RestoPublicRenderer";
 
+import TurnosPublicRenderer
+    from "@/app/modules/turnos/components/public/TurnosPublicRenderer";
+
+import { getTurnosBySlug, getPublicLocations }
+    from "@/app/modules/turnos/lib/getTurnosPublic";
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -48,6 +56,27 @@ function getBaseUrl() {
     return process.env.NODE_ENV === "development"
         ? "http://localhost:3000"
         : process.env.NEXT_PUBLIC_BASE_URL_PROD;
+}
+
+async function getPortalHomeSlug(portalSlug) {
+    const [rows] = await db.query(
+        `SELECT qp.slug
+         FROM tags_portals p
+         INNER JOIN tags_portal_routes r
+            ON r.id=p.home_route_id
+            AND r.portal_id=p.id
+            AND r.business_id=p.business_id
+            AND r.is_visible=1
+         INNER JOIN tags_qr_pages qp
+            ON qp.id=r.page_id
+            AND qp.business_id=p.business_id
+            AND qp.status='published'
+         WHERE p.slug=? AND p.status='published'
+         LIMIT 1`,
+        [portalSlug]
+    );
+
+    return rows[0]?.slug || null;
 }
 
 function absoluteUrl(url) {
@@ -1119,6 +1148,17 @@ export default async function PublicQRPage({
     searchParams
 }) {
 
+    const portalHomeSlug = await getPortalHomeSlug(params.slug);
+
+    if (portalHomeSlug && portalHomeSlug !== params.slug) {
+        redirect(`/p/${portalHomeSlug}`);
+    }
+
+
+    const h = await headers();
+    console.log("HOST:", h.get("host"));
+    console.log("X-FORWARDED-HOST:", h.get("x-forwarded-host"));
+
 
     /* Store Public */
     async function getPublicStore(slug) {
@@ -1423,6 +1463,36 @@ export default async function PublicQRPage({
                         currentRoute={portalContext.currentRoute}
                     />
                 )}
+            </>
+        );
+    }
+
+    if (page.page_type === "turnos") {
+        const turnos = await getTurnosBySlug(params.slug);
+        if (!turnos) notFound();
+        const turnosPortalContext = await getPublicPortalContext({
+            businessId: page.business_id,
+            pageId: page.id,
+            slug: page.slug
+        });
+        const turnosOwnTheme = page.global_styles?.theme_override === true;
+        const turnosThemeTokens = turnosOwnTheme
+            ? (page.theme?.css_tokens || {})
+            : {
+                ...(page.theme?.css_tokens || {}),
+                ...(turnosPortalContext.portal?.theme?.css_tokens || {})
+            };
+        const turnosApp = {
+            ...turnos,
+            locations: await getPublicLocations(turnos.id),
+            theme_css_vars: turnosThemeTokens,
+            hasPortal: turnosPortalContext.hasPortal
+        };
+        return (
+            <>
+                {turnosPortalContext.hasPortal && <PortalHeader portal={turnosPortalContext.portal} routes={turnosPortalContext.routes} currentRoute={turnosPortalContext.currentRoute} />}
+                <TurnosPublicRenderer page={page} app={turnosApp} />
+                {turnosPortalContext.hasPortal && <PortalFooter portal={turnosPortalContext.portal} routes={turnosPortalContext.routes} currentRoute={turnosPortalContext.currentRoute} />}
             </>
         );
     }

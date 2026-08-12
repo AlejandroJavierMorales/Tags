@@ -13,11 +13,13 @@ import { getValueLabel } from "@/app/lib/helpers/getValueLabel";
 
 import "../../../styles/tagsModals.css";
 import "../../../styles/tags_dashboard.css";
+import "./BusinessDashboardQrInventory.css";
 import showAlert from "@/app/components/showAlert";
 import { FiDownload } from "react-icons/fi";
 import QRDownloadModal from "@/app/components/QRDownloadModal";
 import QRPageSelectorModal from "@/app/components/businesses/QRPageSelectorModal";
 import QRPageActivateModal from "@/app/components/businesses/QRPageActivateModal";
+import BusinessWorkspaceOverview from "@/app/components/businesses/BusinessWorkspaceOverview";
 import PortalDashboard from "@/app/components/businesses/PortalDashboard";
 import {
   buildPortalDashboard,
@@ -50,12 +52,17 @@ export default function BusinessDetailClient({ session, isAdmin }) {
 
   const [portal, setPortal] = useState(null);
   const [portalRoutes, setPortalRoutes] = useState([]);
+  const [portalPages, setPortalPages] = useState([]);
+  const [showQrInventory, setShowQrInventory] = useState(false);
   const [qrPageSelectorOpen, setQrPageSelectorOpen] = useState(false);
   const [qrPageActivateOpen, setQrPageActivateOpen] = useState(false);
   const [restoActivateOpen, setRestoActivateOpen] = useState(false);
+  const [turnosActivateOpen, setTurnosActivateOpen] = useState(false);
+  const [directoryActivateOpen, setDirectoryActivateOpen] = useState(false);
 
   const [qrs, setQrs] = useState([]);
   const [business, setBusiness] = useState(null);
+  const [qrAgency, setQrAgency] = useState(null);
 
   const [editQR, setEditQR] = useState(null);
   const [editLabel, setEditLabel] = useState("");
@@ -98,6 +105,8 @@ export default function BusinessDetailClient({ session, isAdmin }) {
   const subscriptionStatusLabel =
     getSubscriptionStatusLabel(session?.subscriptionStatus);
 
+  const showLegacyOverview = false;
+
   // =====================================
   // 🔐 FLAGS
   // =====================================
@@ -123,7 +132,7 @@ export default function BusinessDetailClient({ session, isAdmin }) {
     load();
     loadSubscriptionSummary();
     loadStore();
-    loadPortal();
+    loadPortal(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
@@ -161,13 +170,14 @@ export default function BusinessDetailClient({ session, isAdmin }) {
       setFeatures(featuresData.features);
     }
     setBusiness(data.business || null);
+    setQrAgency(data.qrAgency || null);
 
     setBusinessAddons(data.addons || []);
 
   }
 
-  async function loadPortal() {
-    setLoading(true);
+  async function loadPortal(showInitialLoader = false) {
+    if (showInitialLoader) setLoading(true);
     try {
       const res =
         await fetch(`/api/portal/admin/get?businessId=${id}`);
@@ -178,13 +188,14 @@ export default function BusinessDetailClient({ session, isAdmin }) {
       if (res.ok && data?.ok) {
         setPortal(data.portal || null);
         setPortalRoutes(Array.isArray(data.routes) ? data.routes : []);
+        setPortalPages(Array.isArray(data.pages) ? data.pages : []);
       }
 
     } catch (err) {
       console.error("PORTAL LOAD ERROR:", err);
     }
     finally {
-      setLoading(false);
+      if (showInitialLoader) setLoading(false);
     }
   }
 
@@ -428,6 +439,7 @@ export default function BusinessDetailClient({ session, isAdmin }) {
     qrs,
     store,
     portal,
+    qrAgency,
     subscriptionSummary,
     businessAddons,
     businessId: id,
@@ -438,7 +450,9 @@ export default function BusinessDetailClient({ session, isAdmin }) {
     setReviewsActivateOpen,
     setTagsIdActivateOpen,
     setPortalActivateOpen,
-    setRestoActivateOpen
+    setRestoActivateOpen,
+    setTurnosActivateOpen,
+    setDirectoryActivateOpen
   });
 
   if (loading) {
@@ -508,6 +522,7 @@ export default function BusinessDetailClient({ session, isAdmin }) {
 
       </div>
 
+      {showLegacyOverview && <>
       {/* CLIENT CARD */}
 
       <div className="tags_dashboard_client_card">
@@ -705,6 +720,16 @@ export default function BusinessDetailClient({ session, isAdmin }) {
             </div>
 
             <div className="col-6 col-md-2 mb-3">
+              <strong>Tags Turnos</strong>
+
+              <div>
+                {subscriptionSummary.usage.turnos_used || 0}
+                {" / "}
+                {subscriptionSummary.usage.turnos_total || 0}
+              </div>
+            </div>
+
+            <div className="col-6 col-md-2 mb-3">
               <strong>Reviews</strong>
               <div>
                 {subscriptionSummary.usage.reviews_used}
@@ -829,20 +854,41 @@ export default function BusinessDetailClient({ session, isAdmin }) {
         inactivePortalFeatures={inactivePortalFeatures}
         onReload={loadPortal}
       />
+      </>}
+
+      <BusinessWorkspaceOverview
+        business={business}
+        subscriptionSummary={subscriptionSummary}
+        portal={portal}
+        portalRoutes={portalRoutes}
+        portalPages={portalPages}
+        activeFeatures={activePortalFeatures}
+        inactiveFeatures={inactivePortalFeatures}
+        businessId={id}
+        isAdmin={isAdmin}
+        onReloadPortal={loadPortal}
+      />
 
       <div className="tags_portal_section_header">
         <div>
-          <h2>QRs Inteligentes</h2>
+          <h2>Accesos QR del negocio</h2>
           <p>
             Accesos físicos o digitales del negocio. Pueden apuntar al Portal,
             a una funcionalidad o a un enlace externo.
           </p>
         </div>
+        <button
+          type="button"
+          className="tags_dashboard_qr_inventory_toggle"
+          onClick={() => setShowQrInventory((current) => !current)}
+        >
+          {showQrInventory ? "Ocultar QRs" : `Ver QRs (${qrs.length})`}
+        </button>
       </div>
 
       {/* TABLE */}
 
-      <div className="tags_dashboard_table_card">
+      {showQrInventory && <div className="tags_dashboard_table_card">
 
         <div className="tags_dashboard_table_scroll">
 
@@ -1205,11 +1251,46 @@ export default function BusinessDetailClient({ session, isAdmin }) {
 
         </div>
 
-      </div>
+      </div>}
 
       {/* ===================================== */}
       {/* EDIT MODAL */}
       {/* ===================================== */}
+      <WorkspaceAppCreateModal
+        open={directoryActivateOpen}
+        businessId={id}
+        title="Activar mi Web"
+        description="Definí la dirección de tu Web. Si existe una ruta histórica, la plataforma la conservará automáticamente."
+        endpoint="/api/workspace/apps/directory/activate"
+        allowCustomSlug
+        allowEmptySlug
+        hidePublicPathPreview
+        createButtonLabel="Activar Web"
+        successTitle="Web activada"
+        successMessage="La Web fue creada y ya podés administrarla."
+        onClose={() => setDirectoryActivateOpen(false)}
+        onCreated={() => { load(); loadPortal(); setDirectoryActivateOpen(false); }}
+      />
+      <WorkspaceAppCreateModal
+        open={turnosActivateOpen}
+        businessId={id}
+        title="Tags Turnos"
+        description="Creá una instancia de Turnos para un servicio específico de tu negocio."
+        endpoint="/api/workspace/apps/turnos/activate"
+        allowCustomSlug
+        businessProfileOptions={[
+          { value: "generic", label: "Genérico" },
+          { value: "spa", label: "Spa" },
+          { value: "bike_kayak", label: "Bicicletas / Kayaks" },
+          { value: "hairdresser", label: "Peluquería" }
+        ]}
+        createButtonLabel="Crear Turnero"
+        successTitle="Turnero creado"
+        successMessage="La instancia de Turnos fue creada correctamente."
+        onClose={() => setTurnosActivateOpen(false)}
+        onCreated={() => { load(); loadPortal(); setTurnosActivateOpen(false); }}
+      />
+
       <WorkspaceAppCreateModal
         open={restoActivateOpen}
         businessId={id}

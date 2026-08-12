@@ -3,7 +3,13 @@
 import { db } from "@/app/lib/tags-db";
 import { getTagsSession } from "./getTagsSession";
 
-export async function requireQRPageAccess(businessId) {
+export async function requireQRPageAccess(
+    businessId,
+    options = {}
+) {
+
+
+
     const session =
         getTagsSession();
 
@@ -46,6 +52,8 @@ export async function requireQRPageAccess(businessId) {
     const business =
         rows[0];
 
+
+
     if (!business) {
         return {
             ok: false,
@@ -68,7 +76,14 @@ export async function requireQRPageAccess(businessId) {
         };
     }
 
-    if (!isAdmin && !business.qr_page_enabled) {
+    const skipQRPageValidation =
+        options.skipQRPageValidation === true;
+
+    if (
+        !isAdmin &&
+        !skipQRPageValidation &&
+        !business.qr_page_enabled
+    ) {
         return {
             ok: false,
             status: 403,

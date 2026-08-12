@@ -1,0 +1,13 @@
+.domain_routes_page { color:#355e5a; }
+.domain_routes_toolbar { display:flex; justify-content:space-between; align-items:flex-end; gap:20px; margin:24px 0; }
+.domain_routes_toolbar p { margin:-12px 0 0; color:#6c757d; }
+.domain_routes_back { display:inline-block; margin-bottom:8px; color:#355e5a; text-decoration:none; font-size:13px; }
+.domain_routes_actions { display:flex; align-items:center; gap:12px; width:min(100%,520px); }
+.domain_routes_actions .form-control { min-width:260px; }
+.domain_routes_action_buttons { justify-content:center; }
+.domain_routes_page td small { display:block; color:#71807d; font-size:11px; margin-top:3px; }
+.domain_routes_empty { text-align:center; padding:36px !important; color:#71807d; }
+.domain_routes_page code { color:#355e5a; background:#eef6f3; padding:3px 6px; border-radius:5px; }
+.domain_routes_hint { display:block; margin-top:5px; color:#71807d; }
+.domain_routes_checkbox { display:flex; gap:8px; align-items:center; margin-top:16px; }
+@media (max-width:760px) { .domain_routes_toolbar { align-items:stretch; flex-direction:column; } .domain_routes_actions { width:100%; flex-direction:column; align-items:stretch; } .domain_routes_actions .form-control,.domain_routes_actions .tags_btn { width:100%; max-width:none; } }

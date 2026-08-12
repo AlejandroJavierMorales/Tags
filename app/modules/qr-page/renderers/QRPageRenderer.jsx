@@ -20,6 +20,9 @@ export default function QRPageRenderer({
     const styles =
         page?.global_styles || {};
 
+    const themeControlsColors =
+        Number(styles.theme_override) === 0;
+
     const themeTokens =
         page?.theme?.css_tokens || {};
 
@@ -109,10 +112,14 @@ export default function QRPageRenderer({
                     typography.button?.fontWeight || "600",
 
                 backgroundColor:
-                    styles.backgroundColor || "var(--qr-bg)",
+                    themeControlsColors
+                        ? "var(--qr-bg)"
+                        : styles.backgroundColor || "var(--qr-bg)",
 
                 color:
-                    styles.textColor || "var(--qr-text)"
+                    themeControlsColors
+                        ? "var(--qr-text)"
+                        : styles.textColor || "var(--qr-text)"
             }}
         >
             {

@@ -29,6 +29,10 @@ export const QR_PAGE_SECTION_TYPES = [
 
 export const QR_PAGE_BLOCK_TYPES = [
     {
+        value: "web_section",
+        label: "Sección Web"
+    },
+    {
         value: "text",
         label: "Texto"
     },

@@ -1,0 +1,7 @@
+.tags_resto_staff_permissions_header { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:14px; }
+.tags_resto_staff_permissions_header h3 { margin-bottom:4px; }
+.tags_resto_staff_permissions_header p { margin:0; color:#6c757d; font-size:13px; }
+.tags_resto_staff_permissions_actions { display:flex; gap:8px; flex-wrap:wrap; }
+.tags_resto_staff_permissions_actions button { border:1px solid #cfe4df; border-radius:8px; padding:7px 10px; background:#fff; color:#355e5a; cursor:pointer; font-size:12px; }
+.tags_resto_staff_permissions_actions button:hover { background:#e8f5f2; }
+@media (max-width:700px) { .tags_resto_staff_permissions_header { flex-direction:column; } }

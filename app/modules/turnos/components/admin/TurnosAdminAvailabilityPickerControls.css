@@ -1,0 +1,7 @@
+.tags_turnos_admin_availability_controls { display: grid; grid-template-columns: minmax(160px, 220px) 1fr; gap: 12px; margin-top: 14px; padding: 12px; border: 1px solid #dce8e1; border-radius: 12px; background: #f8fbf9; }
+.tags_turnos_admin_availability_controls > label { display: grid; align-content: start; gap: 6px; color: #42564b; font-size: 12px; font-weight: 800; }
+.tags_turnos_admin_availability_controls input[type="month"] { min-height: 42px; padding: 8px 10px; border: 1px solid #cbd9d1; border-radius: 9px; background: #fff; }
+.tags_turnos_admin_availability_controls fieldset { display: flex; flex-wrap: wrap; gap: 7px 12px; margin: 0; padding: 0; border: 0; }
+.tags_turnos_admin_availability_controls legend { width: 100%; margin-bottom: 5px; color: #42564b; font-size: 12px; font-weight: 850; }
+.tags_turnos_admin_availability_controls fieldset label { display: inline-flex; align-items: center; gap: 5px; color: #53655b; font-size: 12px; font-weight: 750; }
+@media (max-width: 700px) { .tags_turnos_admin_availability_controls { grid-template-columns: 1fr; } }

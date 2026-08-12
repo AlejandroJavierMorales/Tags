@@ -154,7 +154,10 @@ export async function GET(req) {
             [rolePermissions],
             [staff],
             [overrides],
-            [audit]
+            [audit],
+            [locations],
+            [assignments],
+            [notificationPreferences]
         ] = await Promise.all([
             db.query(
                 `
@@ -246,7 +249,35 @@ export async function GET(req) {
                     [
                         []
                     ]
-                )
+                ),
+            db.query(
+                `
+                SELECT id, name, location_code, parent_id
+                FROM tags_resto_locations
+                WHERE store_id = ?
+                AND location_type = 'table'
+                AND is_active = 1
+                ORDER BY sort_order, name
+                `,
+                [storeId]
+            ),
+            db.query(
+                `
+                SELECT staff_id, location_id
+                FROM tags_resto_staff_location_assignments
+                WHERE store_id = ?
+                AND is_active = 1
+                `,
+                [storeId]
+            ),
+            db.query(
+                `
+                SELECT staff_id, notification_code, scope
+                FROM tags_resto_staff_notification_preferences
+                WHERE store_id = ?
+                `,
+                [storeId]
+            )
         ]);
 
         return Response.json({
@@ -258,6 +289,9 @@ export async function GET(req) {
                 ),
             canViewAudit,
             permissions,
+            locations,
+            assignments,
+            notificationPreferences,
             roles: roles.map(role => ({
                 ...role,
                 permissions:
@@ -296,7 +330,16 @@ export async function GET(req) {
                                     override.effect
                             }),
                             {}
-                        )
+                        ),
+                assignedLocationIds: assignments
+                    .filter(assignment => Number(assignment.staff_id) === Number(item.id))
+                    .map(assignment => Number(assignment.location_id)),
+                notificationPreferences: notificationPreferences
+                    .filter(preference => Number(preference.staff_id) === Number(item.id))
+                    .reduce((result, preference) => ({
+                        ...result,
+                        [preference.notification_code]: preference.scope
+                    }), {})
             })),
             audit
         });
@@ -533,6 +576,69 @@ export async function POST(req) {
                         effect,
                         code
                     ]
+                );
+            }
+
+            const assignedLocationIds = Array.isArray(body.staff?.assignedLocationIds)
+                ? [...new Set(body.staff.assignedLocationIds.map(value => Number(value)).filter(Boolean))]
+                : [];
+
+            if (assignedLocationIds.length) {
+                const placeholders = assignedLocationIds.map(() => "?").join(",");
+                const [validLocations] = await connection.query(
+                    `
+                    SELECT id
+                    FROM tags_resto_locations
+                    WHERE store_id = ?
+                    AND location_type = 'table'
+                    AND is_active = 1
+                    AND id IN (${placeholders})
+                    `,
+                    [storeId, ...assignedLocationIds]
+                );
+
+                if (validLocations.length !== assignedLocationIds.length) {
+                    throw Object.assign(new Error("Una o más mesas no son válidas"), { status: 400 });
+                }
+            }
+
+            await connection.query(
+                `DELETE FROM tags_resto_staff_location_assignments WHERE store_id = ? AND staff_id = ?`,
+                [storeId, staffId]
+            );
+
+            for (const locationId of assignedLocationIds) {
+                await connection.query(
+                    `
+                    INSERT INTO tags_resto_staff_location_assignments
+                        (store_id, staff_id, location_id, assignment_type, is_active)
+                    VALUES (?, ?, ?, 'permanent', 1)
+                    `,
+                    [storeId, staffId, locationId]
+                );
+            }
+
+            const notificationPreferences = body.staff?.notificationPreferences && typeof body.staff.notificationPreferences === "object"
+                ? body.staff.notificationPreferences
+                : {};
+
+            await connection.query(
+                `DELETE FROM tags_resto_staff_notification_preferences WHERE store_id = ? AND staff_id = ?`,
+                [storeId, staffId]
+            );
+
+            for (const [notificationCode, scope] of Object.entries(notificationPreferences)) {
+                if (!["none", "assigned", "all", "unassigned"].includes(scope)) {
+                    continue;
+                }
+
+                await connection.query(
+                    `
+                    INSERT INTO tags_resto_staff_notification_preferences
+                        (store_id, staff_id, notification_code, scope)
+                    VALUES (?, ?, ?, ?)
+                    `,
+                    [storeId, staffId, clean(notificationCode), scope]
                 );
             }
 

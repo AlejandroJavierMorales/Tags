@@ -30,6 +30,16 @@ import "@/app/styles/qr-page.css";
 import "@/app/styles/tags_dashboard.css";
 import "@/app/modules/resto/styles/orders/index.css";
 import "@/app/modules/resto/styles/resto-staff.css";
+import "@/app/modules/resto/styles/resto-staff-permissions.css";
+import "@/app/modules/resto/styles/resto-staff-responsibilities.css";
+import {
+    getRestoPermissionLabel,
+    getRestoPermissionModule
+} from "@/app/modules/resto/lib/staff/permissionLabels";
+import {
+    RESTO_NOTIFICATION_OPTIONS,
+    RESTO_NOTIFICATION_SCOPES
+} from "@/app/modules/resto/lib/staff/responsibilityOptions";
 
 const EMPTY_STAFF = {
     id: null,
@@ -39,7 +49,9 @@ const EMPTY_STAFF = {
     notes: "",
     role_id: "",
     status: "active",
-    overrides: {}
+    overrides: {},
+    assignedLocationIds: [],
+    notificationPreferences: {}
 };
 
 const AUDIT_PERIODS = [
@@ -147,11 +159,10 @@ export default function RestoStaffClient({
                 const permission of
                     data?.permissions || []
             ) {
+                const moduleName = getRestoPermissionModule(permission);
+                grouped[moduleName] ||= [];
                 grouped[
-                    permission.module_name
-                ] ||= [];
-                grouped[
-                    permission.module_name
+                    moduleName
                 ].push(permission);
             }
             return Object.entries(grouped);
@@ -425,8 +436,9 @@ export default function RestoStaffClient({
                                             onClick={() =>
                                                 setStaffForm({
                                                     ...staff,
-                                                    role_id:
-                                                        staff.role_id || ""
+                                                    role_id: staff.role_id || "",
+                                                    assignedLocationIds: staff.assignedLocationIds || [],
+                                                    notificationPreferences: staff.notificationPreferences || {}
                                                 })
                                             }
                                         >
@@ -673,6 +685,17 @@ export default function RestoStaffClient({
                             }))
                         }
                     />
+                    <ResponsibilityMatrix
+                        locations={data.locations || []}
+                        assignedLocationIds={staffForm.assignedLocationIds || []}
+                        notificationPreferences={staffForm.notificationPreferences || {}}
+                        onLocationsChange={assignedLocationIds =>
+                            setStaffForm(current => ({ ...current, assignedLocationIds }))
+                        }
+                        onNotificationsChange={notificationPreferences =>
+                            setStaffForm(current => ({ ...current, notificationPreferences }))
+                        }
+                    />
                 </Editor>
             )}
 
@@ -789,17 +812,42 @@ function PermissionMatrix({
     values,
     onChange
 }) {
+    const allCodes = modules.flatMap(([, permissions]) => permissions.map(permission => permission.code));
+    const grantAll = () => {
+        if (mode === "role") {
+            allCodes.forEach(code => onChange(code, true));
+            return;
+        }
+        allCodes.forEach(code => onChange(code, "allow"));
+    };
+
+    const resetAll = () => {
+        if (mode === "role") {
+            allCodes.forEach(code => onChange(code, false));
+            return;
+        }
+        allCodes.forEach(code => onChange(code, ""));
+    };
+
     return (
         <div className="tags_resto_staff_permissions">
-            <h3>Permisos</h3>
+            <div className="tags_resto_staff_permissions_header">
+                <div>
+                    <h3>Permisos operativos</h3>
+                    <p>Podés combinar responsabilidades aunque el empleado tenga un solo rol principal.</p>
+                </div>
+                <div className="tags_resto_staff_permissions_actions">
+                    <button type="button" onClick={grantAll}>Conceder todos</button>
+                    <button type="button" onClick={resetAll}>Restablecer</button>
+                </div>
+            </div>
             {modules.map(([module, permissions]) => (
                 <section key={module}>
                     <h4>{module}</h4>
                     {permissions.map(permission => (
                         <label key={permission.code}>
                             <span>
-                                <strong>{permission.description}</strong>
-                                <small>{permission.code}</small>
+                                <strong>{getRestoPermissionLabel(permission)}</strong>
                             </span>
                             {mode === "role" ? (
                                 <input
@@ -821,6 +869,73 @@ function PermissionMatrix({
                     ))}
                 </section>
             ))}
+        </div>
+    );
+}
+
+function ResponsibilityMatrix({
+    locations,
+    assignedLocationIds,
+    notificationPreferences,
+    onLocationsChange,
+    onNotificationsChange
+}) {
+    const toggleLocation = locationId => {
+        const current = assignedLocationIds.includes(Number(locationId));
+        onLocationsChange(current
+            ? assignedLocationIds.filter(id => Number(id) !== Number(locationId))
+            : [...assignedLocationIds, Number(locationId)]);
+    };
+
+    return (
+        <div className="tags_resto_staff_responsibilities">
+            <div className="tags_resto_staff_permissions_header">
+                <div>
+                    <h3>Responsabilidades y notificaciones</h3>
+                    <p>Las mesas asignadas se usan para limitar los avisos operativos de ese empleado.</p>
+                </div>
+            </div>
+            <section>
+                <h4>Mesas asignadas</h4>
+                {locations.length === 0 ? (
+                    <p className="tags_resto_staff_empty_hint">Todavía no hay mesas activas para asignar.</p>
+                ) : (
+                    <div className="tags_resto_staff_location_options">
+                        {locations.map(location => (
+                            <label key={location.id}>
+                                <input
+                                    type="checkbox"
+                                    checked={assignedLocationIds.includes(Number(location.id))}
+                                    onChange={() => toggleLocation(location.id)}
+                                />
+                                <span>{location.name}{location.location_code ? ` (${location.location_code})` : ""}</span>
+                            </label>
+                        ))}
+                    </div>
+                )}
+            </section>
+            <section>
+                <h4>Qué notificaciones recibe</h4>
+                {RESTO_NOTIFICATION_OPTIONS.map(option => (
+                    <label key={option.code} className="tags_resto_staff_notification_option">
+                        <span>
+                            <strong>{option.label}</strong>
+                            <small>{option.description}</small>
+                        </span>
+                        <select
+                            value={notificationPreferences[option.code] || "none"}
+                            onChange={event => onNotificationsChange({
+                                ...notificationPreferences,
+                                [option.code]: event.target.value
+                            })}
+                        >
+                            {RESTO_NOTIFICATION_SCOPES.map(([value, label]) => (
+                                <option key={value} value={value}>{label}</option>
+                            ))}
+                        </select>
+                    </label>
+                ))}
+            </section>
         </div>
     );
 }

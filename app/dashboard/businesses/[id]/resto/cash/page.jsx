@@ -44,14 +44,14 @@ export default async function Page({
     if (!access.allowed) {
         redirect(
             access.status === 401
-                ? "/login"
+                ? "/resto/login"
                 : `/dashboard/businesses/${id}/resto`
         );
     }
 
     return (
         <>
-            <HeaderSwitcher />
+            <HeaderSwitcher context="resto" />
             <RestoCashClient
                 businessId={id}
                 permissions={access.permissions}

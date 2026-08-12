@@ -9,6 +9,8 @@ import { requireQRPageAccess }
 
 export async function POST(req) {
 
+    const conn = await db.getConnection();
+
     try {
 
         const {
@@ -61,7 +63,17 @@ export async function POST(req) {
             );
         }
 
-        await db.query(
+        const [pages] = await conn.query(
+            "SELECT id,page_type FROM tags_qr_pages WHERE id=? AND business_id=? LIMIT 1",
+            [pageId, businessId]
+        );
+        if (!pages.length) {
+            return Response.json({ error: "QR-Page no encontrada" }, { status: 404 });
+        }
+
+        await conn.beginTransaction();
+
+        await conn.query(
             `
             UPDATE
                 tags_qr_pages
@@ -78,11 +90,26 @@ export async function POST(req) {
             ]
         );
 
+        if (pages[0].page_type === "directory") {
+            await conn.query(
+                "UPDATE tags_directory_listings SET status='draft',updated_at=NOW() WHERE qr_page_id=? AND business_id=?",
+                [pageId, businessId]
+            );
+            await conn.query(
+                "UPDATE tags_directory_site_listings sl INNER JOIN tags_directory_listings l ON l.id=sl.listing_id SET sl.publication_status='draft',sl.updated_at=NOW() WHERE l.qr_page_id=? AND l.business_id=?",
+                [pageId, businessId]
+            );
+        }
+
+        await conn.commit();
+
         return Response.json({
             ok: true
         });
 
     } catch (err) {
+
+        await conn.rollback();
 
         console.log(err);
 
@@ -95,5 +122,7 @@ export async function POST(req) {
                 status: 500
             }
         );
+    } finally {
+        conn.release();
     }
 }

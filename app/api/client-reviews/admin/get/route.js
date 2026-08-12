@@ -96,6 +96,16 @@ export async function GET(req) {
                 SELECT
                     f.*,
 
+                    COALESCE(NULLIF(b.logo_url, ''), f.logo_url) AS logo_url,
+                    COALESCE(NULLIF(b.display_name, ''), b.name) AS business_name,
+                    b.email AS business_email,
+                    b.phone AS business_phone,
+                    b.whatsapp AS business_whatsapp,
+                    b.address AS business_address,
+                    b.website_url AS business_website_url,
+                    b.instagram_url AS business_instagram_url,
+                    b.facebook_url AS business_facebook_url,
+
                     th.id AS selected_theme_id,
                     th.code AS theme_code,
                     th.name AS theme_name,
@@ -103,6 +113,9 @@ export async function GET(req) {
                     th.css_tokens AS theme_tokens_json
 
                 FROM tags_client_review_forms f
+
+                INNER JOIN tags_businesses b
+                    ON b.id = f.business_id
 
                 LEFT JOIN tags_qr_page_themes th
                     ON th.id = f.theme_id

@@ -46,8 +46,15 @@ export async function POST(req) {
             name,
             slug,
             description,
+
             logo_url,
+            logo_storage_path,
+            logo_og_storage_path,
+
             cover_url,
+            cover_storage_path,
+            cover_og_storage_path,
+
             whatsapp,
             email,
             address,
@@ -137,21 +144,28 @@ export async function POST(req) {
             await conn.query(
                 `
                 UPDATE tags_stores
-                SET
-                    slug = ?,
-                    name = ?,
-                    description = ?,
-                    logo_url = ?,
-                    cover_url = ?,
-                    whatsapp = ?,
-                    email = ?,
-                    address = ?,
-                    currency = ?,
-                    status = ?,
-                    seo_title = ?,
-                    seo_description = ?,
-                    settings_json = ?,
-                    styles_json = ?
+                        SET
+                slug = ?,
+                name = ?,
+                description = ?,
+
+                logo_url = ?,
+                logo_storage_path = ?,
+                logo_og_storage_path = ?,
+
+                cover_url = ?,
+                cover_storage_path = ?,
+                cover_og_storage_path = ?,
+
+                whatsapp = ?,
+                email = ?,
+                address = ?,
+                currency = ?,
+                status = ?,
+                seo_title = ?,
+                seo_description = ?,
+                settings_json = ?,
+                styles_json = ?
                 WHERE id = ?
                 AND business_id = ?
                 `,
@@ -159,8 +173,15 @@ export async function POST(req) {
                     cleanSlug,
                     name,
                     safe(description),
+
                     safe(logo_url),
+                    safe(logo_storage_path),
+                    safe(logo_og_storage_path),
+
                     safe(cover_url),
+                    safe(cover_storage_path),
+                    safe(cover_og_storage_path),
+
                     safe(whatsapp),
                     safe(email),
                     safe(address),
@@ -171,6 +192,34 @@ export async function POST(req) {
                     JSON.stringify(settings_json || {}),
                     JSON.stringify(styles_json || {}),
                     storeId,
+                    businessId
+                ]
+            );
+
+            await conn.query(
+                `UPDATE tags_businesses
+                 SET logo_url=?,cover_url=?,whatsapp=?,email=?,address=?,updated_at=NOW()
+                 WHERE id=?`,
+                [
+                    safe(logo_url),
+                    safe(cover_url),
+                    safe(whatsapp),
+                    safe(email),
+                    safe(address),
+                    businessId
+                ]
+            );
+
+            await conn.query(
+                `UPDATE tags_stores
+                 SET logo_url=?,cover_url=?,whatsapp=?,email=?,address=?,updated_at=NOW()
+                 WHERE business_id=?`,
+                [
+                    safe(logo_url),
+                    safe(cover_url),
+                    safe(whatsapp),
+                    safe(email),
+                    safe(address),
                     businessId
                 ]
             );
@@ -269,8 +318,15 @@ export async function POST(req) {
                     slug,
                     name,
                     description,
+
                     logo_url,
+                    logo_storage_path,
+                    logo_og_storage_path,
+
                     cover_url,
+                    cover_storage_path,
+                    cover_og_storage_path,
+
                     whatsapp,
                     email,
                     address,
@@ -283,9 +339,9 @@ export async function POST(req) {
                     created_at,
                     updated_at
                 )
-                VALUES (
-                    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW()
-                )
+               VALUES (
+                        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW()
+                    )
                 `,
                 [
                     businessId,
@@ -293,8 +349,15 @@ export async function POST(req) {
                     cleanSlug,
                     name,
                     safe(description),
+
                     safe(logo_url),
+                    safe(logo_storage_path),
+                    safe(logo_og_storage_path),
+
                     safe(cover_url),
+                    safe(cover_storage_path),
+                    safe(cover_og_storage_path),
+
                     safe(whatsapp),
                     safe(email),
                     safe(address),
@@ -309,6 +372,34 @@ export async function POST(req) {
 
         const newStoreId =
             storeResult.insertId;
+
+        await conn.query(
+            `UPDATE tags_businesses
+             SET logo_url=?,cover_url=?,whatsapp=?,email=?,address=?,updated_at=NOW()
+             WHERE id=?`,
+            [
+                safe(logo_url),
+                safe(cover_url),
+                safe(whatsapp),
+                safe(email),
+                safe(address),
+                businessId
+            ]
+        );
+
+        await conn.query(
+            `UPDATE tags_stores
+             SET logo_url=?,cover_url=?,whatsapp=?,email=?,address=?,updated_at=NOW()
+             WHERE business_id=?`,
+            [
+                safe(logo_url),
+                safe(cover_url),
+                safe(whatsapp),
+                safe(email),
+                safe(address),
+                businessId
+            ]
+        );
 
         // =====================================
         // INSTALAR TEMPLATE INICIAL

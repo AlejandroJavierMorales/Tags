@@ -1,0 +1,45 @@
+.tags_turnos_admin_agenda_actions .tags_turnos_admin_agenda_delete {
+    margin-left: auto;
+    background: #b42318;
+    color: #fff;
+}
+
+.tags_turnos_admin_agenda_reschedule {
+    display: grid;
+    gap: 14px;
+    margin-top: 16px;
+    padding: 16px;
+    border: 1px solid #dbe8e1;
+    border-radius: 14px;
+    background: #f8fbf9;
+}
+
+.tags_turnos_admin_agenda_reschedule > header,
+.tags_turnos_admin_agenda_reschedule_confirmation {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.tags_turnos_admin_agenda_reschedule > header button {
+    border: 0;
+    background: transparent;
+    color: #53655b;
+    font-weight: 800;
+}
+
+.tags_turnos_admin_agenda_reschedule_confirmation {
+    padding: 12px;
+    border-radius: 10px;
+    background: #e8f7ee;
+    color: #185b38;
+    font-weight: 800;
+}
+
+@media (max-width: 600px) {
+    .tags_turnos_admin_agenda_reschedule_confirmation {
+        align-items: stretch;
+        flex-direction: column;
+    }
+}

@@ -66,8 +66,8 @@
 }
 
 .tags_portal_public_logo {
-    max-width: 120px;
-    max-height: 64px;
+    max-width: 150px;
+    max-height: 76px;
     width: auto;
     height: auto;
 
@@ -87,8 +87,8 @@
 .tags_portal_public_logo img {
     width: auto;
     height: auto;
-    max-width: 120px;
-    max-height: 64px;
+    max-width: 150px;
+    max-height: 76px;
     object-fit: contain;
 }
 
@@ -435,12 +435,12 @@
 }
 
 .tags_portal_public_footer_col a {
-    color: var(--qr-primary, #0F9D58);
+    color: var(--portal-footer-link, #7ee2a8);
 }
 
 .tags_portal_public_footer_col a:hover {
     opacity: 1;
-    color: var(--qr-primary-hover, var(--qr-primary, #0F9D58));
+    color: #ffffff;
 }
 
 .tags_portal_public_footer_bottom {
@@ -483,6 +483,12 @@
 @media (max-width: 600px) {
     .tags_portal_public_header_inner {
         padding: 10px 14px;
+    }
+
+    .tags_portal_public_logo,
+    .tags_portal_public_logo img {
+        max-width: 118px;
+        max-height: 60px;
     }
 
     /*  .tags_portal_public_logo,

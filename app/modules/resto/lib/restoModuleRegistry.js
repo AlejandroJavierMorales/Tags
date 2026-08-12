@@ -45,9 +45,19 @@ import RestoReviewsCTA
 import RestoReviewsBlock
     from "@/app/modules/resto/components/blocks/RestoReviewsBlock";
 
+import RestoFeaturedProductsBlock
+    from "@/app/modules/resto/components/blocks/RestoFeaturedProductsBlock";
+
+import RestoTrustBarBlock
+    from "@/app/modules/resto/components/blocks/RestoTrustBarBlock";
+
 import {
     createDefaultEditorSchema
 } from "@/app/modules/store/lib/builder/storeBuilderSchema";
+
+import {
+    getRestoBuilderDefinition
+} from "./restoBuilderDefinitions";
 
 const restoModules = {
 
@@ -198,6 +208,9 @@ const restoModules = {
         type: "resto_featured_products",
         label: "Productos destacados",
         category: "catalogo",
+
+        component:
+            RestoFeaturedProductsBlock,
 
         defaultContent: {
             title:
@@ -404,6 +417,9 @@ const restoModules = {
         label: "Información destacada",
         category: "contenido",
 
+        component:
+            RestoTrustBarBlock,
+
         defaultContent: {
             items: [
                 {
@@ -578,7 +594,7 @@ export function getRestoModuleDefinition(blockType) {
     return {
         ...module,
         name: module.label,
-        editor: module.editor || createDefaultEditorSchema({
+        editor: getRestoBuilderDefinition(blockType) || module.editor || createDefaultEditorSchema({
             description: `Personalizá cómo se muestra ${String(module.label || "este bloque").toLowerCase()} en la página pública.`,
             content: getPrimitiveContentFields(module.defaultContent || {}),
             typography: ["title", "subtitle", "text", "button", "meta"],

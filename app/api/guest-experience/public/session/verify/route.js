@@ -5,27 +5,22 @@ import { cookies } from "next/headers";
 import { db } from "@/app/lib/tags-db";
 import {
     createGuestToken,
+    getGuestPublicPageUrl,
+    getGuestVerificationUrl,
     hashGuestToken,
     parseGuestJson,
     guestError
 } from "@/app/modules/guest-experience/lib/guestExperienceService";
 
-function getPublicOrigin() {
-
-    const base =
-        process.env.NODE_ENV === "production"
-            ? (
-                process.env.NEXT_PUBLIC_BASE_URL_PROD ||
-                process.env.BASE_URL_PROD
-            )
-            : (
-                process.env.NEXT_PUBLIC_BASE_URL_DEV ||
-                process.env.BASE_URL_DEV ||
-                "http://localhost:3000"
-            );
-
-    return base.replace(/\/+$/, "");
-
+function normalizeRequestHost(value) {
+    return String(value || "")
+        .split(",")[0]
+        .trim()
+        .toLowerCase()
+        .replace(/^https?:\/\//, "")
+        .split("/")[0]
+        .replace(/:\d+$/, "")
+        .replace(/^www\./, "");
 }
 
 export async function GET(req) {
@@ -48,13 +43,41 @@ export async function GET(req) {
 
     }
 
-    const origin =
-        getPublicOrigin();
+    const publicPageUrl =
+        await getGuestPublicPageUrl(db, slug);
+
+    const actualRequestHost = normalizeRequestHost(
+        req.headers.get("host") || new URL(req.url).host
+    );
+    const forwardedRequestHost = normalizeRequestHost(
+        req.headers.get("x-forwarded-host")
+    );
+    const publicHost = normalizeRequestHost(new URL(publicPageUrl).host);
+
+    // Cuando el Worker proxifica la petición, el Host que ve Next es
+    // tags.com.ar y el dominio público original llega en X-Forwarded-Host.
+    // En ese caso no hay que redirigir nuevamente al mismo endpoint: la
+    // respuesta seguirá siendo entregada al navegador bajo el dominio público
+    // y la cookie quedará asociada a ese dominio.
+    const requestWasProxied = Boolean(forwardedRequestHost);
+    const requestIsAlreadyOnPublicHost = [actualRequestHost, forwardedRequestHost]
+        .includes(publicHost);
+    const localHosts = ["localhost", "127.0.0.1"];
+    if (
+        token &&
+        !requestWasProxied &&
+        !requestIsAlreadyOnPublicHost &&
+        !localHosts.includes(actualRequestHost)
+    ) {
+        return Response.redirect(
+            await getGuestVerificationUrl(db, slug, token)
+        );
+    }
 
     if (!token) {
 
         return Response.redirect(
-            `${origin}/p/${slug}/mi-estadia?access=invalid`
+            `${publicPageUrl}?access=invalid`
         );
 
     }
@@ -143,7 +166,7 @@ export async function GET(req) {
             await connection.rollback();
 
             return Response.redirect(
-                `${origin}/p/${slug}/mi-estadia?access=expired`
+                `${publicPageUrl}?access=expired`
             );
 
         }
@@ -291,7 +314,7 @@ export async function GET(req) {
         );
 
         return Response.redirect(
-            `${origin}/p/${slug}/mi-estadia`
+            publicPageUrl
         );
 
     } catch (error) {

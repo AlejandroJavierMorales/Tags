@@ -106,7 +106,8 @@ export async function getBusinessStatus(
 
     if (
         business.subscription_status !== "active" &&
-        business.subscription_status !== "trial"
+        business.subscription_status !== "trial" &&
+        !(business.subscription_status === "inactive" && ["directory_web", "directory_web_plus"].includes(business.code))
     ) {
         return {
             blocked: true

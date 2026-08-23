@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FaArrowLeft, FaBed, FaCalendarCheck, FaCalendarDays, FaComments, FaDoorOpen, FaEye, FaGear, FaGift, FaHotel, FaLocationDot, FaMoneyBillWave, FaPlus, FaShop, FaStar, FaUtensils, FaUserCheck } from "react-icons/fa6";
 import TagsSpinner from "@/app/components/TagsSpinner";
 import showAlert from "@/app/components/showAlert";
+import { normalizeArgentinaWhatsapp } from "@/app/modules/qr-page/lib/normalizeContactFields";
 import GuestExperienceReservationsPanel from "./GuestExperienceReservationsPanel";
 import GuestExperienceArrivalsPanel from "./GuestExperienceArrivalsPanel";
 import GuestExperienceFinanceReport from "./GuestExperienceFinanceReport";
@@ -153,7 +154,13 @@ export default function GuestExperienceAdminPage({
       eventCode: reminder ? "arrival_reminder" : "access_link"
     }, reminder ? "Recordatorio de ingreso enviado." : channel === "email" ? "Acceso enviado por email." : null);
     if (!p) return;
-    if (channel === "whatsapp" && p.whatsappUrl) window.open(p.whatsappUrl, "_blank", "noopener,noreferrer");
+    if (channel === "whatsapp" && p.whatsappUrl) {
+      const url = new URL(p.whatsappUrl);
+      const phone = normalizeArgentinaWhatsapp(item.guest_phone);
+      if (phone) url.pathname = `/${phone}`;
+      url.searchParams.set("text", `🏡 *Mi Estadía*\n\n*Acceso a Mi Estadía en ${data.app.name}*\n\n📌 *Reserva:* ${item.stay_code}\n📅 *Estadía:* ${new Date(item.starts_at).toLocaleDateString("es-AR")} al ${new Date(item.ends_at).toLocaleDateString("es-AR")}\n\n🔗 *Enlace de acceso:*\n${p.link}\n\nTe esperamos.`);
+      window.open(url.toString(), "_blank", "noopener,noreferrer");
+    }
     if (channel === "manual") {
       await navigator.clipboard.writeText(p.link);
       await showAlert({
@@ -163,6 +170,11 @@ export default function GuestExperienceAdminPage({
         timer: 1600
       });
     }
+  }
+  async function deleteCommunication(record) {
+    const ok = await showAlert({ title: "¿Eliminar esta comunicación?", text: "Se quitará del historial de la reserva. Esta acción no reenvía ni modifica el enlace del huésped.", icon: "warning", showCancelButton: true, confirmButtonText: "Eliminar", cancelButtonText: "Cancelar" });
+    if (!ok) return false;
+    return Boolean(await request("/api/guest-experience/admin/communications", "DELETE", { communicationId: record.id }, "Comunicación eliminada del historial."));
   }
   async function togglePublication() {
     const next = data.app.status === "published" ? "draft" : "published",
@@ -181,6 +193,33 @@ export default function GuestExperienceAdminPage({
   }
   async function saveCheckin(body, success) {
     return Boolean(await request("/api/guest-experience/admin/checkin", "POST", body, success));
+  }
+  async function checkoutReservation(item) {
+    const first = await showAlert({ title: "¿Confirmar checkout?", text: "La estadía pasará a estado concluido y se ocultarán las claves WiFi.", icon: "warning", showCancelButton: true, confirmButtonText: "Confirmar checkout", cancelButtonText: "Cancelar" });
+    if (!first) return false;
+    async function send(confirmEarly = false) {
+      const response = await fetch("/api/guest-experience/admin/checkin", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ businessId, guestAppId: data.app.id, stayId: item.id, action: "checkout", confirmEarly }) });
+      const payload = await response.json().catch(() => ({}));
+      return { response, payload };
+    }
+    let result = await send();
+    if (result.payload.code === "early_checkout") {
+      const early = await showAlert({ title: "Checkout anticipado", text: `${result.payload.error} ¿Querés confirmar igualmente?`, icon: "warning", showCancelButton: true, confirmButtonText: "Sí, hacer checkout", cancelButtonText: "Cancelar" });
+      if (!early) return false;
+      result = await send(true);
+    }
+    if (!result.response.ok || !result.payload.ok) { await showAlert({ title: "No se pudo confirmar", text: result.payload.error || "Error al registrar el checkout.", icon: "error" }); return false; }
+    await showAlert({ title: "Checkout confirmado", text: "La estadía quedó concluida y las claves WiFi ya no están disponibles.", icon: "success", timer: 1800 });
+    await load(true);
+    return true;
+  }
+  function financeManage(value) {
+    if (value && typeof value === "object" && value.checkout) {
+      const item = data?.stays?.find(stay => Number(stay.id) === Number(value.id));
+      if (item) checkoutReservation(item);
+      return;
+    }
+    setExternalStayId(value);
   }
   const adminGroups = [{ key:"stays",label:"Reservas / Estadías",icon:FaCalendarDays,items:[{key:"reservations",label:"Grilla de ocupación",icon:FaCalendarDays},{key:"arrivals",label:"Ingresos",icon:FaDoorOpen},{key:"finance",label:"Estadías y pagos",icon:FaMoneyBillWave},{key:"checkin",label:"Checkin",icon:FaUserCheck},{key:"active",label:"Estadías en curso",icon:FaBed}]},{key:"configuration",label:"Configuración",icon:FaGear,items:[{key:"settings",label:"General",icon:FaGear},{key:"units",label:"Unidades / Habitaciones",icon:FaHotel}]},{key:"guest_services",label:"Servicios al huésped",icon:FaGift,items:[{key:"turnos",label:"Reservas de amenities",icon:FaCalendarCheck},{key:"commerce",label:"Tienda y gastronomía",icon:FaShop},{key:"store_orders",label:"Pedidos de tienda",icon:FaShop},{key:"resto_orders",label:"Pedidos de gastronomía",icon:FaUtensils},{key:"messages",label:"Mensajes / Solicitudes",icon:FaComments},{key:"nearby",label:"Lugares cercanos",icon:FaLocationDot},{key:"benefits",label:"Beneficios",icon:FaGift},{key:"reviews",label:"Reseñas",icon:FaStar}]}];
   const adminNavigation = <GuestExperienceAdminNavigation groups={adminGroups} active={tab} onChange={setTab}/>;
@@ -236,7 +275,7 @@ export default function GuestExperienceAdminPage({
 </section>
 </main>;
   if (!missing && tab === "arrivals") return <main className="tags_guest_admin"><header className="tags_guest_admin_hero"><div className="tags_guest_admin_identity"><span className="tags_guest_admin_icon"><FaHotel /></span><div><small>RECEPCIÓN</small><h1>{data.app.name}</h1><p>Ingresos previstos</p></div></div></header>{adminNavigation}<GuestExperienceArrivalsPanel data={data} onBack={() => setTab("reservations")} onReminder={item=>invite(item,"reminder")} onCheckin={stayId => { sessionStorage.setItem("tags_guest_checkin_stay", String(stayId)); setTab("checkin"); }} /></main>;
-  if (!missing && tab === "finance") return <main className="tags_guest_admin"><header className="tags_guest_admin_hero"><div className="tags_guest_admin_identity"><span className="tags_guest_admin_icon"><FaHotel /></span><div><small>ADMINISTRACIÓN</small><h1>{data.app.name}</h1><p>Estadías, ventas y pagos</p></div></div></header>{adminNavigation}<GuestExperienceFinanceReport businessId={businessId} data={data} onBack={() => setTab("reservations")} onManage={setExternalStayId} />{externalStayId&&<GuestExperienceReservationsPanel overlayOnly stayId={externalStayId} onClose={()=>setExternalStayId(null)} data={data} busy={busy} onCreate={createReservation} onUpdate={updateReservation} onDelete={deleteReservation} onInvite={invite}/>}</main>;
+  if (!missing && tab === "finance") return <main className="tags_guest_admin"><header className="tags_guest_admin_hero"><div className="tags_guest_admin_identity"><span className="tags_guest_admin_icon"><FaHotel /></span><div><small>ADMINISTRACIÓN</small><h1>{data.app.name}</h1><p>Estadías, ventas y pagos</p></div></div></header>{adminNavigation}<GuestExperienceFinanceReport businessId={businessId} data={data} onBack={() => setTab("reservations")} onManage={financeManage} />{externalStayId&&<GuestExperienceReservationsPanel overlayOnly stayId={externalStayId} onClose={()=>setExternalStayId(null)} data={data} busy={busy} onCreate={createReservation} onUpdate={updateReservation} onDelete={deleteReservation} onInvite={invite} onDeleteCommunication={deleteCommunication} onCheckout={checkoutReservation}/>}</main>;
   if (missing) return <main className="tags_guest_admin">
 <header className="tags_guest_admin_hero">
 <div className="tags_guest_admin_identity">
@@ -288,7 +327,7 @@ export default function GuestExperienceAdminPage({
 <FaEye /> Ver página</a>
 </div>
 </header>
-{adminNavigation}{tab === "reservations" && <GuestExperienceReservationsPanel data={data} busy={busy} onCreate={createReservation} onUpdate={updateReservation} onDelete={deleteReservation} onInvite={invite} />} {tab === "checkin" && <section className="tags_guest_admin_panel">
+{adminNavigation}{tab === "reservations" && <GuestExperienceReservationsPanel data={data} busy={busy} onCreate={createReservation} onUpdate={updateReservation} onDelete={deleteReservation} onInvite={invite} onDeleteCommunication={deleteCommunication} onCheckout={checkoutReservation} />} {tab === "checkin" && <section className="tags_guest_admin_panel">
 <h2>Pre-check-in y check-in</h2>
 <p>Las reservas pendientes aparecerán aquí para completar acompañantes, vehículo y confirmar el ingreso.</p>
 </section>}{tab === "active" && <section className="tags_guest_admin_panel">

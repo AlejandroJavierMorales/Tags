@@ -1,0 +1,7 @@
+export const runtime="nodejs";export const dynamic="force-dynamic";
+import{requireSubscriptionAdmin,subscriptionAdminError}from"@/app/modules/subscriptions/lib/requireSubscriptionAdmin";
+import{getSubscriptionFoundationStatus}from"@/app/modules/subscriptions/lib/subscriptionSchema";
+import{createSubscriptionOffer}from"@/app/modules/subscriptions/lib/subscriptionOfferService";
+import{getRequestBaseUrl}from"@/app/lib/channelContext";
+export async function POST(req){const access=await requireSubscriptionAdmin();if(!access.ok)return subscriptionAdminError(access);try{const foundation=await getSubscriptionFoundationStatus();if(!foundation.ready)return Response.json({ok:false,error:"Primero ejecutá la migración fundacional"},{status:409});const body=await req.json().catch(()=>null);if(!body)return Response.json({ok:false,error:"Cuerpo JSON inválido"},{status:400});const result=await createSubscriptionOffer(body,Number(access.session?.businessId||access.session?.id||0)||null),root=String(getRequestBaseUrl(req)||process.env.NEXT_PUBLIC_APP_URL||new URL(req.url).origin).replace(/\/+$/,"");return Response.json({ok:true,id:result.id,url:`${root}/suscripcion/oferta/${result.token}`,expiresAt:result.expiresAt})}catch(error){console.error("SUBSCRIPTION OFFER CREATE ERROR",error);return Response.json({ok:false,error:error?.message||"No se pudo crear la oferta"},{status:error?.status||500})}}
+

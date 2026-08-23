@@ -46,6 +46,9 @@ import TurnosPublicRenderer
 
 import { getTurnosBySlug, getPublicLocations }
     from "@/app/modules/turnos/lib/getTurnosPublic";
+import { getPagePublicEntitlement } from "@/app/modules/subscriptions/lib/publicEntitlement";
+import { getPublicAiChatConfig } from "@/app/modules/ai-chat/server/getPublicAiChatConfig";
+import ChatWidget from "@/app/modules/ai-chat/components/ChatWidget";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -718,6 +721,9 @@ export async function generateMetadata({
             page
         );
 
+    const isDirectoryPage =
+        page.page_type === "directory";
+
     return {
         title:
             seo.title,
@@ -731,14 +737,14 @@ export async function generateMetadata({
         },
         robots: {
             index:
-                page.robots_index === 1,
+                !isDirectoryPage && page.robots_index === 1,
             follow:
-                page.robots_follow === 1,
+                !isDirectoryPage && page.robots_follow === 1,
             googleBot: {
                 index:
-                    page.robots_index === 1,
+                    !isDirectoryPage && page.robots_index === 1,
                 follow:
-                    page.robots_follow === 1,
+                    !isDirectoryPage && page.robots_follow === 1,
                 "max-image-preview": "large",
                 "max-snippet": -1,
                 "max-video-preview": -1
@@ -1148,6 +1154,11 @@ export default async function PublicQRPage({
     searchParams
 }) {
 
+    const pageEntitlement = await getPagePublicEntitlement(params.slug);
+    if (pageEntitlement.addonCode === "directory") {
+        redirect(`/${params.slug}`);
+    }
+
     const portalHomeSlug = await getPortalHomeSlug(params.slug);
 
     if (portalHomeSlug && portalHomeSlug !== params.slug) {
@@ -1327,6 +1338,12 @@ export default async function PublicQRPage({
                 portalContext.hasPortal && !storeHasThemeOverride
             );
 
+        const aiChatConfig = await getPublicAiChatConfig(
+            storeBuilderData.store.business_id,
+            "store",
+            storeBuilderData.store.id
+        );
+
         return (
             <>
                 <script
@@ -1352,6 +1369,8 @@ export default async function PublicQRPage({
                     sections={storeBuilderData.sections}
                     blocks={storeBuilderData.blocks}
                 />
+
+                {aiChatConfig && <ChatWidget config={aiChatConfig} />}
 
                 {portalContext.hasPortal && (
                     <PortalFooter
@@ -1395,6 +1414,12 @@ export default async function PublicQRPage({
                 !hasPageThemeOverride(storeData.store.page_global_styles)
             );
 
+        const aiChatConfig = await getPublicAiChatConfig(
+            storeData.store.business_id,
+            "store",
+            storeData.store.id
+        );
+
         return (
             <>
                 {portalContext.hasPortal && (
@@ -1410,6 +1435,8 @@ export default async function PublicQRPage({
                     categories={storeData.categories}
                     products={storeData.products}
                 />
+
+                {aiChatConfig && <ChatWidget config={aiChatConfig} />}
 
                 {portalContext.hasPortal && (
                     <PortalFooter
@@ -1436,6 +1463,7 @@ export default async function PublicQRPage({
         });
 
     if (page.page_type === "client_reviews") {
+        const aiChatConfig = await getPublicAiChatConfig(page.business_id, "qr_page", page.id);
         return (
             <>
                 {portalContext.hasPortal && (
@@ -1455,6 +1483,8 @@ export default async function PublicQRPage({
                         !hasPageThemeOverride(page.global_styles)
                     }
                 />
+
+                {aiChatConfig && <ChatWidget config={aiChatConfig} />}
 
                 {portalContext.hasPortal && (
                     <PortalFooter
@@ -1488,10 +1518,16 @@ export default async function PublicQRPage({
             theme_css_vars: turnosThemeTokens,
             hasPortal: turnosPortalContext.hasPortal
         };
+        const aiChatConfig = await getPublicAiChatConfig(
+            page.business_id,
+            "turnos",
+            turnos.id
+        );
         return (
             <>
                 {turnosPortalContext.hasPortal && <PortalHeader portal={turnosPortalContext.portal} routes={turnosPortalContext.routes} currentRoute={turnosPortalContext.currentRoute} />}
                 <TurnosPublicRenderer page={page} app={turnosApp} />
+                {aiChatConfig && <ChatWidget config={aiChatConfig} />}
                 {turnosPortalContext.hasPortal && <PortalFooter portal={turnosPortalContext.portal} routes={turnosPortalContext.routes} currentRoute={turnosPortalContext.currentRoute} />}
             </>
         );
@@ -1520,6 +1556,12 @@ export default async function PublicQRPage({
                 !hasPageThemeOverride(storeData.store.page_global_styles)
             );
 
+        const aiChatConfig = await getPublicAiChatConfig(
+            storeData.store.business_id,
+            "store",
+            storeData.store.id
+        );
+
         return (
             <>
                 {portalContext.hasPortal && (
@@ -1535,6 +1577,8 @@ export default async function PublicQRPage({
                     categories={storeData.categories}
                     products={storeData.products}
                 />
+
+                {aiChatConfig && <ChatWidget config={aiChatConfig} />}
 
                 {portalContext.hasPortal && (
                     <PortalFooter
@@ -1590,6 +1634,12 @@ export default async function PublicQRPage({
                 }
                 : resto.store;
 
+        const aiChatConfig = await getPublicAiChatConfig(
+            page.business_id,
+            "resto",
+            resto.store?.id
+        );
+
 
         return (
             <>
@@ -1614,6 +1664,8 @@ export default async function PublicQRPage({
                     showOwnFooter={true}
                 />
 
+                {aiChatConfig && <ChatWidget config={aiChatConfig} />}
+
                 {restoPortalContext.hasPortal && (
                     <PortalFooter
                         portal={restoPortalContext.portal}
@@ -1630,6 +1682,8 @@ export default async function PublicQRPage({
             page,
             products
         });
+
+    const aiChatConfig = await getPublicAiChatConfig(page.business_id, "qr_page", page.id);
 
     const inheritPortalTheme =
         portalContext.hasPortal &&
@@ -1681,6 +1735,8 @@ export default async function PublicQRPage({
                 showOwnHeader={!portalContext.portal?.hide_child_headers}
                 showOwnFooter={!portalContext.portal?.hide_child_footers}
             />
+
+            {aiChatConfig && <ChatWidget config={aiChatConfig} />}
 
             {portalContext.hasPortal && (
                 <PortalFooter

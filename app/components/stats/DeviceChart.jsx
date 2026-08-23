@@ -13,6 +13,7 @@ const COLORS = ["#0d6efd", "#198754", "#ffc107", "#dc3545", "#6f42c1"];
 export default function DeviceChart({ data = [] }) {
 
     const devices = Array.isArray(data) ? data : [];
+    const sortedDevices = [...devices].sort((a, b) => Number(b.total || 0) - Number(a.total || 0));
 
     return (
         <div className="card p-3 mb-4">
@@ -58,11 +59,10 @@ export default function DeviceChart({ data = [] }) {
                     </thead>
 
                     <tbody>
-                        {devices
-                            .sort((a, b) => b.total - a.total)
+                        {sortedDevices
                             .map((d, i) => {
 
-                                const totalAll = devices.reduce((acc, x) => acc + x.total, 0);
+                                const totalAll = sortedDevices.reduce((acc, x) => acc + Number(x.total || 0), 0);
                                 const percent = totalAll
                                     ? ((d.total / totalAll) * 100).toFixed(1)
                                     : 0;

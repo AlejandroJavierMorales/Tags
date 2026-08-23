@@ -7,6 +7,7 @@ import TagsSpinner from "@/app/components/TagsSpinner";
 import showAlert from "@/app/components/showAlert";
 import QrAgencyCustomers from "./QrAgencyCustomers";
 import QrAgencyQrs from "./QrAgencyQrs";
+import QrAgencyStats from "./QrAgencyStats";
 import "./QrAgencyAdminPage.css";
 import "./QrAgencyAdminTier.css";
 
@@ -21,6 +22,7 @@ export default function QrAgencyAdminPage({ businessId }) {
     const [data, setData] = useState(null);
     const [busy, setBusy] = useState(false);
     const [slug, setSlug] = useState("");
+    const [customerStatsEnabled, setCustomerStatsEnabled] = useState(true);
     const [tierCode, setTierCode] = useState("agency25");
 
     async function load() {
@@ -31,6 +33,7 @@ export default function QrAgencyAdminPage({ businessId }) {
             if (!response.ok) throw new Error(result.error || "No se pudo cargar QR Agency");
             setData(result);
             setSlug(result.agency?.slug || "");
+            setCustomerStatsEnabled(result.agency?.customerStatsEnabled !== false);
             if (!result.agency && result.tiers?.length) setTierCode(result.tiers[0].code);
         } catch (error) {
             await showAlert({ title: "No se pudo cargar", text: error.message, icon: "error" });
@@ -85,7 +88,7 @@ export default function QrAgencyAdminPage({ businessId }) {
             const response = await fetch("/api/qr-agency/admin/settings", {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ businessId, slug })
+                body: JSON.stringify({ businessId, slug, customerStatsEnabled })
             });
             const result = await payload(response);
             if (!response.ok) throw new Error(result.error || "No se pudo cambiar la ruta");
@@ -124,13 +127,15 @@ export default function QrAgencyAdminPage({ businessId }) {
 
             <section className="tags_qr_agency_admin_settings">
                 <header><FaLink /><div><h2>Acceso de tus clientes</h2><p>Esta será la dirección desde la que solicitarán su enlace privado.</p></div></header>
-                <form onSubmit={saveSlug}><label>Ruta de la agencia<div><span>/agency/</span><input required value={slug} onChange={(event) => setSlug(event.target.value)} /></div></label><button disabled={busy || slug === agency.slug}>Guardar ruta</button></form>
+                <form onSubmit={saveSlug}><label>Ruta de la agencia<div><span>/agency/</span><input required value={slug} onChange={(event) => setSlug(event.target.value)} /></div></label><label className="tags_qr_agency_customer_stats_toggle"><input type="checkbox" checked={customerStatsEnabled} onChange={(event) => setCustomerStatsEnabled(event.target.checked)} /><span>Permitir estadísticas al cliente</span><small>El cliente podrá ver gráficos, períodos y dispositivos de sus propios QRs.</small></label><button disabled={busy || (slug === agency.slug && customerStatsEnabled === (agency.customerStatsEnabled !== false))}>Guardar configuración</button></form>
                 <code>{typeof window !== "undefined" ? window.location.origin : ""}/agency/{agency.slug}/login</code>
             </section>
 
             <QrAgencyCustomers businessId={businessId} onChanged={load} />
 
             <QrAgencyQrs businessId={businessId} onChanged={load} />
+
+            <QrAgencyStats businessId={businessId} />
 
             <section className="tags_qr_agency_admin_next"><header><h2>Próxima etapa</h2><p>La gestión de clientes ya está disponible. A continuación incorporaremos sus códigos y métricas.</p></header><div><article><FaQrcode /><strong>Códigos QR</strong><span>Creación, destino, asignación y pausa.</span></article><article><FaChartLine /><strong>Estadísticas</strong><span>Escaneos por cliente y QR.</span></article></div></section>
         </>}

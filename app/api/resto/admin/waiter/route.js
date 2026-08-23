@@ -752,7 +752,7 @@ export async function POST(
             ) {
 
                 throw new Error(
-                    "Producto invÃ¡lido"
+                    "Producto inválido"
                 );
 
             }
@@ -787,7 +787,7 @@ export async function POST(
             if (!affected) {
 
                 throw new Error(
-                    "El producto ya no estÃ¡ disponible para entregar"
+                    "El producto ya no está disponible para entregar"
                 );
 
             }

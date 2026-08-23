@@ -100,6 +100,9 @@ export function buildPortalDashboard({
 
     const hasGuestExperienceAddon =
         businessHasAddon(businessAddons, "guest_experience");
+    const hasAiChatAddon =
+        businessHasAddon(businessAddons, "ai_chatbot");
+
     const hasDirectoryAddon =
         businessHasAddon(businessAddons, "directory");
 
@@ -155,6 +158,16 @@ export function buildPortalDashboard({
             onClick: () => {
                 if (!hasQrAgencyAddon) return;
                 router.push(portalRegistry.qr_agency.adminPath({ businessId }));
+            }
+        },
+        {
+            ...portalRegistry.ai_chatbot,
+            active: hasAiChatAddon,
+            status: hasAiChatAddon ? "Disponible" : null,
+            actionLabel: hasAiChatAddon ? "Administrar" : "No contratado",
+            onClick: () => {
+                if (!hasAiChatAddon) return;
+                router.push(portalRegistry.ai_chatbot.adminPath({ businessId }));
             }
         },
         {

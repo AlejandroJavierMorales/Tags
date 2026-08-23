@@ -7,6 +7,7 @@ export default function TagsSpinner({
     borderSize = 6,
     speed = "1s",
     background = "transparent",
+    showLogo = true,
 
 }) {
 
@@ -62,7 +63,7 @@ export default function TagsSpinner({
                 }}
             >
 
-                <img
+                {showLogo && <img
                     src="/logo_tags_transparente.webp"
                     alt="Tags Logo"
                     style={{
@@ -73,7 +74,7 @@ export default function TagsSpinner({
 
                         objectFit: "contain"
                     }}
-                />
+                />}
 
             </div>
 

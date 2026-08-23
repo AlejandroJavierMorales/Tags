@@ -6,8 +6,10 @@
 import { db } from "@/app/lib/tags-db";
 
 export async function canCreateQR({
+    conn = null,
     businessId,
-    quantity = 1
+    quantity = 1,
+    allowTrial = false
 }) {
 
     if (!businessId) {
@@ -19,8 +21,9 @@ export async function canCreateQR({
         };
     }
 
+    const queryDb = conn || db;
     const [subs] =
-        await db.query(
+        await queryDb.query(
             `
             SELECT
                 s.*,
@@ -32,13 +35,16 @@ export async function canCreateQR({
                     ON p.id = s.plan_id
             WHERE
                 s.business_id = ?
-                AND s.status = 'active'
+                AND s.status IN ('active', 'trial')
+                AND (? = 1 OR s.status = 'active')
+                AND (s.expires_at IS NULL OR s.expires_at >= NOW())
             ORDER BY
                 s.id DESC
             LIMIT 1
             `,
             [
-                businessId
+                businessId,
+                allowTrial ? 1 : 0
             ]
         );
 
@@ -63,6 +69,8 @@ export async function canCreateQR({
                 tags_qr_codes
             WHERE
                 business_id = ?
+                AND is_active = 1
+                AND status NOT IN ('deleted', 'disabled')
             `,
             [
                 businessId

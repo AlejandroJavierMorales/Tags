@@ -3,15 +3,16 @@ export const dynamic = "force-dynamic";
 
 import { db } from "@/app/lib/tags-db";
 import { sendMail } from "@/app/lib/sendMail";
-import { createGuestToken, hashGuestToken, parseGuestJson } from "@/app/modules/guest-experience/lib/guestExperienceService";
+import { createGuestToken, getGuestVerificationUrl, hashGuestToken, parseGuestJson } from "@/app/modules/guest-experience/lib/guestExperienceService";
 
 function authorized(req) {
     const expected = process.env.SYSTEM_CRON_SECRET || "";
     const received = (req.headers.get("authorization") || req.headers.get("x-cron-secret") || "").replace(/^Bearer\s+/i, "").trim();
     return Boolean(expected && received === expected);
 }
-function baseUrl() { return process.env.NODE_ENV === "development" ? "http://localhost:3000" : process.env.NEXT_PUBLIC_BASE_URL_PROD; }
 function date(value) { return String(value).slice(0, 10); }
+function displayDate(value) { return new Date(value).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "America/Argentina/Buenos_Aires" }); }
+function displayTime(value) { const [hour, minute] = String(value || "").split(":"); return hour ? `${Number(hour)}${minute && Number(minute) ? `:${String(minute).padStart(2, "0")}` : ""}hs` : "A confirmar"; }
 
 async function runArrivalReminders(req) {
     if (!authorized(req)) return Response.json({ ok: false, error: "No autorizado" }, { status: 401 });
@@ -47,10 +48,10 @@ async function runArrivalReminders(req) {
         }
         connection.release();
 
-        const link = `${baseUrl()}/api/guest-experience/public/session/verify?slug=${encodeURIComponent(stay.slug)}&token=${token}`;
+        const link = await getGuestVerificationUrl(db, stay.slug, token);
         const subject = "¡Tenés un ingreso a nuestras cabañas!";
         const people = Number(stay.adults||0) + Number(stay.children||0);
-        const period = `${new Date(stay.starts_at).toLocaleDateString("es-AR")} al ${new Date(stay.ends_at).toLocaleDateString("es-AR")}`;
+        const period = `Ingreso: ${displayDate(stay.starts_at)} ${displayTime(settings.checkinTime || "15:00")}\nEgreso: ${displayDate(stay.ends_at)} ${displayTime(settings.checkoutTime || "10:00")}`;
         const precheckinDone = ["submitted","reviewed","checked_in"].includes(stay.precheckin_status);
         const precheckinHtml = precheckinDone ? "" : `<div style="margin:22px 0;padding:16px;border-radius:12px;background:#fff5e6;color:#75420d"><strong>Antes de viajar</strong><p style="margin:7px 0 0">Te invitamos a completar el pre-check-in desde Mi Estadía. Así, cuando llegues, tu ingreso será mucho más ágil.</p></div>`;
         const precheckinText = precheckinDone ? "" : " Te recomendamos completar el pre-check-in desde Mi Estadía antes de viajar.";

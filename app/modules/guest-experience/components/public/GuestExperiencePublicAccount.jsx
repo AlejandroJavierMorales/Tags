@@ -1,4 +1,54 @@
 "use client";
-import{useEffect,useState}from"react";import{FaCircleCheck,FaEye,FaReceipt}from"react-icons/fa6";import TagsSpinner from"@/app/components/TagsSpinner";import showAlert from"@/app/components/showAlert";import GuestExperienceAccountMovementModal from"./GuestExperienceAccountMovementModal";import"./GuestExperiencePublicAccount.css";import"./GuestExperiencePublicAccountStatus.css";
-const LABELS={charge:"Cargo",discount:"Descuento",adjustment:"Ajuste",payment:"Pago",refund:"Reintegro",void:"Anulación"},METHODS={cash:"Efectivo",transfer:"Transferencia",debit_card:"Tarjeta de débito",credit_card:"Tarjeta de crédito",mercadopago:"Mercado Pago"},money=(value,currency="ARS")=>new Intl.NumberFormat("es-AR",{style:"currency",currency}).format(Number(value||0)),formatDate=value=>value?new Date(value).toLocaleString("es-AR",{dateStyle:"short",timeStyle:"short"}):"";
-export default function GuestExperiencePublicAccount({slug,previewData=null}){const[data,setData]=useState(previewData),[busy,setBusy]=useState(!previewData),[detailId,setDetailId]=useState(null);useEffect(()=>{if(previewData)return;fetch(`/api/guest-experience/public/account?slug=${encodeURIComponent(slug)}`,{cache:"no-store"}).then(async response=>({response,payload:await response.json()})).then(({response,payload})=>response.ok?setData(payload):showAlert({title:"No se pudo cargar la cuenta",text:payload.error,icon:"error"})).finally(()=>setBusy(false))},[slug,previewData]);if(busy)return <div className="tags_guest_account_loading"><TagsSpinner size={88} logoSize={46} borderSize={4}/></div>;const summary=data?.summary||{},currency=data?.account?.currency||"ARS",entries=data?.entries||[],pending=Number(summary.balance||0)>0;return <div className="tags_guest_account_public"><header><span>CUENTA DEL HUÉSPED</span><h2>Cuenta de la estadía</h2><p>Consultá los consumos y pagos registrados por el alojamiento.</p></header><div className="tags_guest_account_status"><div className={pending?"is_pending":"is_clear"}>{pending?<FaReceipt/>:<FaCircleCheck/>}<span>{pending?"Saldo pendiente":"Cuenta al día"}</span></div><strong>{money(summary.balance,currency)}</strong></div><div className="tags_guest_account_kpis"><div><small>Cargos</small><strong>{money(summary.charges,currency)}</strong></div><div><small>Descuentos</small><strong>{money(summary.discounts,currency)}</strong></div><div><small>Pagado</small><strong>{money(summary.paid,currency)}</strong></div></div><section><h3>Movimientos</h3>{entries.length?<div className="tags_guest_account_entries">{entries.map(entry=><article key={entry.id}><div><span>{LABELS[entry.entry_type]||"Movimiento"}</span><small>{formatDate(entry.occurred_at)}</small></div><strong className={Number(entry.total_amount)<0?"is_credit":""}>{money(entry.total_amount,entry.currency||currency)}</strong><p>{entry.description}</p>{entry.payment_method&&<small>{METHODS[entry.payment_method]||entry.payment_method}{entry.reference?` · Ref. ${entry.reference}`:""}</small>}<button type="button" onClick={()=>setDetailId(entry.id)}><FaEye/> Ver detalle</button></article>)}</div>:<p>Todavía no hay movimientos registrados en esta cuenta.</p>}</section><footer>Si necesitás corregir o consultar un movimiento, comunicate con el alojamiento.</footer>{detailId&&<GuestExperienceAccountMovementModal slug={slug} entryId={detailId} onClose={()=>setDetailId(null)}/>}</div>}
+
+import { useEffect, useState } from "react";
+import { FaCircleCheck, FaEye, FaReceipt } from "react-icons/fa6";
+import TagsSpinner from "@/app/components/TagsSpinner";
+import showAlert from "@/app/components/showAlert";
+import GuestExperienceAccountMovementModal from "./GuestExperienceAccountMovementModal";
+import "./GuestExperiencePublicAccount.css";
+import "./GuestExperiencePublicAccountStatus.css";
+
+const LABELS = { charge: "Cargo", discount: "Descuento", adjustment: "Ajuste", payment: "Pago", refund: "Reintegro", void: "Anulación" };
+const METHODS = { cash: "Efectivo", transfer: "Transferencia", debit_card: "Tarjeta de débito", credit_card: "Tarjeta de crédito", mercadopago: "Mercado Pago" };
+const money = (value, currency = "ARS") => new Intl.NumberFormat("es-AR", { style: "currency", currency }).format(Number(value || 0));
+const formatDate = value => value ? new Date(value).toLocaleString("es-AR", { dateStyle: "short", timeStyle: "short" }) : "";
+
+export default function GuestExperiencePublicAccount({ slug, previewData = null }) {
+    const [data, setData] = useState(previewData);
+    const [busy, setBusy] = useState(!previewData);
+    const [detailId, setDetailId] = useState(null);
+
+    useEffect(() => {
+        if (previewData) return;
+        fetch(`/api/guest-experience/public/account?slug=${encodeURIComponent(slug)}`, { cache: "no-store" })
+            .then(async response => ({ response, payload: await response.json() }))
+            .then(({ response, payload }) => {
+                if (response.ok) setData(payload);
+                else showAlert({ title: "No se pudo cargar la cuenta", text: payload.error, icon: "error" });
+            })
+            .finally(() => setBusy(false));
+    }, [slug, previewData]);
+
+    if (busy) return <div className="tags_guest_account_loading"><TagsSpinner size={88} logoSize={46} borderSize={4} /></div>;
+
+    const summary = data?.summary || {};
+    const currency = data?.account?.currency || "ARS";
+    const entries = data?.entries || [];
+    const pending = Number(summary.balance || 0) > 0;
+
+    return <div className="tags_guest_account_public">
+        <header><span>CUENTA DEL HUÉSPED</span><h2>Cuenta de la estadía</h2><p>Consultá la reserva, los consumos y los pagos registrados por el alojamiento.</p></header>
+        <div className="tags_guest_account_status"><div className={pending ? "is_pending" : "is_clear"}>{pending ? <FaReceipt /> : <FaCircleCheck />}<span>{pending ? "Saldo pendiente" : "Cuenta al día"}</span></div><strong>{money(summary.balance, currency)}</strong></div>
+        <div className="tags_guest_account_kpis"><div><small>Cargos</small><strong>{money(summary.charges, currency)}</strong></div><div><small>Descuentos</small><strong>{money(summary.discounts, currency)}</strong></div><div><small>Pagado</small><strong>{money(summary.paid, currency)}</strong></div></div>
+        <section><h3>Movimientos</h3>{entries.length ? <div className="tags_guest_account_entries">{entries.map(entry => <article key={entry.id}>
+            <div><span>{LABELS[entry.entry_type] || "Movimiento"}</span><small>{formatDate(entry.occurred_at)}</small></div>
+            <strong className={Number(entry.total_amount) < 0 ? "is_credit" : ""}>{money(entry.total_amount, entry.currency || currency)}</strong>
+            <p>{entry.description}</p>
+            <small className="tags_guest_account_running_balance">Saldo después del movimiento: {money(entry.balance_after, currency)}</small>
+            {entry.payment_method && <small>{METHODS[entry.payment_method] || entry.payment_method}{entry.reference ? ` · Ref. ${entry.reference}` : ""}</small>}
+            <button type="button" onClick={() => setDetailId(entry.id)}><FaEye /> Ver detalle</button>
+        </article>)}</div> : <p>Todavía no hay movimientos registrados en esta cuenta.</p>}</section>
+        <footer>Si necesitás corregir o consultar un movimiento, comunicate con el alojamiento.</footer>
+        {detailId && <GuestExperienceAccountMovementModal slug={slug} entryId={detailId} onClose={() => setDetailId(null)} />}
+    </div>;
+}

@@ -33,12 +33,20 @@ export async function POST(req) {
         if (taxonomyIds.length) {
             const placeholders = taxonomyIds.map(() => "?").join(",");
             const [validTaxonomy] = await conn.query(
-                `SELECT id FROM tags_directory_taxonomy_nodes WHERE id IN (${placeholders}) AND is_active=1`,
+                `SELECT id FROM tags_directory_taxonomy_nodes n WHERE n.id IN (${placeholders}) AND n.is_active=1 AND NOT EXISTS (SELECT 1 FROM tags_directory_taxonomy_nodes child WHERE child.parent_id=n.id)`,
                 taxonomyIds
             );
             if (validTaxonomy.length !== taxonomyIds.length) {
                 await conn.rollback();
                 return Response.json({ error: "Uno o más rubros seleccionados no son válidos" }, { status: 400 });
+            }
+        }
+
+        if (placeId) {
+            const [placeRows] = await conn.query("SELECT place_type FROM tags_geo_places WHERE id=? AND is_active=1 LIMIT 1", [placeId]);
+            if (!placeRows.length || placeRows[0].place_type !== "locality") {
+                await conn.rollback();
+                return Response.json({ error: "La ubicación de la ficha debe ser una localidad" }, { status: 400 });
             }
         }
 

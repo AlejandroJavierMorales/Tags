@@ -1,6 +1,7 @@
 import { db } from "@/app/lib/tags-db";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { getGeo, getCachedGeo, setCachedGeo } from "@/app/utils/geo/geo-loader";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -162,11 +163,13 @@ export async function GET(req, { params }) {
       /*  const ip = "181.124.187.12"; *///Paraguay
       /* const ip = "8.8.8.8"; */ // Google (USA)
       /* const ip = "181.46.0.1"; */ // Argentina (aprox)
-      const ip =
+      const ip = (
+        req.headers.get("cf-connecting-ip") ||
         req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
         req.headers.get("x-real-ip") ||
         req.ip ||
-        "0.0.0.0";
+        "0.0.0.0"
+      ).replace(/^::ffff:/i, "").trim();
 
       const userAgent = req.headers.get("user-agent") || "";
       const referrer = req.headers.get("referer") || "";
@@ -280,24 +283,57 @@ export async function GET(req, { params }) {
         ip !== "::1" &&
         ip !== "127.0.0.1"
       ) {
-        const geoUrl =
-          `${baseUrl}/api/geo`;
+        // Resolver en el mismo request del escaneo. Evita depender de una
+        // segunda llamada HTTP que puede ser interceptada por Cloudflare o
+        // cancelada al producirse la redirección del QR.
+        const edgeGeo = {
+          country: req.headers.get("x-tags-geo-country") || null,
+          region: req.headers.get("x-tags-geo-region") || null,
+          city: req.headers.get("x-tags-geo-city") || null
+        };
 
-        // debug útil
-        /*  console.log("🌍 Geo lookup:", ip, "click:", clickId); */
+        // Cloudflare tiene prioridad cuando entrega ciudad. Si no la
+        // entrega, se conserva MaxMind como respaldo.
+        let geo = edgeGeo.city ? edgeGeo : getCachedGeo(ip);
+        if (!geo && (edgeGeo.country || edgeGeo.region)) {
+          geo = edgeGeo;
+          setCachedGeo(ip, geo);
+        }
+        if (!geo) {
+          const [cachedRows] = await db.execute(
+            "SELECT country, region, city FROM tags_geo_cache WHERE ip = ? LIMIT 1",
+            [ip]
+          );
+          if (cachedRows?.[0] && (cachedRows[0].country || cachedRows[0].region || cachedRows[0].city)) {
+            geo = cachedRows[0];
+            setCachedGeo(ip, geo);
+          }
+        }
+        if (!geo) {
+          const geoDB = await getGeo();
+          const data = geoDB.get(ip);
+          geo = {
+            country: data?.country?.names?.en || null,
+            region: data?.subdivisions?.[0]?.names?.en || null,
+            city: data?.city?.names?.en || null
+          };
+          setCachedGeo(ip, geo);
 
-        fetch(geoUrl.toString(), {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            ip,
-            clickId
-          })
-        }).catch((err) => {
-          console.log("Geo fetch error:", err.message);
-        });
+          await db.execute(
+            `INSERT INTO tags_geo_cache (ip, country, region, city)
+             VALUES (?, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE
+               country = VALUES(country),
+               region = VALUES(region),
+               city = VALUES(city)`,
+            [ip, geo.country, geo.region, geo.city]
+          );
+        }
+
+        await db.execute(
+          `UPDATE tags_clicks SET country = ?, region = ?, city = ? WHERE id = ?`,
+          [geo.country, geo.region, geo.city, clickId]
+        );
       }
 
     } catch (e) {
@@ -351,7 +387,39 @@ export async function GET(req, { params }) {
         `${baseUrl}/setup?code=${code}`
       );
     }
-    const res = NextResponse.redirect(url);
+    // La pantalla intermedia permite pedir geolocalización del navegador con
+    // consentimiento. Luego recupera el destino original y continúa.
+    const requestUrl = new URL(req.url);
+    const forwardedHost = (
+      req.headers.get("x-tags-public-host") ||
+      req.headers.get("x-forwarded-host") ||
+      req.headers.get("host") ||
+      ""
+    ).split(",")[0].trim();
+    const forwardedProto = (
+      req.headers.get("x-forwarded-proto") ||
+      requestUrl.protocol.replace(":", "")
+    ).split(",")[0].trim().replace(/:$/, "") || "https";
+    const configuredOrigin = String(process.env.NEXT_PUBLIC_APP_URL || "").replace(/\/$/, "");
+    const safeConfiguredOrigin = /^https?:\/\/(?!localhost(?::|\/)|127\.0\.0\.1(?::|\/))/i.test(configuredOrigin)
+      ? configuredOrigin
+      : "";
+    let res;
+    if (clickId && Number(qr.browser_geolocation_enabled) === 1) {
+      try {
+        const publicOrigin = forwardedHost && !/^localhost(?::|$)|^127\.0\.0\.1(?::|$)/i.test(forwardedHost)
+          ? `${forwardedProto}://${forwardedHost}`
+          : (safeConfiguredOrigin || requestUrl.origin);
+        const locationUrl = new URL("/qr-location", publicOrigin);
+        locationUrl.searchParams.set("clickId", String(clickId));
+        res = NextResponse.redirect(locationUrl);
+      } catch (redirectError) {
+        console.error("QR location redirect error:", redirectError.message);
+        res = NextResponse.redirect(url);
+      }
+    } else {
+      res = NextResponse.redirect(url);
+    }
 
     res.cookies.set("visitor_id", visitorId, {
       httpOnly: false,

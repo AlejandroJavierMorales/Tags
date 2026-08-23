@@ -127,6 +127,31 @@ export async function POST(req) {
             ]
         );
 
+        // Las altas públicas diferidas nacen con la ficha activa durante 72 h.
+        // Cuando Administración imputa el pago, también se confirma la
+        // suscripción del Directorio y se reactiva su publicación.
+        if (subscription.source === "public_signup") {
+            await conn.query(
+                `UPDATE tags_business_addons
+                 SET status='active', expires_at=?, updated_at=NOW()
+                 WHERE business_id=? AND addon_code='directory'`,
+                [periodEnd, subscription.business_id]
+            );
+            await conn.query(
+                `UPDATE tags_directory_listings
+                 SET status='published', updated_at=NOW()
+                 WHERE business_id=?`,
+                [subscription.business_id]
+            );
+            await conn.query(
+                `UPDATE tags_directory_site_listings dsl
+                 INNER JOIN tags_directory_listings dl ON dl.id=dsl.listing_id
+                 SET dsl.publication_status='published', dsl.published_at=COALESCE(dsl.published_at,NOW()), dsl.updated_at=NOW()
+                 WHERE dl.business_id=?`,
+                [subscription.business_id]
+            );
+        }
+
         await conn.commit();
 
         return Response.json({

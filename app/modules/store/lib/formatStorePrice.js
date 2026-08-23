@@ -3,11 +3,21 @@
 // Descripción: Formatea precios de Tags Tienda.
 // =====================================
 
-export function formatStorePrice(value, currency = "ARS") {
-    const number =
-        Number(value || 0);
+export function hasValidStorePrice(value) {
+    if (value === null || value === undefined || String(value).trim() === "") return false;
+    const number = Number(value);
+    return Number.isFinite(number) && number > 0;
+}
 
-    return `${currency} ${number.toLocaleString("es-AR")}`;
+export function formatStorePrice(value, currency = "ARS") {
+    if (!hasValidStorePrice(value)) return "";
+    const number = Number(value);
+    const label = String(currency || "ARS").toUpperCase() === "ARS"
+        ? "$"
+        : String(currency || "").toUpperCase() === "USD"
+            ? "US$"
+            : String(currency || "").toUpperCase();
+    return `${label} ${number.toLocaleString("es-AR", { maximumFractionDigits: 2 })}`;
 }
 
 export function getProductFinalPrice(product) {

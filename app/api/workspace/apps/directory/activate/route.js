@@ -118,7 +118,7 @@ export async function POST(req) {
             ? `${baseUrl()}/${channel.slug}`
             : `https://${channel.primary_host}/${channel.slug}`;
 
-        const qr = await createAppQRCode({ conn, businessId, label: business.name, value: publicUrl, finalUrl: publicUrl, status: "active" });
+        const qr = await createAppQRCode({ conn, businessId, label: business.name, value: publicUrl, finalUrl: publicUrl, status: "active", allowTrial: true });
         const template = getDefaultDirectoryTemplate(templateBusiness);
         const galleryBlock = template.sections.find(section => section.title === "Galería")?.blocks?.[0];
         if (galleryBlock) {
@@ -135,7 +135,7 @@ export async function POST(req) {
             qrCodeId: qr.id,
             slug: pageSlug,
             title: business.name,
-            status: "draft",
+            status: "published",
             pageType: "directory",
             templateOverride: template
         });

@@ -11,6 +11,8 @@ import DirectoryPublicFooter from "@/app/modules/directory/components/public/Dir
 import DirectoryResultsHeading from "@/app/modules/directory/components/public/DirectoryResultsHeading";
 import DirectoryLocalityFilter from "@/app/modules/directory/components/public/DirectoryLocalityFilter";
 import { getDirectoryPublicData, getDirectorySiteByCode, getDirectorySiteCodeByHost } from "@/app/modules/directory/lib/getDirectoryPublicData";
+import { getHeadersHost } from "@/app/lib/channelContext";
+import { getPublicSitemapContext } from "@/app/lib/seo/publicSitemap";
 import "./directoryPublicPage.css";
 
 export const runtime = "nodejs";
@@ -18,14 +20,28 @@ export const dynamic = "force-dynamic";
 
 async function currentSiteCode() {
   const requestHeaders = await headers();
-  return getDirectorySiteCodeByHost(requestHeaders.get("host"));
+  return getDirectorySiteCodeByHost(getHeadersHost(requestHeaders));
 }
 
 export async function generateMetadata() {
   const site = await getDirectorySiteByCode(await currentSiteCode());
   if (!site) return { title: "Directorio comercial" };
+  const context = await getPublicSitemapContext();
+  const canonicalPath = context.isTags ? "/directorio" : "/";
   return {
     title: `Comercios y servicios | ${site.name}`,
+    alternates: { canonical: `${context.baseUrl}${canonicalPath}` },
+    robots: {
+      index: !context.isTags,
+      follow: !context.isTags,
+      googleBot: {
+        index: !context.isTags,
+        follow: !context.isTags,
+        "max-image-preview": "large",
+        "max-snippet": -1,
+        "max-video-preview": -1,
+      },
+    },
     description: `Encontrá comercios, profesionales, productos y servicios en ${site.name}.`
   };
 }
@@ -78,7 +94,7 @@ export default async function DirectoryPublicPage({ searchParams }) {
 
       {isHome && <section className="tags_directory_commercial_intro">
         <div><span>UNA PLATAFORMA COMERCIAL</span><h2>{data.site.name} conecta personas, comercios y servicios</h2><p>Ayudamos a encontrar lo que necesitás y brindamos a cada negocio herramientas para crecer y ofrecer sus productos y servicios en internet.</p></div>
-        <aside><strong>¿Tenés un comercio o prestás un servicio?</strong><p>Publicá tu actividad y accedé a una web propia, catálogo, carta online, turnos, reseñas y más herramientas de Tags.</p><a href="/login">Publicar mi negocio</a></aside>
+        <aside><strong>¿Tenés un comercio o prestás un servicio?</strong><p>Publicá tu actividad y accedé a una web propia, catálogo, carta online, turnos, reseñas y más herramientas de Tags.</p><a href="/publicar-mi-negocio">Publicar mi negocio</a></aside>
       </section>}
     </div>
     <DirectoryPublicFooter site={data.site} />

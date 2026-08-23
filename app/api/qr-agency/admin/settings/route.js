@@ -8,6 +8,12 @@ function cleanSlug(value) {
     return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 100);
 }
 
+function parseSettings(value) {
+    if (!value) return {};
+    if (typeof value === "object") return value;
+    try { return JSON.parse(value); } catch { return {}; }
+}
+
 export async function GET(req) {
     const businessId = Number(new URL(req.url).searchParams.get("businessId") || 0);
     const access = await getQrAgencyAdminAccess(businessId);
@@ -43,7 +49,9 @@ export async function GET(req) {
          FROM tags_qr_agency_tiers WHERE is_active=1 ORDER BY sort_order,id`
     );
 
-    return Response.json({ ok: true, business: businessRows[0], addonActive: addonRows.length > 0, agency: agencyRows[0] || null, tiers });
+    const agency = agencyRows[0] || null;
+    const settings = parseSettings(agency?.settings_json);
+    return Response.json({ ok: true, business: businessRows[0], addonActive: addonRows.length > 0, agency: agency ? { ...agency, settings, customerStatsEnabled: settings.customerStatsEnabled !== false } : null, tiers });
 }
 
 export async function PATCH(req) {
@@ -55,19 +63,21 @@ export async function PATCH(req) {
     if (!access.allowed) return qrAgencyAdminError(access);
 
     try {
-        const [agencyRows] = await db.query("SELECT id,slug FROM tags_qr_agencies WHERE business_id=? LIMIT 1", [businessId]);
+        const [agencyRows] = await db.query("SELECT id,slug,settings_json FROM tags_qr_agencies WHERE business_id=? LIMIT 1", [businessId]);
         if (!agencyRows.length) return Response.json({ ok: false, error: "QR Agency todavía no está activado" }, { status: 404 });
         const [duplicate] = await db.query("SELECT id FROM tags_qr_agencies WHERE slug=? AND id<>? LIMIT 1", [slug, agencyRows[0].id]);
         if (duplicate.length) return Response.json({ ok: false, error: "La ruta ya está siendo utilizada" }, { status: 409 });
 
-        await db.query("UPDATE tags_qr_agencies SET slug=?,updated_at=NOW() WHERE id=?", [slug, agencyRows[0].id]);
+        const settings = parseSettings(agencyRows[0].settings_json);
+        if (typeof body?.customerStatsEnabled === "boolean") settings.customerStatsEnabled = body.customerStatsEnabled;
+        await db.query("UPDATE tags_qr_agencies SET slug=?,settings_json=?,updated_at=NOW() WHERE id=?", [slug, JSON.stringify(settings), agencyRows[0].id]);
         await db.query(
             `INSERT INTO tags_qr_agency_audit_log
              (agency_id,actor_type,actor_id,action,before_json,after_json,created_at)
              VALUES (?,?,?,?,?,?,NOW())`,
             [agencyRows[0].id, access.session.role === "admin" ? "platform" : "agency", String(access.session.id || access.session.email || ""), "agency_slug_changed", JSON.stringify({ slug: agencyRows[0].slug }), JSON.stringify({ slug })]
         );
-        return Response.json({ ok: true, slug });
+        return Response.json({ ok: true, slug, customerStatsEnabled: settings.customerStatsEnabled !== false });
     } catch (error) {
         console.error("QR AGENCY SETTINGS ERROR:", error);
         return Response.json({ ok: false, error: "No se pudo guardar la configuración" }, { status: 500 });

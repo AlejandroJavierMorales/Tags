@@ -20,7 +20,8 @@ export async function POST(req) {
             email,
             phone,
             name,
-            stop_message
+            stop_message,
+            browser_geolocation_enabled
         } = body;
 
         console.log('Body de QR **** ' + JSON.stringify(body, 2, null))
@@ -157,6 +158,7 @@ export async function POST(req) {
                 business_id = ?,
                 final_url = ?,                
                 stop_message = ?,
+                browser_geolocation_enabled = ?,
                 status = 'active'
             WHERE code = ?
             `,
@@ -166,6 +168,7 @@ export async function POST(req) {
                 safe(safeBusinessId),
                 safe(finalUrl),
                 safe(stop_message ?? qr.stop_message),
+                browser_geolocation_enabled ? 1 : 0,
                 code
             ]
         );

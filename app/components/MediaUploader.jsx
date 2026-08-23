@@ -24,7 +24,8 @@ export default function MediaUploader({
     folder = "media",
 
     accept = "image/*",
-    label = "Subir archivo"
+    label = "Subir archivo",
+    uploadEndpoint = "/api/qr-page/media/upload"
 }) {
     const [uploading, setUploading] =
         useState(false);
@@ -76,7 +77,7 @@ export default function MediaUploader({
 
             const res =
                 await fetch(
-                    "/api/qr-page/media/upload",
+                    uploadEndpoint,
                     {
                         method: "POST",
                         body: formData

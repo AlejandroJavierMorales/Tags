@@ -45,7 +45,8 @@ export async function createAppQRCode({
     label,
     value = null,
     finalUrl = null,
-    status = "active"
+    status = "active",
+    allowTrial = false
 }) {
     if (!conn) {
         throw new Error("conn requerido");
@@ -61,8 +62,10 @@ export async function createAppQRCode({
 
     const canCreate =
         await canCreateQR({
+            conn,
             businessId,
-            quantity: 1
+            quantity: 1,
+            allowTrial
         });
 
     if (!canCreate.ok) {

@@ -59,6 +59,32 @@
     border: 1px solid var(--qr-border);
     border-radius: calc(var(--qr-radius) - 4px);
     box-shadow: var(--qr-shadow);
+    max-height: 320px;
+    overflow-y: auto;
+}
+
+.tags_select_search {
+    width: 100%;
+    min-height: 38px;
+    margin-bottom: .4rem;
+    padding: .55rem .65rem;
+    border: 1px solid var(--qr-border);
+    border-radius: calc(var(--qr-radius) - 8px);
+    background: var(--qr-surface-alt, #f7faf8);
+    color: var(--qr-text);
+    outline: none;
+}
+
+.tags_select_search:focus {
+    border-color: var(--qr-primary);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--qr-primary) 14%, transparent);
+}
+
+.tags_select_empty {
+    display: block;
+    padding: .7rem .8rem;
+    color: var(--qr-muted, #718078);
+    font-size: .85rem;
 }
 
 .tags_select_menu button {

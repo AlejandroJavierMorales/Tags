@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 
 
 
-export async function getBusinessStats({ businessId, from = null, to = null, qrId }) {
+export async function getBusinessStats({ businessId, from = null, to = null, qrId, qrIds = null }) {
     // ================= DATE FILTER =================
     let dateFilter = "";
     let queryParams = [businessId];
@@ -30,6 +30,23 @@ export async function getBusinessStats({ businessId, from = null, to = null, qrI
         );
     }
 
+    // ================= QR FILTER =================
+    // Optional qrIds is used by scoped products such as QR Agency. The
+    // regular business dashboard keeps the original business-wide behavior.
+    const normalizedQrIds = Array.isArray(qrIds)
+        ? qrIds.map(Number).filter((value) => Number.isInteger(value) && value > 0)
+        : [];
+    let qrFilter = "";
+    if (Array.isArray(qrIds) && !normalizedQrIds.length) {
+        qrFilter = " AND 1 = 0 ";
+    } else if (normalizedQrIds.length) {
+        qrFilter = ` AND q.id IN (${normalizedQrIds.map(() => "?").join(",")}) `;
+        queryParams.push(...normalizedQrIds);
+    } else if (qrId && qrId !== "all") {
+        qrFilter = " AND q.id = ? ";
+        queryParams.push(qrId);
+    }
+
     // ================= BUSINESS =================
     const [[business]] = await db.execute(
         `
@@ -50,6 +67,7 @@ export async function getBusinessStats({ businessId, from = null, to = null, qrI
         JOIN tags_qr_codes q ON q.id = c.qr_code_id
         WHERE q.business_id = ?
         ${dateFilter}
+        ${qrFilter}
         `,
         queryParams
     );
@@ -67,6 +85,7 @@ export async function getBusinessStats({ businessId, from = null, to = null, qrI
         JOIN tags_qr_codes q ON q.id = c.qr_code_id
         WHERE q.business_id = ?
         ${dateFilter}
+        ${qrFilter}
         GROUP BY q.id
         ORDER BY clicks DESC
         LIMIT 10
@@ -79,27 +98,34 @@ export async function getBusinessStats({ businessId, from = null, to = null, qrI
         `
         SELECT 
             c.country,
+            c.region,
             c.city,
             COUNT(*) as total
         FROM tags_clicks c
         JOIN tags_qr_codes q ON q.id = c.qr_code_id
         WHERE q.business_id = ?
         ${dateFilter}
-        GROUP BY c.country, c.city
+        ${qrFilter}
+        GROUP BY c.country, c.region, c.city
         ORDER BY total DESC
         `,
         queryParams
     );
 
     const countries = {};
+    const provinces = {};
     const cities = {};
 
     geoRows.forEach((g) => {
         if (g.country) {
             countries[g.country] = (countries[g.country] || 0) + g.total;
         }
+        if (g.region) {
+            provinces[g.region] = (provinces[g.region] || 0) + g.total;
+        }
         if (g.city) {
-            cities[g.city] = (cities[g.city] || 0) + g.total;
+            const key = `${g.region || ""}||${g.city}`;
+            cities[key] = (cities[key] || 0) + g.total;
         }
     });
 
@@ -113,6 +139,7 @@ export async function getBusinessStats({ businessId, from = null, to = null, qrI
         JOIN tags_qr_codes q ON q.id = c.qr_code_id
         WHERE q.business_id = ?
         ${dateFilter}
+        ${qrFilter}
         GROUP BY device_type
         `,
         queryParams
@@ -129,6 +156,7 @@ export async function getBusinessStats({ businessId, from = null, to = null, qrI
         JOIN tags_qr_codes q ON q.id = c.qr_code_id
         WHERE q.business_id = ?
         ${dateFilter}
+        ${qrFilter}
         GROUP BY DATE(c.created_at)
         ORDER BY date ASC
         `,
@@ -140,9 +168,11 @@ export async function getBusinessStats({ businessId, from = null, to = null, qrI
         `
         SELECT 
             c.created_at,
+            c.qr_code_id,
             q.code,
             q.label,
             c.country,
+            c.region,
             c.city,
             c.device_type,
             c.os,
@@ -152,6 +182,7 @@ export async function getBusinessStats({ businessId, from = null, to = null, qrI
         JOIN tags_qr_codes q ON q.id = c.qr_code_id
         WHERE q.business_id = ?
         ${dateFilter}
+        ${qrFilter}
         ORDER BY c.created_at DESC
         LIMIT 300
         `,
@@ -175,6 +206,7 @@ export async function getBusinessStats({ businessId, from = null, to = null, qrI
   JOIN tags_qr_codes q ON q.id = c.qr_code_id
   WHERE q.business_id = ?
   ${dateFilter}
+  ${qrFilter}
   GROUP BY q.id
   ORDER BY clicks DESC
 `, queryParams);
@@ -199,10 +231,18 @@ export async function getBusinessStats({ businessId, from = null, to = null, qrI
                 country,
                 total
             })),
-            cities: Object.entries(cities).map(([city, total]) => ({
+            provinces: Object.entries(provinces).map(([province, total]) => ({
+                province,
+                total
+            })),
+            cities: Object.entries(cities).map(([key, total]) => {
+                const [region, city] = key.split("||");
+                return {
+                region: region || null,
                 city,
                 total
-            }))
+                };
+            })
         },
         devices,
         timeline,

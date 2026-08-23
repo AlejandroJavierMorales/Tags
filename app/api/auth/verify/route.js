@@ -3,6 +3,12 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { signTagsSession } from "@/app/lib/signTagsSession";
+import {
+    canBusinessAccessChannel,
+    getChannelContextFromHost,
+    getRequestBaseUrl,
+    getRequestHost,
+} from "@/app/lib/channelContext";
 
 
 export async function GET(req) {
@@ -101,14 +107,21 @@ export async function GET(req) {
             );
         }
 
+        const channel = await getChannelContextFromHost(getRequestHost(req));
+        const allowed = business.role === "admin"
+            ? channel.isTags
+            : await canBusinessAccessChannel({ businessId: business.id, channel });
+
+        if (!allowed) {
+            return new Response(
+                "Este cliente no está habilitado para este canal",
+                { status: 403 }
+            );
+        }
+
         // =====================================
         // 🧹 DELETE TOKEN
         // =====================================
-
-        await db.execute(`
-            DELETE FROM tags_auth_tokens
-            WHERE token = ?
-        `, [token]);
 
         // =====================================
         // 🍪 SESSION
@@ -125,6 +138,10 @@ export async function GET(req) {
             email: business.email,
 
             phone: business.phone,
+
+            channelCode: channel.code,
+
+            channelSiteId: channel.siteId,
 
             subscriptionStatus:
                 business.subscription_status,
@@ -201,11 +218,8 @@ export async function GET(req) {
                 :`/dashboard/businesses/${business.id}`;
 
 
-        const isDev = process.env.NODE_ENV === "development";
-
-        const baseUrl = isDev
-            ? "http://localhost:3000"
-            : process.env.NEXT_PUBLIC_APP_URL;
+        const baseUrl = getRequestBaseUrl(req);
+        if (!baseUrl) throw new Error("AUTH_PUBLIC_URL_UNAVAILABLE");
 
         const response = NextResponse.redirect(
             `${baseUrl}${redirectUrl}`
@@ -213,6 +227,14 @@ export async function GET(req) {
 
         const sessionValue =
             JSON.stringify(session);
+
+        const sessionSignature = signTagsSession(sessionValue);
+
+        // El token se consume recién cuando la sesión ya pudo construirse y firmarse.
+        await db.execute(`
+            DELETE FROM tags_auth_tokens
+            WHERE token = ?
+        `, [token]);
 
         response.cookies.set(
             "tags_session",
@@ -229,7 +251,7 @@ export async function GET(req) {
 
         response.cookies.set(
             "tags_session_sig",
-            signTagsSession(sessionValue),
+            sessionSignature,
             {
                 httpOnly: true,
                 sameSite: "lax",
@@ -244,10 +266,11 @@ export async function GET(req) {
 
     } catch (error) {
 
-        console.error(error);
+        const diagnosticCode = error?.code || (String(error?.message || "").startsWith("AUTH_") ? error.message : "AUTH_VERIFY_FAILED");
+        console.error("AUTH VERIFY ERROR", { diagnosticCode, error });
 
         return new Response(
-            "Error interno",
+            `Error interno [${diagnosticCode}]`,
             { status: 500 }
         );
     }

@@ -6,7 +6,8 @@
 import {
     formatStorePrice,
     getProductFinalPrice,
-    hasProductSale
+    hasProductSale,
+    hasValidStorePrice
 } from "../lib/formatStorePrice";
 
 export default function StoreProductCard({
@@ -59,17 +60,10 @@ export default function StoreProductCard({
                     {product.description || ""}
                 </p>
 
-                <div className="store_public_price_row">
-                    <strong>
-                        {formatStorePrice(finalPrice, currency)}
-                    </strong>
-
-                    {hasSale && (
-                        <small>
-                            {formatStorePrice(product.price, currency)}
-                        </small>
-                    )}
-                </div>
+                {(hasValidStorePrice(finalPrice) || (hasSale && hasValidStorePrice(product.price))) && <div className="store_public_price_row">
+                    {hasValidStorePrice(finalPrice) && <strong>{formatStorePrice(finalPrice, currency)}</strong>}
+                    {hasSale && hasValidStorePrice(product.price) && <small>{formatStorePrice(product.price, currency)}</small>}
+                </div>}
 
                 {Number(product.variants_count || 0) > 0 && (
                     <div className="store_public_variants_note">

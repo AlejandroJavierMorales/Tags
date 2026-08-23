@@ -27,19 +27,24 @@ export default function TagsSelect({
     className = "",
     disabled = false,
     maxWidth = null,
-    size = "md"
+    size = "md",
+    searchable = false,
+    searchPlaceholder = "Buscar..."
 }) {
 
     const [open, setOpen] =
         useState(false);
 
+    const [query, setQuery] =
+        useState("");
+
     const ref =
         useRef(null);
 
-    const selected =
-        options.find(option =>
-            option.value === value
-        );
+    const selected = options.find(option => String(option.value) === String(value));
+    const visibleOptions = searchable
+        ? options.filter(option => String(option.label || "").toLowerCase().includes(query.toLowerCase()))
+        : options;
 
     useEffect(() => {
 
@@ -79,9 +84,7 @@ export default function TagsSelect({
                 type="button"
                 className="tags_select_trigger"
                 disabled={disabled}
-                onClick={() =>
-                    setOpen(prev => !prev)
-                }
+                onClick={() => setOpen(prev => !prev)}
             >
                 <span>
                     {
@@ -98,19 +101,29 @@ export default function TagsSelect({
 
                     <div className="tags_select_menu">
 
+                        {searchable && <input
+                            type="search"
+                            className="tags_select_search"
+                            value={query}
+                            placeholder={searchPlaceholder}
+                            onChange={event => setQuery(event.target.value)}
+                            onClick={event => event.stopPropagation()}
+                        />}
+
                         {
-                            options.map(option => (
+                            visibleOptions.map(option => (
 
                                 <button
                                     key={option.value}
                                     type="button"
                                     className={
-                                        option.value === value
+                                        String(option.value) === String(value)
                                             ? "active"
                                             : ""
                                     }
                                     onClick={() => {
                                         onChange?.(option.value);
+                                        setQuery("");
                                         setOpen(false);
                                     }}
                                 >
@@ -119,6 +132,7 @@ export default function TagsSelect({
 
                             ))
                         }
+                        {searchable && !visibleOptions.length && <span className="tags_select_empty">No se encontraron opciones.</span>}
 
                     </div>
 

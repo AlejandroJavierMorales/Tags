@@ -86,6 +86,15 @@ export const portalRegistry = {
             `/dashboard/businesses/${businessId}/qr-agency`
     },
 
+    ai_chatbot: {
+        key: "ai_chatbot",
+        title: "Chatbot con IA",
+        description: "Asistente conversacional para orientar a los visitantes de la Página Web.",
+        canHaveMultiple: false,
+        adminPath: ({ businessId }) =>
+            `/dashboard/businesses/${businessId}/ai-chat`
+    },
+
     booking: {
         key: "booking",
         title: "Tags Reservas",

@@ -10,7 +10,11 @@ function typography(styles, part) {
 
 export default function DirectoryWebSection({ content = {}, styles = {} }) {
   const [active, setActive] = useState(0);
-  const paragraphs = Array.isArray(content.paragraphs) ? content.paragraphs.filter(Boolean) : [];
+  const normalizeText = value => String(value || "").replace(/\s+/g, " ").trim().toLocaleLowerCase();
+  const highlightedKey = normalizeText(content.highlightedText);
+  const paragraphs = (Array.isArray(content.paragraphs) ? content.paragraphs : [])
+    .filter(Boolean)
+    .filter(paragraph => normalizeText(typeof paragraph === "string" ? paragraph : paragraph?.text) !== highlightedKey);
   const images = Array.isArray(content.images) ? content.images.filter(item => item?.url).slice(0, 10) : [];
   const carousel = content.imageLayout === "carousel";
   return <div className="tags_directory_web_section" style={{ textAlign: styles.alignment || "left" }}>

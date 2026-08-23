@@ -2,13 +2,14 @@
 -- Preparada el 2026-08-03. NO ejecutar sin autorización explícita.
 
 INSERT IGNORE INTO tags_addons (
-    code, name, description, default_quantity, price, currency,
+    code, name, description, addon_type, page_type, default_quantity, price, currency,
     is_active, is_public, sort_order, created_at
 ) VALUES (
     'guest_experience', 'Tags Guest Experience',
     'Experiencia digital de estadía para alojamientos temporarios.',
-    1, 0, 'ARS', 1, 1, 50, NOW()
-);
+    'page', 'guest_experience', 1, 0, 'ARS', 1, 1, 50, NOW()
+)
+ON DUPLICATE KEY UPDATE addon_type='page',page_type='guest_experience',is_active=1,is_public=1;
 
 CREATE TABLE IF NOT EXISTS tags_guest_apps (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,

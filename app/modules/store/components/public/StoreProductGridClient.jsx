@@ -10,7 +10,9 @@ import {
     FiEye
 } from "react-icons/fi";
 import {
-    formatStorePrice
+    formatStorePrice,
+    hasValidStorePrice,
+    hasProductSale
 } from "../../lib/formatStorePrice";
 
 import StoreFavoriteButton from "./StoreFavoriteButton";
@@ -772,7 +774,8 @@ const imageStyle = {
 
                                                                 {
                                                                     showPrice &&
-                                                                    product.sale_price && (
+                                                                    hasProductSale(product) &&
+                                                                    hasValidStorePrice(product.sale_price) && (
 
                                                                         <div className="store_product_price"
                                                                             style={priceStyle}>
@@ -788,7 +791,8 @@ const imageStyle = {
 
                                                                 {
                                                                     showPrice &&
-                                                                    !product.sale_price && (
+                                                                    !hasProductSale(product) &&
+                                                                    hasValidStorePrice(product.price) && (
 
                                                                         <div className="store_product_price" style={priceStyle}>
                                                                             {formatStorePrice(
@@ -802,7 +806,8 @@ const imageStyle = {
 
                                                                 {
                                                                     showOldPrice &&
-                                                                    product.sale_price && (
+                                                                    hasProductSale(product) &&
+                                                                    hasValidStorePrice(product.price) && (
 
                                                                         <div className="store_product_old_price"
                                                                             style={oldPriceStyle}>

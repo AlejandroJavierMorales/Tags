@@ -60,6 +60,7 @@ export default function DashboardAdminClient({ session }) {
   const [editQR, setEditQR] = useState(null);
   const [editLabel, setEditLabel] = useState("");
   const [editValue, setEditValue] = useState("");
+  const [editBrowserGeolocation, setEditBrowserGeolocation] = useState(false);
 
   const [total, setTotal] = useState(0);
 
@@ -191,6 +192,7 @@ export default function DashboardAdminClient({ session }) {
     setEditQR(qr);
     setEditLabel(qr.label || "");
     setEditValue(qr.value || "");
+    setEditBrowserGeolocation(Number(qr.browser_geolocation_enabled) === 1);
   }
 
   /* ACTIVAR EL QR */
@@ -287,7 +289,8 @@ export default function DashboardAdminClient({ session }) {
       body: JSON.stringify({
         code: editQR.code,
         label: editLabel,
-        value: editValue
+        value: editValue,
+        browser_geolocation_enabled: editBrowserGeolocation
       })
     });
 
@@ -507,10 +510,11 @@ export default function DashboardAdminClient({ session }) {
 
       <div className="row d-flex justify-content-start align-items-center">
         <div className="tags_navbar mt-3 col-12 col-md-6">
-          <Link href="/dashboard/create">📦 +QRs</Link>
-          <Link href="/dashboard/qr-types">🏷 Tipos</Link>
-          <Link href="/dashboard/businesses">👤 Clientes</Link>
-          <Link href="/dashboard/stats">📊 Estadísticas</Link>
+          <Link href="/dashboard/businesses"><span className="tags_dashboard_nav_icon" aria-hidden="true">👤</span> Clientes</Link>
+          <Link href="/dashboard/subscriptions-center"><span className="tags_dashboard_nav_icon" aria-hidden="true">💳</span> Suscripciones</Link>
+          <Link href="/dashboard/directory"><span className="tags_dashboard_nav_icon" aria-hidden="true">🌐</span> Directorios</Link>
+          <Link href="/dashboard/stats"><span className="tags_dashboard_nav_icon" aria-hidden="true">📊</span> Estadísticas</Link>
+          <Link href="/dashboard/ai-chat/usage"><span className="tags_dashboard_nav_icon" aria-hidden="true">🤖</span> Consumo IA</Link>
         </div>
         {/* <div className="d-flex justify-content-end col-12 col-md-6 mb-3 pe-3">
           👤{`${session.session?.user?.name} - ${session.session?.user?.email} `}
@@ -1154,6 +1158,14 @@ export default function DashboardAdminClient({ session }) {
                   onChange={(e) => setEditValue(e.target.value)}
                 />
 
+              </div>
+
+              <div className="tags_modal_group mt-3">
+                <label className="tags_modal_label">
+                  <input type="checkbox" checked={editBrowserGeolocation} onChange={(e) => setEditBrowserGeolocation(e.target.checked)} />{" "}
+                  Pedir ubicación del navegador al escanear
+                </label>
+                <small>Solicita permiso y guarda provincia y ciudad cuando el visitante lo permite.</small>
               </div>
 
             </div>

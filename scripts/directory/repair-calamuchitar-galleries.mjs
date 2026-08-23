@@ -2,6 +2,7 @@ import "dotenv/config";
 import mysql from "mysql2/promise";
 
 const SOURCE = "calamuchitar";
+const missingOnly = process.argv.includes("--missing-only");
 function cfg(prefix) {
   const v = key => process.env[`${prefix}_${key}`];
   return { host:v("DB_HOST"), port:Number(v("DB_PORT")||3306), user:v("DB_USER"), password:v("DB_PASSWORD")||"", database:v("DB_NAME"), charset:"utf8mb4" };
@@ -49,16 +50,18 @@ async function run() {
       imagesByPublisher.set(owner.publisherId, list);
     }
     await target.beginTransaction();
-    await target.query(`CREATE TABLE IF NOT EXISTS tags_directory_gallery_repair_backup_20260812 AS
-      SELECT m.*, CURRENT_TIMESTAMP AS backup_at FROM tags_directory_media m WHERE 1=0`);
-    await target.query(`INSERT INTO tags_directory_gallery_repair_backup_20260812
-      SELECT m.*, CURRENT_TIMESTAMP FROM tags_directory_media m
-      WHERE JSON_UNQUOTE(JSON_EXTRACT(m.source_payload,'$.migration'))=?
-         OR JSON_EXTRACT(m.source_payload,'$.subscriptionId') IS NOT NULL`, [SOURCE]);
-    const mappedListingIds = [...new Set([...listingByPublisher.values()])];
-    if (mappedListingIds.length) {
-      const placeholders = mappedListingIds.map(() => "?").join(",");
-      await target.execute(`DELETE FROM tags_directory_media WHERE media_type='gallery' AND listing_id IN (${placeholders})`, mappedListingIds);
+    if (!missingOnly) {
+      await target.query(`CREATE TABLE IF NOT EXISTS tags_directory_gallery_repair_backup_20260812 AS
+        SELECT m.*, CURRENT_TIMESTAMP AS backup_at FROM tags_directory_media m WHERE 1=0`);
+      await target.query(`INSERT INTO tags_directory_gallery_repair_backup_20260812
+        SELECT m.*, CURRENT_TIMESTAMP FROM tags_directory_media m
+        WHERE JSON_UNQUOTE(JSON_EXTRACT(m.source_payload,'$.migration'))=?
+           OR JSON_EXTRACT(m.source_payload,'$.subscriptionId') IS NOT NULL`, [SOURCE]);
+      const mappedListingIds = [...new Set([...listingByPublisher.values()])];
+      if (mappedListingIds.length) {
+        const placeholders = mappedListingIds.map(() => "?").join(",");
+        await target.execute(`DELETE FROM tags_directory_media WHERE media_type='gallery' AND listing_id IN (${placeholders})`, mappedListingIds);
+      }
     }
     const result = [];
     for (const publisher of publishers) {
@@ -70,8 +73,26 @@ async function run() {
       const [blocks] = await target.execute(`SELECT b.id,b.content_json FROM tags_qr_page_blocks b
         INNER JOIN tags_qr_page_sections s ON s.id=b.section_id
         WHERE s.page_id=? AND b.type='gallery'`, [listing.qr_page_id]);
+      if (missingOnly) {
+        const [[mediaCount]] = await target.execute(
+          "SELECT COUNT(*) total FROM tags_directory_media WHERE listing_id=? AND media_type='gallery' AND is_active=1",
+          [listingId]
+        );
+        const hasConfiguredImages = blocks.some(block => {
+          const content = parse(block.content_json);
+          return Array.isArray(content.images) && content.images.some(image => clean(image?.url));
+        });
+        if (Number(mediaCount?.total || 0) > 0 || hasConfiguredImages) {
+          result.push({ publisherId:Number(publisher.id), companyName:publisher.company_name, listingId, businessId:Number(listing.business_id), pageId:Number(listing.qr_page_id), images:0, skipped:"gallery_not_empty" });
+          continue;
+        }
+      }
       const sourceSubscriptionIds = subscriptionsByPublisher.get(Number(publisher.id)) || [];
       const gallery = (imagesByPublisher.get(Number(publisher.id)) || []).slice(0,8);
+      if (missingOnly && !gallery.length) {
+        result.push({ publisherId:Number(publisher.id), companyName:publisher.company_name, listingId, businessId:Number(listing.business_id), pageId:Number(listing.qr_page_id), subscriptionIds:sourceSubscriptionIds, images:0, skipped:"no_legacy_images_matched" });
+        continue;
+      }
       for (const block of blocks) {
         const content = parse(block.content_json);
         content.images = gallery.map(item => ({ url:item.url, alt:"" }));
@@ -91,7 +112,8 @@ async function run() {
       result.push({ publisherId:Number(publisher.id), companyName:publisher.company_name, listingId, businessId:Number(listing.business_id), pageId:Number(listing.qr_page_id), subscriptionIds:sourceSubscriptionIds, images:gallery.length });
     }
     await target.commit();
-    console.log(JSON.stringify({ backupTable:"tags_directory_gallery_repair_backup_20260812", repaired:result.length, result },null,2));
+    const repaired = result.filter(item => Number(item.images || 0) > 0).length;
+    console.log(JSON.stringify({ mode:missingOnly ? "missing-only" : "full-repair", backupTable:missingOnly ? null : "tags_directory_gallery_repair_backup_20260812", repaired, result },null,2));
   } catch (error) { await target.rollback(); throw error; }
   finally { await Promise.allSettled([source.end(),target.end()]); }
 }

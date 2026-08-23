@@ -8,6 +8,7 @@ import Header from "./components/landing/Header";
 import Services from "./components/landing/Sevices";
 import FAQs from "./components/landing/FAQs";
 import WhatsAppFloat from "./components/WhatsAppFloat";
+import ChatWidget from "./modules/ai-chat/components/ChatWidget";
 
 import { tagsSiteConfig } from "./config/configSite";
 
@@ -340,6 +341,8 @@ export default function Page() {
                     <WhatsAppFloat />
 
                 </div>
+
+                <ChatWidget />
 
             </main>
         </>

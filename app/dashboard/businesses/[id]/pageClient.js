@@ -32,12 +32,7 @@ import QRPageManagerModal from "@/app/components/businesses/QRPageManagerModal";
 import WorkspaceAppCreateModal from "@/app/components/businesses/WorkspaceAppCreateModal";
 import TagsSpinner from "@/app/components/TagsSpinner";
 
-function getQRUrl(code) {
-  const base =
-    process.env.NODE_ENV === "development"
-      ? "http://localhost:3000"
-      : process.env.NEXT_PUBLIC_BASE_URL_PROD;
-
+function getQRUrl(code, base) {
   return `https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${base}/t/${code}`;
 }
 
@@ -45,8 +40,13 @@ function getQRUrl(code) {
 /////////////////////////////////////////////////
 //Pagina Pricipal del cliente: Portal /QRs Admin
 ////////////////////////////////////////////////
-export default function BusinessDetailClient({ session, isAdmin }) {
+export default function BusinessDetailClient({ session, isAdmin, channel = null, channelOrigin = "" }) {
   const { id } = useParams();
+  const brand = channel?.brandConfig || {};
+  const brandName = brand.displayName || channel?.name || "Tags";
+  const brandLogo = brand.logoUrl || brand.logo_url || (channel?.code === "calamuchitar"
+    ? "/directory/calamuchitar/LogoCalamuchitar.webp"
+    : "/logo_tags_transparente.webp");
 
   const [loading, setLoading] = useState(true);
 
@@ -68,6 +68,7 @@ export default function BusinessDetailClient({ session, isAdmin }) {
   const [editLabel, setEditLabel] = useState("");
   const [editValue, setEditValue] = useState("");
   const [editStopMessage, setEditStopMessage] = useState("");
+  const [editBrowserGeolocation, setEditBrowserGeolocation] = useState(false);
 
   const router = useRouter();
   const [store, setStore] = useState(null);
@@ -89,6 +90,7 @@ export default function BusinessDetailClient({ session, isAdmin }) {
     useState(false);
   const [portalActivateOpen, setPortalActivateOpen] =
     useState(false);
+
 
 
   // =====================================
@@ -247,6 +249,7 @@ export default function BusinessDetailClient({ session, isAdmin }) {
     setEditLabel(qr.label || "");
     setEditValue(extractEditableValue(qr));
     setEditStopMessage(qr.stop_message || "");
+    setEditBrowserGeolocation(Number(qr.browser_geolocation_enabled) === 1);
   }
 
   async function updateStatus(code, action, stopped_message = '', extra = {}) {
@@ -379,6 +382,7 @@ export default function BusinessDetailClient({ session, isAdmin }) {
         label: editLabel,
         value: result.value,
         stop_message: editStopMessage
+        ,browser_geolocation_enabled: editBrowserGeolocation
       }),
     });
 
@@ -479,13 +483,13 @@ export default function BusinessDetailClient({ session, isAdmin }) {
 
         <div className="tags_dashboard_hero_left">
 
-          <div className="tags_dashboard_logo_box">
+          <div className="tags_dashboard_logo_box tags_dashboard_brand_logo_box">
 
             <Image
-              src="/logo_tags_transparente.webp"
-              alt="Tags"
-              width={70}
-              height={70}
+              src={brandLogo}
+              alt={brandName}
+              width={150}
+              height={66}
               className="img-fluid"
             />
 
@@ -839,6 +843,17 @@ export default function BusinessDetailClient({ session, isAdmin }) {
             </div>
           )}
 
+          <div className="mt-3">
+            <button
+              type="button"
+              className="tags_btn rounded tags_text_normal"
+              style={{ maxWidth: "230px" }}
+              onClick={() => router.push(`/dashboard/businesses/${id}/seo`)}
+            >
+              🔎 SEO e indexación
+            </button>
+          </div>
+
         </div>
       )}
 
@@ -944,7 +959,7 @@ export default function BusinessDetailClient({ session, isAdmin }) {
                       <div className="tags_dashboard_qr_cell">
 
                         <Image
-                          src={getQRUrl(qr.code)}
+                          src={getQRUrl(qr.code, channelOrigin)}
                           width={82}
                           height={82}
                           alt={`qr-${qr.code}`}
@@ -1427,8 +1442,8 @@ export default function BusinessDetailClient({ session, isAdmin }) {
               <div className="col-4 tags_modal_logo_container">
 
                 <Image
-                  src="/logo_tags_transparente.webp"
-                  alt="Tags"
+                  src={brandLogo}
+                  alt={brandName}
                   width={120}
                   height={90}
                   className="img-fluid"
@@ -1502,6 +1517,14 @@ export default function BusinessDetailClient({ session, isAdmin }) {
                 />
 
               </div>
+              <div className="tags_modal_group mt-4">
+                <label className="tags_modal_label tags_text_normal">
+                  <input type="checkbox" checked={editBrowserGeolocation} onChange={(e) => setEditBrowserGeolocation(e.target.checked)} />{" "}
+                  Pedir ubicación del navegador al escanear
+                </label>
+                <small className="d-block">Muestra una pantalla intermedia y guarda provincia y ciudad si el visitante lo permite.</small>
+              </div>
+
               {/* Stop_Message */}
               <div className="tags_modal_group mt-4">
 

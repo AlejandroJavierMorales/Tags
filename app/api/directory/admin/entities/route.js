@@ -58,14 +58,22 @@ export async function POST(req) {
             const name = clean(body.name, 190);
             const host = clean(body.primaryHost, 255).toLowerCase();
             const territoryPlaceId = Number(body.territoryPlaceId) || null;
+            const logoUrl = clean(body.logoUrl, 2000);
+            const slogan = clean(body.slogan, 255);
+            const primaryColor = clean(body.primaryColor, 20) || "#2f7958";
+            const emailFrom = clean(body.emailFrom, 190).toLowerCase();
+            const replyTo = clean(body.replyTo, 190).toLowerCase();
+            const notificationEmail = clean(body.notificationEmail, 190).toLowerCase();
+            const whatsapp = clean(body.whatsapp, 60);
+            const phone = clean(body.phone, 60);
             if (!code || !name || !host) {
                 return Response.json({ error: "Código, nombre y dominio son obligatorios" }, { status: 400 });
             }
             const [result] = await db.query(
                 `INSERT INTO tags_directory_sites
                  (code,name,primary_host,brand_config,seo_config,directory_config,is_active)
-                 VALUES (?,?,?,JSON_OBJECT(),JSON_OBJECT(),JSON_OBJECT('territoryPlaceId',?),?)`,
-                [code, name, host, territoryPlaceId, body.isActive === false ? 0 : 1]
+                 VALUES (?,?,?,JSON_OBJECT('displayName',?,'logoUrl',?,'slogan',?,'primaryColor',?,'emailFrom',?,'replyTo',?,'notificationEmail',?,'whatsapp',?,'phone',?),JSON_OBJECT(),JSON_OBJECT('territoryPlaceId',?),?)`,
+                [code, name, host, name, logoUrl, slogan, primaryColor, emailFrom, replyTo, notificationEmail, whatsapp, phone, territoryPlaceId, body.isActive === false ? 0 : 1]
             );
             return Response.json({ ok: true, id: result.insertId });
         }
@@ -150,8 +158,12 @@ export async function PATCH(req) {
     try {
         if (body.entity === "site") {
             await db.query(
-                "UPDATE tags_directory_sites SET name=?,primary_host=?,directory_config=JSON_SET(COALESCE(directory_config,JSON_OBJECT()),'$.territoryPlaceId',?),is_active=? WHERE id=?",
-                [clean(body.name, 190), clean(body.primaryHost, 255).toLowerCase(), Number(body.territoryPlaceId) || null, body.isActive === false ? 0 : 1, id]
+                `UPDATE tags_directory_sites
+                    SET name=?,primary_host=?,
+                        brand_config=JSON_SET(COALESCE(brand_config,JSON_OBJECT()),'$.displayName',?,'$.logoUrl',?,'$.slogan',?,'$.primaryColor',?,'$.emailFrom',?,'$.replyTo',?,'$.notificationEmail',?,'$.whatsapp',?,'$.phone',?),
+                        directory_config=JSON_SET(COALESCE(directory_config,JSON_OBJECT()),'$.territoryPlaceId',?),is_active=?
+                  WHERE id=?`,
+                [clean(body.name, 190), clean(body.primaryHost, 255).toLowerCase(), clean(body.name, 190), clean(body.logoUrl, 2000), clean(body.slogan, 255), clean(body.primaryColor, 20) || "#2f7958", clean(body.emailFrom, 190).toLowerCase(), clean(body.replyTo, 190).toLowerCase(), clean(body.notificationEmail, 190).toLowerCase(), clean(body.whatsapp, 60), clean(body.phone, 60), Number(body.territoryPlaceId) || null, body.isActive === false ? 0 : 1, id]
             );
         } else if (body.entity === "taxonomy") {
             const conn = await db.getConnection();

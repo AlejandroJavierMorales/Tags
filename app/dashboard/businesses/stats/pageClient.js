@@ -605,6 +605,7 @@ export default function BusinessStatsPageClient({ session, isAdmin }) {
                                 <th>QR</th>
                                 <th>Label</th>
                                 <th>País</th>
+                                <th>Provincia</th>
                                 <th>Ciudad</th>
                                 <th>Device</th>
                                 <th>OS</th>
@@ -619,6 +620,7 @@ export default function BusinessStatsPageClient({ session, isAdmin }) {
                                     <td>{m.code}</td>
                                     <td>{m.label || "-"}</td>
                                     <td>{m.country}</td>
+                                    <td>{m.region || "-"}</td>
                                     <td>{m.city}</td>
                                     <td>{m.device_type}</td>
                                     <td>{m.os}</td>

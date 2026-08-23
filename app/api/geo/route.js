@@ -5,7 +5,8 @@ import { getGeo, getCachedGeo, setCachedGeo } from "@/app/utils/geo/geo-loader";
 
 export async function POST(req) {
   try {
-    const { ip, clickId } = await req.json();
+    const { ip: rawIp, clickId } = await req.json();
+    const ip = String(rawIp || "").trim().replace(/^::ffff:/i, "");
 
     if (!ip || !clickId) {
       return Response.json({ ok: false });
@@ -29,7 +30,7 @@ export async function POST(req) {
         [ip]
       );
 
-      if (cache?.[0]) {
+      if (cache?.[0] && (cache[0].country || cache[0].region || cache[0].city)) {
         geo = cache[0];
         setCachedGeo(ip, geo);
       }
@@ -41,6 +42,10 @@ export async function POST(req) {
     if (!geo) {
       const geoDB = await getGeo();
       const data = geoDB.get(ip);
+
+      if (!data) {
+        console.warn("GeoLite no encontró ubicación para IP:", ip, "click:", clickId);
+      }
 
       geo = {
         country: data?.country?.names?.en || null,
@@ -79,7 +84,7 @@ export async function POST(req) {
     return Response.json({ ok: true });
 
   } catch (e) {
-    console.log("Geo error:", e.message);
-    return Response.json({ ok: false });
+    console.error("Geo error:", { message: e.message, stack: e.stack, clickId });
+    return Response.json({ ok: false, error: "geo_lookup_failed" }, { status: 500 });
   }
 }

@@ -1,12 +1,13 @@
 // page.jsx
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { db } from "@/app/lib/tags-db";
 
 import HeaderSwitcher from "@/app/components/HeaderSwitcher";
 import BusinessDetailClient from "./pageClient";
+import { canBusinessAccessChannel, getChannelContextFromHost, getHeadersHost } from "@/app/lib/channelContext";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -46,11 +47,25 @@ export default async function Page({ params }) {
         return redirect("/login");
     }
 
+    const requestHeaders = await headers();
+    const publicHost = String(requestHeaders.get("x-tags-public-host") || requestHeaders.get("x-forwarded-host") || requestHeaders.get("host") || "").split(",")[0].trim();
+    const forwardedHost = getHeadersHost(requestHeaders);
+    const forwardedProto = String(requestHeaders.get("x-forwarded-proto") || "").split(",")[0].trim();
+    const requestProtocol = forwardedProto === "http" || forwardedProto === "https"
+        ? forwardedProto
+        : (process.env.NODE_ENV === "development" ? "http" : "https");
+    const channelOrigin = publicHost ? `${requestProtocol}://${publicHost}` : "";
+    const channel = await getChannelContextFromHost(
+        forwardedHost
+    );
+
     // =====================================
     // ✅ ADMIN ACCESS
     // =====================================
 
     if (parsed?.role === "admin") {
+
+        if (!channel.isTags) return redirect("/login");
 
         return (
             <>
@@ -59,6 +74,8 @@ export default async function Page({ params }) {
                 <BusinessDetailClient
                     session={parsed}
                     isAdmin={true}
+                    channel={channel}
+                    channelOrigin={channelOrigin}
                 />
             </>
         );
@@ -75,6 +92,13 @@ export default async function Page({ params }) {
 
         return redirect("/login");
     }
+
+    const hasCurrentChannelAccess = await canBusinessAccessChannel({
+        businessId: parsed.businessId,
+        channel,
+    });
+
+    if (!hasCurrentChannelAccess) return redirect("/login");
 
     // =====================================
     // 🔥 BUSINESS REALTIME STATUS
@@ -200,10 +224,10 @@ export default async function Page({ params }) {
         }
     };
 
-    return (
-        <BusinessDetailClient
-            session={businessStatus}
-            isAdmin={false}
-        />
-    );
+    return <BusinessDetailClient
+        session={{ ...businessStatus, channelCode: channel.code, channelSiteId: channel.siteId }}
+        isAdmin={false}
+        channel={channel}
+        channelOrigin={channelOrigin}
+    />;
 }

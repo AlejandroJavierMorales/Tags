@@ -10,6 +10,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 import { db } from "@/app/lib/tags-db";
+import { getRequestBaseUrl } from "@/app/lib/channelContext";
 
 import { createSlug }
     from "@/app/modules/qr-page/lib/createSlug";
@@ -20,12 +21,6 @@ import { registerQRAddonUsage }
 import { createAppQRCode }
     from "@/app/modules/qr/lib/createAppQRCode";
 import { installRestoTemplate } from "@/app/modules/resto/lib/installRestoTemplate";
-
-function getBaseUrl() {
-    return process.env.NODE_ENV === "development"
-        ? "http://localhost:3000"
-        : process.env.NEXT_PUBLIC_BASE_URL_PROD;
-}
 
 export async function POST(req) {
 
@@ -199,7 +194,7 @@ export async function POST(req) {
         await conn.beginTransaction();
 
         const publicUrl =
-            `${getBaseUrl()}/p/${cleanSlug}`;
+            `${getRequestBaseUrl(req)}/p/${cleanSlug}`;
 
         const qr =
             await createAppQRCode({

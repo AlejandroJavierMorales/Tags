@@ -9,7 +9,7 @@ import "./DirectorySectionEditor.css";
 
 function kindOf(section) {
   const type = section?.blocks?.[0]?.type;
-  return section?.settings_json?.directoryBaseSlot || (type === "gallery" ? "gallery" : type === "contact_info" ? "contact" : type === "catalog" || section?.type === "catalog" ? "catalog" : "web");
+  return section?.settings_json?.directoryBaseSlot || (type === "gallery" ? "gallery" : type === "contact_info" ? "contact" : type === "catalog" || section?.type === "catalog" ? "catalog" : type === "benefits" ? "benefits" : "web");
 }
 
 async function payload(response) { const text = await response.text(); try { return text ? JSON.parse(text) : {}; } catch { return {}; } }

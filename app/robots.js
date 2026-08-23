@@ -1,62 +1,35 @@
-// app/robots.js
+import { getPublicSitemapContext, getSitemapUrl } from "@/app/lib/seo/publicSitemap";
 
-import { tagsSiteConfig } from "./config/configSite";
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
-export default function robots() {
+export default async function robots() {
+  const context = await getPublicSitemapContext();
 
-    const BASE_URL =
-        tagsSiteConfig.site.url;
+  const commonDisallow = [
+    "/login",
+    "/logout",
+    "/setup",
+    "/activate",
+    "/supports",
+    "/private",
+    "/dashboard",
+    "/admin/",
+    "/api/",
+    "/_next/",
+    "/t/",
+    "/e/",
+  ];
 
-    return {
-
-        rules: [
-
-            {
-                userAgent: "*",
-
-                allow: [
-
-                    "/",
-                    "/contact",
-                    "/store-products",
-                    "/demo",
-
-                    "/qr-inteligente",
-                    "/qr-page",
-                    "/tags-id",
-                    "/tags-reviews",
-                    "/e-events",
-
-                    "/p/",
-                ],
-
-                disallow: [
-
-                    "/login",
-                    "/logout",
-                    "/setup",
-                    "/activate",
-                    "/supports",
-                    "/qr-stopped",
-                    "/private",
-                    "/dashboard",
-
-                    "/t/",
-                    "/e/",
-
-                    "/dashboard/",
-                    "/admin/",
-
-                    "/api/",
-                    "/_next/",
-                ],
-            },
-        ],
-
-        sitemap:
-            `${BASE_URL}/sitemap.xml`,
-
-        host:
-            BASE_URL,
-    };
+  return {
+    rules: [{
+      userAgent: "*",
+      allow: context.isTags ? ["/", "/p/"] : ["/", "/directorio"],
+      disallow: context.isTags
+        ? commonDisallow
+        : [...commonDisallow, "/p/"],
+    }],
+    sitemap: getSitemapUrl(context),
+    host: context.baseUrl,
+  };
 }

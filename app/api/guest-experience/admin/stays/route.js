@@ -7,7 +7,49 @@ import { db } from "@/app/lib/tags-db";
 
 import { getGuestAdminAccess, guestAdminAccessResponse } from "@/app/modules/guest-experience/lib/getGuestAdminAccess";
 
-import { cleanGuestText, guestError, parseGuestJson } from "@/app/modules/guest-experience/lib/guestExperienceService";
+import { cleanGuestText, createGuestToken, getGuestVerificationUrl, guestError, hashGuestToken, parseGuestJson } from "@/app/modules/guest-experience/lib/guestExperienceService";
+import { sendMail } from "@/app/lib/sendMail";
+
+async function sendReservationAccessEmail(stayId, guestAppId, createdById = null) {
+    const [rows] = await db.query(`
+        SELECT s.id,s.stay_code,s.starts_at,s.ends_at,s.adults,s.children,s.expected_arrival_text,
+               a.id guest_app_id,a.slug,a.name app_name,a.logo_url,a.settings_json,
+               g.id guest_id,g.name guest_name,g.email,g.phone
+        FROM tags_guest_stays s
+        INNER JOIN tags_guest_apps a ON a.id=s.guest_app_id
+        INNER JOIN tags_guest_people g ON g.id=s.primary_guest_id
+        WHERE s.id=? AND s.guest_app_id=?
+        LIMIT 1
+    `, [stayId, guestAppId]);
+    const stay = rows[0];
+    if (!stay?.email) return { sent: false, reason: "El titular no tiene email." };
+    const settings = parseGuestJson(stay.settings_json), grace = Math.max(1, Number(settings.sessionGraceDays || 7));
+    const token = createGuestToken();
+    const connection = await db.getConnection();
+    let tokenId;
+    try {
+        await connection.beginTransaction();
+        await connection.query("UPDATE tags_guest_access_tokens SET revoked_at=NOW() WHERE stay_id=? AND revoked_at IS NULL", [stay.id]);
+        const [result] = await connection.query("INSERT INTO tags_guest_access_tokens (guest_app_id,stay_id,guest_id,token_hash,channel,expires_at) VALUES (?,?,?,?, 'email',DATE_ADD(?,INTERVAL ? DAY))", [stay.guest_app_id, stay.id, stay.guest_id, hashGuestToken(token), stay.ends_at, grace]);
+        tokenId = result.insertId;
+        await connection.commit();
+    } catch (error) { await connection.rollback(); throw error; } finally { connection.release(); }
+    const link = await getGuestVerificationUrl(db, stay.slug, token);
+    const people = Number(stay.adults || 0) + Number(stay.children || 0);
+    const formatDate = value => new Date(value).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" });
+    const formatTime = value => { const [hour, minute] = String(value || "").split(":"); return hour ? `${Number(hour)}${minute && Number(minute) ? `:${String(minute).padStart(2, "0")}` : ""}hs` : "A confirmar"; };
+    const checkinLabel = `${formatDate(stay.starts_at)} ${formatTime(settings.checkinTime || "15:00")}`;
+    const checkoutLabel = `${formatDate(stay.ends_at)} ${formatTime(settings.checkoutTime || "10:00")}`;
+    const subject = `Acceso a Mi Estadía · ${stay.app_name}`;
+    const delivery = await sendMail({
+        to: stay.email,
+        subject,
+        html: `<div style="max-width:620px;margin:auto;font-family:Arial,sans-serif;color:#183226;border:1px solid #dfe9e4;border-radius:18px;overflow:hidden"><div style="padding:24px;background:#f4f8f5;text-align:center">${stay.logo_url ? `<img src="${stay.logo_url}" alt="${stay.app_name}" style="max-width:150px;max-height:90px">` : ""}<h1>Tu reserva fue confirmada</h1></div><div style="padding:24px"><p>Hola <strong>${stay.guest_name}</strong>.</p><p>Tu reserva <strong>${stay.stay_code}</strong> es para ${people} pasajero${people === 1 ? "" : "s"}.</p><p><strong>Ingreso:</strong> ${checkinLabel}<br><strong>Egreso:</strong> ${checkoutLabel}</p><p style="text-align:center;margin:28px 0"><a href="${link}" style="display:inline-block;padding:13px 20px;background:#22a35a;color:#fff;text-decoration:none;border-radius:9px;font-weight:bold">Acceder a Mi Estadía</a></p><p style="font-size:12px;color:#63746a">El enlace estará disponible durante la estadía y el período de gracia configurado.</p></div></div>`,
+        text: `Tu reserva ${stay.stay_code} fue confirmada. Acceder a Mi Estadía: ${link}`
+    });
+    await db.query("INSERT INTO tags_guest_communications (guest_app_id,stay_id,guest_id,access_token_id,event_code,direction,channel,recipient,subject,message_text,status,sent_at,failed_at,attempts,provider_reference,last_error,created_by_type,created_by_id) VALUES (?,?,?,?,'access_link','outbound','email',?,?,?,?,?,?,?,1,?,?, 'system',?)", [stay.guest_app_id, stay.id, stay.guest_id, tokenId, stay.email, subject, `Acceso a Mi Estadía: ${link}`, delivery.ok ? "sent" : "failed", delivery.ok ? new Date() : null, delivery.ok ? null : new Date(), delivery.result?.id || delivery.result?.message || null, delivery.error || null, createdById]);
+    return { sent: delivery.ok, link, reason: delivery.ok ? null : delivery.error };
+}
 
 
 export async function POST(req) {
@@ -92,13 +134,17 @@ export async function POST(req) {
 
         await connection.query("INSERT INTO tags_guest_accounts (guest_app_id,stay_id,currency,status) SELECT id,?,currency,'open' FROM tags_guest_apps WHERE id=?", [result.insertId, guestAppId]);
 
-        if (lodgingTotal > 0) await connection.query("INSERT INTO tags_guest_account_entries (account_id,entry_type,source_type,source_id,idempotency_key,description,quantity,unit_amount,total_amount,currency,status,created_by_type,created_by_id) SELECT id,'charge','lodging',?,?,?, ?,?,?,?,'confirmed','owner',? FROM tags_guest_accounts WHERE stay_id=?", [String(result.insertId), `lodging:${result.insertId}`, `Alojamiento ${code} · ${nights} noches`, nights, nightlyRate, lodgingTotal, apps[0].currency || "ARS", access.session?.id || access.session?.userId || null, result.insertId]);
+        await connection.query("INSERT INTO tags_guest_account_entries (account_id,entry_type,source_type,source_id,idempotency_key,description,quantity,unit_amount,total_amount,currency,status,created_by_type,created_by_id) SELECT id,'charge','lodging',?,?,?, ?,?,?,?,'confirmed','owner',? FROM tags_guest_accounts WHERE stay_id=?", [String(result.insertId), `lodging:${result.insertId}`, `Reserva confirmada ${code} · total de alojamiento`, nights, nightlyRate, lodgingTotal, apps[0].currency || "ARS", access.session?.id || access.session?.userId || null, result.insertId]);
 
         await connection.query("INSERT INTO tags_guest_audit_log (guest_app_id,stay_id,actor_type,actor_id,action,entity_type,entity_id) VALUES (?,?,'owner',?,'reservation.created','reservation',?)", [guestAppId, result.insertId, access.session?.id || access.session?.userId || null, result.insertId]);
 
         await connection.commit();
 
-        return Response.json({ ok: true, reservationId: result.insertId, stayCode: code }, { status: 201 });
+        let accessEmail = { sent: false, reason: "No se pudo generar el acceso." };
+        try { accessEmail = await sendReservationAccessEmail(result.insertId, guestAppId, access.session?.id || access.session?.userId || null); }
+        catch (emailError) { console.error("GUEST RESERVATION ACCESS EMAIL ERROR:", emailError); accessEmail = { sent: false, reason: emailError.message }; }
+
+        return Response.json({ ok: true, reservationId: result.insertId, stayCode: code, accessEmail }, { status: 201 });
 
     } catch (error) {
         await connection.rollback();

@@ -113,6 +113,7 @@ export async function GET(req) {
                     q.email,
                     q.business_id,
                     q.has_qr_page,
+                    q.browser_geolocation_enabled,
 
                     b.name AS business_name,
                     b.email AS business_email,
@@ -157,6 +158,7 @@ export async function GET(req) {
                     q.email,
                     q.business_id,
                     q.has_qr_page,
+                    q.browser_geolocation_enabled,
                     b.name,
                     b.email,
                     p.id,

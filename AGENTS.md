@@ -17,6 +17,7 @@ Este archivo resume el contexto funcional y técnico conocido del proyecto para 
 - No instalar librerías ni ejecutar `npm install` sin autorización explícita del usuario.
 - No iniciar ni detener servidores de desarrollo sin autorización explícita.
 - No modificar la base de datos sin autorización. Si una migración fuera necesaria, entregar el script SQL exacto.
+- No declarar claves foráneas contra tablas legacy (`tags_businesses`, `tags_plans`, `tags_directory_sites` u otras preexistentes) suponiendo el tipo de sus PK. Antes de una FK se debe verificar `SHOW CREATE TABLE` en desarrollo y producción y confirmar coincidencia exacta de tipo, tamaño, signo y motor. Si esa verificación no está disponible o las instalaciones difieren, usar columnas indexadas sin FK y mantener la integridad desde el flujo transaccional existente.
 - Comunicar cada etapa terminada y esperar aprobación cuando el usuario lo solicite.
 - No usar datos falsos ni APIs inventadas para completar funcionalidades.
 - Validar cambios con comprobaciones locales no destructivas; no asumir que una compilación o servidor está disponible.

@@ -27,6 +27,9 @@ export async function GET(req) {
     const [people] = await db.query(`SELECT g.*,sp.role FROM tags_guest_stay_people sp INNER JOIN tags_guest_people g ON g.id=sp.guest_id WHERE sp.stay_id=? ORDER BY sp.role='primary' DESC,sp.created_at,g.id`,[session.stay_id]);
     const [records] = await db.query("SELECT * FROM tags_guest_precheckins WHERE stay_id=? LIMIT 1",[session.stay_id]);
     let primary = people.find(item=>item.role==="primary") || people.find(item=>Number(item.id)===Number(session.guest_id));
+    const [reservationPrimaryRows] = await db.query("SELECT g.*, 'primary' role FROM tags_guest_stays s INNER JOIN tags_guest_people g ON g.id=s.primary_guest_id WHERE s.id=? LIMIT 1",[session.stay_id]);
+    const reservationPrimary = reservationPrimaryRows[0];
+    if (!primary || (!primary.document_number && reservationPrimary?.document_number)) primary = reservationPrimary;
     if (!primary) { const [primaryRows]=await db.query("SELECT *, 'primary' role FROM tags_guest_people WHERE id=? LIMIT 1",[session.guest_id]); primary=primaryRows[0]; }
     if (!primary) return guestError("No se encontraron los datos del titular",404);
     return Response.json({ok:true,status:records[0]?.status||"draft",readOnly:["reviewed","checked_in"].includes(records[0]?.status)||["active","checked_out"].includes(session.stay_status),expectedCompanions:Math.max(0,Number(session.adults||0)+Number(session.children||0)-1),primary:publicPerson(primary),companions:people.filter(item=>item.role==="companion").map(publicPerson),vehicle:{plate:records[0]?.vehicle_plate||"",makeModel:records[0]?.vehicle_make_model||"",color:records[0]?.vehicle_color||""},expectedArrivalText:session.expected_arrival_text||"",guestNotes:records[0]?.guest_notes||""});

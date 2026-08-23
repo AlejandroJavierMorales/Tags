@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 /* import TagsHeader from "../../components/Header"; */
 import { FaUser } from "react-icons/fa";
 import "../../styles/tagsModals.css";
+import "../../styles/qr-page.css";
 import {
     isRequired,
     isValidEmail,
@@ -17,6 +18,7 @@ import { isExpiring } from "../../lib/dateUtils";
 import showAlert from "@/app/components/showAlert";
 import MediaUploader from "@/app/components/MediaUploader";
 import BusinessLocationFields from "@/app/components/businesses/BusinessLocationFields";
+import { validateBusinessForm } from "@/app/lib/validateBusinessForm";
 
 import { FiDownload } from "react-icons/fi";
 import { FaGoogle } from "react-icons/fa";
@@ -297,6 +299,12 @@ export default function BusinessesPageClient({ session }) {
 
     async function saveEdit() {
 
+        const validationError = validateBusinessForm({ name: editName, email: editEmail, phone: editPhone, details: editDetails });
+        if (validationError) {
+            await showAlert({ title: "Revisá los datos", text: validationError, icon: "warning" });
+            return;
+        }
+
         if (!isRequired(editName)) {
             showAlert({
                 title: "Error",
@@ -414,7 +422,7 @@ export default function BusinessesPageClient({ session }) {
         if (!res.ok) {
             showAlert({
                 title: "Error",
-                text: data.error || "Error actualizando cliente",
+                text: [data.error, data.detail].filter(Boolean).join(" · ") || "Error actualizando cliente",
                 icon: "error"
             });
             return;

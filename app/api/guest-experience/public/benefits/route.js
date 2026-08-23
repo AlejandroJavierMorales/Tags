@@ -11,6 +11,13 @@ function publicCoupon(item, origin) {
     return { id: item.id, campaignId: item.campaign_id, code: item.code, status, issuedAt: item.issued_at, expiresAt: item.expires_at, redeemedAt: item.redeemed_at, signature, qrPayload: `${origin}/beneficios/validar?code=${encodeURIComponent(item.code)}&signature=${signature}` };
 }
 
+function benefitLabel(item) {
+    if (item.benefit_type === "percentage") return `${Number(item.benefit_value || 0)}% de descuento`;
+    if (item.benefit_type === "quantity") return item.conditions_text || "Promoción especial";
+    if (item.benefit_type === "fixed" || item.benefit_type === "amount") return `$ ${Number(item.benefit_value || 0).toLocaleString("es-AR")} de descuento`;
+    return "Beneficio disponible";
+}
+
 export async function GET(req) {
     try {
         const url = new URL(req.url), session = await getGuestPublicSession(url.searchParams.get("slug"));
@@ -23,7 +30,7 @@ export async function GET(req) {
             ORDER BY bc.sort_order,bc.name,c.name`, [session.id, session.id]);
         const [coupons] = await db.query("SELECT * FROM tags_benefit_coupons WHERE guest_app_id=? AND stay_id=? AND guest_id=? ORDER BY issued_at DESC", [session.id, session.stay_id, session.guest_id]);
         const issued = coupons.reduce((map, item) => { (map[item.campaign_id] ||= []).push(publicCoupon(item, url.origin)); return map; }, {});
-        return Response.json({ ok: true, categories: [...new Map(campaigns.filter(item => item.category_id).map(item => [item.category_id, { id: item.category_id, name: item.category_name }])).values()], campaigns: campaigns.map(item => ({ ...item, coupons: issued[item.id] || [] })) });
+        return Response.json({ ok: true, categories: [...new Map(campaigns.filter(item => item.category_id).map(item => [item.category_id, { id: item.category_id, name: item.category_name }])).values()], campaigns: campaigns.map(item => ({ ...item, benefit_label: benefitLabel(item), coupons: issued[item.id] || [] })) });
     } catch (error) { console.error("PUBLIC BENEFITS GET ERROR", error); return benefitError(error?.code === "ER_NO_SUCH_TABLE" ? "Beneficios todavía no está habilitado." : "No se pudieron cargar los beneficios", 500); }
 }
 

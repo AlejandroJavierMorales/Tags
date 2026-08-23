@@ -30,6 +30,15 @@ export async function GET(req) {
             INNER JOIN tags_benefit_merchants m ON m.id=ca.merchant_id LEFT JOIN tags_guest_people g ON g.id=cp.guest_id LEFT JOIN tags_guest_stays s ON s.id=cp.stay_id
             LEFT JOIN tags_benefit_redemptions r ON r.coupon_id=cp.id AND r.status='confirmed' LEFT JOIN tags_benefit_staff st ON st.id=r.staff_id ORDER BY cp.issued_at DESC LIMIT 500`, [businessId, guestAppId]);
         const [merchants] = await db.query("SELECT * FROM tags_benefit_merchants WHERE created_by_business_id=? OR business_id=? ORDER BY name", [businessId, businessId]);
+        const [directoryBenefits] = await db.query(`
+            SELECT db.id,db.business_id,db.name,db.benefit_type,db.benefit_value,db.promotion_buy_quantity,db.promotion_pay_quantity,db.promotion_item,db.valid_from,db.valid_until,db.description,db.image_url,
+                   COALESCE(NULLIF(src.display_name,''),src.name) source_business_name
+            FROM tags_directory_benefits db
+            INNER JOIN tags_directory_listings dl ON dl.id=db.listing_id AND dl.status='published'
+            INNER JOIN tags_businesses src ON src.id=db.business_id
+            WHERE db.visibility='public' AND db.is_active=1 AND db.valid_from<=CURDATE() AND db.valid_until>=CURDATE()
+              AND NOT EXISTS (SELECT 1 FROM tags_benefit_campaigns bc WHERE bc.source_directory_benefit_id=db.id AND bc.guest_app_id=?)
+            ORDER BY db.valid_until,db.name`, [guestAppId]);
         const merchantIds = merchants.map(item => item.id);
         let locations = [], staff = [];
         if (merchantIds.length) {
@@ -37,7 +46,7 @@ export async function GET(req) {
             [locations] = await db.query(`SELECT * FROM tags_benefit_locations WHERE merchant_id IN (${marks}) ORDER BY name`, merchantIds);
             [staff] = await db.query(`SELECT id,merchant_id,location_id,name,email,status,created_at FROM tags_benefit_staff WHERE merchant_id IN (${marks}) ORDER BY name`, merchantIds);
         }
-        return Response.json({ ok: true, categories, merchants, locations, staff, campaigns, coupons });
+        return Response.json({ ok: true, categories, merchants, locations, staff, campaigns, coupons, directoryBenefits });
     } catch (error) {
         console.error("BENEFITS ADMIN GET ERROR", error);
         return benefitError(error?.code === "ER_NO_SUCH_TABLE" ? "Falta ejecutar la migración del módulo Beneficios." : "No se pudo cargar Beneficios.", 500);
@@ -49,6 +58,25 @@ export async function POST(req) {
         const body = await req.json().catch(() => null); if (!body) return benefitError("Cuerpo JSON inválido");
         const { businessId, guestAppId, access } = await accessFrom(body); if (!access.allowed) return guestAdminAccessResponse(access);
         const entity = body.entity;
+        if (entity === "directory-benefit") {
+            const sourceId = Number(body.directoryBenefitId || 0);
+            const [sourceRows] = await db.query(`SELECT db.*,COALESCE(NULLIF(src.display_name,''),src.name) source_business_name,src.email,src.phone
+                FROM tags_directory_benefits db INNER JOIN tags_businesses src ON src.id=db.business_id
+                WHERE db.id=? AND db.visibility='public' AND db.is_active=1 AND db.valid_from<=CURDATE() AND db.valid_until>=CURDATE() LIMIT 1`, [sourceId]);
+            const source = sourceRows[0]; if (!source) return benefitError("El beneficio público no está disponible", 404);
+            const [existingMerchant] = await db.query("SELECT id FROM tags_benefit_merchants WHERE business_id=? LIMIT 1", [source.business_id]);
+            let merchantId = existingMerchant[0]?.id;
+            if (!merchantId) {
+                const [merchant] = await db.query("INSERT INTO tags_benefit_merchants (business_id,created_by_business_id,name,email,phone,status) VALUES (?,?,?,?,?,'active')", [source.business_id, businessId, source.source_business_name, source.email || null, source.phone || null]);
+                merchantId = merchant.insertId;
+            }
+            const benefitType = source.benefit_type === "percentage" ? "percentage" : source.benefit_type === "quantity" ? "quantity" : "fixed";
+            const [campaign] = await db.query(`INSERT INTO tags_benefit_campaigns
+                (merchant_id,issuer_type,issuer_business_id,source_directory_benefit_id,guest_app_id,name,image_url,description,conditions_text,benefit_type,benefit_value,valid_from,valid_until,limit_scope,max_issues,scope_type,status)
+                VALUES (?,'directory',?,?,?,?,?,?,? ,?,?,?,?,?,'stay',1,'guest_app','published')`, [merchantId, businessId, sourceId, guestAppId, source.name, source.image_url || null, source.description || null, source.benefit_type === "quantity" ? `${source.promotion_buy_quantity}x${source.promotion_pay_quantity}${source.promotion_item ? ` en ${source.promotion_item}` : ""}` : null, benefitType, source.benefit_value, `${String(source.valid_from).slice(0, 10)} 00:00:00`, `${String(source.valid_until).slice(0, 10)} 23:59:59`]);
+            await db.query("INSERT INTO tags_benefit_campaign_scopes (campaign_id,scope_type,scope_id) VALUES (?,'guest_app',?)", [campaign.insertId, guestAppId]);
+            return Response.json({ ok: true, id: campaign.insertId }, { status: 201 });
+        }
         if (entity === "category") {
             const name = cleanBenefitText(body.name, 120); if (!name) return benefitError("El nombre de la categoría es obligatorio");
             const [result] = await db.query("INSERT INTO tags_benefit_categories (issuer_business_id,guest_app_id,name,icon_code,sort_order,is_active) VALUES (?,?,?,?,?,?)", [businessId, guestAppId, name, cleanBenefitText(body.iconCode, 60) || null, Number(body.sortOrder || 0), active(body.isActive)]);

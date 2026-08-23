@@ -9,7 +9,7 @@ function providerHref(slug, returnHref, navigationTrail) {
   if (returnHref?.startsWith("/directorio")) params.set("volver", returnHref);
   if (navigationTrail?.length) params.set("ruta", JSON.stringify(navigationTrail));
   const query = params.toString();
-  return `/directorio/prestador/${slug}${query ? `?${query}` : ""}`;
+  return `/${slug}${query ? `?${query}` : ""}`;
 }
 
 export default function DirectoryListingGrid({ listings, returnHref = "", navigationTrail = [] }) {

@@ -2,23 +2,29 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { FaArrowLeft, FaEye, FaGlobe, FaPalette, FaPuzzlePiece, FaStore, FaUserPen } from "react-icons/fa6";
+import { FaArrowLeft, FaEye, FaGlobe, FaLink, FaPalette, FaPuzzlePiece, FaRobot, FaStore, FaUserPen } from "react-icons/fa6";
 import MediaUploader from "@/app/components/MediaUploader";
 import TagsSpinner from "@/app/components/TagsSpinner";
 import showAlert from "@/app/components/showAlert";
 import DirectoryStructureManager from "./DirectoryStructureManager";
 import DirectoryCatalogManager from "./DirectoryCatalogManager";
 import DirectoryCommerceVisualBuilder from "./DirectoryCommerceVisualBuilder";
+import DirectoryBenefitsManager from "./DirectoryBenefitsManager";
+import AiChatSurfaceSettings from "@/app/modules/ai-chat/components/admin/AiChatSurfaceSettings";
 import "@/app/styles/qr-page.css";
 import "./DirectoryWebBuilderClient.css";
+import "./DirectoryWebBuilderSlug.css";
+import "./DirectoryWebBuilderSlugLabels.css";
 
 const TABS = [
-  ["profile", "Ficha", FaUserPen],
+  ["profile", "Web", FaUserPen],
   ["content", "Contenido", FaGlobe],
   ["catalog", "Catálogo", FaStore],
   ["modules", "Módulos", FaPuzzlePiece],
+  ["benefits", "Beneficios", FaPuzzlePiece],
   ["design", "Diseño", FaPalette],
-  ["preview", "Vista previa", FaEye]
+  ["preview", "Vista previa", FaEye],
+  ["chatbot", "Chatbot", FaRobot]
 ];
 
 async function responsePayload(response) {
@@ -39,6 +45,7 @@ export default function DirectoryWebBuilderClient({ businessId, qrCodeId, busine
   const [footerConfig, setFooterConfig] = useState({});
   const [globalStyles, setGlobalStyles] = useState({});
   const [moduleWeb, setModuleWeb] = useState(null);
+  const [publicSlug, setPublicSlug] = useState("");
 
   async function load() {
     setBusy(true);
@@ -51,6 +58,7 @@ export default function DirectoryWebBuilderClient({ businessId, qrCodeId, busine
       if (!pageResponse.ok) throw new Error(pagePayload.error || "No se pudo cargar la Web");
       if (!profileResponse.ok) throw new Error(profilePayload.error || "No se pudo cargar el perfil del negocio");
       setQrPage(pagePayload.qrPage);
+      setPublicSlug(pagePayload.qrPage?.page?.slug || "");
       const moduleResponse = await fetch(`/api/directory/client/modules?businessId=${businessId}&pageId=${pagePayload.qrPage?.page?.id}`, { cache: "no-store" });
       const modulePayload = await responsePayload(moduleResponse);
       if (!moduleResponse.ok) throw new Error(modulePayload.error || "No se pudieron cargar los módulos");
@@ -115,6 +123,25 @@ export default function DirectoryWebBuilderClient({ businessId, qrCodeId, busine
     } finally { setBusy(false); }
   }
 
+  async function savePublicSlug() {
+    const slug = publicSlug.trim();
+    if (slug.length < 3) return showAlert({ title: "Slug inválido", text: "Ingresá una ruta pública de al menos 3 caracteres.", icon: "warning" });
+    setBusy(true);
+    try {
+      const response = await fetch("/api/portal/admin/pages/slug", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ businessId, pageId: qrPage.page.id, slug, confirmed: true })
+      });
+      const payload = await responsePayload(response);
+      if (!response.ok) throw new Error(payload.error || "No se pudo cambiar el slug");
+      await load();
+      await showAlert({ title: "Slug actualizado", text: "La URL pública de la página fue actualizada.", icon: "success", timer: 1400 });
+    } catch (error) {
+      await showAlert({ title: "No se pudo cambiar el slug", text: error.message, icon: "error" });
+    } finally { setBusy(false); }
+  }
+
   async function applyTheme(themeId) {
     setBusy(true);
     try {
@@ -155,6 +182,13 @@ export default function DirectoryWebBuilderClient({ businessId, qrCodeId, busine
       </nav>
     </header>
 
+    <section className="tags_directory_web_slug_bar">
+      <div className="tags_directory_web_slug_label"><FaLink aria-hidden="true" /><strong>URL pública de la Web</strong></div>
+      <div><FaLink /><span><strong>URL pública de la Web</strong><small>Se conserva el contenido y se actualiza la ruta del Directorio.</small></span></div>
+      <label><span>/</span><input value={publicSlug} onChange={event => setPublicSlug(event.target.value)} /></label>
+      <button type="button" onClick={savePublicSlug} disabled={busy || publicSlug === page.slug}>Guardar slug</button>
+    </section>
+
     <div className="tags_directory_web_tabs" role="tablist">{TABS.map(([key, label, Icon]) => <button key={key} type="button" className={tab === key ? "active" : ""} onClick={() => setTab(key)}><Icon /> {label}</button>)}</div>
 
     {tab === "profile" && <section className="tags_directory_web_panel">
@@ -188,6 +222,10 @@ export default function DirectoryWebBuilderClient({ businessId, qrCodeId, busine
     {tab === "catalog" && <section className="tags_directory_web_panel"><DirectoryCatalogManager businessId={businessId} pageId={page.id} products={qrPage.products || []} catalogSection={(qrPage.sections || []).find(section => section.blocks?.some(block => block.type === "catalog") || section.type === "catalog")} onReload={load} /></section>}
 
     {tab === "modules" && <section className="tags_directory_web_panel"><DirectoryCommerceVisualBuilder businessId={businessId} pageId={page.id} web={moduleWeb} onReload={load} /></section>}
+
+    {tab === "benefits" && <section className="tags_directory_web_panel"><DirectoryBenefitsManager businessId={businessId} pageId={page.id} onReload={load} /></section>}
+
+    {tab === "chatbot" && <section className="tags_directory_web_panel"><AiChatSurfaceSettings businessId={businessId} surfaceType="qr_page" surfaceId={page.id} surfaceLabel="la Página Web" /></section>}
 
     {tab === "design" && <section className="tags_directory_web_panel tags_directory_design_panel"><div className="tags_directory_web_panel_title"><div><h2>Diseño de la Web</h2><p>Elegí el tema y personalizá el encabezado y el footer.</p></div><button type="button" onClick={saveDesign}>Guardar diseño</button></div>
       <div className="tags_directory_theme_picker"><h3>Tema visual</h3><div><button type="button" className={!Number(pendingThemeId === undefined ? page.theme_id : pendingThemeId)?"active":""} onClick={()=>setPendingThemeId(null)}><span className="portal" /><b>Portal</b><small>Heredar</small></button>{themes.map(theme=>{const themeTokens=theme.css_tokens||{};const swatch=`linear-gradient(135deg,${themeTokens["--qr-bg"]||"#f6f8f7"} 0 42%,${themeTokens["--qr-surface"]||"#fff"} 42% 70%,${themeTokens["--qr-primary"]||"#26734f"} 70%)`;return <button type="button" key={theme.id} className={Number(pendingThemeId === undefined ? page.theme_id : pendingThemeId)===Number(theme.id)?"active":""} onClick={()=>setPendingThemeId(theme.id)}><span style={{background:swatch}} /><b>{theme.name}</b><small>{Number(page.theme_id)===Number(theme.id)?"Activo":"Seleccionar"}</small></button>})}</div>{pendingThemeId!==undefined&&<nav><button type="button" onClick={()=>setPendingThemeId(undefined)}>Cancelar</button><button type="button" onClick={()=>applyTheme(pendingThemeId)}>Guardar tema</button></nav>}</div>

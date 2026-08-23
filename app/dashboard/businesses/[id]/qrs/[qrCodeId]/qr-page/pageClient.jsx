@@ -26,6 +26,7 @@ import QRPageProductsManager
     from "@/app/modules/qr-page/builder/QRPageProductsManager";
 import TypographyEditor from "@/app/modules/qr-page/builder/TypographyEditor";
 import TagsSpinner from "@/app/components/TagsSpinner";
+import AiChatSurfaceSettings from "@/app/modules/ai-chat/components/admin/AiChatSurfaceSettings";
 
 
 
@@ -122,6 +123,11 @@ export default function QRPageBuilderClient({
 
                 ["seo", "Google y buscadores"]
             ]
+        },
+
+        {
+            title: "Chatbot",
+            items: [["chatbot", "Chatbot con IA"]]
         }
 
     ];
@@ -173,6 +179,9 @@ export default function QRPageBuilderClient({
     useEffect(() => {
         loadQRPage();
         loadThemes();
+
+        const requestedTab = new URLSearchParams(window.location.search).get("tab");
+        if (requestedTab) setActiveTab(requestedTab);
     }, []);
 
     useEffect(() => {
@@ -2711,6 +2720,11 @@ export default function QRPageBuilderClient({
                         onReload={loadQRPage}
                         onApplied={() => setActiveTab("builder")}
                     />
+                )
+            }
+            {
+                activeTab === "chatbot" && (
+                    <AiChatSurfaceSettings businessId={businessId} surfaceType="qr_page" surfaceId={page.id} surfaceLabel="esta Página Web" />
                 )
             }
             {

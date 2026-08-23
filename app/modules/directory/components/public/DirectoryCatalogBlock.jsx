@@ -10,6 +10,18 @@ function normalized(value) {
   return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 }
 
+function hasPrice(value) {
+  if (value === null || value === undefined || String(value).trim() === "") return false;
+  const number = Number(value);
+  return Number.isFinite(number) && number > 0;
+}
+
+function formatCatalogPrice(value, currency) {
+  if (!hasPrice(value)) return "";
+  const label = String(currency || "ARS").toUpperCase() === "ARS" ? "$" : String(currency || "").toUpperCase() === "USD" ? "US$" : String(currency || "").toUpperCase();
+  return `${label} ${Number(value).toLocaleString("es-AR", { maximumFractionDigits: 2 })}`;
+}
+
 function productImages(product) {
   const images = (Array.isArray(product.images_json) ? product.images_json : []).filter(item => item?.url).slice(0, 12);
   if (!images.length && product.image_url) images.push({ url: product.image_url, alt: product.title });
@@ -41,7 +53,7 @@ function ProductCard({ product, page, onDetail }) {
       <span>{product.category || "General"}</span>
       <h3>{product.title}</h3>
       {product.description && <p>{product.description}</p>}
-      {product.price != null && product.price !== "" && <strong>{product.currency || "ARS"} {product.price}</strong>}
+      {hasPrice(product.price) && <strong>{formatCatalogPrice(product.price, product.currency)}</strong>}
       <div className="tags_directory_catalog_actions">
         <button type="button" className="detail" onClick={() => onDetail(product)} aria-label={"Ver detalle de " + product.title} title="Ver detalle"><FaMagnifyingGlass /><span>Ver detalle</span></button>
         {whatsapp && <a href={whatsapp} target="_blank" rel="noreferrer" aria-label={"Consultar " + product.title + " por WhatsApp"} title="Consultar por WhatsApp"><FaWhatsapp /></a>}
@@ -92,10 +104,10 @@ function ProductDetailModal({ product, page, onClose }) {
         <div className="tags_directory_catalog_modal_info">
           {product.description && <p>{product.description}</p>}
           {(product.old_price || product.discount_label) && <div className="offer">
-            {product.old_price && <del>{product.currency || "ARS"} {product.old_price}</del>}
+            {hasPrice(product.old_price) && <del>{formatCatalogPrice(product.old_price, product.currency)}</del>}
             {product.discount_label && <em>{product.discount_label}</em>}
           </div>}
-          {product.price != null && product.price !== "" && <strong>{product.currency || "ARS"} {product.price}</strong>}
+          {hasPrice(product.price) && <strong>{formatCatalogPrice(product.price, product.currency)}</strong>}
           <div className="actions">
             {whatsapp && <a href={whatsapp} target="_blank" rel="noreferrer"><FaWhatsapp /><span>Consultar por WhatsApp</span></a>}
             <button type="button" onClick={() => shareProduct(product)}><FaShareNodes /><span>Compartir</span></button>

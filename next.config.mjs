@@ -35,10 +35,16 @@ const nextConfig = {
   },
 
   async headers() {
-    return [{
-      source: "/directory/:path*",
-      headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
-    }];
+    return [
+      {
+        source: "/directory/:path*",
+        headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
+      },
+      {
+        source: "/embed/ai-chat.js",
+        headers: [{ key: "Cache-Control", value: "no-cache, must-revalidate" }],
+      },
+    ];
   },
 };
 

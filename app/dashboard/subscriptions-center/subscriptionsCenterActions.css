@@ -1,0 +1,84 @@
+.tags_subscription_header_actions,
+.tags_subscription_row_actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tags_subscription_center_panel > header button {
+  border: 1px solid #16834a;
+  background: #198f50;
+  color: #fff;
+  box-shadow: 0 7px 17px rgba(24, 116, 66, 0.2);
+  cursor: pointer;
+}
+
+.tags_subscription_center_panel > header button:hover {
+  border-color: #0f6f3d;
+  background: #147b45;
+}
+
+.tags_subscription_header_actions select {
+  min-height: 42px;
+  padding: 9px 34px 9px 11px;
+  border: 1px solid #ccd9d2;
+  border-radius: 9px;
+  background: #fff;
+  color: #254638;
+  font-weight: 750;
+}
+
+.tags_subscription_price_summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border: 1px solid #b9dbc8;
+  border-radius: 11px;
+  background: #eff9f3;
+  color: #28533f;
+}
+
+.tags_subscription_price_summary strong {
+  color: #137543;
+  font-size: 20px;
+  white-space: nowrap;
+}
+
+.tags_subscription_row_actions button {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid #d7e2dc;
+  border-radius: 8px;
+  background: #fff;
+  color: #246646;
+  cursor: pointer;
+}
+
+.tags_subscription_row_actions button:hover {
+  border-color: #55ad79;
+  background: #edf8f1;
+}
+
+.tags_subscription_row_actions button:last-child { color: #b3413b; }
+.tags_subscription_plan_grid .tags_subscription_row_actions {
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid #edf1ef;
+}
+
+@media (max-width: 760px) {
+  .tags_subscription_header_actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .tags_subscription_price_summary {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

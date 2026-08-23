@@ -119,9 +119,9 @@ export async function POST(req) {
       ]
     );
 
-    const [directoryRows] = await conn.execute("SELECT id,qr_page_id FROM tags_directory_listings WHERE business_id=? LIMIT 1", [id]);
+    const [directoryRows] = await conn.execute("SELECT id,qr_page_id FROM tags_directory_listings WHERE business_id=?", [id]);
     if (directoryRows.length) {
-      const listing = directoryRows[0];
+      for (const listing of directoryRows) {
       await conn.execute(
         `UPDATE tags_directory_listings SET
           display_name=IF(?,?,display_name),
@@ -165,16 +165,17 @@ export async function POST(req) {
           ]
         );
       }
+      }
     }
 
     if (locationWasSent) {
       await conn.execute("DELETE FROM tags_business_places WHERE business_id=? AND relation_type='location'", [id]);
       if (primaryPlaceId) await conn.execute("INSERT INTO tags_business_places (business_id,place_id,relation_type,is_primary) VALUES (?,?,'location',1)", [id, primaryPlaceId]);
 
-      const [listingRows] = await conn.execute("SELECT id FROM tags_directory_listings WHERE business_id=? LIMIT 1", [id]);
-      if (listingRows.length) {
-        await conn.execute("DELETE FROM tags_directory_listing_places WHERE listing_id=? AND relation_type='location'", [listingRows[0].id]);
-        if (primaryPlaceId) await conn.execute("INSERT INTO tags_directory_listing_places (listing_id,place_id,relation_type,is_primary) VALUES (?,?,'location',1)", [listingRows[0].id, primaryPlaceId]);
+      const [listingRows] = await conn.execute("SELECT id FROM tags_directory_listings WHERE business_id=?", [id]);
+      for (const listing of listingRows) {
+        await conn.execute("DELETE FROM tags_directory_listing_places WHERE listing_id=? AND relation_type='location'", [listing.id]);
+        if (primaryPlaceId) await conn.execute("INSERT INTO tags_directory_listing_places (listing_id,place_id,relation_type,is_primary) VALUES (?,?,'location',1)", [listing.id, primaryPlaceId]);
       }
     }
 
@@ -286,7 +287,7 @@ export async function POST(req) {
     console.error("UPDATE BUSINESS ERROR:", e);
 
     return Response.json(
-      { error: "Error actualizando cliente" },
+      { error: "Error actualizando cliente", detail: e?.sqlMessage || e?.message || "Error interno" },
       { status: 500 }
     );
 

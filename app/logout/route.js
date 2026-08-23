@@ -1,19 +1,14 @@
 import { NextResponse } from "next/server";
+import { getRequestBaseUrl } from "@/app/lib/channelContext";
 
 export const dynamic = "force-dynamic";
-
-function getBaseUrl(req) {
-    return process.env.NODE_ENV === "production"
-        ? process.env.NEXT_PUBLIC_BASE_URL_PROD
-        : new URL(req.url).origin;
-}
 
 export async function GET(req) {
 
     try {
 
         const baseUrl =
-            getBaseUrl(req);
+            getRequestBaseUrl(req);
 
         const response =
             NextResponse.redirect(
@@ -33,7 +28,11 @@ export async function GET(req) {
         response.cookies.set({
             name: "tags_session_sig",
             value: "",
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
             path: "/",
+            expires: new Date(0),
             maxAge: 0
         });
 
@@ -46,7 +45,7 @@ export async function GET(req) {
         return NextResponse.redirect(
             new URL(
                 "/login",
-                process.env.NEXT_PUBLIC_BASE_URL_PROD || req.url
+                getRequestBaseUrl(req) || new URL(req.url).origin
             )
         );
     }

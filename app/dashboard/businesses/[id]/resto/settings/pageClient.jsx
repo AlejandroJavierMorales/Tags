@@ -26,6 +26,7 @@ import showAlert
     from "@/app/components/showAlert";
 import MediaUploader
     from "@/app/components/MediaUploader";
+import AiChatSurfaceSettings from "@/app/modules/ai-chat/components/admin/AiChatSurfaceSettings";
 
 import "@/app/styles/qr-page.css";
 import "@/app/styles/tags_dashboard.css";
@@ -37,7 +38,8 @@ const TABS = [
     ["location", "Ubicación", FaMapMarkerAlt],
     ["operation", "Operación y horarios", FaClock],
     ["orders", "Pedidos y cocina", FaUtensils],
-    ["payments", "Pagos y cuentas", FaCreditCard]
+    ["payments", "Pagos y cuentas", FaCreditCard],
+    ["chatbot", "Chatbot con IA", FaCog]
 ];
 
 const DAYS = [
@@ -200,6 +202,8 @@ export default function RestoSettingsClient({
         });
     const [form, setForm] =
         useState(EMPTY);
+    const [storeId, setStoreId] =
+        useState(null);
     const [loading, setLoading] =
         useState(true);
     const [saving, setSaving] =
@@ -223,6 +227,7 @@ export default function RestoSettingsClient({
                 throw new Error(result?.error);
             }
             setForm(mergeLoaded(result));
+            setStoreId(result.store?.id || null);
         } catch (error) {
             showAlert({
                 icon: "error",
@@ -585,6 +590,10 @@ export default function RestoSettingsClient({
                             )}
                         </div>
                     </>
+                )}
+
+                {activeTab === "chatbot" && storeId && (
+                    <AiChatSurfaceSettings businessId={businessId} surfaceType="resto" surfaceId={storeId} surfaceLabel="la página pública de Resto" />
                 )}
             </section>
         </main>

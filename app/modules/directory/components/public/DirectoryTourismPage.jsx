@@ -18,25 +18,27 @@ const PAGE_CONFIG = {
 
 export default function DirectoryTourismPage({ data, kind }) {
   const config = PAGE_CONFIG[kind];
-  const returnHref = config.route;
+  const returnHref = data.publicPath || config.route;
+  const pageTitle = data.pageTitle || config.title;
+  const seoParagraphs = data.seo?.length ? data.seo : config.seo;
   const resultsTitle = data.selectedTourismCategory ? `Prestadores de ${data.selectedTourismCategory.name}` : "Prestadores turísticos";
   const categoryHref = categoryId => `/directorio?categoria=${categoryId}#resultados`;
 
   return <main className="tags_directory_tourism_page">
     <DirectoryPublicHeader site={data.site} compact showSearch={false} />
-    <section className="tags_directory_tourism_hero"><div><span>{config.eyebrow}</span><h1>{config.title}</h1><p>{config.intro}</p></div></section>
+    <section className="tags_directory_tourism_hero"><div><span>{config.eyebrow}</span><h1>{pageTitle}</h1><p>{config.intro}</p></div></section>
     <div className="tags_directory_tourism_images tags_directory_tourism_images_desktop">{config.images.map(image => <Image src={`/directory/calamuchitar/tourism/${image}`} alt="" width={480} height={190} sizes="25vw" key={image} />)}</div>
     <div className="tags_directory_tourism_images tags_directory_tourism_images_mobile">{config.images.slice(0, 2).map(image => <Image src={`/directory/calamuchitar/tourism/${image}`} alt="" width={240} height={125} sizes="50vw" key={image} />)}</div>
     <div className="tags_directory_tourism_page_content">
       <nav className="tags_directory_tourism_back"><Link href="/directorio">← Volver al Directorio</Link></nav>
       {data.categories.length > 0 && <DirectoryCategoryGrid categories={data.categories} title="Explorá por categoría" />}
       <section className="tags_directory_tourism_results" id="resultados">
-        <header><DirectoryResultsHeading title={resultsTitle} total={data.pagination.total} navigationKey={`${kind}|${data.pagination.total}`} /><DirectoryLocalityFilter localities={data.localities} categoryId={data.filters.categoryId} /></header>
+        <header><DirectoryResultsHeading title={resultsTitle} total={data.pagination.total} navigationKey={`${kind}|${data.pagination.total}`} /><DirectoryLocalityFilter localities={data.localities} categoryId={data.filters.categoryId} localityId={data.filters.localityId} /></header>
         <DirectoryResultsMap listings={data.mapListings} apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ""} mapId={process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID || "DEMO_MAP_ID"} />
         <DirectoryListingGrid listings={data.listings} returnHref={returnHref} navigationTrail={[{ label: config.title, href: returnHref }]} />
       </section>
       <div className="tags_directory_tourism_images tags_directory_tourism_images_mobile">{config.images.slice(2).map(image => <Image src={`/directory/calamuchitar/tourism/${image}`} alt="" width={240} height={125} sizes="50vw" key={image} />)}</div>
-      <section className="tags_directory_tourism_seo">{config.seo.map((paragraph, index) => <p key={index}>{paragraph}</p>)}</section>
+      <section className="tags_directory_tourism_seo">{seoParagraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)}</section>
     </div>
     <DirectoryPublicFooter site={data.site} />
   </main>;

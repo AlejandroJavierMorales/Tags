@@ -32,7 +32,8 @@ import {
     from "../../lib/getStoreFeaturedProducts";
 
 import {
-    formatStorePrice
+    formatStorePrice,
+    hasValidStorePrice
 }
     from "../../lib/formatStorePrice";
 import { withStoreReturnUrl } from "../../lib/storePublicContext";
@@ -599,7 +600,8 @@ export default async function StoreFeaturedProductsBlock({
                                                                 }
 
                                                                 {
-                                                                    showPrice && (
+                                                                    showPrice &&
+                                                                    hasValidStorePrice(hasSalePrice ? product.sale_price : product.price) && (
                                                                         <div
                                                                             className="store_product_price"
                                                                             style={priceStyle}
@@ -618,7 +620,8 @@ export default async function StoreFeaturedProductsBlock({
 
                                                                 {
                                                                     showOldPrice &&
-                                                                    hasSalePrice && (
+                                                                    hasSalePrice &&
+                                                                    hasValidStorePrice(product.price) && (
                                                                         <div
                                                                             className="store_product_old_price"
                                                                             style={oldPriceStyle}

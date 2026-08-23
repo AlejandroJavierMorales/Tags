@@ -51,3 +51,5 @@
   .tags_directory_catalog_modal_info{padding:13px}
   .tags_directory_catalog_modal_info .actions a,.tags_directory_catalog_modal_info .actions button{flex:1 1 100%}
 }
+.tags_directory_catalog_media>img{object-fit:contain;background:var(--qr-surface-alt)}
+.tags_directory_catalog_media>img{object-fit:cover;background:var(--qr-surface-alt)}

@@ -68,7 +68,7 @@ export default function TagsHeader() {
 
       </div>
       <div className="text-center">
-        <span className="ms-3 tags_subtitle d-flex justify-content-center" style={{ fontWeight: "500" }}>Gestión y Reporting de Códigos QR</span>
+        <span className="ms-3 tags_subtitle d-flex justify-content-center" style={{ fontWeight: "500" }}>Plataforma de Experiencias Digitales Inteligentes</span>
       </div>
 
       {/* NAV */}
@@ -131,6 +131,10 @@ export default function TagsHeader() {
               <Item
                 href="/dashboard/businesses/subscriptions"
                 label="Subscripciones"
+              />
+              <Item
+                href="/dashboard/subscriptions-center"
+                label="Centro de Suscripciones y Pagos"
               />
 
               <div className="dropdown_divider" />

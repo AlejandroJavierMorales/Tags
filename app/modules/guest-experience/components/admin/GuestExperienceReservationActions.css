@@ -1,1 +1,4 @@
 .tags_guest_reservation_whatsapp,.tags_guest_reservation_checkin{display:inline-flex;align-items:center;gap:8px;margin:4px;padding:11px 15px;border:0;border-radius:9px;font-weight:900}.tags_guest_reservation_checkin{background:#22a35a;color:#fff;cursor:pointer}
+.tags_guest_reservation_checkout{display:inline-flex;align-items:center;gap:8px;margin:4px;padding:11px 15px;border:0;border-radius:9px;background:#315d91;color:#fff;font-weight:900;cursor:pointer}
+.tags_guest_reservation_checkout:disabled{background:#d8dee5;color:#77818b;cursor:not-allowed;box-shadow:inset 0 1px 2px #b9c0c8}
+.tags_guest_reservation_checkout_icon:disabled{opacity:.45;cursor:not-allowed}

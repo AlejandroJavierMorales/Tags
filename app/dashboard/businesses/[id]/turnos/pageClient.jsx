@@ -14,6 +14,7 @@ import TurnosAdminCalendar from "@/app/modules/turnos/components/admin/TurnosAdm
 import TurnosAdminCustomers from "@/app/modules/turnos/components/admin/TurnosAdminCustomers";
 import showAlert from "@/app/components/showAlert";
 import TagsSpinner from "@/app/components/TagsSpinner";
+import AiChatSurfaceSettings from "@/app/modules/ai-chat/components/admin/AiChatSurfaceSettings";
 import "@/app/modules/turnos/styles/turnos-admin.css";
 import "@/app/styles/tags_dashboard.css";
 
@@ -106,6 +107,7 @@ export default function TurnosAdminPageClient({ businessId }) {
         <TurnosAdminCustomers businessId={businessId} turnosId={selectedId} />
         <TurnosAdminPublication businessId={businessId} turnosId={selectedId} slug={app.slug} name={app.name} status={app.status} onSaved={() => load(selectedId, { silent: true })} />
         <TurnosAdminPolicies businessId={businessId} turnosId={selectedId} settings={settings} publicPolicy={publicPolicy} depositPolicy={depositPolicy} onSaved={() => load(selectedId, { silent: true })} />
+        <AiChatSurfaceSettings businessId={businessId} surfaceType="turnos" surfaceId={selectedId} surfaceLabel="la página pública de Turnos" />
         <TurnosAdminBlocks businessId={businessId} turnosId={selectedId} resources={resources} />
         <TurnosAdminTabs value={activeTab} onChange={setActiveTab} />
         <TurnosAdminCalendar businessId={businessId} turnosId={selectedId} onCreateRange={range => { setCalendarRange(range); setActiveTab("reservations"); }} />

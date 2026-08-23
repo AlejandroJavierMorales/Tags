@@ -3,6 +3,7 @@ LOGIN V2
 ========================================= */
 
 .tags_login_page {
+  --tags-login-primary: #0fb957;
   min-height: 100vh;
 
   background:
@@ -16,12 +17,7 @@ LOGIN V2
 }
 
 .tags_login_topbar {
-  background:
-    linear-gradient(
-      90deg,
-      #0fd15a,
-      #08b74b
-    );
+  background: var(--tags-login-primary);
 
   color: white;
 
@@ -70,7 +66,7 @@ LOGIN V2
 
   background: rgba(15, 209, 90, 0.1);
 
-  color: #0ba84a;
+  color: var(--tags-login-primary);
 
   border: 1px solid rgba(15, 209, 90, 0.15);
 
@@ -197,12 +193,7 @@ LOGIN V2
 
   border-radius: 18px;
 
-  background:
-    linear-gradient(
-      135deg,
-      #0fd15a,
-      #10b84e
-    );
+  background: var(--tags-login-primary);
 
   color: white;
 
@@ -425,3 +416,9 @@ LOGIN V2
     font-size: 22px;
   }
 }
+
+/* Identidad contextual: el logo no debe quedar comprimido contra el slogan. */
+.tags_login_logo{margin-bottom:22px}
+.tags_login_logo img{display:block;width:230px;max-width:100%;height:auto}
+.tags_login_badge{margin-top:4px;margin-bottom:24px}
+@media (max-width:991px){.tags_login_logo img{margin:0 auto;width:210px}}

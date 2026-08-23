@@ -3,14 +3,14 @@ export const dynamic = "force-dynamic";
 
 import { db } from "@/app/lib/tags-db";
 import { sendMail } from "@/app/lib/sendMail";
-import { createGuestToken, hashGuestToken, parseGuestJson, guestError } from "@/app/modules/guest-experience/lib/guestExperienceService";
+import { createGuestToken, getGuestVerificationUrl, hashGuestToken, parseGuestJson, guestError } from "@/app/modules/guest-experience/lib/guestExperienceService";
 
 const genericMessage = "Si los datos coinciden con una reserva, recibirás un nuevo enlace de acceso.";
 function digits(value) { return String(value || "").replace(/\D/g, ""); }
 function phoneKey(value) { let phone = digits(value); if (phone.startsWith("00")) phone = phone.slice(2); if (phone.startsWith("549")) phone = phone.slice(3); else if (phone.startsWith("54")) phone = phone.slice(2); return phone.replace(/^0/, "").replace(/^15/, ""); }
 function whatsapp(value) { let phone = digits(value); if (phone.startsWith("00")) phone = phone.slice(2); if (phone.startsWith("54")) return phone.startsWith("549") ? phone : `549${phone.slice(2).replace(/^15/, "")}`; phone = phone.replace(/^0/, "").replace(/^15/, ""); return phone ? `549${phone}` : ""; }
-function displayDate(value) { return value ? new Date(value).toLocaleDateString("es-AR", { day: "2-digit", month: "long", year: "numeric" }) : ""; }
-function baseUrl() { return process.env.NODE_ENV === "development" ? "http://localhost:3000" : process.env.NEXT_PUBLIC_BASE_URL_PROD || process.env.NEXT_PUBLIC_APP_URL; }
+function displayDate(value) { return value ? new Date(value).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" }) : ""; }
+function displayTime(value) { const [hour, minute] = String(value || "").split(":"); return hour ? `${Number(hour)}${minute && Number(minute) ? `:${String(minute).padStart(2, "0")}` : ""}hs` : "A confirmar"; }
 
 export async function POST(req) {
     try {
@@ -36,10 +36,10 @@ export async function POST(req) {
             tokenId = result.insertId;
             await connection.commit();
         } catch (error) { await connection.rollback(); throw error; } finally { connection.release(); }
-        const link = `${baseUrl()}/api/guest-experience/public/session/verify?slug=${encodeURIComponent(stay.slug)}&token=${token}`;
+        const link = await getGuestVerificationUrl(db, stay.slug, token);
         const title = `Tu nuevo acceso a Mi Estadía en ${stay.app_name}`;
-        const schedule = `${displayDate(stay.starts_at)} al ${displayDate(stay.ends_at)}`;
-        const text = `${title}\nReserva ${stay.stay_code}\n${schedule}\nAcceder: ${link}`;
+        const schedule = `Ingreso: ${displayDate(stay.starts_at)} ${displayTime(settings.checkinTime || "15:00")}<br>Egreso: ${displayDate(stay.ends_at)} ${displayTime(settings.checkoutTime || "10:00")}`;
+        const text = `🏡 *Mi Estadía*\n\n*${title}*\n\n📌 *Reserva:* ${stay.stay_code}\n\n🟢 *Ingreso:* ${displayDate(stay.starts_at)} ${displayTime(settings.checkinTime || "15:00")}\n🔴 *Egreso:* ${displayDate(stay.ends_at)} ${displayTime(settings.checkoutTime || "10:00")}\n\n🔗 *Enlace de acceso:*\n${link}`;
         const whatsappNumber = whatsapp(stay.guest_phone);
         const whatsappUrl = whatsappNumber ? `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(text)}` : null;
         let emailSent = false;

@@ -18,7 +18,8 @@ export async function GET(req) {
         if(order?.module_type==="resto")[items]=await db.query("SELECT product_title title,variant_title,quantity,unit_price,total_price,notes FROM tags_resto_session_items WHERE session_id=? ORDER BY id",[order.external_session_id]);
         return Response.json({ok:true,entry,order,items});
     }
-    const[entries]=await db.query(`SELECT e.id,e.entry_type,e.source_type,e.source_id,e.description,e.quantity,e.unit_amount,e.total_amount,e.currency,e.occurred_at,p.payment_method,p.reference FROM tags_guest_account_entries e LEFT JOIN tags_guest_payments p ON p.account_entry_id=e.id WHERE e.account_id=? AND e.status='confirmed' ORDER BY e.occurred_at,e.id`,[account.id]);
-    const summary=entries.reduce((result,item)=>{const amount=Number(item.total_amount||0);if(item.entry_type==="payment")result.paid+=Math.abs(amount);else if(item.entry_type==="discount")result.discounts+=Math.abs(amount);else if(amount>0)result.charges+=amount;result.balance+=amount;return result},{charges:0,discounts:0,paid:0,balance:0});
+    const[rawEntries]=await db.query(`SELECT e.id,e.entry_type,e.source_type,e.source_id,e.description,e.quantity,e.unit_amount,e.total_amount,e.currency,e.occurred_at,p.payment_method,p.reference FROM tags_guest_account_entries e LEFT JOIN tags_guest_payments p ON p.account_entry_id=e.id WHERE e.account_id=? AND e.status='confirmed' ORDER BY e.occurred_at,e.id`,[account.id]);
+    const summary={charges:0,discounts:0,paid:0,balance:0};
+    const entries=rawEntries.map(item=>{const amount=Number(item.total_amount||0);if(item.entry_type==="payment")summary.paid+=Math.abs(amount);else if(item.entry_type==="discount")summary.discounts+=Math.abs(amount);else if(amount>0)summary.charges+=amount;summary.balance+=amount;return {...item,balance_after:summary.balance};});
     return Response.json({ok:true,account,entries,summary});
 }

@@ -134,6 +134,8 @@ export async function GET(req) {
                     COUNT(*) AS total_qrs
                 FROM tags_qr_codes
                 WHERE business_id = ?
+                AND is_active = 1
+                AND status NOT IN ('deleted', 'disabled')
                 `,
                 [
                     id

@@ -858,6 +858,8 @@ export default function StoreProductEditorClient({
                     Imágenes
                 </h2>
 
+                <p className="text-muted small mb-3">Para que se vean bien en las tarjetas: imágenes cuadradas 1:1, preferentemente de 900x900 px. Formatos aceptados: WebP, PNG o JPG.</p>
+
                 <MediaUploader
                     businessId={businessId}
                     value=""

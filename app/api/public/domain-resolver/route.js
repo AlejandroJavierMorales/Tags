@@ -245,8 +245,16 @@ export async function POST(req) {
          * corresponde renderizar QR Page, Store, Stay, Reviews,
          * Restaurant u otra aplicación pública.
          */
+        const encodedSlug =
+            encodeURIComponent(route.target_slug);
+
+        const applicationBase =
+            route.addon_code === "guest_experience"
+                ? `/p/${encodedSlug}/mi-estadia`
+                : `/p/${encodedSlug}`;
+
         const target =
-            `/p/${encodeURIComponent(route.target_slug)}${suffix}`;
+            `${applicationBase}${suffix}`;
 
         return Response.json(
             {

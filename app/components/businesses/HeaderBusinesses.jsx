@@ -5,13 +5,19 @@ import Link from "next/link";
 import { usePathname, useParams, useSearchParams } from "next/navigation";
 import Image from "next/image";
 
-export default function HeaderBusinesses() {
+export default function HeaderBusinesses({ channel = null }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const params = useParams();
   const searchParams = useSearchParams();
 
   const id = params?.id || searchParams.get("business_id");
+  const isCalamuchitar = channel?.code === "calamuchitar";
+  const brand = channel?.brandConfig || {};
+  const brandName = brand.displayName || channel?.name || (isCalamuchitar ? "CalamuchitAr" : "Tags");
+  const brandLogo = brand.logoUrl || brand.logo_url || (isCalamuchitar
+    ? "/directory/calamuchitar/LogoCalamuchitar.webp"
+    : "/logo_tags.webp");
 
   const closeMenu = () => setOpen(false);
 
@@ -33,8 +39,8 @@ export default function HeaderBusinesses() {
       <div className="tags_logo">
         <Link href="/dashboard" onClick={closeMenu}>
           <Image
-            src="/logo_tags.webp"
-            alt="Logo"
+            src={brandLogo}
+            alt={brandName}
             width={98}
             height={80}
           />
@@ -43,7 +49,7 @@ export default function HeaderBusinesses() {
 
       <div className="w-100 text-center">
         <h1 className="tags_header_title">
-          Gestión y Reporting de Códigos QR
+          {channel?.isTags === false ? `Panel de Administración · ${brandName}` : "Gestión y Reporting de Códigos QR"}
         </h1>
       </div>
 

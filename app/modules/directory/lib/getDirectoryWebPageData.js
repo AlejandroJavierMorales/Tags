@@ -16,13 +16,14 @@ export async function getDirectoryWebPageData(pageId, { includeDraft = false } =
         10,
         Number(directoryModules.reviewsSlider?.content?.limit || 10)
     );
-    const [sections, blocks, products, embeddedStore, embeddedResto, embeddedReviews] = await Promise.all([
+    const [sections, blocks, products, embeddedStore, embeddedResto, embeddedReviews, benefits] = await Promise.all([
         db.query("SELECT * FROM tags_qr_page_sections WHERE page_id=? AND is_visible=1 ORDER BY sort_order,id", [page.id]),
         db.query("SELECT b.* FROM tags_qr_page_blocks b INNER JOIN tags_qr_page_sections s ON s.id=b.section_id WHERE s.page_id=? AND s.is_visible=1 AND b.is_visible=1 ORDER BY b.sort_order,b.id", [page.id]),
         db.query("SELECT * FROM tags_qr_page_products WHERE page_id=? AND is_visible=1 ORDER BY sort_order,id", [page.id]),
         getDirectoryEmbeddedStore(page.business_id),
         getDirectoryEmbeddedResto(page.business_id),
-        getDirectoryEmbeddedReviews(page.business_id, reviewLimit)
+        getDirectoryEmbeddedReviews(page.business_id, reviewLimit),
+        db.query(`SELECT * FROM tags_directory_benefits WHERE listing_id=(SELECT id FROM tags_directory_listings WHERE qr_page_id=? AND business_id=? LIMIT 1) AND is_active=1 ${includeDraft ? "" : "AND valid_from<=CURDATE() AND valid_until>=CURDATE()"} ORDER BY sort_order,id`, [page.id, page.business_id]).catch(error => { if (error?.code === "ER_NO_SUCH_TABLE") return [[]]; throw error; })
     ]);
     return {
         page: { ...page, theme: page.theme_id ? { id: page.theme_id, code: page.theme_code, name: page.theme_name, css_tokens: safeParseJSON(page.theme_css_tokens) } : null, global_styles: { ...pageGlobalStyles, directoryModules }, typography_tokens: safeParseJSON(page.typography_tokens), header_config: safeParseJSON(page.header_config), footer_config: safeParseJSON(page.footer_config), theme_config: safeParseJSON(page.theme_config) },
@@ -33,6 +34,7 @@ export async function getDirectoryWebPageData(pageId, { includeDraft = false } =
         })),
         embeddedStore,
         embeddedResto,
-        embeddedReviews
+        embeddedReviews,
+        benefits: benefits[0] || []
     };
 }

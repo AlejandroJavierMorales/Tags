@@ -6,7 +6,6 @@
 // =====================================
 
 import { useEffect, useMemo, useState } from "react";
-import Image from "next/image";
 
 import "@/app/styles/qr-page.css";
 import TagsSpinner from "@/app/components/TagsSpinner";
@@ -50,6 +49,13 @@ function getBlock(blocks, type) {
 
 function styleValue(value, fallback) {
     return value || fallback;
+}
+
+function useProxiedAssetFallback(event, assetPath) {
+    const image = event.currentTarget;
+    if (image.dataset.proxiedFallback === "1") return;
+    image.dataset.proxiedFallback = "1";
+    image.src = `/__tags__${assetPath}`;
 }
 
 export default function ClientReviewsPublicRenderer({
@@ -520,6 +526,7 @@ export default function ClientReviewsPublicRenderer({
             <img
                 src="/assets/images/logos/estrellas-reviews.webp"
                 alt="Reviews"
+                onError={event => useProxiedAssetFallback(event, "/assets/images/logos/estrellas-reviews.webp")}
                 style={{
                     maxWidth: 200,
                     width: "100%",
@@ -555,12 +562,11 @@ export default function ClientReviewsPublicRenderer({
                     &&
                     (
                         <div className="client_reviews_public_google_wrap">
-                            <Image
+                            <img
                                 src={googleLogo}
                                 alt="Google"
-                                width={250}
-                                height={60}
                                 className="client_reviews_public_google_logo"
+                                onError={event => useProxiedAssetFallback(event, googleLogo)}
                             />
                         </div>
                     )
@@ -571,6 +577,7 @@ export default function ClientReviewsPublicRenderer({
                         src="/assets/images/logos/estrellas-reviews.webp"
                         alt="Reviews"
                         className="client_reviews_public_stars"
+                        onError={event => useProxiedAssetFallback(event, "/assets/images/logos/estrellas-reviews.webp")}
                     />
                 </div>
 
@@ -787,11 +794,9 @@ export default function ClientReviewsPublicRenderer({
                                         "1px solid var(--qr-border)"
                                 }}
                             >
-                                <Image
+                                <img
                                     src={googleLogo}
                                     alt="Google"
-                                    width={150}
-                                    height={60}
                                     style={{
                                         objectFit: "contain",
                                         maxWidth: "100%",

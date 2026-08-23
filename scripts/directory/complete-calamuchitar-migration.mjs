@@ -172,6 +172,122 @@ function publisherBusinessValues(publisher) {
   };
 }
 
+/*
+ * La migracion historica primero carga el listado Directory. Ese listado no
+ * puede quedar como fuente de lectura: el editor del cliente trabaja sobre
+ * tags_businesses, tags_qr_pages y sus bloques. Esta sincronizacion es
+ * idempotente y tambien sirve para reparar fichas que ya existian.
+ */
+async function syncDefinitiveDirectoryProfile(target, { businessId, listingId, publisher }) {
+  if (!Number(businessId) || !Number(listingId)) return;
+
+  const [listingRows] = await target.execute(
+    "SELECT * FROM tags_directory_listings WHERE id=? AND business_id=? LIMIT 1",
+    [listingId, businessId]
+  );
+  const listing = listingRows[0];
+  if (!listing) return;
+
+  const [mediaRows] = await target.execute(
+    "SELECT media_type,url FROM tags_directory_media WHERE listing_id=? AND is_active=1 ORDER BY sort_order,id",
+    [listingId]
+  );
+  const logoUrl = mediaRows.find(item => item.media_type === "logo")?.url || null;
+  const coverUrl = mediaRows.find(item => item.media_type === "cover")?.url || null;
+  const values = publisherBusinessValues(publisher || {});
+  const descriptionShort = nullable(publisher?.description1) || nullable(listing.short_description);
+  const descriptionLong = nullable(publisher?.description2) || nullable(listing.description) || descriptionShort;
+  const businessName = values.displayName || listing.display_name;
+
+  await target.execute(
+    `UPDATE tags_businesses SET
+       display_name=COALESCE(NULLIF(display_name,''),?),
+       email=COALESCE(NULLIF(email,''),?),
+       phone=COALESCE(NULLIF(phone,''),?),
+       description=COALESCE(NULLIF(description,''),?),
+       logo_url=COALESCE(NULLIF(logo_url,''),?),
+       cover_url=COALESCE(NULLIF(cover_url,''),?),
+       whatsapp=COALESCE(NULLIF(whatsapp,''),?),
+       address=COALESCE(NULLIF(address,''),?),
+       website_url=COALESCE(NULLIF(website_url,''),?),
+       instagram_url=COALESCE(NULLIF(instagram_url,''),?),
+       facebook_url=COALESCE(NULLIF(facebook_url,''),?),
+       updated_at=NOW()
+     WHERE id=?`,
+    [
+      businessName || null,
+      nullable(listing.email) || values.email || null,
+      nullable(listing.phone) || values.phone || null,
+      descriptionLong || null,
+      logoUrl || values.logoUrl || null,
+      coverUrl || null,
+      nullable(listing.whatsapp) || values.whatsapp || null,
+      nullable(listing.address) || values.address || null,
+      nullable(listing.website_url) || values.websiteUrl || null,
+      nullable(listing.instagram_url) || values.instagramUrl || null,
+      nullable(listing.facebook_url) || values.facebookUrl || null,
+      businessId,
+    ]
+  );
+
+  const [pageRows] = await target.execute(
+    "SELECT id FROM tags_qr_pages WHERE id=(SELECT qr_page_id FROM tags_directory_listings WHERE id=? LIMIT 1) AND business_id=? LIMIT 1",
+    [listingId, businessId]
+  );
+  if (!pageRows.length) return;
+
+  const pageId = Number(pageRows[0].id);
+  await target.execute(
+    `UPDATE tags_qr_pages SET
+       title=COALESCE(NULLIF(title,''),?),
+       description=COALESCE(NULLIF(description,''),?),
+       logo_url=COALESCE(NULLIF(logo_url,''),?),
+       cover_image_url=COALESCE(NULLIF(cover_image_url,''),?),
+       whatsapp=COALESCE(NULLIF(whatsapp,''),?),
+       email=COALESCE(NULLIF(email,''),?),
+       phone=COALESCE(NULLIF(phone,''),?),
+       address=COALESCE(NULLIF(address,''),?),
+       website_url=COALESCE(NULLIF(website_url,''),?),
+       instagram_url=COALESCE(NULLIF(instagram_url,''),?),
+       facebook_url=COALESCE(NULLIF(facebook_url,''),?),
+       updated_at=NOW()
+     WHERE id=? AND business_id=?`,
+    [
+      businessName || null,
+      descriptionLong || null,
+      logoUrl || values.logoUrl || null,
+      coverUrl || null,
+      nullable(listing.whatsapp) || values.whatsapp || null,
+      nullable(listing.email) || values.email || null,
+      nullable(listing.phone) || values.phone || null,
+      nullable(listing.address) || values.address || null,
+      nullable(listing.website_url) || values.websiteUrl || null,
+      nullable(listing.instagram_url) || values.instagramUrl || null,
+      nullable(listing.facebook_url) || values.facebookUrl || null,
+      pageId,
+      businessId,
+    ]
+  );
+
+  const [blocks] = await target.execute(
+    `SELECT b.id,b.content_json
+     FROM tags_qr_page_sections s
+     INNER JOIN tags_qr_page_blocks b ON b.section_id=s.id AND b.type='web_section'
+     WHERE s.page_id=? AND JSON_UNQUOTE(JSON_EXTRACT(s.settings_json,'$.directoryBaseSlot'))='presentation'
+     ORDER BY b.id LIMIT 1`,
+    [pageId]
+  );
+  if (blocks.length) {
+    let content = {};
+    try { content = JSON.parse(blocks[0].content_json || "{}"); } catch { content = {}; }
+    const paragraphs = descriptionLong && descriptionLong !== descriptionShort ? [descriptionLong] : [];
+    await target.execute(
+      "UPDATE tags_qr_page_blocks SET content_json=? WHERE id=?",
+      [JSON.stringify({ ...content, title: businessName || content.title || "", highlightedText: descriptionShort || "", paragraphs }), blocks[0].id]
+    );
+  }
+}
+
 async function businessPromotionPlan(source, target, resolutions = {}, publisherIds = new Set(), options = {}) {
   const galleryPublisherIds = options.galleryPublisherIds || new Set();
   const galleryPublisherEmails = options.galleryPublisherEmails || new Set();

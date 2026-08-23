@@ -1224,7 +1224,7 @@ export default function RestoOperationalAlerts({
                                             Alertas visualizadas
                                         </strong>
                                         <span>
-                                            PodÃ©s mostrarlas nuevamente o esperar novedades.
+                                            Podés mostrarlas nuevamente o esperar novedades.
                                         </span>
                                     </div>
                                 ) : (

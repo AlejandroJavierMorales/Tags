@@ -33,6 +33,7 @@ export async function GET(req, { params }) {
         q.label,
         q.final_url,
         q.status,
+        q.browser_geolocation_enabled,
         p.id as product_id,
         p.name as product_name
       FROM tags_qr_codes q

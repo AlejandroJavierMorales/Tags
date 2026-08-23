@@ -1,12 +1,30 @@
-import { FaBars, FaBriefcase, FaHouse, FaMagnifyingGlass, FaRightToBracket, FaXmark } from "react-icons/fa6";
+import { FaBars, FaBriefcase, FaGaugeHigh, FaHouse, FaMagnifyingGlass, FaRightFromBracket, FaRightToBracket, FaTag, FaXmark } from "react-icons/fa6";
 import Link from "next/link";
 import Image from "next/image";
+import { cookies } from "next/headers";
+import { verifyTagsSession } from "@/app/lib/signTagsSession";
+import { canBusinessAccessChannel } from "@/app/lib/channelContext";
 import DirectorySearchForm from "./DirectorySearchForm";
 import "./DirectoryPublicHeader.css";
 import "./DirectoryPublicHeaderChannels.css";
 import "./DirectoryVisualOverrides.css";
+import "./DirectoryPublicHeaderBenefits.css";
 
-export default function DirectoryPublicHeader({ site, query = "", compact = true, showSearch = true }) {
+export default async function DirectoryPublicHeader({ site, query = "", compact = true, showSearch = true }) {
+  const cookieStore = cookies();
+  const sessionValue = cookieStore.get("tags_session")?.value || "";
+  const sessionSignature = cookieStore.get("tags_session_sig")?.value || "";
+  let session = null;
+  try {
+    if (sessionValue && sessionSignature && verifyTagsSession(sessionValue, sessionSignature)) session = JSON.parse(sessionValue);
+  } catch { session = null; }
+  const authenticated = session?.role === "admin"
+    ? Boolean(site?.code === "tags")
+    : Boolean(session?.businessId && await canBusinessAccessChannel({
+      businessId: session.businessId,
+      channel: { siteId: site?.id, isTags: site?.code === "tags" },
+    }));
+  const panelHref = session?.role === "admin" ? "/dashboard" : `/dashboard/businesses/${session?.businessId}`;
   const isCalamuchitar = site.code === "calamuchitar";
   const territoryName = isCalamuchitar ? "Calamuchita" : site.name;
   let searchContent = null;
@@ -22,7 +40,7 @@ export default function DirectoryPublicHeader({ site, query = "", compact = true
         <h1>Todo {territoryName}<br />en un solo lugar</h1>
         <p>Encontrá comercios, profesionales, productos y servicios del área.</p>
         <DirectorySearchForm initialQuery={query} variant="hero" />
-        <div className="tags_directory_hero_actions"><a href="#rubros">Explorar rubros</a><Link href="/login">Publicar mi negocio</Link></div>
+        <div className="tags_directory_hero_actions"><a href="#rubros">Explorar rubros</a><Link href="/beneficios" className="is_benefits"><FaTag /> Beneficios</Link><Link href="/publicar-mi-negocio">Publicar mi negocio</Link></div>
       </div>
     </section>;
   }
@@ -37,15 +55,15 @@ export default function DirectoryPublicHeader({ site, query = "", compact = true
         <nav className="tags_directory_desktop_nav" aria-label="Navegación principal">
           <Link href="/directorio"><FaHouse /> Inicio</Link>
           <a href="#rubros"><FaMagnifyingGlass /> Explorar</a>
-          <Link href="/login"><FaBriefcase /> Publicar mi negocio</Link>
-          <Link href="/login" className="is_login"><FaRightToBracket /> Ingresar</Link>
+          <Link href="/publicar-mi-negocio"><FaBriefcase /> Publicar mi negocio</Link>
+          {authenticated ? <><a href={panelHref} className="is_login"><FaGaugeHigh /> Mi Panel</a><a href="/logout" className="is_logout"><FaRightFromBracket /> Cerrar sesión</a></> : <Link href="/login" className="is_login"><FaRightToBracket /> Ingresar</Link>}
         </nav>
         <details className="tags_directory_mobile_nav">
           <summary><FaBars className="is_open" /><FaXmark className="is_close" /><span className="sr_only">Abrir menú</span></summary>
           <nav>
             <div className="tags_directory_drawer_brand"><Image src="/directory/calamuchitar/LogoCalamuchitar.webp" alt="CalamuchitAr" width={210} height={70} sizes="210px" /><span>La Plataforma Comercial de Calamuchita</span></div>
-            <div className="tags_directory_drawer_links"><Link href="/directorio"><FaHouse /> Inicio</Link><a href="#rubros"><FaMagnifyingGlass /> Explorar rubros</a><Link href="/login"><FaBriefcase /> Publicar mi negocio</Link></div>
-            <Link href="/login" className="tags_directory_drawer_login"><FaRightToBracket /> Ingresar</Link>
+            <div className="tags_directory_drawer_links"><Link href="/directorio"><FaHouse /> Inicio</Link><a href="#rubros"><FaMagnifyingGlass /> Explorar rubros</a><Link href="/publicar-mi-negocio"><FaBriefcase /> Publicar mi negocio</Link>{authenticated && <a href={panelHref}><FaGaugeHigh /> Mi Panel</a>}</div>
+            {authenticated ? <a href="/logout" className="tags_directory_drawer_login"><FaRightFromBracket /> Cerrar sesión</a> : <Link href="/login" className="tags_directory_drawer_login"><FaRightToBracket /> Ingresar</Link>}
           </nav>
         </details>
       </div>

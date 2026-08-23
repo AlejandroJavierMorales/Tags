@@ -119,6 +119,27 @@ const styles = StyleSheet.create({
     colLabel: { width: "30%" },
     colSmall: { width: "20%" },
     colWide: { width: "40%" },
+    movementDate: { width: "18%" },
+    movementCode: { width: "24%" },
+    movementLocation: { width: "40%" },
+    movementDevice: { width: "18%" },
+    chartGrid: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        justifyContent: "space-between"
+    },
+    chartBox: {
+        width: "48%",
+        height: 245,
+        marginBottom: 14,
+        border: "1px solid #e5e7eb",
+        padding: 6
+    },
+    chartImage: {
+        width: "100%",
+        height: 215,
+        objectFit: "contain"
+    },
 
     // ================= FOOTER =================
     footer: {
@@ -152,6 +173,7 @@ export default function BusinessReportPDF({ data }) {
 
 
     const { charts = {} } = data;
+    const reportScope = data.reportScope || {};
 
     return (
         <Document>
@@ -188,13 +210,14 @@ export default function BusinessReportPDF({ data }) {
 
                         <View>
                             <Text style={styles.title}>
-                                Reporte de Actividad
+                        {reportScope.title || "Reporte de Actividad"}
                             </Text>
                             <Text style={styles.subtitle}>
                                 Tags - Gestión y Reporting de Códigos QR
                             </Text>
                             <Text style={{ marginTop: 10 }}>Cliente: {business?.name}</Text>
                             <Text>Email: {business?.email}</Text>
+                            {reportScope.customer && <Text>Cliente QR Agency: {reportScope.customer}</Text>}
 
                             <Text style={{ marginTop: 20, fontWeight: 550 }}>
                                 QR: {filters.qr
@@ -323,27 +346,31 @@ export default function BusinessReportPDF({ data }) {
 
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>
-                        Movimientos Detallados
+                        Movimientos recientes (últimos 100)
                     </Text>
 
                     <View style={styles.tableHeader}>
-                        <Text style={styles.colQR}>QR</Text>
+                        <Text style={styles.movementDate}>Fecha y hora</Text>
+                        <Text style={styles.movementCode}>Codigo QR</Text>
                         <Text style={styles.colWide}>Ubicación</Text>
-                        <Text style={styles.colSmall}>Device</Text>
+                        <Text style={styles.movementDevice}>Dispositivo</Text>
                     </View>
 
-                    {movements.map((m, i) => (
+                    {movements.slice(0, 100).map((m, i) => (
                         <View key={i} style={styles.tableRow}>
-                            <Text style={styles.colQR}>
-                                {m.code} {m.label ? `- ${m.label}` : ""}
+                            <Text style={styles.movementDate}>
+                                {m.created_at ? new Date(m.created_at).toLocaleString("es-AR") : "-"}
+                            </Text>
+                            <Text style={styles.movementCode}>
+                                {m.code || "-"}
                             </Text>
 
-                            <Text style={styles.colWide}>
-                                {m.country} / {m.city}
+                            <Text style={styles.movementLocation}>
+                                {[m.country, m.region, m.city].filter(Boolean).join(" / ") || "-"}
                             </Text>
 
-                            <Text style={styles.colSmall}>
-                                {m.device_type}
+                            <Text style={styles.movementDevice}>
+                                {m.device_type || "-"}
                             </Text>
                         </View>
                     ))}
@@ -369,7 +396,58 @@ export default function BusinessReportPDF({ data }) {
 
             </Page>
             {/* **************************** */}
-            {/*           CHARTS             */}
+            {/* ================= CHARTS ================= */}
+            <Page style={styles.page}>
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Gráficos de actividad</Text>
+                    {[
+                        [charts.timeline, "Clicks diarios"],
+                        [charts.qrsClicks, "Clicks por QR"]
+                    ].map(([src, title]) => src ? (
+                        <View style={{ marginBottom: 22 }} key={title}>
+                            <Text style={styles.subtitle}>{title}</Text>
+                            <Image src={src} style={{ width: "100%", height: 300, objectFit: "contain" }} alt={title} />
+                        </View>
+                    ) : null)}
+                </View>
+                <View style={styles.footer} fixed>
+                    <View>
+                        <Image src={`${baseUrl}/logo_tags_slogan.png`} style={styles.logoSmall} alt="Logo Tags"/>
+                    </View>
+                    <View>
+                        <Text>{COMPANY_INFO.address}</Text>
+                        <Text>{COMPANY_INFO.email}</Text>
+                        <Text>{COMPANY_INFO.web}</Text>
+                        <Text>{COMPANY_INFO.whatsapp}</Text>
+                    </View>
+                </View>
+            </Page>
+            <Page style={styles.page}>
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Gráficos de ubicación y dispositivos</Text>
+                    {[
+                        [charts.city, "Clicks por ciudad"],
+                        [charts.device, "Clicks por dispositivo"]
+                    ].map(([src, title]) => src ? (
+                        <View style={{ marginBottom: 22 }} key={title}>
+                            <Text style={styles.subtitle}>{title}</Text>
+                            <Image src={src} style={{ width: "100%", height: 300, objectFit: "contain" }} alt={title} />
+                        </View>
+                    ) : null)}
+                </View>
+                <View style={styles.footer} fixed>
+                    <View>
+                        <Image src={`${baseUrl}/logo_tags_slogan.png`} style={styles.logoSmall} alt="Logo Tags"/>
+                    </View>
+                    <View>
+                        <Text>{COMPANY_INFO.address}</Text>
+                        <Text>{COMPANY_INFO.email}</Text>
+                        <Text>{COMPANY_INFO.web}</Text>
+                        <Text>{COMPANY_INFO.whatsapp}</Text>
+                    </View>
+                </View>
+            </Page>
+            {false && (<>
             {/*           Página 4           */}
             <Page style={styles.page}>
 
@@ -489,6 +567,8 @@ export default function BusinessReportPDF({ data }) {
                 </View>
             </Page>
 
+            </>
+            )}
         </Document>
     );
 }

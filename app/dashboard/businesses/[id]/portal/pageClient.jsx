@@ -312,7 +312,7 @@ export default function PortalAdminClient({
         if (!response.ok) {
             showAlert({
                 title: "No se pudo aplicar el tema",
-                text: payload.error || "La configuraciÃ³n no pudo actualizarse.",
+                text: payload.error || "La configuración no pudo actualizarse.",
                 icon: "error"
             });
             return;

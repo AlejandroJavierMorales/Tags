@@ -315,11 +315,42 @@ font-weight: 400 !important;
 }
 
 .tags_navbar a {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   padding: 10px 15px;
   background: #111;
   color: #fff;
   border-radius: 8px;
   text-decoration: none;
+}
+
+.tags_dashboard_nav_icon {
+  font-size: 17px;
+  line-height: 1;
+}
+
+@media (max-width: 576px) {
+  .tags_navbar {
+    gap: 4px;
+    flex-wrap: nowrap;
+  }
+
+  .tags_navbar a {
+    flex: 1 1 0;
+    min-width: 0;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+    padding: 7px 6px;
+    font-size: 10px;
+    line-height: 1.1;
+    white-space: nowrap;
+  }
+
+  .tags_dashboard_nav_icon {
+    font-size: 13px;
+  }
 }
 
 .tags_kpis {
@@ -449,12 +480,10 @@ font-weight: 400 !important;
   bottom: 60px;
 
   width: 100%;
-  max-width: 1600px;
+  left: 0;
+  transform: none;
 
-  left: 50%;
-  transform: translateX(-50%);
-
-  z-index: 99999;
+  z-index: 1200;
 
   pointer-events: none;
 }
@@ -462,14 +491,16 @@ font-weight: 400 !important;
 .tagsWhatsapp_float_box {
   position: absolute;
 
-  right: 10px;
+  right: auto;
+  left: 5px;
   bottom: 0;
 
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: flex-start;
+  justify-content: flex-start;
 
-  gap: 6px;
+  gap: 2px;
 
   pointer-events: auto;
 }
@@ -486,7 +517,8 @@ font-weight: 400 !important;
   font-size: 12px;
   font-weight: 500;
 
-  padding: 4px 8px;
+  padding: 2px 4px;
+  white-space: nowrap;
 
   border-radius: 12px;
 
@@ -505,8 +537,8 @@ font-weight: 400 !important;
 
 /* BOTÓN */
 .tagsWhatsapp_float_btn {
-  width: 45px;
-  height: 45px;
+  width: 42px;
+  height: 42px;
 
   display: flex;
   align-items: center;
@@ -1160,6 +1192,17 @@ font-weight: 400 !important;
 
   .tagsWhatsapp_float_box {
     bottom: 200px;
+  }
+
+  .tagsWhatsapp_float_text {
+    font-size: 10px;
+    padding: 2px 3px;
+  }
+
+  .tagsWhatsapp_float_btn,
+  .tagsWhatsapp_float_btn img {
+    width: 36px;
+    height: 36px;
   }
 
 

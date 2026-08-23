@@ -12,6 +12,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import showAlert from "@/app/components/showAlert";
 import TagsSpinner from "@/app/components/TagsSpinner";
 import MediaUploader from "@/app/components/MediaUploader";
+import AiChatSurfaceSettings from "@/app/modules/ai-chat/components/admin/AiChatSurfaceSettings";
 
 import StoreCouponsTab
     from "@/app/modules/store/components/admin/StoreCouponsTab";
@@ -98,7 +99,8 @@ export default function StoreAdminClient({
             title: "⚙️ General",
             items: [
                 ["general", "Información", "ready"],
-                ["contact", "Contacto", "ready"]
+                ["contact", "Contacto", "ready"],
+                ["chatbot", "Chatbot con IA", "ready"]
             ]
         },
         {
@@ -941,6 +943,11 @@ export default function StoreAdminClient({
                 )
             }
 
+            {
+                activeTab === "chatbot" && (
+                    <AiChatSurfaceSettings businessId={businessId} surfaceType="store" surfaceId={form.id} surfaceLabel="la Tienda" />
+                )
+            }
             {
                 activeTab === "general" && (
                     <div className="qr_page_card">

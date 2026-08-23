@@ -80,9 +80,17 @@ export function getDefaultDirectoryTemplate(business) {
                 blocks: [{ type: "gallery", sort_order: 1, content_json: { eyebrow: "GALERÍA", title: `Conocé ${business.name}`, subtitle: "", images: [], maxImages: 8, imageLayout: "grid" }, styles_json: { alignment: "left" } }]
             },
             {
+                type: "content",
+                title: "Beneficios",
+                sort_order: 3,
+                settings_json: { directoryBaseSlot: "benefits" },
+                styles_json: {},
+                blocks: [{ type: "benefits", sort_order: 1, content_json: { eyebrow: "BENEFICIOS", title: "Beneficios para vos", subtitle: "Promociones vigentes de este negocio" }, styles_json: { alignment: "left" } }]
+            },
+            {
                 type: "catalog",
                 title: "Catálogo",
-                sort_order: 3,
+                sort_order: 4,
                 settings_json: { directoryBaseSlot: "catalog" },
                 styles_json: {},
                 blocks: [{ type: "catalog", sort_order: 1, content_json: { eyebrow: "CATÁLOGO", title: "Productos y servicios", subtitle: "", highlightedText: "", paragraphs: [], searchPlaceholder: "Buscar por producto o categoría", allCategoriesLabel: "Todos" }, styles_json: { alignment: "left" } }]
@@ -90,7 +98,7 @@ export function getDefaultDirectoryTemplate(business) {
             {
                 type: "content",
                 title: "Contacto",
-                sort_order: 4,
+                sort_order: 5,
                 settings_json: { directoryBaseSlot: "contact" },
                 styles_json: {},
                 blocks: [{ type: "contact_info", sort_order: 1, content_json: { eyebrow: "CONTACTO", title: "Hablemos", subtitle: "", showWhatsapp: true, showPhone: true, showEmail: true, showAddress: true, showWebsite: true, whatsappLabel: "WhatsApp", phoneLabel: "Teléfono", emailLabel: "Email", addressLabel: "Dirección", directionsAction: "Cómo llegar" }, styles_json: { alignment: "left" } }]

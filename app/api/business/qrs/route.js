@@ -35,6 +35,7 @@ export async function GET(req) {
     q.status,
     q.stop_message,
     q.has_qr_page,
+    q.browser_geolocation_enabled,
 
     qrp.id AS qr_page_id,
     qrp.status AS qr_page_status,
@@ -89,6 +90,7 @@ export async function GET(req) {
     q.status,
     q.stop_message,
     q.has_qr_page,
+    q.browser_geolocation_enabled,
     qrp.id,
     qrp.status,
     qrp.slug,

@@ -13,6 +13,9 @@ const DEFAULTS = {
     primary_color: "#1f9d55",
     launcher_color: "#1f9d55",
     launcher_offset_bottom: 120,
+    widget_type: "bubble",
+    launcher_prompt: "Cómo podemos ayudarte",
+    launcher_prompt_size: 12,
 };
 
 function businessIdFrom(source) {
@@ -22,6 +25,11 @@ function businessIdFrom(source) {
 function cleanText(value, max, fallback) {
     const text = String(value ?? "").trim().slice(0, max);
     return text || fallback;
+}
+
+function cleanOptionalText(value, max, fallback) {
+    if (value === undefined || value === null) return fallback;
+    return String(value).trim().slice(0, max);
 }
 
 function normalizeSettings(row) {
@@ -36,6 +44,9 @@ function normalizeSettings(row) {
         primary_color: /^#[0-9a-f]{6}$/i.test(String(extra.primary_color || "")) ? extra.primary_color : DEFAULTS.primary_color,
         launcher_color: /^#[0-9a-f]{6}$/i.test(String(extra.launcher_color || "")) ? extra.launcher_color : DEFAULTS.launcher_color,
         launcher_offset_bottom: Math.max(0, Math.min(400, Number(extra.launcher_offset_bottom ?? DEFAULTS.launcher_offset_bottom)))
+        ,widget_type: ["bubble", "robot", "avatar_woman", "avatar_man"].includes(String(extra.widget_type)) ? extra.widget_type : DEFAULTS.widget_type
+        ,launcher_prompt: cleanOptionalText(extra.launcher_prompt, 80, DEFAULTS.launcher_prompt)
+        ,launcher_prompt_size: Math.max(8, Math.min(20, Number(extra.launcher_prompt_size ?? DEFAULTS.launcher_prompt_size)))
     };
 }
 
@@ -65,6 +76,9 @@ export async function PATCH(request) {
     const primaryColor = /^#[0-9a-f]{6}$/i.test(String(body.primary_color || "")) ? String(body.primary_color) : DEFAULTS.primary_color;
     const launcherColor = /^#[0-9a-f]{6}$/i.test(String(body.launcher_color || "")) ? String(body.launcher_color) : DEFAULTS.launcher_color;
     const launcherOffsetBottom = Math.max(0, Math.min(400, Number(body.launcher_offset_bottom ?? DEFAULTS.launcher_offset_bottom)));
+    const widgetType = ["bubble", "robot", "avatar_woman", "avatar_man"].includes(String(body.widget_type)) ? String(body.widget_type) : DEFAULTS.widget_type;
+    const launcherPrompt = cleanOptionalText(body.launcher_prompt, 80, DEFAULTS.launcher_prompt);
+    const launcherPromptSize = Math.max(8, Math.min(20, Number(body.launcher_prompt_size ?? DEFAULTS.launcher_prompt_size)));
     const settings = {
         // El formulario envía 0/1; no tratar 0 como ausencia de valor.
         is_enabled: body.is_enabled === false || Number(body.is_enabled) === 0 ? 0 : 1,
@@ -75,6 +89,9 @@ export async function PATCH(request) {
         primary_color: primaryColor,
         launcher_color: launcherColor,
         launcher_offset_bottom: launcherOffsetBottom,
+        widget_type: widgetType,
+        launcher_prompt: launcherPrompt,
+        launcher_prompt_size: launcherPromptSize,
     };
 
     await db.query(
@@ -84,7 +101,7 @@ export async function PATCH(request) {
          ON DUPLICATE KEY UPDATE
             is_enabled=VALUES(is_enabled),title=VALUES(title),subtitle=VALUES(subtitle),
             greeting=VALUES(greeting),position=VALUES(position),settings_json=VALUES(settings_json),updated_at=NOW()`,
-        [businessId, settings.is_enabled, settings.title, settings.subtitle, settings.greeting, settings.position, JSON.stringify({ primary_color: settings.primary_color, launcher_color: settings.launcher_color, launcher_offset_bottom: settings.launcher_offset_bottom })]
+        [businessId, settings.is_enabled, settings.title, settings.subtitle, settings.greeting, settings.position, JSON.stringify({ primary_color: settings.primary_color, launcher_color: settings.launcher_color, launcher_offset_bottom: settings.launcher_offset_bottom, widget_type: settings.widget_type, launcher_prompt: settings.launcher_prompt, launcher_prompt_size: settings.launcher_prompt_size })]
     );
 
     return Response.json({ ok: true, settings });

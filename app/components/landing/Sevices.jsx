@@ -80,6 +80,7 @@ export default function Services() {
                                     alt={step.alt}
                                     width={900}
                                     height={672}
+                                    sizes="(max-width: 991px) 100vw, 50vw"
                                     className="img-fluid tags_service_image"
                                 />
 

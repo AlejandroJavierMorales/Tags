@@ -97,6 +97,7 @@ export default function Features() {
                                 alt="Plataforma Tags con analytics, SEO y QR dinámicos"
                                 width={900}
                                 height={672}
+                                sizes="(max-width: 991px) 100vw, 42vw"
                                 className="img-fluid tags_features_image"
                             />
 

@@ -111,6 +111,8 @@ export async function getChannelContextFromHost(rawHost) {
 export async function canBusinessAccessChannel({ businessId, channel }) {
   if (!businessId || !channel) return false;
   if (channel.isTags) return true;
+  const siteId = Number(channel.siteId);
+  if (!Number.isInteger(siteId) || siteId <= 0) return false;
 
   const [rows] = await db.execute(
     `SELECT 1
@@ -128,7 +130,7 @@ export async function canBusinessAccessChannel({ businessId, channel }) {
            WHERE l.business_id=?
         )
       LIMIT 1`,
-    [businessId, channel.siteId, businessId]
+    [businessId, siteId, businessId]
   );
 
   return Boolean(rows.length);

@@ -41,6 +41,17 @@ export async function getSessionBusiness() {
             };
         }
 
+        if (parsed?.role === "user" && parsed?.userId) {
+            return {
+                role: "user",
+                id: null,
+                userId: Number(parsed.userId),
+                permissions: {
+                    loyalty: true
+                }
+            };
+        }
+
         // =========================
         // BUSINESS
         // =========================

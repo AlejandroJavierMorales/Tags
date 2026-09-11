@@ -178,6 +178,7 @@ export default function Header() {
                         alt="Tags"
                         width={90}
                         height={75}
+                        sizes="90px"
                         priority
                     />
                 </Link>

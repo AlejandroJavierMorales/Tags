@@ -73,6 +73,8 @@ export async function GET(req) {
          INNER JOIN tags_turnos_service_resources sr ON sr.resource_id = r.id AND sr.service_id = ? AND sr.is_active = 1
          WHERE r.turnos_id = ? AND r.is_active = 1`, [serviceId, app.id]
     );
+    const requestedResource = resourceRows.find(resource => Number(resource.id) === requestedResourceId);
+    if (requestedResourceId && !requestedResource) return jsonResponseError("Recurso inválido", 400);
     const [rules] = await db.query(
         `SELECT * FROM tags_turnos_schedule_rules WHERE turnos_id = ? AND is_active = 1
          AND (scope_type = 'app' OR scope_type = 'resource' OR (scope_type = 'location' AND scope_id IN (${locations.filter(Boolean).map(() => "?").join(",") || "NULL"})))`,
@@ -141,7 +143,7 @@ export async function GET(req) {
                 if (requirements.length) {
                     for (const requirement of requirements) {
                         let remaining = requestedQuantity * Math.max(1, Number(requirement.quantity_required || 1));
-                        const candidates = resourceRows.filter(resource => Number(resource.resource_type_id) === Number(requirement.resource_type_id) && (!requestedResourceId || Number(resource.id) === requestedResourceId) && scheduleAllows(resource));
+                        const candidates = resourceRows.filter(resource => Number(resource.resource_type_id) === Number(requirement.resource_type_id) && (!requestedResourceId || Number(requirement.resource_type_id) !== Number(requestedResource.resource_type_id) || Number(resource.id) === requestedResourceId) && scheduleAllows(resource));
                         const capacities = candidates.map(resource => {
                             const used = booked.filter(item => Number(item.resource_id) === Number(resource.id) && new Date(item.starts_at) < end && new Date(item.ends_at) > start).reduce((sum, item) => sum + Math.max(1, Number(item.units || 1)), 0);
                             return { resource, free: Math.max(0, Math.max(1, Number(resource.capacity || 1)) - used) };

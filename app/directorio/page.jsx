@@ -8,6 +8,7 @@ import DirectoryTourismShortcuts from "@/app/modules/directory/components/public
 import DirectoryFeaturedListings from "@/app/modules/directory/components/public/DirectoryFeaturedListings";
 import DirectoryResultsMap from "@/app/modules/directory/components/public/DirectoryResultsMap";
 import DirectoryPublicFooter from "@/app/modules/directory/components/public/DirectoryPublicFooter";
+import DirectoryInstallPrompt from "@/app/modules/directory/components/public/DirectoryInstallPrompt";
 import DirectoryResultsHeading from "@/app/modules/directory/components/public/DirectoryResultsHeading";
 import DirectoryLocalityFilter from "@/app/modules/directory/components/public/DirectoryLocalityFilter";
 import { getDirectoryPublicData, getDirectorySiteByCode, getDirectorySiteCodeByHost } from "@/app/modules/directory/lib/getDirectoryPublicData";
@@ -29,7 +30,12 @@ export async function generateMetadata() {
   const context = await getPublicSitemapContext();
   const canonicalPath = context.isTags ? "/directorio" : "/";
   return {
-    title: `Comercios y servicios | ${site.name}`,
+    title: site.code === "calamuchitar"
+      ? "La Plataforma Comercial de Calamuchita | Comercios y Servicios"
+      : `Comercios y servicios | ${site.name}`,
+    ...(site.code === "calamuchitar" && !context.isTags
+      ? { manifest: "/calamuchitar.webmanifest?v=2" }
+      : {}),
     alternates: { canonical: `${context.baseUrl}${canonicalPath}` },
     robots: {
       index: !context.isTags,
@@ -93,10 +99,11 @@ export default async function DirectoryPublicPage({ searchParams }) {
         </section>}
 
       {isHome && <section className="tags_directory_commercial_intro">
-        <div><span>UNA PLATAFORMA COMERCIAL</span><h2>{data.site.name} conecta personas, comercios y servicios</h2><p>Ayudamos a encontrar lo que necesitás y brindamos a cada negocio herramientas para crecer y ofrecer sus productos y servicios en internet.</p></div>
+        <div><span>LA PLATAFORMA COMERCIAL</span><h2>{data.site.name} conecta personas, comercios y servicios</h2><p>Conectamos a quienes buscan productos y servicios con comercios, profesionales y prestadores de toda la región. Desarrollamos herramientas digitales para cada tipo de negocio e implementamos soluciones a medida, simples y seguras. Ponemos a disposición de los usuarios buscadores con filtros, mapas, indicaciones para llegar y medios de contacto. Además, impulsamos un sistema de beneficios para que los prestadores adheridos puedan ofrecer descuentos, puntos y recompensas, y para que usuarios y clientes puedan disfrutarlos. Así fomentamos la actividad comercial de la región mediante tecnología de alta prestación, accesible y de muy bajo costo.</p></div>
         <aside><strong>¿Tenés un comercio o prestás un servicio?</strong><p>Publicá tu actividad y accedé a una web propia, catálogo, carta online, turnos, reseñas y más herramientas de Tags.</p><a href="/publicar-mi-negocio">Publicar mi negocio</a></aside>
       </section>}
     </div>
     <DirectoryPublicFooter site={data.site} />
+    {data.site.code === "calamuchitar" && <DirectoryInstallPrompt />}
   </main>;
 }

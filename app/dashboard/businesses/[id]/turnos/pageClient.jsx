@@ -15,6 +15,7 @@ import TurnosAdminCustomers from "@/app/modules/turnos/components/admin/TurnosAd
 import showAlert from "@/app/components/showAlert";
 import TagsSpinner from "@/app/components/TagsSpinner";
 import AiChatSurfaceSettings from "@/app/modules/ai-chat/components/admin/AiChatSurfaceSettings";
+import SportsClubAdmin from "@/app/modules/sports/components/admin/SportsClubAdmin";
 import "@/app/modules/turnos/styles/turnos-admin.css";
 import "@/app/styles/tags_dashboard.css";
 
@@ -30,6 +31,7 @@ export default function TurnosAdminPageClient({ businessId }) {
     const [resourceForm, setResourceForm] = useState({ name: "", serviceId: "", resourceTypeId: "", capacity: 1, allowConsecutiveBookings: false, maxConsecutiveSlots: 2 });
     const [scheduleForm, setScheduleForm] = useState({ scopeType: "app", scopeId: "", weekday: 1, startTime: "09:00", endTime: "18:00", slotIntervalMinutes: 30 });
     const [activeTab, setActiveTab] = useState("agenda");
+    const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
     const [calendarRange, setCalendarRange] = useState(null);
 
     const selectedId = Number(app?.id || params.get("turnosId") || 0);
@@ -43,6 +45,7 @@ export default function TurnosAdminPageClient({ businessId }) {
             const responses = await Promise.all(["settings", "services", "resources", "resource-types", "schedules"].map(name => fetch(`/api/turnos/admin/${name}?${query}`)));
             const payloads = await Promise.all(responses.map(response => response.json()));
             const settingsPayload = payloads[0];
+            setIsPlatformAdmin(settingsPayload.isPlatformAdmin === true);
             setApps(settingsPayload.apps || []);
             if (!settingsPayload.ok) { setApp(null); setMessage(settingsPayload.error || "No hay una instancia de Turnos seleccionada."); return; }
             const nextApp = settingsPayload.settings;
@@ -107,9 +110,12 @@ export default function TurnosAdminPageClient({ businessId }) {
         <TurnosAdminCustomers businessId={businessId} turnosId={selectedId} />
         <TurnosAdminPublication businessId={businessId} turnosId={selectedId} slug={app.slug} name={app.name} status={app.status} onSaved={() => load(selectedId, { silent: true })} />
         <TurnosAdminPolicies businessId={businessId} turnosId={selectedId} settings={settings} publicPolicy={publicPolicy} depositPolicy={depositPolicy} onSaved={() => load(selectedId, { silent: true })} />
-        <AiChatSurfaceSettings businessId={businessId} surfaceType="turnos" surfaceId={selectedId} surfaceLabel="la página pública de Turnos" />
+        <section className="turnos_admin_chatbot">
+            <AiChatSurfaceSettings businessId={businessId} surfaceType="turnos" surfaceId={selectedId} surfaceLabel="la página pública de Turnos" />
+        </section>
         <TurnosAdminBlocks businessId={businessId} turnosId={selectedId} resources={resources} />
-        <TurnosAdminTabs value={activeTab} onChange={setActiveTab} />
+        {templateCode === "sports_club" && <SportsClubAdmin businessId={businessId} turnosId={selectedId} view={activeTab} resourceTypes={resourceTypes} isPlatformAdmin={isPlatformAdmin} onReload={() => load(selectedId, { silent: true })} />}
+        <TurnosAdminTabs value={activeTab} onChange={setActiveTab} sportsEnabled={templateCode === "sports_club"} isPlatformAdmin={isPlatformAdmin} />
         <TurnosAdminCalendar businessId={businessId} turnosId={selectedId} onCreateRange={range => { setCalendarRange(range); setActiveTab("reservations"); }} />
         {saving && <TagsSpinner size={120} logoSize={66} borderSize={5} background="rgba(255,255,255,.72)" />}
     </main>;

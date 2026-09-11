@@ -17,7 +17,9 @@ export async function GET(req) {
          FROM tags_turnos_resources r
          INNER JOIN tags_turnos_service_resources sr ON sr.resource_id=r.id AND sr.service_id=? AND sr.is_active=1
          INNER JOIN tags_turnos_resource_types rt ON rt.id=r.resource_type_id
+         INNER JOIN tags_turnos_service_resource_requirements rr ON rr.service_id=sr.service_id AND rr.resource_type_id=r.resource_type_id
          WHERE r.turnos_id=? AND r.is_active=1
+           AND rr.id=(SELECT MIN(rr2.id) FROM tags_turnos_service_resource_requirements rr2 WHERE rr2.service_id=sr.service_id)
          ORDER BY r.sort_order,r.name`,
         [serviceId, app.id]
     );

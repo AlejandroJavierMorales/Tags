@@ -34,6 +34,15 @@ export const TURNOS_TEMPLATES = {
         serviceLabel: "Servicio",
         bookingMode: "individual",
         capabilities: ["appointments", "resources", "service_buffers"]
+    },
+    sports_club: {
+        code: "sports_club",
+        label: "Tags Deportes",
+        description: "Canchas, clases, socios y reservas para clubes y complejos deportivos.",
+        resourceLabel: "Cancha, espacio o profesor",
+        serviceLabel: "Actividad o reserva",
+        bookingMode: "rental",
+        capabilities: ["resource_rental", "group_classes", "customer_records", "memberships", "waitlist", "packages"]
     }
 };
 

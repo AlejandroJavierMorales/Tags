@@ -91,8 +91,6 @@ export default function BusinessDetailClient({ session, isAdmin, channel = null,
   const [portalActivateOpen, setPortalActivateOpen] =
     useState(false);
 
-
-
   // =====================================
   // 🔐 DATOS
   // =====================================
@@ -511,6 +509,7 @@ export default function BusinessDetailClient({ session, isAdmin, channel = null,
 
         {(isAdmin || features?.plan?.permissions?.analytics) && (
 
+          <div className="d-flex flex-wrap gap-2 justify-content-end">
           <button
             className="tags_dashboard_stats_btn"
             onClick={() =>
@@ -521,6 +520,10 @@ export default function BusinessDetailClient({ session, isAdmin, channel = null,
           >
             📊 Ver estadísticas
           </button>
+          <button type="button" className="tags_dashboard_stats_btn" onClick={() => router.push(`/dashboard/businesses/${id}/seo`)}>
+            SEO e indexacion
+          </button>
+          </div>
 
         )}
 
@@ -881,6 +884,7 @@ export default function BusinessDetailClient({ session, isAdmin, channel = null,
         inactiveFeatures={inactivePortalFeatures}
         businessId={id}
         isAdmin={isAdmin}
+        qrs={qrs}
         onReloadPortal={loadPortal}
       />
 
@@ -1297,6 +1301,7 @@ export default function BusinessDetailClient({ session, isAdmin, channel = null,
           { value: "generic", label: "Genérico" },
           { value: "spa", label: "Spa" },
           { value: "bike_kayak", label: "Bicicletas / Kayaks" },
+          { value: "sports_club", label: "Tags Deportes" },
           { value: "hairdresser", label: "Peluquería" }
         ]}
         createButtonLabel="Crear Turnero"

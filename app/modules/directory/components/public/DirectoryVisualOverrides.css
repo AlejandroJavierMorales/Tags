@@ -13,8 +13,6 @@
 .tags_directory_mobile_nav nav .tags_directory_drawer_links a:hover::before,.tags_directory_mobile_nav nav .tags_directory_drawer_login:hover::before{height:22px}
 .tags_directory_mobile_nav nav .tags_directory_drawer_login{margin:auto 12px 0;background:#267451;color:#fff}
 .tags_directory_mobile_nav nav .tags_directory_drawer_login:hover{background:#1e6044;color:#fff}
-.tags_directory_desktop_nav a:nth-child(3),.tags_directory_mobile_nav nav .tags_directory_drawer_links a:nth-child(3){background:#267451;color:#fff}
-.tags_directory_desktop_nav a:nth-child(3):hover,.tags_directory_mobile_nav nav .tags_directory_drawer_links a:nth-child(3):hover{background:#1e6044;color:#fff}
 .tags_directory_category_card:hover{border-color:#78c99a;box-shadow:0 0 0 1px #78c99a55,0 8px 22px #78c99a24}
 .tags_directory_category_card:hover .tags_directory_category_image{border-color:#cbe0d2;box-shadow:inset 2px 2px 5px #ffffffcc,inset -2px -2px 5px #8eb7a040}
 .tags_directory_category_card:hover .tags_directory_category_image img{filter:none}

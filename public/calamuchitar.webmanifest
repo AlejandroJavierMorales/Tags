@@ -1,0 +1,17 @@
+{
+  "name": "CalamuchitAr | La Plataforma Comercial de Calamuchita",
+  "short_name": "CalamuchitAr",
+  "description": "Comercios, servicios y propuestas de Calamuchita.",
+  "lang": "es-AR",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f4f7f5",
+  "theme_color": "#173a2d",
+  "icons": [{
+    "src": "/directory/calamuchitar/footer/logo_calamuchitar_redondo_200x200.png",
+    "sizes": "200x200",
+    "type": "image/png",
+    "purpose": "any maskable"
+  }]
+}

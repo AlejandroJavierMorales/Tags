@@ -1,0 +1,16 @@
+.tags_directory_page{--tags-directory-install-bar-height:58px}
+.tags_directory_page.has-install-prompt{padding-bottom:var(--tags-directory-install-bar-height)}
+.tags_directory_install_prompt{position:fixed;z-index:1200;right:0;bottom:0;left:0;height:var(--tags-directory-install-bar-height);border-top:1px solid #c9ddd1;background:rgba(238,248,241,.97);box-shadow:0 -7px 24px rgba(23,58,45,.12);backdrop-filter:blur(8px)}
+.tags_directory_install_prompt_inner{display:flex;align-items:center;justify-content:space-between;gap:16px;width:min(1180px,100%);margin:0 auto;padding:12px 18px}
+.tags_directory_install_prompt_copy{display:flex;align-items:center;gap:10px;min-width:0;color:#29493a;font-size:.92rem}
+.tags_directory_install_prompt_copy svg{flex:0 0 auto;color:#d78320;font-size:1.15rem}
+.tags_directory_install_prompt_copy strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tags_directory_install_prompt_actions{display:flex;align-items:center;gap:9px;flex:0 0 auto}
+.tags_directory_install_button{border:1px solid #d78320;border-radius:9px;background:#f0a23c;padding:8px 15px;color:#fff;font:inherit;font-size:.82rem;font-weight:800;cursor:pointer}
+.tags_directory_install_button:hover{background:#d9821f}
+.tags_directory_install_button:disabled{cursor:wait;opacity:.8}
+.tags_directory_install_spinner{display:inline-block;width:12px;height:12px;margin-right:4px;border:2px solid rgba(255,255,255,.45);border-top-color:#fff;border-radius:50%;vertical-align:-2px;animation:tags-directory-install-spin .7s linear infinite}
+@keyframes tags-directory-install-spin{to{transform:rotate(360deg)}}
+.tags_directory_install_close{display:grid;place-items:center;width:31px;height:31px;border:0;border-radius:50%;background:transparent;color:#496555;font-size:1rem;cursor:pointer}
+.tags_directory_install_close:hover{background:#dcebe1;color:#173a2d}
+@media(max-width:480px){.tags_directory_page{--tags-directory-install-bar-height:48px}.tags_directory_install_prompt_inner{height:100%;gap:9px;padding:6px 10px}.tags_directory_install_prompt_copy{gap:7px;font-size:.75rem}.tags_directory_install_prompt_copy svg{font-size:.95rem}.tags_directory_install_button{padding:6px 10px;font-size:.74rem}.tags_directory_install_close{width:27px;height:27px;font-size:.85rem}}

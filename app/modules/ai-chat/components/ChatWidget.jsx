@@ -17,6 +17,11 @@ export default function ChatWidget({ config = null }) {
     const [error, setError] = useState("");
     const [messages, setMessages] = useState([{ ...initialMessage, content: config?.greeting || initialMessage.content }]);
     const [scrollToIndex, setScrollToIndex] = useState(null);
+    const avatarSrc = config?.widgetType === "avatar_woman"
+        ? "/assets/icons/chat_woman.webp"
+        : config?.widgetType === "avatar_man"
+            ? "/assets/icons/chat_men.webp"
+            : null;
 
     useEffect(() => {
         if (typeof window !== "undefined" && window.parent !== window) {
@@ -87,13 +92,14 @@ export default function ChatWidget({ config = null }) {
             )}
             <button
                 type="button"
-                className="tags_ai_chat_launcher"
+                className={`tags_ai_chat_launcher${avatarSrc ? " tags_ai_chat_launcher_avatar_mode" : ""}`}
                 style={{ bottom: `${config?.embedded ? 0 : Number(config?.launcherOffsetBottom ?? 100)}px` }}
                 onClick={() => setOpen(value => !value)}
                 aria-label={open ? "Cerrar asistente de Tags" : "Abrir asistente de Tags"}
             >
-                {open ? <FaXmark /> : config?.widgetType === "robot" ? <FaRobot /> : <FaComments />}
+                {open ? <FaXmark /> : avatarSrc ? <img className="tags_ai_chat_launcher_avatar" src={avatarSrc} alt="Asistente del chatbot" /> : config?.widgetType === "robot" ? <FaRobot /> : <FaComments />}
             </button>
+            {!open && config?.launcherPrompt && <span className="tags_ai_chat_launcher_prompt" style={{ bottom: `${(config?.embedded ? 0 : Number(config?.launcherOffsetBottom ?? 100)) + 64}px`, fontSize: `${Number(config.launcherPromptSize || 12)}px` }}>{config.launcherPrompt}</span>}
         </div>
     );
 }

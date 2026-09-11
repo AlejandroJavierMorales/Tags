@@ -109,6 +109,31 @@ async function requestBusinessId(request) {
 }
 
 export async function middleware(request) {
+    const forwardedHost = String(
+        request.headers.get("x-forwarded-host") ||
+        request.headers.get("x-tags-public-host") ||
+        ""
+    )
+        .toLowerCase()
+        .split(",")[0]
+        .split(":")[0]
+        .replace(/^www\./, "");
+
+    if (
+        forwardedHost === "calamuchita.ar" &&
+        request.nextUrl.pathname === "/"
+    ) {
+        const target = request.nextUrl.clone();
+        target.pathname = "/directorio";
+        return NextResponse.rewrite(target);
+    }
+
+    // La raíz pública de Tags no requiere sesión. La validación siguiente
+    // corresponde únicamente a rutas administrativas y APIs protegidas.
+    if (request.nextUrl.pathname === "/") {
+        return NextResponse.next();
+    }
+
     const session =
         await readTagsSession(request);
 
@@ -142,6 +167,7 @@ export async function middleware(request) {
 
 export const config = {
     matcher: [
+        "/",
         "/api/store/admin/((?!payments/create-preference|payments/mercadopago/webhook).*)"
     ]
 };

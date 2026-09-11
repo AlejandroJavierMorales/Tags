@@ -6,6 +6,7 @@ import { FaArrowLeft, FaBed, FaCalendarCheck, FaCalendarDays, FaComments, FaDoor
 import TagsSpinner from "@/app/components/TagsSpinner";
 import showAlert from "@/app/components/showAlert";
 import { normalizeArgentinaWhatsapp } from "@/app/modules/qr-page/lib/normalizeContactFields";
+import { buildReservationAccessCommunication } from "@/app/modules/guest-experience/lib/reservationAccessCommunication";
 import GuestExperienceReservationsPanel from "./GuestExperienceReservationsPanel";
 import GuestExperienceArrivalsPanel from "./GuestExperienceArrivalsPanel";
 import GuestExperienceFinanceReport from "./GuestExperienceFinanceReport";
@@ -134,7 +135,30 @@ export default function GuestExperienceAdminPage({
     }
   }
   async function createReservation(form) {
-    return Boolean(await request("/api/guest-experience/admin/stays", "POST", form, "Reserva creada y agregada a la ocupación."));
+    const created = await request("/api/guest-experience/admin/stays", "POST", form, null);
+    if (!created) return false;
+    const unit = data.units.find(item => Number(item.id) === Number(form.unitId));
+    const nights = Math.max(1, Math.round((new Date(`${form.endsAt}T12:00:00`) - new Date(`${form.startsAt}T12:00:00`)) / 86400000));
+    const lodgingTotal = Number(form.nightlyRate || 0) * nights;
+    const previewStay = {
+      id: created.reservationId,
+      stay_code: created.stayCode,
+      guest_name: `${form.firstName} ${form.lastName}`.trim(),
+      guest_email: form.email,
+      starts_at: form.startsAt,
+      ends_at: form.endsAt,
+      adults: form.adults,
+      children: form.children,
+      unit_name: unit?.name || "A confirmar",
+      lodging_total: lodgingTotal,
+      deposit_required_amount: lodgingTotal * Number(form.depositPercentage || 0) / 100,
+      currency: data.app.currency || "ARS",
+      app_name: data.app.name,
+      logo_url: data.app.logo_url
+    };
+    const sent = await invite(previewStay, "email");
+    if (!sent) await showAlert({ title: "Reserva creada", text: "La reserva quedó registrada, pero el envío del email fue cancelado.", icon: "info" });
+    return true;
   }
   async function updateReservation(form) {
     return Boolean(await request("/api/guest-experience/admin/stays", "PATCH", form, "Reserva modificada."));
@@ -148,12 +172,26 @@ export default function GuestExperienceAdminPage({
   }
   async function invite(item, channel) {
     const reminder = channel === "reminder";
+    if (channel === "email" || reminder) {
+      const preview = buildReservationAccessCommunication({ stay: { ...item, app_name: data.app.name, logo_url: data.app.logo_url, currency: data.app.currency || "ARS" }, settings: data.app.settings || {}, eventCode: reminder ? "arrival_reminder" : "access_link" });
+      const confirmed = await showAlert({
+        title: "Revisá el email antes de enviarlo",
+        text: `<div style="margin-bottom:12px;text-align:left;font-size:13px"><strong>Destinatario:</strong> ${String(item.guest_email || "Sin email").replace(/[<>&]/g, "")}<br><strong>Asunto:</strong> ${preview.title}<br><small>También se enviará una copia a la plataforma.</small></div>${preview.html}`,
+        icon: "info",
+        isHtml: true,
+        showCancelButton: true,
+        confirmButtonText: "Confirmar y enviar",
+        cancelButtonText: "Cancelar",
+        width: "760px"
+      });
+      if (!confirmed) return false;
+    }
     const p = await request("/api/guest-experience/admin/invitations", "POST", {
       stayId: item.id,
       channel: reminder ? "email" : channel,
       eventCode: reminder ? "arrival_reminder" : "access_link"
     }, reminder ? "Recordatorio de ingreso enviado." : channel === "email" ? "Acceso enviado por email." : null);
-    if (!p) return;
+    if (!p) return false;
     if (channel === "whatsapp" && p.whatsappUrl) {
       const url = new URL(p.whatsappUrl);
       const phone = normalizeArgentinaWhatsapp(item.guest_phone);
@@ -170,6 +208,7 @@ export default function GuestExperienceAdminPage({
         timer: 1600
       });
     }
+    return true;
   }
   async function deleteCommunication(record) {
     const ok = await showAlert({ title: "¿Eliminar esta comunicación?", text: "Se quitará del historial de la reserva. Esta acción no reenvía ni modifica el enlace del huésped.", icon: "warning", showCancelButton: true, confirmButtonText: "Eliminar", cancelButtonText: "Cancelar" });

@@ -90,6 +90,7 @@ export default function Hero() {
                                     alt="Plataforma Tags"
                                     width={750}
                                     height={570}
+                                    sizes="(max-width: 991px) 100vw, 1px"
                                     className="img-fluid tags_hero_image"
                                     priority
                                     style={{
@@ -142,6 +143,7 @@ export default function Hero() {
                                 alt="Plataforma de experiencias digitales inteligentes"
                                 width={700}
                                 height={550}
+                                sizes="(min-width: 992px) 50vw, 1px"
                                 className="img-fluid tags_hero_image"
                                 priority
                             />

@@ -172,6 +172,7 @@ export async function GET(req) {
             ok: true,
             store: {
                 id: store.id,
+                page_id: store.page_id || null,
                 name: store.name,
                 description: store.description,
                 logo_url:

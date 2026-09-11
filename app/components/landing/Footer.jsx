@@ -19,8 +19,8 @@ export default function TagsFooter() {
                 alt="Tags"
                 width={280}
                 height={66}
+                sizes="200px"
                 style={{ width: "100%", height: "auto" }}
-                priority
               />
             </div>
 

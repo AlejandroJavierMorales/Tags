@@ -510,6 +510,7 @@ export default function DashboardAdminClient({ session }) {
 
       <div className="row d-flex justify-content-start align-items-center">
         <div className="tags_navbar mt-3 col-12 col-md-6">
+          <Link href="/dashboard/pwa-installations"><span className="tags_dashboard_nav_icon" aria-hidden="true">📱</span> Instalaciones</Link>
           <Link href="/dashboard/businesses"><span className="tags_dashboard_nav_icon" aria-hidden="true">👤</span> Clientes</Link>
           <Link href="/dashboard/subscriptions-center"><span className="tags_dashboard_nav_icon" aria-hidden="true">💳</span> Suscripciones</Link>
           <Link href="/dashboard/directory"><span className="tags_dashboard_nav_icon" aria-hidden="true">🌐</span> Directorios</Link>

@@ -14,6 +14,18 @@ const DIRECTORY_PATHS = [
   { path: "/actividades-turisticas", priority: 0.85, changeFrequency: "daily" },
   { path: "/regalos-artesanias-regionales", priority: 0.8, changeFrequency: "daily" },
   { path: "/beneficios", priority: 0.8, changeFrequency: "daily" },
+  { path: "/experiencias-digitales", priority: 0.95, changeFrequency: "weekly" },
+  { path: "/que-ofrecemos", priority: 0.95, changeFrequency: "weekly" },
+  { path: "/experiencias-digitales/qr-dinamicos", priority: 0.9, changeFrequency: "monthly" },
+  { path: "/experiencias-digitales/pagina-web", priority: 0.9, changeFrequency: "monthly" },
+  { path: "/experiencias-digitales/catalogo-tienda", priority: 0.9, changeFrequency: "monthly" },
+  { path: "/experiencias-digitales/resto", priority: 0.9, changeFrequency: "monthly" },
+  { path: "/experiencias-digitales/turnos-reservas", priority: 0.9, changeFrequency: "monthly" },
+  { path: "/experiencias-digitales/resenias", priority: 0.9, changeFrequency: "monthly" },
+  { path: "/experiencias-digitales/beneficios-fidelizacion", priority: 0.9, changeFrequency: "monthly" },
+  { path: "/experiencias-digitales/chatbot", priority: 0.9, changeFrequency: "monthly" },
+  { path: "/experiencias-digitales/mi-estadia", priority: 0.9, changeFrequency: "monthly" },
+  { path: "/experiencias-digitales/tags-id", priority: 0.9, changeFrequency: "monthly" },
 ];
 
 function normalizeHost(value) {

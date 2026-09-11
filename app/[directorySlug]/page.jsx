@@ -26,6 +26,19 @@ async function getSiteCode() {
   return getDirectorySiteCodeByHost(getHeadersHost(requestHeaders));
 }
 
+async function getDomainFavicon(host, businessId) {
+  const cleanHost = String(host || "").toLowerCase().split(":")[0].replace(/^www\./, "");
+  if (!cleanHost || !businessId) return null;
+  const [rows] = await db.query(
+    `SELECT favicon_url FROM tags_domains
+      WHERE business_id=? AND is_active=1
+        AND (LOWER(domain)=? OR LOWER(domain)=?)
+      ORDER BY id DESC LIMIT 1`,
+    [businessId, cleanHost, `www.${cleanHost}`]
+  );
+  return rows[0]?.favicon_url || null;
+}
+
 async function getPortalHome(slug) {
   const [rows] = await db.query(
     `SELECT p.title,p.description,qp.slug home_slug
@@ -64,9 +77,15 @@ export async function generateMetadata({ params }) {
   const sitemapContext = await getPublicSitemapContext();
   const web = await getDirectoryWebPageData(data.listing.qr_page_id);
   const page = web?.page;
+  const requestHeaders = await headers();
+  const favicon = await getDomainFavicon(getHeadersHost(requestHeaders), data.listing.business_id)
+    || data.listing.business_logo_url
+    || data.media?.find(item => item.media_type === "logo")?.url
+    || null;
   const canonical = new URL(`/${data.listing.slug}`, `${sitemapContext.baseUrl}/`).toString();
   return {
     metadataBase: new URL(sitemapContext.baseUrl),
+    ...(favicon ? { icons: { icon: favicon, shortcut: favicon, apple: favicon } } : {}),
     title: page?.seo_title || data.listing.seo_title || data.listing.display_name,
     description: page?.seo_description || data.listing.seo_description || data.listing.short_description || undefined,
     alternates: { canonical },
@@ -99,7 +118,11 @@ export default async function DirectoryStandaloneProviderPage({ params, searchPa
   const web = await getDirectoryWebPageData(data.listing.qr_page_id);
   const modules = web?.page?.global_styles?.directoryModules || {};
   const { internal, trail } = getInternalNavigation(query);
-  const site = { name: data.listing.site_name, code: data.listing.site_code };
+  const site = {
+    id: data.listing.site_id,
+    name: data.listing.site_name,
+    code: data.listing.site_code,
+  };
   const returnUrl = `/${data.listing.slug}`;
 
   return <main className={internal ? "tags_directory_provider_page" : "tags_directory_standalone_page"}>

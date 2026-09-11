@@ -13,6 +13,7 @@ import {
     FaClock,
     FaCog,
     FaCreditCard,
+    FaGlobe,
     FaMapMarkerAlt,
     FaSave,
     FaStore,
@@ -27,6 +28,7 @@ import showAlert
 import MediaUploader
     from "@/app/components/MediaUploader";
 import AiChatSurfaceSettings from "@/app/modules/ai-chat/components/admin/AiChatSurfaceSettings";
+import PublicPageSeoFields from "@/app/components/seo/PublicPageSeoFields";
 
 import "@/app/styles/qr-page.css";
 import "@/app/styles/tags_dashboard.css";
@@ -39,7 +41,8 @@ const TABS = [
     ["operation", "Operación y horarios", FaClock],
     ["orders", "Pedidos y cocina", FaUtensils],
     ["payments", "Pagos y cuentas", FaCreditCard],
-    ["chatbot", "Chatbot con IA", FaCog]
+    ["chatbot", "Chatbot con IA", FaCog],
+    ["seo", "SEO e indexación", FaGlobe]
 ];
 
 const DAYS = [
@@ -204,6 +207,10 @@ export default function RestoSettingsClient({
         useState(EMPTY);
     const [storeId, setStoreId] =
         useState(null);
+    const [seoPage, setSeoPage] =
+        useState(null);
+    const [seoSaving, setSeoSaving] =
+        useState(false);
     const [loading, setLoading] =
         useState(true);
     const [saving, setSaving] =
@@ -228,6 +235,14 @@ export default function RestoSettingsClient({
             }
             setForm(mergeLoaded(result));
             setStoreId(result.store?.id || null);
+            if (result.store?.page_id) {
+                const seoResponse = await fetch(
+                    `/api/seo/page?businessId=${encodeURIComponent(businessId)}&pageId=${encodeURIComponent(result.store.page_id)}`,
+                    { cache: "no-store" }
+                );
+                const seoResult = await seoResponse.json();
+                if (seoResponse.ok) setSeoPage(seoResult.page || null);
+            }
         } catch (error) {
             showAlert({
                 icon: "error",
@@ -386,6 +401,25 @@ export default function RestoSettingsClient({
             });
         } finally {
             setSaving(false);
+        }
+    }
+
+    async function saveSeo(page) {
+        setSeoSaving(true);
+        try {
+            const response = await fetch("/api/seo/page", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ businessId, pageId: page.id, ...page })
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result?.error || "No se pudo guardar el SEO.");
+            setSeoPage(page);
+            showAlert({ icon: "success", title: "SEO guardado", text: "La configuración de la página pública fue actualizada.", timer: 1400 });
+        } catch (error) {
+            showAlert({ icon: "error", title: "SEO e indexación", text: error.message });
+        } finally {
+            setSeoSaving(false);
         }
     }
 
@@ -594,6 +628,19 @@ export default function RestoSettingsClient({
 
                 {activeTab === "chatbot" && storeId && (
                     <AiChatSurfaceSettings businessId={businessId} surfaceType="resto" surfaceId={storeId} surfaceLabel="la página pública de Resto" />
+                )}
+                {activeTab === "seo" && (
+                    seoPage ? (
+                        <PublicPageSeoFields
+                            page={seoPage}
+                            onChange={setSeoPage}
+                            onSave={saveSeo}
+                            onCancel={() => setActiveTab("identity")}
+                            saving={seoSaving}
+                        />
+                    ) : (
+                        <PanelTitle title="SEO e indexación" text="Todavía no hay una página pública de Resto asociada para configurar." />
+                    )
                 )}
             </section>
         </main>

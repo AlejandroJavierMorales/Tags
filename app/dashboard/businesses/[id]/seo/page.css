@@ -1,0 +1,11 @@
+.tags_business_seo_table_wrap { overflow-x: auto; }
+.tags_business_seo_table { width: 100%; min-width: 980px; table-layout: fixed; }
+.tags_business_seo_table th, .tags_business_seo_table td { padding: 14px 12px; vertical-align: middle; }
+.tags_business_seo_table th:nth-child(1), .tags_business_seo_table td:nth-child(1) { width: 22%; }
+.tags_business_seo_table th:nth-child(2), .tags_business_seo_table td:nth-child(2) { width: 30%; }
+.tags_business_seo_table th:nth-child(3), .tags_business_seo_table td:nth-child(3) { width: 16%; }
+.tags_business_seo_table th:nth-child(4), .tags_business_seo_table td:nth-child(4) { width: 22%; }
+.tags_business_seo_table th:nth-child(5), .tags_business_seo_table td:nth-child(5) { width: 10%; }
+.tags_business_seo_url, .tags_business_seo_reason { overflow-wrap: anywhere; word-break: break-word; }
+.tags_business_seo_action { display: inline-flex; min-width: 112px; align-items: center; justify-content: center; border: 0; border-radius: 10px; background: #198754; padding: 9px 12px; color: #fff; font-size: .82rem; font-weight: 700; text-decoration: none; }
+.tags_business_seo_action:hover { background: #146c43; color: #fff; }

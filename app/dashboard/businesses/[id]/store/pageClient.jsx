@@ -44,6 +44,8 @@ const emptyStore = {
 
     seo_title: "",
     seo_description: "",
+    robots_index: 1,
+    robots_follow: 1,
 
     settings_json: {},
     styles_json: {}
@@ -335,6 +337,8 @@ export default function StoreAdminClient({
 
                             seo_title: form.seo_title,
                             seo_description: form.seo_description,
+                            robots_index: form.robots_index,
+                            robots_follow: form.robots_follow,
 
                             settings_json: form.settings_json || {},
                             styles_json: form.styles_json || {}
@@ -1285,7 +1289,18 @@ export default function StoreAdminClient({
                                             e.target.value
                                         )
                                     }
-                                />
+                                    />
+                            </div>
+
+                            <div className="qr_page_field full">
+                                <label className="qr_page_checkbox">
+                                    <input type="checkbox" checked={!!form.robots_index} onChange={e => updateFormField("robots_index", e.target.checked ? 1 : 0)} />
+                                    Indexar en buscadores
+                                </label>
+                                <label className="qr_page_checkbox">
+                                    <input type="checkbox" checked={!!form.robots_follow} onChange={e => updateFormField("robots_follow", e.target.checked ? 1 : 0)} />
+                                    Seguir enlaces
+                                </label>
                             </div>
 
                         </div>

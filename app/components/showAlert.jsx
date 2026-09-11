@@ -8,6 +8,7 @@ const showAlert = async ({
     cancelButtonText = 'Cancelar',
     showCancelButton = false,
     timer = null,
+    width = null,
     isHtml = false // Nueva opción para manejar texto como HTML
 }) => {
     const result = await Swal.fire({
@@ -19,6 +20,7 @@ const showAlert = async ({
         cancelButtonText,
         showCancelButton,
         timer,
+        width: width || undefined,
         allowOutsideClick: !showCancelButton, // Previene cerrar si requiere confirmación
         showConfirmButton: !timer // Oculta el botón de confirmación si hay un tiempo de cierre automático
     });

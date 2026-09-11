@@ -22,7 +22,7 @@ function proxyHeaders(request, publicHost) {
   return headers;
 }
 
-
+// Mantiene las solicitudes hacia el origen de Tags con el contexto del dominio público.
 function proxyRequest(request, targetUrl, headers) {
   return new Request(targetUrl, {
     method: request.method,
@@ -39,9 +39,8 @@ function rewriteLocation(headers, publicHost) {
   }
 }
 
-async function resolvePublicFavicon(publicHost) {
-  // El canal CalamuchitAr no depende de tags_domains: su branding vive en el
-  // Directorio. Se devuelve el logo contextual como favicon directamente.
+async function resolvePublicFavicon(publicHost, request) {
+  // El favicon se resuelve por dominio antes de aplicar las reescrituras HTML.
   if (publicHost === "calamuchita.ar") {
     return fetch(`${TAGS_ORIGIN}/branding/favicons/calamuchitar.ico`, {
       method: "GET",
@@ -55,10 +54,25 @@ async function resolvePublicFavicon(publicHost) {
     body: JSON.stringify({ host: publicHost, path: "/" }),
   });
   const resolver = await resolverResponse.json().catch(() => null);
-  const faviconUrl = resolver?.success && resolver?.domain?.favicon_url
-    ? resolver.domain.favicon_url
-    : `${TAGS_ORIGIN}/icon.ico`;
-  return fetch(faviconUrl, { method: "GET", redirect: "follow" });
+  if (resolver?.success && resolver?.domain?.favicon_url) {
+    return fetch(resolver.domain.favicon_url, { method: "GET", redirect: "follow" });
+  }
+  const brandingResponse = await fetch(`${TAGS_ORIGIN}/api/public/domain-favicon?host=${encodeURIComponent(publicHost)}`, {
+    headers: { "Accept": "application/json" },
+  });
+  const branding = await brandingResponse.json().catch(() => null);
+  if (branding?.success && branding?.favicon_url) {
+    const faviconResponse = await fetch(branding.favicon_url, { method: "GET", redirect: "follow" });
+    const faviconHeaders = new Headers(faviconResponse.headers);
+    faviconHeaders.set("Cache-Control", "public, max-age=3600, must-revalidate");
+    faviconHeaders.set("X-Tags-Worker-Version", "2026-08-23-metrics-4-favicon");
+    return new Response(faviconResponse.body, {
+      status: faviconResponse.status,
+      statusText: faviconResponse.statusText,
+      headers: faviconHeaders,
+    });
+  }
+  return fetch(`${TAGS_ORIGIN}/icon.ico`, { method: "GET", redirect: "follow" });
 }
 
 async function publicResponse(response, publicHost, pathname) {
@@ -120,7 +134,7 @@ export default {
     // El navegador solicita el favicon en el dominio público, antes de que
     // exista cualquier HTML reescrito por el proxy.
     if (url.pathname === "/favicon.ico" || url.pathname === "/icon.ico") {
-      return resolvePublicFavicon(publicHost);
+      return resolvePublicFavicon(publicHost, request);
     }
 
     // URL canónica del Directorio: la plataforma vive en / y las fichas en /[slug].
@@ -132,7 +146,7 @@ export default {
     // Recursos reescritos por el proxy. Conserva el funcionamiento existente.
     if (url.pathname.startsWith("/__tags__/") || url.pathname.startsWith("/_next/static/media/")) {
       if (url.pathname === "/__tags__/icon.ico" || url.pathname === "/__tags__/favicon.ico") {
-        return resolvePublicFavicon(publicHost);
+        return resolvePublicFavicon(publicHost, request);
       }
 
       const realPath = url.pathname.startsWith("/__tags__/")

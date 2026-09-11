@@ -54,6 +54,7 @@ export default async function DirectoryBenefitsPage({ searchParams }) {
     <DirectoryPublicHeader site={data.site} compact showSearch={false} />
     <div className="tags_directory_benefits_content">
       <nav className="tags_directory_breadcrumb" aria-label="Navegación"><Link href="/directorio">Inicio</Link><span><b>/</b> Beneficios</span></nav>
+      <nav className="tags_directory_benefits_tabs" aria-label="Beneficios y recompensas"><Link href="/programas-de-fidelizacion"><FaTag /> Beneficios y Recompensas</Link><Link href="/beneficios" aria-current="page" className="is_active"><FaTag /> Descuentos y Promociones</Link></nav>
       <header className="tags_directory_benefits_heading"><span>OPORTUNIDADES</span><h1><FaTag aria-hidden="true" /> Beneficios</h1><p>Promociones vigentes de comercios y prestadores.</p></header>
       <form className="tags_directory_benefits_filters" method="get">
         <label><span>Buscar</span><input name="q" defaultValue={filters.query} placeholder="Negocio, beneficio o actividad" /></label>

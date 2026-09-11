@@ -5,14 +5,14 @@ import { useState } from "react";
 import Image from "next/image";
 import showAlert from "@/app/components/showAlert";
 
-export default function LoginForm({ channel = null, initialEmail = "" }) {
+export default function LoginForm({ channel = null, initialEmail = "", returnTo = "" }) {
   const brand = channel?.brandConfig || {};
   const brandName = brand.displayName || channel?.name || "Tags";
   const brandLogo = brand.logoUrl || brand.logo_url || (channel?.code === "calamuchitar"
     ? "/directory/calamuchitar/LogoCalamuchitar.webp"
     : "/logo_tags_transparente.webp");
   const platformDescription = brand.slogan || (channel?.code === "calamuchitar"
-    ? "Plataforma Comercial de Calamuchita"
+    ? "La Plataforma Comercial de Calamuchita"
     : "Plataforma de Gestión y Reporting de Códigos QR");
   const primaryColor = brand.primaryColor || "#0fb957";
 
@@ -20,9 +20,11 @@ export default function LoginForm({ channel = null, initialEmail = "" }) {
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
+  const [accountChoices, setAccountChoices] = useState(null);
 
-  async function handleLogin() {
+  async function handleLogin(accountType = null) {
     setError("");
+    setAccountChoices(null);
     if (!email.trim()) {
       setError("Ingresá un email válido");
       return;
@@ -30,10 +32,31 @@ export default function LoginForm({ channel = null, initialEmail = "" }) {
 
     setLoading(true);
     try {
-      const response = await fetch("/api/auth/send-link", {
+      let selectedType = accountType;
+      if (!selectedType) {
+        const optionsResponse = await fetch("/api/auth/account-options", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: email.trim() }),
+        });
+        const optionsPayload = await optionsResponse.json().catch(() => ({}));
+        if (!optionsResponse.ok) {
+          setError(optionsPayload.error || "No se pudo verificar la cuenta");
+          return;
+        }
+        const options = optionsPayload.options || [];
+        if (options.length > 1) {
+          setAccountChoices(options);
+          return;
+        }
+        selectedType = options[0]?.type;
+      }
+
+      const endpoint = selectedType === "user" ? "/api/auth/send-user-link" : "/api/auth/send-link";
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim() }),
+        body: JSON.stringify({ email: email.trim(), returnTo }),
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
@@ -60,7 +83,7 @@ export default function LoginForm({ channel = null, initialEmail = "" }) {
             <div className="tags_login_success_icon">📩</div>
             <h2 className="tags_login_success_title">Revisá tu email</h2>
             <p className="tags_login_success_text">
-              Te enviamos un enlace para ingresar a tu panel.
+              Te enviamos un enlace para ingresar a tu cuenta.
             </p>
             <button className="tags_login_btn" onClick={() => setSent(false)}>
               Enviar nuevamente
@@ -92,7 +115,7 @@ export default function LoginForm({ channel = null, initialEmail = "" }) {
                 <div className="tags_login_badge">{platformDescription}</div>
                 <h1 className="tags_login_title">Bienvenido 👋</h1>
                 <p className="tags_login_subtitle">
-                  Accedé a tu panel para gestionar tus funcionalidades y consultar tus resultados.
+                  Accedé con el mismo email a tu negocio o a tu cuenta personal.
                 </p>
               </div>
             </div>
@@ -127,7 +150,7 @@ export default function LoginForm({ channel = null, initialEmail = "" }) {
               <div className="tags_login_card_header">
                 <div className="tags_login_card_icon">🔐</div>
                 <div>
-                  <h2>Acceso a clientes</h2>
+                  <h2>Acceso a tu cuenta</h2>
                   <p>Ingresá tu email para continuar</p>
                 </div>
               </div>
@@ -143,9 +166,28 @@ export default function LoginForm({ channel = null, initialEmail = "" }) {
                   onKeyDown={(event) => event.key === "Enter" && handleLogin()}
                 />
               </div>
-              <button onClick={handleLogin} disabled={loading} className="tags_login_btn">
+              <button type="button" onClick={() => handleLogin()} disabled={loading} className="tags_login_btn">
                 {loading ? "Enviando..." : "Enviar link"}
               </button>
+              <a href="/registro" className="tags_login_register_link">
+                ¿No tenés cuenta? Crear cuenta de usuario
+              </a>
+              {accountChoices && (
+                <div className="tags_login_account_choices" role="group" aria-label="Elegir tipo de acceso">
+                  <p className="tags_login_account_choices_title">Encontramos más de una forma de acceso para este email:</p>
+                  {accountChoices.map(option => (
+                    <button
+                      key={option.type}
+                      type="button"
+                      className="tags_login_btn tags_login_account_choice"
+                      onClick={() => handleLogin(option.type)}
+                      disabled={loading}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              )}
               {error && <div className="tags_login_error">{error}</div>}
               <div className="tags_login_footer">
                 <a href="/logout" className="tags_login_change_account">↻ Cambiar cuenta</a>

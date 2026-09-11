@@ -1,4 +1,4 @@
-import { FaBars, FaBriefcase, FaGaugeHigh, FaHouse, FaMagnifyingGlass, FaRightFromBracket, FaRightToBracket, FaTag, FaXmark } from "react-icons/fa6";
+import { FaAward, FaBars, FaBriefcase, FaCircleInfo, FaGaugeHigh, FaHouse, FaMagnifyingGlass, FaRightFromBracket, FaRightToBracket, FaUser, FaXmark } from "react-icons/fa6";
 import Link from "next/link";
 import Image from "next/image";
 import { cookies } from "next/headers";
@@ -25,6 +25,7 @@ export default async function DirectoryPublicHeader({ site, query = "", compact 
       channel: { siteId: site?.id, isTags: site?.code === "tags" },
     }));
   const panelHref = session?.role === "admin" ? "/dashboard" : `/dashboard/businesses/${session?.businessId}`;
+  const personalUser = session?.role === "user";
   const isCalamuchitar = site.code === "calamuchitar";
   const territoryName = isCalamuchitar ? "Calamuchita" : site.name;
   let searchContent = null;
@@ -40,7 +41,7 @@ export default async function DirectoryPublicHeader({ site, query = "", compact 
         <h1>Todo {territoryName}<br />en un solo lugar</h1>
         <p>Encontrá comercios, profesionales, productos y servicios del área.</p>
         <DirectorySearchForm initialQuery={query} variant="hero" />
-        <div className="tags_directory_hero_actions"><a href="#rubros">Explorar rubros</a><Link href="/beneficios" className="is_benefits"><FaTag /> Beneficios</Link><Link href="/publicar-mi-negocio">Publicar mi negocio</Link></div>
+        <div className="tags_directory_hero_actions"><Link href="/directorio#rubros">Explorar rubros</Link><Link href="/programas-de-fidelizacion" className="is_benefits"><FaAward /> Beneficios y Recompensas</Link><Link href="/publicar-mi-negocio" className="is_publish">Publicar mi negocio</Link></div>
       </div>
     </section>;
   }
@@ -54,16 +55,19 @@ export default async function DirectoryPublicHeader({ site, query = "", compact 
         </Link>
         <nav className="tags_directory_desktop_nav" aria-label="Navegación principal">
           <Link href="/directorio"><FaHouse /> Inicio</Link>
-          <a href="#rubros"><FaMagnifyingGlass /> Explorar</a>
-          <Link href="/publicar-mi-negocio"><FaBriefcase /> Publicar mi negocio</Link>
-          {authenticated ? <><a href={panelHref} className="is_login"><FaGaugeHigh /> Mi Panel</a><a href="/logout" className="is_logout"><FaRightFromBracket /> Cerrar sesión</a></> : <Link href="/login" className="is_login"><FaRightToBracket /> Ingresar</Link>}
+          <Link href="/experiencias-digitales"><FaCircleInfo /> Experiencias digitales</Link>
+          <Link href="/que-ofrecemos"><FaBriefcase /> Herramientas</Link>
+          <Link href="/directorio#rubros"><FaMagnifyingGlass /> Explorar</Link>
+          <Link href="/programas-de-fidelizacion"><FaAward /> Beneficios y Recompensas</Link>
+          <Link href="/publicar-mi-negocio" className="is_publish"><FaBriefcase /> Publicar mi negocio</Link>
+          {personalUser ? <><Link href="/mi-cuenta" className="is_login"><FaUser /> Mi cuenta</Link><a href="/logout" className="is_logout"><FaRightFromBracket /> Cerrar sesión</a></> : authenticated ? <><a href={panelHref} className="is_login"><FaGaugeHigh /> Mi Panel</a><a href="/logout" className="is_logout"><FaRightFromBracket /> Cerrar sesión</a></> : <Link href="/login" className="is_login"><FaRightToBracket /> Ingresar</Link>}
         </nav>
         <details className="tags_directory_mobile_nav">
           <summary><FaBars className="is_open" /><FaXmark className="is_close" /><span className="sr_only">Abrir menú</span></summary>
           <nav>
             <div className="tags_directory_drawer_brand"><Image src="/directory/calamuchitar/LogoCalamuchitar.webp" alt="CalamuchitAr" width={210} height={70} sizes="210px" /><span>La Plataforma Comercial de Calamuchita</span></div>
-            <div className="tags_directory_drawer_links"><Link href="/directorio"><FaHouse /> Inicio</Link><a href="#rubros"><FaMagnifyingGlass /> Explorar rubros</a><Link href="/publicar-mi-negocio"><FaBriefcase /> Publicar mi negocio</Link>{authenticated && <a href={panelHref}><FaGaugeHigh /> Mi Panel</a>}</div>
-            {authenticated ? <a href="/logout" className="tags_directory_drawer_login"><FaRightFromBracket /> Cerrar sesión</a> : <Link href="/login" className="tags_directory_drawer_login"><FaRightToBracket /> Ingresar</Link>}
+            <div className="tags_directory_drawer_links"><Link href="/directorio"><FaHouse /> Inicio</Link><Link href="/experiencias-digitales"><FaCircleInfo /> Experiencias digitales</Link><Link href="/que-ofrecemos"><FaBriefcase /> Herramientas para Comercios y Prestadores</Link><Link href="/directorio#rubros"><FaMagnifyingGlass /> Explorar rubros</Link><Link href="/programas-de-fidelizacion"><FaAward /> Beneficios y Recompensas</Link><Link href="/publicar-mi-negocio" className="is_publish"><FaBriefcase /> Publicar mi negocio</Link>{personalUser ? <Link href="/mi-cuenta"><FaUser /> Mi cuenta</Link> : authenticated && <a href={panelHref}><FaGaugeHigh /> Mi Panel</a>}</div>
+            {personalUser || authenticated ? <a href="/logout" className="tags_directory_drawer_login"><FaRightFromBracket /> Cerrar sesión</a> : <Link href="/login" className="tags_directory_drawer_login"><FaRightToBracket /> Ingresar</Link>}
           </nav>
         </details>
       </div>

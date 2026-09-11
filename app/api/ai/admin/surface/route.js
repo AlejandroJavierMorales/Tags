@@ -52,7 +52,7 @@ function normalize(row) {
         is_enabled: Number(row?.is_enabled ?? DEFAULTS.is_enabled),
         launcher_offset_bottom: Math.max(0, Math.min(400, Number(row?.launcher_offset_bottom ?? extra.launcher_offset_bottom ?? DEFAULTS.launcher_offset_bottom))),
         launcher_label: String(row?.launcher_label ?? extra.launcher_label ?? DEFAULTS.launcher_label).trim().slice(0, 18),
-        widget_type: ["bubble", "robot"].includes(String(row?.widget_type)) ? row.widget_type : DEFAULTS.widget_type,
+        widget_type: ["bubble", "robot", "avatar_woman", "avatar_man"].includes(String(row?.widget_type)) ? row.widget_type : DEFAULTS.widget_type,
         position: ["left", "right"].includes(String(row?.position)) ? row.position : DEFAULTS.position
     };
 }

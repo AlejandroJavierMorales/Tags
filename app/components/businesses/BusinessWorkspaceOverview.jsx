@@ -7,13 +7,21 @@ import {
     FaCheck,
     FaChevronDown,
     FaCog,
+    FaCalendarCheck,
     FaExternalLinkAlt,
+    FaGift,
     FaGlobe,
+    FaGoogle,
     FaHome,
+    FaHotel,
     FaLink,
     FaPen,
     FaPowerOff,
     FaQrcode,
+    FaRobot,
+    FaStar,
+    FaStore,
+    FaUtensils,
     FaWhatsapp
 } from "react-icons/fa";
 import TagsSpinner from "@/app/components/TagsSpinner";
@@ -31,7 +39,9 @@ const APP_ICONS = {
     guest_experience: FaGlobe,
     qr_agency: FaQrcode,
     tags_id: FaGlobe,
-    client_reviews: FaGlobe
+    client_reviews: FaGlobe,
+    loyalty: FaGift,
+    google_business_profile: FaGoogle
 };
 
 const STATUS_LABELS = {
@@ -52,8 +62,8 @@ const PAGE_TYPE_LABELS = {
     store: "Tags Store",
     resto: "Tags Resto",
     turnos: "Tags Turnos",
-    client_reviews: "Tags Reviews"
-    ,qr_agency: "Tags QR Agency"
+    client_reviews: "Tags Reviews",
+    qr_agency: "Tags QR Agency"
 };
 
 function statusLabel(value) {
@@ -85,6 +95,7 @@ export default function BusinessWorkspaceOverview({
     inactiveFeatures = [],
     businessId,
     isAdmin,
+    qrs = [],
     onReloadPortal
 }) {
     const [showAvailable, setShowAvailable] = useState(false);
@@ -95,9 +106,25 @@ export default function BusinessWorkspaceOverview({
     const [pageSlugEditor, setPageSlugEditor] = useState(null);
     const [pageSlug, setPageSlug] = useState("");
     const [labels, setLabels] = useState({});
+    const [panelEntry, setPanelEntry] = useState("panel");
+    const [panelEntryOptions, setPanelEntryOptions] = useState([]);
+    const [panelEntryBusy, setPanelEntryBusy] = useState(false);
 
     useEffect(() => setPortalSlug(portal?.slug || ""), [portal?.slug]);
     useEffect(() => setPublicBase(window.location.origin), []);
+
+    useEffect(() => {
+        if (!businessId) return;
+        fetch(`/api/business/panel-entry?businessId=${encodeURIComponent(businessId)}`, { cache: "no-store" })
+            .then(response => response.json().catch(() => ({})))
+            .then(payload => {
+                if (payload.ok) {
+                    setPanelEntry(payload.selected || "panel");
+                    setPanelEntryOptions(payload.options || []);
+                }
+            })
+            .catch(() => {});
+    }, [businessId]);
 
     useEffect(() => {
         const next = {};
@@ -112,6 +139,33 @@ export default function BusinessWorkspaceOverview({
     const contractedApps = activeFeatures.filter((item) => item.key !== "portal_public");
     const availableApps = inactiveFeatures.filter((item) => item.key !== "portal_public");
     const portalActive = portal?.status === "published";
+
+    const quickAccessEntries = useMemo(() => {
+        const icons = {
+            guest_experience: FaHotel,
+            store: FaStore,
+            resto: FaUtensils,
+            turnos: FaCalendarCheck,
+            client_reviews: FaStar,
+            ai_chatbot: FaRobot,
+            google_business_profile: FaGoogle,
+            loyalty: FaGift,
+            directory: FaGlobe,
+            qr_agency: FaQrcode,
+        };
+        const entries = contractedApps
+            .filter(feature => feature.key !== "qr_page" && feature.key !== "portal_public")
+            .map(feature => ({ key: feature.key, label: feature.title, Icon: icons[feature.key] || FaGlobe, onClick: feature.onClick }));
+        const qrEntries = qrs
+            .filter(qr => qr.qr_page_type === "qr_page" && qr.qr_page_slug)
+            .map(qr => ({
+                key: `qr-page-${qr.id}`,
+                label: qr.label || qr.qr_page_slug,
+                Icon: FaQrcode,
+                onClick: () => window.location.assign(`/dashboard/businesses/${businessId}/qrs/${qr.id}/qr-page`)
+            }));
+        return [...entries, ...qrEntries];
+    }, [businessId, contractedApps, qrs]);
 
     const pageRows = useMemo(() => {
         const routeByPage = new Map(
@@ -159,6 +213,27 @@ export default function BusinessWorkspaceOverview({
 
     async function reloadPortal() {
         if (onReloadPortal) await onReloadPortal();
+    }
+
+    async function savePanelEntry(event) {
+        const key = event.target.value;
+        setPanelEntry(key);
+        setPanelEntryBusy(true);
+        try {
+            const response = await fetch("/api/business/panel-entry", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ businessId, key })
+            });
+            const payload = await readPayload(response);
+            if (!response.ok) throw new Error(payload.error || "No se pudo guardar");
+            await showAlert({ title: "Preferencia guardada", text: "El próximo acceso abrirá el destino seleccionado.", icon: "success", timer: 1400 });
+        } catch (error) {
+            setPanelEntry("panel");
+            await showAlert({ title: "No se pudo guardar", text: error.message, icon: "error" });
+        } finally {
+            setPanelEntryBusy(false);
+        }
     }
 
     async function changePortalStatus() {
@@ -390,6 +465,34 @@ export default function BusinessWorkspaceOverview({
                         </div>
                     );
                 })}
+            </section>
+
+            {false && !!quickAccessEntries.length && (
+                <nav className="tags_workspace_quick_access" aria-label="Accesos rápidos a funcionalidades">
+                    {quickAccessEntries.map(({ key, label, Icon, onClick }, index) => (
+                        <button type="button" key={key} className={index % 3 === 1 ? "is_orange" : ""} onClick={onClick} title={`Abrir ${label}`}>
+                            <Icon />
+                            <span>{label}</span>
+                        </button>
+                    ))}
+                </nav>
+            )}
+
+            <section className="tags_workspace_section tags_workspace_entry_preference">
+                <div className="tags_workspace_section_heading">
+                    <div>
+                        <span>Acceso rápido</span>
+                        <h2>Destino al ingresar al Panel</h2>
+                        <p>Elegí qué pantalla querés abrir automáticamente después de ingresar.</p>
+                    </div>
+                </div>
+                <label className="tags_workspace_entry_select">
+                    <span>Al ingresar, abrir</span>
+                    <select value={panelEntry} onChange={savePanelEntry} disabled={panelEntryBusy || !panelEntryOptions.length}>
+                        {panelEntryOptions.map(option => <option key={option.key} value={option.key}>{option.label}</option>)}
+                    </select>
+                </label>
+                <small>Las tarjetas de “Mis funcionalidades contratadas” siguen disponibles para acceder a cualquier herramienta activa.</small>
             </section>
 
             <section className={`tags_workspace_portal ${portalActive ? "is_active" : ""}`}>

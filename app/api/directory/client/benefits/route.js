@@ -74,6 +74,7 @@ function normalize(body) {
         description: text(body.description, 5000) || null,
         imageUrl: text(body.imageUrl, 2000) || null,
         visibility: body.visibility === "public" ? "public" : "private",
+        validationMode: ["merchant", "visual", "display"].includes(body?.validationMode) ? body.validationMode : "visual",
         isActive: body.isActive === false ? 0 : 1,
         sortOrder: Number.isFinite(Number(body.sortOrder)) ? Number(body.sortOrder) : 0
     };
@@ -112,9 +113,9 @@ export async function POST(request) {
         if (value.error) return responseError(value.error);
         const [result] = await db.query(`
             INSERT INTO tags_directory_benefits
-                (business_id,site_id,listing_id,name,benefit_type,benefit_value,promotion_buy_quantity,promotion_pay_quantity,promotion_item,valid_from,valid_until,description,image_url,visibility,is_active,sort_order)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-        `, [businessId, item.site_id || null, item.listing_id, value.name, value.benefitType, value.value, value.promotionBuyQuantity, value.promotionPayQuantity, value.promotionItem, value.validFrom, value.validUntil, value.description, value.imageUrl, value.visibility, value.isActive, value.sortOrder]);
+                (business_id,site_id,listing_id,name,benefit_type,benefit_value,promotion_buy_quantity,promotion_pay_quantity,promotion_item,valid_from,valid_until,description,image_url,visibility,validation_mode,is_active,sort_order)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        `, [businessId, item.site_id || null, item.listing_id, value.name, value.benefitType, value.value, value.promotionBuyQuantity, value.promotionPayQuantity, value.promotionItem, value.validFrom, value.validUntil, value.description, value.imageUrl, value.visibility, value.validationMode, value.isActive, value.sortOrder]);
         return Response.json({ ok: true, id: result.insertId }, { status: 201 });
     } catch (error) {
         console.error("DIRECTORY BENEFITS POST ERROR", error);
@@ -135,9 +136,9 @@ export async function PATCH(request) {
         const value = normalize(body);
         if (value.error) return responseError(value.error);
         const [result] = await db.query(`
-            UPDATE tags_directory_benefits SET name=?,benefit_type=?,benefit_value=?,promotion_buy_quantity=?,promotion_pay_quantity=?,promotion_item=?,valid_from=?,valid_until=?,description=?,image_url=?,visibility=?,is_active=?,sort_order=?,updated_at=NOW()
+            UPDATE tags_directory_benefits SET name=?,benefit_type=?,benefit_value=?,promotion_buy_quantity=?,promotion_pay_quantity=?,promotion_item=?,valid_from=?,valid_until=?,description=?,image_url=?,visibility=?,validation_mode=?,is_active=?,sort_order=?,updated_at=NOW()
             WHERE id=? AND business_id=? AND listing_id=?
-        `, [value.name, value.benefitType, value.value, value.promotionBuyQuantity, value.promotionPayQuantity, value.promotionItem, value.validFrom, value.validUntil, value.description, value.imageUrl, value.visibility, value.isActive, value.sortOrder, id, businessId, item.listing_id]);
+        `, [value.name, value.benefitType, value.value, value.promotionBuyQuantity, value.promotionPayQuantity, value.promotionItem, value.validFrom, value.validUntil, value.description, value.imageUrl, value.visibility, value.validationMode, value.isActive, value.sortOrder, id, businessId, item.listing_id]);
         if (!result.affectedRows) return responseError("Beneficio no encontrado.", 404);
         return Response.json({ ok: true });
     } catch (error) {

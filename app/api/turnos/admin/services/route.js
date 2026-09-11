@@ -78,6 +78,23 @@ export async function POST(req) {
     if (resourceTypeId) {
         await db.query("INSERT INTO tags_turnos_service_resource_requirements (service_id, resource_type_id, quantity_required) VALUES (?, ?, 1)", [result.insertId, resourceTypeId]);
     }
+    const sportsSettings = body?.settings?.sports;
+    if (app.business_profile_code === "sports_club" && Number(sportsSettings?.disciplineId)) {
+        const [sportsApps] = await db.query("SELECT id FROM tags_sports_apps WHERE turnos_id=? AND business_id=? LIMIT 1", [app.id, businessId]);
+        if (sportsApps[0]) {
+            const [compatibleResources] = await db.query(
+                `SELECT r.id,r.resource_type_id,rt.code FROM tags_turnos_resources r
+                 INNER JOIN tags_turnos_resource_types rt ON rt.id=r.resource_type_id
+                 INNER JOIN tags_sports_resource_disciplines rd ON rd.resource_id=r.id AND rd.sports_app_id=? AND rd.discipline_id=?
+                 WHERE r.turnos_id=? AND r.is_active=1 AND (rt.code='court' OR (?='class' AND rt.code='coach'))`,
+                [sportsApps[0].id, Number(sportsSettings.disciplineId), app.id, sportsSettings.activityKind]
+            );
+            for (const resource of compatibleResources) {
+                await db.query("INSERT INTO tags_turnos_service_resources (service_id,resource_id,is_active) VALUES (?,?,1) ON DUPLICATE KEY UPDATE is_active=1", [result.insertId, resource.id]);
+                await db.query(`INSERT INTO tags_turnos_service_resource_requirements (service_id,resource_type_id,quantity_required,selection_mode,is_required) SELECT ?,?,1,?,1 WHERE NOT EXISTS (SELECT 1 FROM tags_turnos_service_resource_requirements WHERE service_id=? AND resource_type_id=?)`, [result.insertId, resource.resource_type_id, resource.code === "coach" ? "customer" : "automatic", result.insertId, resource.resource_type_id]);
+            }
+        }
+    }
     return Response.json({ ok: true, serviceId: result.insertId }, { status: 201 });
 }
 

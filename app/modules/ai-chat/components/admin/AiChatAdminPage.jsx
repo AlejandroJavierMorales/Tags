@@ -15,7 +15,10 @@ const EMPTY = {
     position: "right",
     primary_color: "#1f9d55",
     launcher_color: "#1f9d55",
-    launcher_offset_bottom: 120
+    launcher_offset_bottom: 120,
+    widget_type: "bubble",
+    launcher_prompt: "Cómo podemos ayudarte",
+    launcher_prompt_size: 12
 };
 
 export default function AiChatAdminPage({ businessId }) {
@@ -27,6 +30,7 @@ export default function AiChatAdminPage({ businessId }) {
     const [documents, setDocuments] = useState([]);
     const [documentForm, setDocumentForm] = useState({ title: "", topics: "", content: "", is_active: true, sort_order: 0 });
     const [editingDocument, setEditingDocument] = useState(null);
+    const [activeTab, setActiveTab] = useState("config");
 
     useEffect(() => {
         fetch(`/api/ai/admin/settings?businessId=${encodeURIComponent(businessId)}`, { cache: "no-store" })
@@ -104,7 +108,13 @@ export default function AiChatAdminPage({ businessId }) {
                 <button type="button" onClick={() => router.push(`/dashboard/businesses/${businessId}`)}><FaArrowLeft /> Volver al negocio</button>
             </header>
 
-            {loading ? <section className="tags_ai_chat_admin_panel"><p>Cargando configuración...</p></section> : <form onSubmit={save} className="tags_ai_chat_admin_panel">
+            <nav className="tags_ai_chat_admin_tabs" aria-label="Secciones del chatbot">
+                <button type="button" className={activeTab === "config" ? "is_active" : ""} onClick={() => setActiveTab("config")}>Configuración</button>
+                <button type="button" className={activeTab === "usage" ? "is_active" : ""} onClick={() => setActiveTab("usage")}>Consumo</button>
+                <button type="button" className={activeTab === "knowledge" ? "is_active" : ""} onClick={() => setActiveTab("knowledge")}>Base de conocimiento</button>
+            </nav>
+
+            {activeTab === "config" && (loading ? <section className="tags_ai_chat_admin_panel"><p>Cargando configuración...</p></section> : <form onSubmit={save} className="tags_ai_chat_admin_panel">
                 <div className="tags_ai_chat_admin_switch">
                     <input id="ai-chat-enabled" type="checkbox" checked={!!Number(form.is_enabled)} onChange={event => update("is_enabled", event.target.checked ? 1 : 0)} />
                     <label htmlFor="ai-chat-enabled"><strong>Asistente habilitado</strong><small>La página pública podrá mostrarlo cuando se active desde su propia configuración.</small></label>
@@ -118,14 +128,17 @@ export default function AiChatAdminPage({ businessId }) {
                     <label>Texto debajo del título<input id="ai-chat-subtitle" value={form.subtitle} maxLength={180} onChange={event => update("subtitle", event.target.value)} /></label>
                     <label className="is_wide">Saludo inicial<textarea id="ai-chat-greeting" rows="3" maxLength={500} value={form.greeting} onChange={event => update("greeting", event.target.value)} /></label>
                     <label>Ubicación<select id="ai-chat-position" value={form.position} onChange={event => update("position", event.target.value)}><option value="right">Abajo a la derecha</option><option value="left">Abajo a la izquierda</option></select></label>
+                    <label>Imagen de acceso<select id="ai-chat-widget-type" value={form.widget_type || "bubble"} onChange={event => update("widget_type", event.target.value)}><option value="bubble">Burbuja de chat</option><option value="robot">Robot</option><option value="avatar_woman">Asistente mujer</option><option value="avatar_man">Asistente hombre</option></select><small>Se usará cuando el chatbot se muestre sin una configuración específica por página.</small></label>
+                    <label>Texto sobre el widget<input value={form.launcher_prompt || ""} maxLength={80} onChange={event => update("launcher_prompt", event.target.value)} placeholder="Cómo podemos ayudarte" /><small>Dejalo vacío si no querés mostrarlo.</small></label>
+                    <label>Tamaño del texto (px)<input type="number" min="8" max="20" value={form.launcher_prompt_size || 12} onChange={event => update("launcher_prompt_size", event.target.value)} /></label>
                 </div>
 
                 <footer><button type="submit" disabled={saving}>{saving ? "Guardando..." : "Guardar configuración"}</button></footer>
-            </form>}
+            </form>)}
 
-            {!loading && <AiChatUsagePanel businessId={businessId} />}
+            {activeTab === "usage" && !loading && <AiChatUsagePanel businessId={businessId} />}
 
-            {!loading && <section className="tags_ai_chat_admin_panel tags_ai_chat_knowledge_panel">
+            {activeTab === "knowledge" && !loading && <section className="tags_ai_chat_admin_panel tags_ai_chat_knowledge_panel">
                 <div className="tags_ai_chat_admin_panel_title"><div><h2>Base de conocimiento propia</h2><p>Agregá información específica del negocio para que el asistente responda con mayor precisión.</p></div><button type="button" onClick={resetDocument}><FaPlus /> Nuevo contenido</button></div>
                 <form onSubmit={saveDocument} className="tags_ai_chat_knowledge_form">
                     <label>Título<input required value={documentForm.title} onChange={event => setDocumentForm(current => ({ ...current, title: event.target.value }))} placeholder="Ej.: Servicios y horarios" /></label>

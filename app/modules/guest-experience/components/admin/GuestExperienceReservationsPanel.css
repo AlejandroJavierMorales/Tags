@@ -6,3 +6,5 @@
 .tags_guest_reservations.is_overlay_only{display:contents}.tags_guest_reservations.is_overlay_only>header,.tags_guest_reservations.is_overlay_only>.tags_guest_occupancy,.tags_guest_reservations.is_overlay_only>.tags_guest_reservations_list{display:none}
 .tags_guest_communication_delete{display:inline-flex;align-items:center;justify-content:center;gap:5px;width:max-content;padding:5px 8px;border:1px solid #e3b9b4;border-radius:7px;background:#fff;color:#a43f35;font-size:11px;font-weight:800;cursor:pointer}.tags_guest_communication_delete:hover{background:#fff2f0;border-color:#c9786e}
 .tags_guest_reservation_list_actions .tags_guest_reservation_checkout_icon:disabled{background:#e5e9ed;color:#8a949d;opacity:1;box-shadow:inset 0 1px 2px #c5cbd0}
+.tags_guest_reservation_list_actions .tags_guest_reservation_checkout_icon{margin-left:6px;background:#f28c28;color:#fff;box-shadow:0 2px 5px #f28c2840}
+.tags_guest_reservation_list_actions .tags_guest_reservation_checkout_icon:hover:not(:disabled){background:#dc7415}

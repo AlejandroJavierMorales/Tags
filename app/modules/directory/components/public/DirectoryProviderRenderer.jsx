@@ -6,6 +6,7 @@ import DirectoryWebSection from "./DirectoryWebSection";
 import DirectoryCatalogBlock from "./DirectoryCatalogBlock";
 import DirectoryContactBlock from "./DirectoryContactBlock";
 import DirectoryBenefitsBlock from "./DirectoryBenefitsBlock";
+import DirectoryLoyaltyBlock from "./DirectoryLoyaltyBlock";
 import DirectoryFloatingActions from "./DirectoryFloatingActions";
 import DirectoryNavigationMenu from "./DirectoryNavigationMenu";
 import DirectoryReviewsModule from "./DirectoryReviewsModule";
@@ -26,6 +27,7 @@ function baseSlot(section) {
   if (blockType === "contact_info") return "contact";
   if (blockType === "catalog" || section?.type === "catalog") return "catalog";
   if (blockType === "benefits") return "benefits";
+  if (blockType === "loyalty_program") return "loyalty";
   return "web";
 }
 
@@ -52,6 +54,7 @@ export default function DirectoryProviderRenderer({ data, web = null, standalone
   ].filter(Boolean).sort((a, b) => a.sortOrder - b.sortOrder);
   const visibleCatalogProducts = (web?.products || []).filter(product => Number(product.is_visible));
   const benefits = web?.benefits || [];
+  const loyalty = web?.loyalty || null;
 
   function galleryImages(section) {
     const block = (section.blocks || []).find(item => Number(item.is_visible));
@@ -69,6 +72,7 @@ export default function DirectoryProviderRenderer({ data, web = null, standalone
     if (slot === "gallery") return galleryImages(section).length > 0;
     if (slot === "catalog") return visibleCatalogProducts.length > 0;
     if (slot === "benefits") return benefits.length > 0;
+    if (slot === "loyalty") return Boolean(loyalty);
     return true;
   }
 
@@ -91,6 +95,7 @@ export default function DirectoryProviderRenderer({ data, web = null, standalone
     if (slot === "contact") return <DirectoryContactBlock listing={mergedListing} social={social} content={content} styles={styles} />;
     if (slot === "catalog") return <DirectoryCatalogBlock products={visibleCatalogProducts} page={page} content={content} styles={styles} />;
     if (slot === "benefits") return <DirectoryBenefitsBlock benefits={benefits} content={content} styles={styles} />;
+    if (slot === "loyalty") return <DirectoryLoyaltyBlock program={loyalty} content={content} styles={styles} />;
     if (slot === "presentation") {
       const configuredParagraphs = Array.isArray(content.paragraphs) ? content.paragraphs.filter(Boolean) : [];
       // La ficha histórica tiene dos campos distintos: description1 es el resumen

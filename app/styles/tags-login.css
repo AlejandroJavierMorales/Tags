@@ -417,8 +417,40 @@ LOGIN V2
   }
 }
 
+.tags_login_register_link {
+  display: block;
+  margin-top: 12px;
+  text-align: center;
+  color: var(--tags-login-primary, #0fb957);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.tags_login_register_link:hover {
+  text-decoration: underline;
+}
+
 /* Identidad contextual: el logo no debe quedar comprimido contra el slogan. */
 .tags_login_logo{margin-bottom:22px}
 .tags_login_logo img{display:block;width:230px;max-width:100%;height:auto}
 .tags_login_badge{margin-top:4px;margin-bottom:24px}
 @media (max-width:991px){.tags_login_logo img{margin:0 auto;width:210px}}
+
+.tags_login_account_choices {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(31, 157, 85, .18);
+}
+
+.tags_login_account_choices_title {
+  margin: 0 0 10px;
+  color: #5f6f66;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.tags_login_account_choice {
+  margin-top: 8px;
+  width: 100%;
+}

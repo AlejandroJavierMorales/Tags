@@ -18,6 +18,8 @@ export async function GET(req) {
         const { searchParams } = new URL(req.url);
 
         const token = searchParams.get("token");
+        const requestedReturnTo = String(searchParams.get("returnTo") || "");
+        const safeReturnTo = requestedReturnTo.startsWith("/") && !requestedReturnTo.startsWith("//") ? requestedReturnTo : "";
 
         if (!token) {
 
@@ -42,6 +44,50 @@ export async function GET(req) {
         const authRecord = tokenRows[0];
 
         if (!authRecord) {
+            let userTokenRows = [];
+            try {
+                [userTokenRows] = await db.execute(`
+                    SELECT t.*,u.email AS user_email,u.first_name,u.last_name,u.status AS user_status
+                      FROM tags_user_auth_tokens t
+                      INNER JOIN tags_users u ON u.id=t.user_id
+                     WHERE t.token=? AND t.expires_at>NOW() AND t.used_at IS NULL
+                     LIMIT 1
+                `, [token]);
+            } catch (error) {
+                if (!String(error?.code || "").includes("NO_SUCH_TABLE")) throw error;
+            }
+
+            const userToken = userTokenRows[0];
+            if (userToken && userToken.user_status === "active") {
+                const channel = await getChannelContextFromHost(getRequestHost(req));
+                if (channel.siteId && userToken.context_code !== channel.code) {
+                    return new Response("El enlace pertenece a otro contexto", { status: 403 });
+                }
+
+                const session = {
+                    role: "user",
+                    userId: userToken.user_id,
+                    businessId: null,
+                    name: `${userToken.first_name} ${userToken.last_name}`.trim(),
+                    email: userToken.user_email,
+                    channelCode: channel.code,
+                    channelSiteId: channel.siteId,
+                };
+                const baseUrl = getRequestBaseUrl(req);
+                if (!baseUrl) throw new Error("AUTH_PUBLIC_URL_UNAVAILABLE");
+                const response = NextResponse.redirect(`${baseUrl}${safeReturnTo || "/mi-cuenta"}`);
+                const sessionValue = JSON.stringify(session);
+                const sessionSignature = signTagsSession(sessionValue);
+
+                await db.execute(`UPDATE tags_user_auth_tokens SET used_at=NOW() WHERE id=?`, [userToken.id]);
+                await db.execute(`UPDATE tags_users SET email_verified_at=COALESCE(email_verified_at,NOW()),last_login_at=NOW(),updated_at=NOW() WHERE id=?`, [userToken.user_id]);
+                response.cookies.set("tags_session", sessionValue, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 60 * 60 * 24 * 7 });
+                response.cookies.set("tags_session_sig", sessionSignature, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 60 * 60 * 24 * 7 });
+                return response;
+            }
+        }
+
+        if (!authRecord) {
 
             return new Response(
                 "Token inválido o expirado",
@@ -60,6 +106,7 @@ export async function GET(req) {
                 b.name,
                 b.email,
                 b.phone,
+                b.panel_entry_key,
                 b.role, -- 🔥 AGREGADO
 
                 b.plan_id,
@@ -143,6 +190,8 @@ export async function GET(req) {
 
             channelSiteId: channel.siteId,
 
+            panelEntryKey: business.panel_entry_key || "panel",
+
             subscriptionStatus:
                 business.subscription_status,
 
@@ -210,12 +259,28 @@ export async function GET(req) {
         // =====================================
 
 
+        const businessReturnTo = safeReturnTo.startsWith(`/dashboard/businesses/${business.id}/`)
+            ? safeReturnTo
+            : "";
+
         const redirectUrl =
             session.role === "admin"
                 ? `/dashboard`
-                :  session.role === "event_client"
+                : session.role === "event_client"
                 ? `/dashboard/events/${business.id}`
-                :`/dashboard/businesses/${business.id}`;
+                : (businessReturnTo || ({
+                    guest_experience: `/dashboard/businesses/${business.id}/guest-experience`,
+                    store: `/dashboard/businesses/${business.id}/store`,
+                    resto: `/dashboard/businesses/${business.id}/resto`,
+                    turnos: `/dashboard/businesses/${business.id}/turnos`,
+                    client_reviews: `/dashboard/businesses/${business.id}/resto/reviews`,
+                    qr_agency: `/dashboard/businesses/${business.id}/qr-agency`,
+                    ai_chatbot: `/dashboard/businesses/${business.id}/ai-chat`,
+                    google_business_profile: `/dashboard/businesses/${business.id}/google-business-profile`,
+                    loyalty: `/dashboard/businesses/${business.id}/loyalty`,
+                    directory: `/dashboard/businesses/${business.id}/directory`,
+                    portal_public: `/dashboard/businesses/${business.id}/portal`,
+                }[business.panel_entry_key] || `/dashboard/businesses/${business.id}`));
 
 
         const baseUrl = getRequestBaseUrl(req);

@@ -95,6 +95,24 @@ export const portalRegistry = {
             `/dashboard/businesses/${businessId}/ai-chat`
     },
 
+    google_business_profile: {
+        key: "google_business_profile",
+        title: "Tags Google Maps Profile",
+        description: "Centro de presencia digital y administracion de Google Business Profile.",
+        canHaveMultiple: false,
+        adminPath: ({ businessId }) =>
+            `/dashboard/businesses/${businessId}/google-business-profile`
+    },
+
+    loyalty: {
+        key: "loyalty",
+        title: "Tags Fidelización",
+        description: "Programas de puntos, sellos, visitas y recompensas para tus clientes.",
+        canHaveMultiple: false,
+        adminPath: ({ businessId }) =>
+            `/dashboard/businesses/${businessId}/loyalty`
+    },
+
     booking: {
         key: "booking",
         title: "Tags Reservas",

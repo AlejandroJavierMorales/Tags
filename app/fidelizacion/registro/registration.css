@@ -1,0 +1,18 @@
+.tags_user_registration_page{min-height:100vh;background:#f4f8f5;color:#18362a}
+.tags_user_registration_wrapper{width:100%;padding:28px 16px 48px}
+.tags_user_registration_card{width:min(100%,760px);margin:36px auto;padding:30px;background:#fff;border:1px solid #dfeae2;border-radius:18px;box-shadow:0 12px 35px rgba(24,54,42,.08)}
+.tags_user_registration_back{display:inline-block;margin-bottom:20px;text-decoration:none}
+.tags_user_registration_brand{display:flex;flex-direction:column;align-items:flex-start;gap:7px;margin-bottom:18px}
+.tags_user_registration_brand img{display:block;width:auto!important;max-width:180px!important;height:auto!important;max-height:100px!important;object-fit:contain}
+.tags_user_registration_brand p{margin:0;color:var(--tags-login-primary,#0fb957);font-size:14px;font-weight:700}
+.tags_user_registration_title{margin:0 0 8px;font-size:clamp(25px,4vw,36px);font-weight:800}
+.tags_user_registration_intro{color:#687970;margin:0 0 22px}
+.tags_user_registration_form .form-label{display:block;width:100%;color:#274437;font-size:14px;font-weight:700}
+.tags_user_registration_form .form-control{width:100%;margin-top:7px;min-height:46px;border:1px solid #cddbd2;border-radius:10px;background:#fff;color:#18362a;box-shadow:none}
+.tags_user_registration_form .form-control:focus{border-color:var(--tags-login-primary,#0fb957);box-shadow:0 0 0 3px color-mix(in srgb,var(--tags-login-primary,#0fb957) 15%,transparent)}
+.tags_user_registration_form .form-check{display:flex;align-items:flex-start;gap:9px;color:#52665c}
+.tags_user_registration_form .form-check-input{flex:0 0 auto;margin-top:3px}
+.tags_user_registration_submit{min-height:46px;padding:10px 22px;border:0;border-radius:10px;background:var(--tags-login-primary,#0fb957);color:#fff;font-weight:800;box-shadow:0 8px 18px color-mix(in srgb,var(--tags-login-primary,#0fb957) 24%,transparent);transition:transform .18s ease,filter .18s ease}
+.tags_user_registration_submit:hover:not(:disabled){filter:brightness(.94);transform:translateY(-1px)}
+.tags_user_registration_submit:disabled{opacity:.65;cursor:not-allowed}
+@media(max-width:600px){.tags_user_registration_card{margin:20px 12px;padding:20px}.tags_user_registration_brand img{max-width:150px!important;max-height:82px!important}.tags_user_registration_title{font-size:25px}}

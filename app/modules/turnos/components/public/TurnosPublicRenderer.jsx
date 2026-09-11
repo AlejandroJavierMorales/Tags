@@ -13,7 +13,10 @@ function localDate(value = new Date()) {
 
 export default function TurnosPublicRenderer({ page, app }) {
     const [services, setServices] = useState([]);
+    const [sports, setSports] = useState(null);
+    const [disciplineId, setDisciplineId] = useState("");
     const [serviceId, setServiceId] = useState("");
+    const [durationMinutes, setDurationMinutes] = useState(0);
     const [resources, setResources] = useState([]);
     const [resourceId, setResourceId] = useState("");
     const [locationId, setLocationId] = useState(app?.locations?.[0]?.id || "");
@@ -31,6 +34,19 @@ export default function TurnosPublicRenderer({ page, app }) {
     const [identified, setIdentified] = useState(false);
 
     const service = useMemo(() => services.find(item => String(item.id) === String(serviceId)), [services, serviceId]);
+    const sportsDurations = useMemo(() => {
+        const policy = service?.sports_duration_policy;
+        if (!policy) return [];
+        const values = [];
+        for (let value = Number(policy.minimumMinutes); value <= Number(policy.maxDurationMinutes); value += Number(policy.incrementMinutes)) values.push(value);
+        return values;
+    }, [service]);
+    const visibleServices = useMemo(() => {
+        if (!disciplineId || !sports?.disciplines?.length) return services;
+        const discipline = sports.disciplines.find(item => String(item.id) === String(disciplineId));
+        if (!discipline || !discipline.serviceIds.length) return services;
+        return services.filter(item => discipline.serviceIds.includes(Number(item.id)));
+    }, [services, sports, disciplineId]);
     const resource = useMemo(() => resources.find(item => String(item.id) === String(resourceId)), [resources, resourceId]);
     const shared = Number(resource?.capacity || 1) > 1;
     const allowsConsecutive = resource?.allow_consecutive_bookings === true || resource?.allow_consecutive_bookings === 1 || String(resource?.allow_consecutive_bookings).toLowerCase() === "true";
@@ -64,20 +80,32 @@ export default function TurnosPublicRenderer({ page, app }) {
     }, [app.slug]);
 
     useEffect(() => {
+        if (app.business_profile_code !== "sports_club") return;
+        fetch(`/api/sports/public/app?slug=${encodeURIComponent(app.slug)}`, { cache: "no-store" }).then(response => response.json()).then(payload => {
+            if (!payload.ok) return;
+            setSports(payload);
+            if (payload.disciplines?.length === 1) setDisciplineId(String(payload.disciplines[0].id));
+        }).catch(() => {});
+    }, [app.slug, app.business_profile_code]);
+
+    useEffect(() => {
         setSlots([]); setSelected(null); setQuantity(1); setTurnCount(1);
         if (!serviceId) { setResources([]); setResourceId(""); return; }
+        const selectedService = services.find(item => String(item.id) === String(serviceId));
+        setDurationMinutes(Number(selectedService?.sports_duration_policy?.minimumMinutes || selectedService?.duration_minutes || 0));
         fetch(`/api/turnos/public/resources?slug=${encodeURIComponent(app.slug)}&serviceId=${serviceId}`).then(response => response.json()).then(payload => {
             const list = payload.resources || [];
             setResources(list);
             setResourceId(current => list.some(item => String(item.id) === String(current)) ? current : list.length === 1 ? String(list[0].id) : "");
         }).catch(() => setMessage("No pudimos cargar los recursos del servicio."));
-    }, [app.slug, serviceId]);
+    }, [app.slug, serviceId, services]);
 
     useEffect(() => {
         if (!serviceId || !resourceId || !date) { setSlots([]); return; }
         let cancelled = false;
         setLoading(true); setMessage(""); setSelected(null);
         const query = new URLSearchParams({ slug: app.slug, serviceId, resourceId, locationId: String(locationId || 0), from: date, to: date, quantity: "1" });
+        if (service?.sports_duration_policy && durationMinutes) query.set("durationMinutes", String(durationMinutes));
         fetch(`/api/turnos/public/availability?${query}`).then(async response => ({ response, payload: await response.json() })).then(({ response, payload }) => {
             if (cancelled) return;
             setSlots(response.ok ? payload.slots || [] : []);
@@ -85,7 +113,7 @@ export default function TurnosPublicRenderer({ page, app }) {
             else if (!payload.slots?.length) setMessage("No hay horarios disponibles para este día.");
         }).catch(() => !cancelled && setMessage("No pudimos consultar la disponibilidad.")).finally(() => !cancelled && setLoading(false));
         return () => { cancelled = true; };
-    }, [app.slug, serviceId, resourceId, locationId, date]);
+    }, [app.slug, serviceId, resourceId, locationId, date, durationMinutes, service]);
 
     function chooseSlot(slot) {
         if (!["available", "partial"].includes(slot.status) || Number(slot.availableUnits) < 1) return;
@@ -93,7 +121,7 @@ export default function TurnosPublicRenderer({ page, app }) {
     }
 
     const selectableTurns = useMemo(() => {
-        if (!selected || !allowsConsecutive) return 1;
+        if (!selected || !allowsConsecutive || service?.sports_duration_policy) return 1;
         let count = 1;
         const configuredMax = Math.max(1, Number(resource?.max_consecutive_slots || 1));
         let expectedStart = new Date(selected.endsAt).getTime();
@@ -104,7 +132,7 @@ export default function TurnosPublicRenderer({ page, app }) {
             expectedStart = new Date(current.endsAt).getTime();
         }
         return count;
-    }, [selected, slots, allowsConsecutive, resource, quantity]);
+    }, [selected, slots, allowsConsecutive, resource, quantity, service]);
 
     async function requestLink() {
         if (!customer.email.trim()) { setMessage("Ingresá tu email para verificarlo."); return; }
@@ -118,7 +146,7 @@ export default function TurnosPublicRenderer({ page, app }) {
     async function book() {
         if (!selected || !customer.name.trim() || (!customer.email.trim() && !customer.phone.trim())) { setMessage("Completá tu nombre y un medio de contacto."); return; }
         setLoading(true);
-        const response = await fetch("/api/turnos/public/bookings/create", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: app.slug, serviceId, resourceId: Number(resourceId), locationId, startsAt: selected.startsAt, turnCount, quantity: shared ? quantity : 1, customer }) });
+        const response = await fetch("/api/turnos/public/bookings/create", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: app.slug, serviceId, resourceId: Number(resourceId), locationId, startsAt: selected.startsAt, durationMinutes: service?.sports_duration_policy ? durationMinutes : undefined, turnCount, quantity: shared ? quantity : 1, customer }) });
         const payload = await response.json();
         if (response.ok) { localStorage.removeItem(`tags_turnos_booking_draft_${app.slug}`); setReceipt(payload.booking); setSlots([]); setMessage(""); }
         else setMessage(payload.error || "No pudimos crear la reserva.");
@@ -129,7 +157,9 @@ export default function TurnosPublicRenderer({ page, app }) {
         {!app.hasPortal && <header className="tags_turnos_public_booking_brand"><strong>{app.name}</strong><a href={`/p/${app.slug}/mis-turnos`}>Mis turnos</a></header>}
         <section className="tags_turnos_public_booking_intro"><span>RESERVAS</span><h1>{page?.title || app.name}</h1><p>{page?.description || "Elegí un servicio y un horario disponible."}</p></section>
         <section className="tags_turnos_public_booking_panel">
-            <section className="tags_turnos_public_booking_choice"><h2>1. Elegí el servicio</h2><div>{services.map(item => <button type="button" key={item.id} className={String(item.id) === String(serviceId) ? "is_selected" : ""} onClick={() => setServiceId(String(item.id))}><strong>{item.name}</strong><span>{item.duration_minutes} minutos</span>{item.description && <small>{item.description}</small>}</button>)}</div></section>
+            {sports?.disciplines?.length > 1 && <section className="tags_turnos_public_booking_choice tags_sports_public_disciplines"><h2>Elegí el deporte</h2><div>{sports.disciplines.map(item => <button type="button" key={item.id} className={String(item.id) === String(disciplineId) ? "is_selected" : ""} onClick={() => { setDisciplineId(String(item.id)); setServiceId(""); setResourceId(""); }}><strong>{item.name}</strong>{item.description && <small>{item.description}</small>}</button>)}</div></section>}
+            <section className="tags_turnos_public_booking_choice"><h2>1. Elegí el servicio</h2><div>{visibleServices.map(item => <button type="button" key={item.id} className={String(item.id) === String(serviceId) ? "is_selected" : ""} onClick={() => setServiceId(String(item.id))}><strong>{item.name}</strong><span>Desde {item.sports_duration_policy?.minimumMinutes || item.duration_minutes} minutos</span>{item.description && <small>{item.description}</small>}</button>)}</div>{disciplineId && !visibleServices.length && <p>Esta disciplina todavía no tiene actividades publicadas.</p>}</section>
+            {serviceId && sportsDurations.length > 1 && <section className="tags_turnos_public_booking_choice"><h2>2. Elegí la duración</h2><div>{sportsDurations.map(value => <button type="button" key={value} className={value === durationMinutes ? "is_selected" : ""} onClick={() => { setDurationMinutes(value); setSelected(null); }}><strong>{value % 60 === 0 ? `${value / 60} hora${value === 60 ? "" : "s"}` : `${Math.floor(value / 60)} h 30 min`}</strong><span>{service.price ? `${service.currency || "ARS"} ${(Number(service.price) * value / Number(service.sports_duration_policy.minimumMinutes)).toLocaleString("es-AR")}` : "Consultar precio"}</span></button>)}</div></section>}
             {serviceId && <section className="tags_turnos_public_booking_choice"><h2>2. Elegí {service?.booking_mode === "rental" ? "qué querés alquilar" : "el recurso"}</h2><div>{resources.map(item => <button type="button" key={item.id} className={String(item.id) === String(resourceId) ? "is_selected" : ""} onClick={() => setResourceId(String(item.id))}><strong>{item.name}</strong><span>{Number(item.capacity) > 1 ? `Capacidad: ${item.capacity} ${quantityLabel}` : "Atención individual"}</span></button>)}</div>{!resources.length && <p>Este servicio todavía no tiene recursos disponibles.</p>}</section>}
             {resourceId && <section className="tags_turnos_public_booking_schedule"><h2>3. Elegí día y horario</h2><p className="tags_turnos_public_booking_duration">Cada turno dura <strong>{service?.duration_minutes} minutos</strong>.</p>{(app.locations || []).length > 1 && <label>Lugar<select value={locationId} onChange={event => setLocationId(event.target.value)}>{app.locations.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>}<div className="tags_turnos_public_booking_dates"><button disabled={week === 0} type="button" onClick={() => setWeek(Math.max(0, week - 1))}>‹</button>{dates.map(item => <button type="button" key={item.value} className={date === item.value ? "is_selected" : ""} onClick={() => setDate(item.value)}><span>{item.day}</span><strong>{item.number}</strong></button>)}<button type="button" onClick={() => setWeek(week + 1)}>›</button></div><div className="tags_turnos_public_booking_legend"><span><i />Disponible</span><span><i className="partial" />Parcialmente ocupado</span><span><i className="full" />Completo o bloqueado</span></div>{loading && <p>Consultando disponibilidad…</p>}<div className="tags_turnos_public_booking_slots">{slots.map(slot => <button type="button" key={slot.startsAt} disabled={["full", "blocked"].includes(slot.status)} className={`is_${slot.status}`} onClick={() => chooseSlot(slot)}><strong>{new Date(slot.startsAt).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}</strong><span>{STATUS[slot.status]}</span><small>{slot.availableUnits} de {slot.totalUnits} {quantityLabel} disponibles</small></button>)}</div></section>}
             {selected && !receipt && <div className="tags_turnos_public_booking_overlay" onMouseDown={() => setSelected(null)}><section className="tags_turnos_public_booking_summary" onMouseDown={event => event.stopPropagation()}><button className="tags_turnos_public_booking_close" type="button" onClick={() => setSelected(null)}>×</button><h2>Confirmá tu reserva</h2><p><strong>{service?.name}</strong> · {resource?.name}</p><p>{new Date(selected.startsAt).toLocaleString("es-AR", { dateStyle: "full", timeStyle: "short" })} · {Number(selected.durationMinutes) * turnCount} minutos</p>{allowsConsecutive && <label className="tags_turnos_public_booking_quantity">Turnos consecutivos<div className="tags_turnos_public_booking_stepper"><button type="button" onClick={() => setTurnCount(Math.max(1, turnCount - 1))}>−</button><strong>{turnCount}</strong><button type="button" onClick={() => setTurnCount(Math.min(selectableTurns, turnCount + 1))}>+</button></div><small>Máximo disponible desde este horario: {selectableTurns}</small></label>}<dl className="tags_turnos_public_booking_capacity"><div><dt>Capacidad total</dt><dd>{selected.totalUnits}</dd></div><div><dt>Reservadas</dt><dd>{selected.reservedUnits}</dd></div><div><dt>Disponibles</dt><dd>{selected.availableUnits}</dd></div></dl>{shared && <label className="tags_turnos_public_booking_quantity">¿Cuántas {quantityLabel} querés reservar?<div className="tags_turnos_public_booking_stepper"><button type="button" onClick={() => setQuantity(Math.max(1, quantity - 1))}>−</button><strong>{quantity}</strong><button type="button" onClick={() => setQuantity(Math.min(Number(selected.availableUnits), quantity + 1))}>+</button></div></label>}{needsVerification && !identified ? <div className="tags_turnos_public_booking_verify"><h3>Verificá tu email para reservar</h3><input type="email" value={customer.email} onChange={event => setCustomer({ ...customer, email: event.target.value })} />{!linkRequested ? <button type="button" onClick={requestLink}>Enviar enlace</button> : <div className="tags_turnos_public_booking_verify_sent"><strong>Enlace enviado</strong><p>Revisá tu correo para continuar.</p><button type="button" onClick={() => setLinkRequested(false)}>Cambiar email o reenviar</button></div>}</div> : <div className="tags_turnos_public_booking_customer"><input placeholder="Nombre" value={customer.name} onChange={event => setCustomer({ ...customer, name: event.target.value })} /><input type="email" placeholder="Email" value={customer.email} onChange={event => setCustomer({ ...customer, email: event.target.value })} /><input placeholder="Teléfono" value={customer.phone} onChange={event => setCustomer({ ...customer, phone: event.target.value })} /><button className="tags_turnos_public_booking_primary" type="button" onClick={book} disabled={loading}>Confirmar reserva</button></div>}</section></div>}

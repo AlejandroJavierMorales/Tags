@@ -235,6 +235,8 @@ export async function POST(req) {
                     p.status = ?,
                     p.seo_title = ?,
                     p.seo_description = ?,
+                    p.robots_index = ?,
+                    p.robots_follow = ?,
                     p.updated_at = NOW()
                 WHERE s.id = ?
                 AND s.business_id = ?
@@ -245,6 +247,8 @@ export async function POST(req) {
                     status === "published" ? "published" : "draft",
                     seo_title || name,
                     seo_description || description || null,
+                    robots_index ? 1 : 0,
+                    robots_follow ? 1 : 0,
                     storeId,
                     businessId
                 ]

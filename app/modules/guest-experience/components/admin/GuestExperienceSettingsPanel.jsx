@@ -26,7 +26,7 @@ const PUBLIC_SECTIONS = [
 
 export default function GuestExperienceSettingsPanel({ businessId, data, onSaved }) {
  const current=data.app.settings||{};
- const [form,setForm]=useState({name:data.app.name||"",welcomeMessage:data.app.welcome_message||"",logoUrl:data.app.logo_url||"",coverUrl:data.app.cover_url||"",themeOverride:Boolean(current.themeOverride),themeId:current.themeId||"",reservationCodeBase:current.reservationCodeBase||"R000",checkinTime:current.checkinTime||"15:00",checkoutTime:current.checkoutTime||"10:00",depositPercentage:current.depositPercentage||0,occupancyFixedPeriod:Boolean(current.occupancyFixedPeriod),occupancyStartDate:current.occupancyStartDate||"",occupancyDays:Math.min(120,Math.max(7,Number(current.occupancyDays||30))),receptionPhone:current.receptionPhone||"",receptionEmail:current.receptionEmail||"",arrivalInstructions:current.arrivalInstructions||"",departureInstructions:current.departureInstructions||"",houseRules:current.houseRules||"",sectionVisibility:Object.fromEntries(PUBLIC_SECTIONS.map(([key])=>[key,current.sectionVisibility?.[key]!==false]))});
+ const [form,setForm]=useState({name:data.app.name||"",welcomeMessage:data.app.welcome_message||"",logoUrl:data.app.logo_url||"",coverUrl:data.app.cover_url||"",pwaIcon192Url:current.pwaIcon192Url||"",pwaIcon512Url:current.pwaIcon512Url||"",themeOverride:Boolean(current.themeOverride),themeId:current.themeId||"",reservationCodeBase:current.reservationCodeBase||"R000",checkinTime:current.checkinTime||"15:00",checkoutTime:current.checkoutTime||"10:00",depositPercentage:current.depositPercentage||0,occupancyFixedPeriod:Boolean(current.occupancyFixedPeriod),occupancyStartDate:current.occupancyStartDate||"",occupancyDays:Math.min(120,Math.max(7,Number(current.occupancyDays||30))),receptionPhone:current.receptionPhone||"",receptionEmail:current.receptionEmail||"",arrivalInstructions:current.arrivalInstructions||"",departureInstructions:current.departureInstructions||"",houseRules:current.houseRules||"",sectionVisibility:Object.fromEntries(PUBLIC_SECTIONS.map(([key])=>[key,current.sectionVisibility?.[key]!==false]))});
  const [slugOpen,setSlugOpen]=useState(false),[slug,setSlug]=useState(data.app.slug||""),[busy,setBusy]=useState(false);
  useEffect(()=>setSlug(data.app.slug||""),[data.app.slug]);
  async function save(e){e.preventDefault();setBusy(true);try{const r=await fetch("/api/guest-experience/admin/settings",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({businessId,guestAppId:data.app.id,...form})}),p=await r.json();if(!r.ok)return showAlert({title:"No se pudo guardar",text:p.error||"Revisá la configuración.",icon:"error"});await onSaved?.();await showAlert({title:"Configuración guardada",text:"La identidad y apariencia pública fueron actualizadas.",icon:"success",timer:1600});}finally{setBusy(false)}}
@@ -55,6 +55,11 @@ export default function GuestExperienceSettingsPanel({ businessId, data, onSaved
 <div className="tags_guest_settings_media">
 <strong>Imagen de portada</strong>
 <MediaUploader businessId={businessId} value={form.coverUrl} module="guest-experience" variant="cover" entityId={data.app.id} fileName="cover" replace previousUrl={form.coverUrl} label="Subir portada" onChange={media=>setForm({...form,coverUrl:media?.url||""})}/>
+</div>
+<div className="tags_guest_settings_media">
+<strong>Icono de instalación</strong>
+<p>Es la imagen que verá el huésped al instalar Mi Estadía. Usá una imagen cuadrada; puede contener un diseño circular y no debe superar los 2 MB.</p>
+<MediaUploader businessId={businessId} value={form.pwaIcon512Url} module="guest-experience" variant="pwa-icon" entityId={data.app.id} accept="image/png,image/jpeg,image/webp,image/avif" uploadEndpoint="/api/guest-experience/admin/pwa-icon" label="Subir icono" onChange={media=>setForm({...form,pwaIcon192Url:media?.icon192Url||"",pwaIcon512Url:media?.icon512Url||""})}/>
 </div>
 <section className="tags_guest_settings_themes">
 <h3>Tema de la página pública</h3>

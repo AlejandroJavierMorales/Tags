@@ -17,6 +17,8 @@ import {
 } from "@/app/modules/turnos/lib/turnosService";
 import { deliverTurnosNotification } from "@/app/modules/turnos/lib/deliverTurnosNotification";
 import { getGuestPublicSession } from "@/app/modules/guest-experience/lib/getGuestPublicSession";
+import { getSportsBookingPolicy } from "@/app/modules/sports/lib/getSportsBookingPolicy";
+import { calculateSportsDurationPrice, validateSportsDuration } from "@/app/modules/sports/lib/sportsDurationPolicy";
 
 function validDate(value) {
     const date = new Date(value);
@@ -64,6 +66,20 @@ export async function POST(req) {
             await connection.rollback();
             return jsonResponseError("Este servicio no está disponible públicamente", 403, "PUBLIC_BOOKING_DISABLED");
         }
+        const sportsPolicy = await getSportsBookingPolicy(connection, app, service);
+        if (["admin_only", "members_only"].includes(sportsPolicy?.audienceMode)) {
+            await connection.rollback();
+            return jsonResponseError(sportsPolicy.audienceMode === "members_only" ? "Esta actividad está reservada para miembros activos" : "Esta actividad se reserva desde la administración", 403, "SPORTS_BOOKING_AUDIENCE_NOT_ALLOWED");
+        }
+        const sportsDuration = sportsPolicy ? validateSportsDuration(service, body?.durationMinutes) : null;
+        if (sportsDuration && !sportsDuration.valid) {
+            await connection.rollback();
+            return jsonResponseError(`La duración debe ser de ${sportsDuration.minimumMinutes} a ${sportsDuration.maxDurationMinutes} minutos, en incrementos de ${sportsDuration.incrementMinutes}`, 400, "SPORTS_DURATION_INVALID");
+        }
+        const bookingPrice = sportsPolicy
+            ? calculateSportsDurationPrice(sportsPolicy.guestPrice, sportsDuration)
+            : Number(service.price || 0);
+        const bookingCurrency = sportsPolicy?.currency || service.currency || app.currency;
         if (!guestSession && service.customer_identification_mode !== "contact") {
             const authToken = (await cookies()).get("tags_turnos_customer_session")?.value || "";
             const [authRows] = await connection.query(
@@ -86,14 +102,14 @@ export async function POST(req) {
             return jsonResponseError("Sede inválida para este servicio", 400, "LOCATION_INVALID");
         }
         const requestedResourceId = Number(body?.resourceId || 0);
-        const [selectedResourceRows] = await connection.query(`SELECT r.id,r.public_metadata_json FROM tags_turnos_resources r INNER JOIN tags_turnos_service_resources sr ON sr.resource_id=r.id AND sr.service_id=? AND sr.is_active=1 WHERE r.id=? AND r.turnos_id=? AND r.is_active=1 LIMIT 1`, [serviceId, requestedResourceId, app.id]);
+        const [selectedResourceRows] = await connection.query(`SELECT r.id,r.resource_type_id,r.public_metadata_json FROM tags_turnos_resources r INNER JOIN tags_turnos_service_resources sr ON sr.resource_id=r.id AND sr.service_id=? AND sr.is_active=1 WHERE r.id=? AND r.turnos_id=? AND r.is_active=1 LIMIT 1`, [serviceId, requestedResourceId, app.id]);
         if (!selectedResourceRows.length) { await connection.rollback(); return jsonResponseError("Recurso inválido para este servicio", 400, "RESOURCE_INVALID"); }
         const resourceMetadata = typeof selectedResourceRows[0].public_metadata_json === "string" ? JSON.parse(selectedResourceRows[0].public_metadata_json || "{}") : selectedResourceRows[0].public_metadata_json || {};
         const allowsConsecutive = resourceMetadata.allowConsecutiveBookings === true;
         const maxConsecutive = allowsConsecutive ? Math.max(2, Math.min(96, Number(resourceMetadata.maxConsecutiveSlots || 2))) : 1;
         const turnCount = Math.max(1, Math.min(maxConsecutive, Number(body?.turnCount || 1)));
         if (!allowsConsecutive && Number(body?.turnCount || 1) > 1) { await connection.rollback(); return jsonResponseError("Este recurso no permite turnos consecutivos", 409, "CONSECUTIVE_NOT_ALLOWED"); }
-        const durationMinutes = Number(service.duration_minutes) * turnCount;
+        const durationMinutes = sportsDuration?.durationMinutes || Number(service.duration_minutes) * turnCount;
         const ends = new Date(starts.getTime() + durationMinutes * 60000);
         if (starts.getTime() < Date.now() + Number(service.min_notice_minutes || 0) * 60000 || starts.getTime() > Date.now() + Number(service.max_advance_days || 90) * 86400000) {
             await connection.rollback();
@@ -109,9 +125,9 @@ export async function POST(req) {
             const [resources] = await connection.query(
                 `SELECT r.id, r.capacity FROM tags_turnos_resources r
                  INNER JOIN tags_turnos_service_resources sr ON sr.resource_id = r.id AND sr.service_id = ? AND sr.is_active = 1
-                 WHERE r.turnos_id = ? AND r.resource_type_id = ? AND r.is_active = 1 AND (? = 0 OR r.id = ?)
+                 WHERE r.turnos_id = ? AND r.resource_type_id = ? AND r.is_active = 1 AND (? = 0 OR r.resource_type_id <> ? OR r.id = ?)
                  FOR UPDATE`,
-                [serviceId, app.id, requirement.resource_type_id, requestedResourceId, requestedResourceId]
+                [serviceId, app.id, requirement.resource_type_id, requestedResourceId, selectedResourceRows[0].resource_type_id, requestedResourceId]
             );
             let remaining = requestedQuantity * Math.max(1, Number(requirement.quantity_required || 1));
             for (const resource of resources) {
@@ -164,7 +180,7 @@ export async function POST(req) {
             customerId = result.insertId;
         }
         const policy = resolveDepositPolicy(app, service);
-        const depositAmount = calculateDeposit(policy, service.price);
+        const depositAmount = calculateDeposit(policy, bookingPrice);
         const depositRequired = depositAmount > 0 && policy.requiredForPublic;
         const auto = isAutoConfirm(service) && (!depositRequired || !policy.confirmAfterPayment);
         const status = auto ? "confirmed" : "pending";
@@ -179,7 +195,7 @@ export async function POST(req) {
               customer_notes, source, created_by_type, confirmed_at)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'public', 'customer', ?)` ,
             [app.id, locationId, serviceId, customerId, bookingNumber, hashToken(publicToken), status,
-                starts, ends, app.timezone, Math.max(requestedQuantity, Number(body?.partySize || 1)), service.price, service.currency || app.currency,
+                starts, ends, app.timezone, Math.max(requestedQuantity, Number(body?.partySize || 1)), bookingPrice, bookingCurrency,
                 paymentStatus, depositRequired ? 1 : 0, depositRequired ? depositAmount : null,
                 depositRequired ? new Date(Date.now() + policy.holdMinutes * 60000) : null,
                 JSON.stringify(policy), cleanText(body?.notes, 1000), auto ? new Date() : null]

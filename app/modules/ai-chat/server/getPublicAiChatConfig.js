@@ -16,10 +16,12 @@ export async function getPublicAiChatConfig(businessId, surfaceType, surfaceId) 
         if (surfaceType === "external" && !Number(surfaceId)) {
             surface = {
                 is_enabled: 1,
-                widget_type: "bubble",
+                widget_type: generalExtra.widget_type || "bubble",
                 position: settingsRows[0]?.position || "right",
                 primary_color: generalExtra.primary_color || "#1f9d55",
-                launcher_color: generalExtra.launcher_color || "#1f9d55",
+            launcher_color: generalExtra.launcher_color || "#1f9d55",
+                launcher_prompt: generalExtra.launcher_prompt || "Cómo podemos ayudarte",
+                launcher_prompt_size: generalExtra.launcher_prompt_size || 12,
                 button_label: "Chat con Tags",
                 settings_json: JSON.stringify({ launcher_offset_bottom: generalExtra.launcher_offset_bottom ?? 120 })
             };
@@ -42,6 +44,8 @@ export async function getPublicAiChatConfig(businessId, surfaceType, surfaceId) 
             buttonLabel: surface.button_label || "Chat con Tags",
             launcherLabel: String(extra.launcher_label || "Chat").trim().slice(0, 18),
             launcherOffsetBottom: Math.max(0, Math.min(400, Number(extra.launcher_offset_bottom ?? 100))),
+            launcherPrompt: String(extra.launcher_prompt ?? generalExtra.launcher_prompt ?? "Cómo podemos ayudarte").trim().slice(0, 80),
+            launcherPromptSize: Math.max(8, Math.min(20, Number(extra.launcher_prompt_size ?? generalExtra.launcher_prompt_size ?? 12))),
             embedded: surfaceType === "external"
         };
     } catch (error) {

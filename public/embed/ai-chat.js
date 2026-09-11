@@ -44,6 +44,7 @@
 
     var currentPosition = requestedPosition === "left" ? "left" : "right";
     var currentOffset = 120;
+    var currentOpen = false;
 
     function place(position) {
         currentPosition = position === "left" ? "left" : "right";
@@ -59,9 +60,10 @@
     place(currentPosition);
 
     function resize(open) {
+        currentOpen = Boolean(open);
         if (!open) {
-            iframe.style.width = "100px";
-            iframe.style.height = "80px";
+            iframe.style.width = "250px";
+            iframe.style.height = "140px";
             iframe.style.bottom = Math.max(0, Math.min(400, currentOffset)) + "px";
             return;
         }
@@ -81,7 +83,7 @@
     });
 
     window.addEventListener("resize", function () {
-        if (iframe.style.width !== "100px") resize(true);
+        resize(currentOpen);
     });
 
     document.body.appendChild(iframe);

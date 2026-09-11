@@ -140,9 +140,11 @@ export async function POST(req) {
 
         await connection.commit();
 
-        let accessEmail = { sent: false, reason: "No se pudo generar el acceso." };
-        try { accessEmail = await sendReservationAccessEmail(result.insertId, guestAppId, access.session?.id || access.session?.userId || null); }
-        catch (emailError) { console.error("GUEST RESERVATION ACCESS EMAIL ERROR:", emailError); accessEmail = { sent: false, reason: emailError.message }; }
+        let accessEmail = { sent: false, reason: "Envío pendiente de confirmación." };
+        if (body.sendAccessEmail === true) {
+            try { accessEmail = await sendReservationAccessEmail(result.insertId, guestAppId, access.session?.id || access.session?.userId || null); }
+            catch (emailError) { console.error("GUEST RESERVATION ACCESS EMAIL ERROR:", emailError); accessEmail = { sent: false, reason: emailError.message }; }
+        }
 
         return Response.json({ ok: true, reservationId: result.insertId, stayCode: code, accessEmail }, { status: 201 });
 

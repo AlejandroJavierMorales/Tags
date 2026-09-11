@@ -4,11 +4,17 @@ export const dynamic = "force-dynamic";
 import { db } from "@/app/lib/tags-db";
 import { getTurnosAccess, turnosAccessResponse } from "@/app/modules/turnos/lib/access/getTurnosAccess";
 import { jsonResponseError, parseJson } from "@/app/modules/turnos/lib/turnosService";
+import { ensureSportsApp } from "@/app/modules/sports/lib/ensureSportsApp";
 
 const PROFILE_TYPES = {
     spa: [["professional", "Profesionales", "Profesional", "Profesionales"], ["cabin", "Cabinas", "Cabina", "Cabinas"]],
     bike_kayak: [["equipment", "Bicicletas / Kayaks", "Unidad", "Unidades"]],
     hairdresser: [["professional", "Profesionales", "Profesional", "Profesionales"]],
+    sports_club: [
+        ["court", "Canchas y espacios", "Cancha o espacio", "Canchas y espacios"],
+        ["coach", "Profesores", "Profesor", "Profesores"],
+        ["equipment", "Equipamiento", "Equipo", "Equipamiento"]
+    ],
     generic: [["resource", "Recursos", "Recurso", "Recursos"]]
 };
 
@@ -21,7 +27,7 @@ export async function GET(req) {
     const [rows] = await db.query("SELECT * FROM tags_turnos_apps WHERE business_id = ? AND (? = 0 OR id = ?) ORDER BY id ASC", [businessId, turnosId, turnosId]);
     if (!rows[0]) return jsonResponseError("Tags Turnos no encontrado", 404, "TURNOS_NOT_FOUND");
     const [apps] = await db.query("SELECT id, page_id, slug, name, business_profile_code, status FROM tags_turnos_apps WHERE business_id = ? ORDER BY id ASC", [businessId]);
-    return Response.json({ ok: true, apps, settings: { ...rows[0], settings: parseJson(rows[0].settings_json), publicBookingPolicy: parseJson(rows[0].public_booking_policy_json), depositPolicy: parseJson(rows[0].deposit_policy_json) } });
+    return Response.json({ ok: true, apps, isPlatformAdmin: access.session?.role === "admin", settings: { ...rows[0], settings: parseJson(rows[0].settings_json), publicBookingPolicy: parseJson(rows[0].public_booking_policy_json), depositPolicy: parseJson(rows[0].deposit_policy_json) } });
 }
 
 export async function POST(req) {
@@ -42,6 +48,10 @@ export async function POST(req) {
     if (!result.affectedRows) return jsonResponseError("Tags Turnos no encontrado", 404, "TURNOS_NOT_FOUND");
     for (const [code, name, singular, plural] of PROFILE_TYPES[profile]) {
         await db.query("INSERT IGNORE INTO tags_turnos_resource_types (turnos_id,code,name,singular_label,plural_label) VALUES (?,?,?,?,?)", [turnosId, code, name, singular, plural]);
+    }
+    if (profile === "sports_club") {
+        const [appRows] = await db.query("SELECT name FROM tags_turnos_apps WHERE id = ? AND business_id = ? LIMIT 1", [turnosId, businessId]);
+        await ensureSportsApp({ connection: db, businessId, turnosId, name: appRows[0]?.name || "Tags Deportes" });
     }
     return Response.json({ ok: true, depositPolicy: normalizedPolicy, publicBookingPolicy: publicPolicy });
 }

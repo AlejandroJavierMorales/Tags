@@ -110,6 +110,10 @@ export default function TagsHeader() {
                 href="/dashboard/businesses"
                 label="Clientes"
               />
+              <Item
+                href="/dashboard/users"
+                label="Usuarios"
+              />
                <div className="dropdown_divider" />
 
               <Item

@@ -6,6 +6,7 @@ import { getRequestBaseUrl } from "@/app/lib/channelContext";
 import { createSlug } from "@/app/modules/qr-page/lib/createSlug";
 import { createAppQRCode } from "@/app/modules/qr/lib/createAppQRCode";
 import { registerQRAddonUsage } from "@/app/modules/addons/lib/registerQRAddonUsage";
+import { ensureSportsApp } from "@/app/modules/sports/lib/ensureSportsApp";
 
 const PROFILE_RESOURCE_TYPES = {
     spa: [
@@ -14,6 +15,11 @@ const PROFILE_RESOURCE_TYPES = {
     ],
     bike_kayak: [["equipment", "Bicicletas / Kayaks", "Unidad", "Unidades"]],
     hairdresser: [["professional", "Profesionales", "Profesional", "Profesionales"]],
+    sports_club: [
+        ["court", "Canchas y espacios", "Cancha o espacio", "Canchas y espacios"],
+        ["coach", "Profesores", "Profesor", "Profesores"],
+        ["equipment", "Equipamiento", "Equipo", "Equipamiento"]
+    ],
     generic: [["resource", "Recursos", "Recurso", "Recursos"]]
 };
 
@@ -104,6 +110,10 @@ export async function POST(req) {
             ]
         );
         const turnosId = appResult.insertId;
+
+        if (profile === "sports_club") {
+            await ensureSportsApp({ connection, businessId, turnosId, name });
+        }
 
         const [profileRows] = await connection.query(
             "SELECT default_capabilities_json FROM tags_turnos_profiles WHERE code = ? AND is_active = 1 LIMIT 1",

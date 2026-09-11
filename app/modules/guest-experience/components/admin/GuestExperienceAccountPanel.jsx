@@ -6,6 +6,7 @@ import showAlert from "@/app/components/showAlert";
 import "./GuestExperienceAccountPanel.css";
 
 const EMPTY = { amount: "", concept: "Seña de reserva", paymentMethod: "cash", reference: "" };
+const communicationLabel = code => code === "arrival_reminder_24h" ? "Recordatorio de ingreso · 24 horas" : code === "arrival_reminder" ? "Recordatorio de ingreso · 48 horas" : "Acceso a Mi Estadía";
 
 export default function GuestExperienceAccountPanel({ businessId, guestAppId, stayId, onChanged }) {
     const [data, setData] = useState(null);
@@ -56,7 +57,7 @@ export default function GuestExperienceAccountPanel({ businessId, guestAppId, st
             <button disabled={busy}>Imputar pago</button>
         </form>
         <div className="tags_guest_account_entries">{data.entries.map(item => <div key={item.id}><span>{item.description}</span><strong className={Number(item.total_amount) < 0 ? "payment" : ""}>${Number(item.total_amount).toLocaleString("es-AR")}</strong></div>)}</div>
-        <details className="tags_guest_communications_report"><summary>Historial de comunicaciones ({communications.length})</summary><div>{communications.map(item => <article key={item.id}><span>{item.event_code === "arrival_reminder" ? "Recordatorio de ingreso" : "Acceso a Mi Estadía"} · {item.channel}</span><strong>{item.status}</strong><small>{new Date(item.created_at).toLocaleString("es-AR")} · {item.recipient || "Sin destinatario"}</small>{item.last_error && <em>{item.last_error}</em>}</article>)}</div></details>
+        <details className="tags_guest_communications_report"><summary>Historial de comunicaciones ({communications.length})</summary><div>{communications.map(item => <article key={item.id}><span>{communicationLabel(item.event_code)} · {item.channel}</span><strong>{item.status}</strong><small>{new Date(item.created_at).toLocaleString("es-AR")} · {item.recipient || "Sin destinatario"}</small>{item.last_error && <em>{item.last_error}</em>}</article>)}</div></details>
         {busy && <TagsSpinner size={100} logoSize={52} borderSize={4} background="rgba(255,255,255,.72)" />}
     </section>;
 }

@@ -39,7 +39,7 @@ export function isClientReviewsPage(qr) {
 
 function businessHasAddon(businessAddons, code) {
     return businessAddons.some(
-        (addon) => addon.addon_code === code
+        (addon) => normalizeCode(addon.addon_code) === normalizeCode(code)
     );
 }
 
@@ -102,6 +102,12 @@ export function buildPortalDashboard({
         businessHasAddon(businessAddons, "guest_experience");
     const hasAiChatAddon =
         businessHasAddon(businessAddons, "ai_chatbot");
+
+    const hasGoogleBusinessProfileAddon =
+        businessHasAddon(businessAddons, "google_business_profile");
+
+    const hasLoyaltyAddon =
+        businessHasAddon(businessAddons, "loyalty");
 
     const hasDirectoryAddon =
         businessHasAddon(businessAddons, "directory");
@@ -168,6 +174,26 @@ export function buildPortalDashboard({
             onClick: () => {
                 if (!hasAiChatAddon) return;
                 router.push(portalRegistry.ai_chatbot.adminPath({ businessId }));
+            }
+        },
+        {
+            ...portalRegistry.google_business_profile,
+            active: hasGoogleBusinessProfileAddon,
+            status: hasGoogleBusinessProfileAddon ? "Disponible" : null,
+            actionLabel: hasGoogleBusinessProfileAddon ? "Administrar" : "No contratado",
+            onClick: () => {
+                if (!hasGoogleBusinessProfileAddon) return;
+                router.push(portalRegistry.google_business_profile.adminPath({ businessId }));
+            }
+        },
+        {
+            ...portalRegistry.loyalty,
+            active: hasLoyaltyAddon,
+            status: hasLoyaltyAddon ? "Disponible" : null,
+            actionLabel: hasLoyaltyAddon ? "Administrar" : "No contratado",
+            onClick: () => {
+                if (!hasLoyaltyAddon) return;
+                router.push(portalRegistry.loyalty.adminPath({ businessId }));
             }
         },
         {

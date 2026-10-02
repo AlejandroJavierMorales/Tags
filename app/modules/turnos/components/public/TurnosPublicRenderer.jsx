@@ -6,12 +6,17 @@ import "./TurnosPublicRenderer.css";
 
 const STATUS = { available: "Disponible", partial: "Disponibilidad parcial", full: "Completo", blocked: "No disponible" };
 
+function whatsappUrl(phone, message) {
+    const digits = String(phone || "").replace(/\D/g, "");
+    return digits ? `https://wa.me/${digits}?text=${encodeURIComponent(message)}` : "";
+}
+
 function localDate(value = new Date()) {
     const offset = value.getTimezoneOffset() * 60000;
     return new Date(value.getTime() - offset).toISOString().slice(0, 10);
 }
 
-export default function TurnosPublicRenderer({ page, app }) {
+export default function TurnosPublicRenderer({ page, app, embedded = false, embeddedReturnUrl = "" }) {
     const [services, setServices] = useState([]);
     const [sports, setSports] = useState(null);
     const [disciplineId, setDisciplineId] = useState("");
@@ -138,7 +143,7 @@ export default function TurnosPublicRenderer({ page, app }) {
         if (!customer.email.trim()) { setMessage("Ingresá tu email para verificarlo."); return; }
         localStorage.setItem(`tags_turnos_booking_draft_${app.slug}`, JSON.stringify({ serviceId, resourceId, locationId, date, quantity, selected, customer }));
         setLoading(true);
-        const response = await fetch("/api/turnos/public/customer/request-link", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: app.slug, email: customer.email, purpose: "booking" }) });
+        const response = await fetch("/api/turnos/public/customer/request-link", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: app.slug, email: customer.email, purpose: "booking", returnTo: embedded ? embeddedReturnUrl : "" }) });
         const payload = await response.json();
         setLinkRequested(response.ok); setMessage(response.ok ? "Revisá tu correo y abrí el enlace para continuar." : payload.error || "No pudimos enviar el enlace."); setLoading(false);
     }
@@ -153,8 +158,22 @@ export default function TurnosPublicRenderer({ page, app }) {
         setLoading(false);
     }
 
-    return <main className="tags_turnos_public_booking" style={app.theme_css_vars || {}}>{loading && <TagsSpinner size={120} logoSize={66} borderSize={5} background="rgba(255,255,255,.72)" />}
-        {!app.hasPortal && <header className="tags_turnos_public_booking_brand"><strong>{app.name}</strong><a href={`/p/${app.slug}/mis-turnos`}>Mis turnos</a></header>}
+    const pendingWhatsappUrl = receipt?.status === "pending" ? whatsappUrl(app.business_whatsapp || app.business_phone, [
+        `Hola, solicité una reserva en ${app.business_name || app.name}.`,
+        `Reserva: ${receipt.bookingNumber}`,
+        `Actividad: ${service?.name || "-"}`,
+        `Recurso: ${resource?.name || "-"}`,
+        `Fecha y horario: ${selected ? new Date(selected.startsAt).toLocaleString("es-AR", { dateStyle: "full", timeStyle: "short" }) : "-"}`,
+        `Duración: ${selected ? Number(selected.durationMinutes) * turnCount : durationMinutes} minutos`,
+        `Nombre: ${customer.name || "-"}`,
+        `Teléfono: ${customer.phone || "-"}`,
+        `Email: ${customer.email || "-"}`,
+        "Quedo a la espera de la confirmación. Gracias."
+    ].join("\n")) : "";
+
+    const Root = embedded ? "div" : "main";
+    return <Root className="tags_turnos_public_booking" style={embedded ? {} : app.theme_css_vars || {}}>{loading && <TagsSpinner size={120} logoSize={66} borderSize={5} background="rgba(255,255,255,.72)" />}
+        {!embedded && !app.hasPortal && <header className="tags_turnos_public_booking_brand"><strong>{app.name}</strong><a href={`/p/${app.slug}/mis-turnos`}>Mis turnos</a></header>}
         <section className="tags_turnos_public_booking_intro"><span>RESERVAS</span><h1>{page?.title || app.name}</h1><p>{page?.description || "Elegí un servicio y un horario disponible."}</p></section>
         <section className="tags_turnos_public_booking_panel">
             {sports?.disciplines?.length > 1 && <section className="tags_turnos_public_booking_choice tags_sports_public_disciplines"><h2>Elegí el deporte</h2><div>{sports.disciplines.map(item => <button type="button" key={item.id} className={String(item.id) === String(disciplineId) ? "is_selected" : ""} onClick={() => { setDisciplineId(String(item.id)); setServiceId(""); setResourceId(""); }}><strong>{item.name}</strong>{item.description && <small>{item.description}</small>}</button>)}</div></section>}
@@ -163,8 +182,8 @@ export default function TurnosPublicRenderer({ page, app }) {
             {serviceId && <section className="tags_turnos_public_booking_choice"><h2>2. Elegí {service?.booking_mode === "rental" ? "qué querés alquilar" : "el recurso"}</h2><div>{resources.map(item => <button type="button" key={item.id} className={String(item.id) === String(resourceId) ? "is_selected" : ""} onClick={() => setResourceId(String(item.id))}><strong>{item.name}</strong><span>{Number(item.capacity) > 1 ? `Capacidad: ${item.capacity} ${quantityLabel}` : "Atención individual"}</span></button>)}</div>{!resources.length && <p>Este servicio todavía no tiene recursos disponibles.</p>}</section>}
             {resourceId && <section className="tags_turnos_public_booking_schedule"><h2>3. Elegí día y horario</h2><p className="tags_turnos_public_booking_duration">Cada turno dura <strong>{service?.duration_minutes} minutos</strong>.</p>{(app.locations || []).length > 1 && <label>Lugar<select value={locationId} onChange={event => setLocationId(event.target.value)}>{app.locations.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>}<div className="tags_turnos_public_booking_dates"><button disabled={week === 0} type="button" onClick={() => setWeek(Math.max(0, week - 1))}>‹</button>{dates.map(item => <button type="button" key={item.value} className={date === item.value ? "is_selected" : ""} onClick={() => setDate(item.value)}><span>{item.day}</span><strong>{item.number}</strong></button>)}<button type="button" onClick={() => setWeek(week + 1)}>›</button></div><div className="tags_turnos_public_booking_legend"><span><i />Disponible</span><span><i className="partial" />Parcialmente ocupado</span><span><i className="full" />Completo o bloqueado</span></div>{loading && <p>Consultando disponibilidad…</p>}<div className="tags_turnos_public_booking_slots">{slots.map(slot => <button type="button" key={slot.startsAt} disabled={["full", "blocked"].includes(slot.status)} className={`is_${slot.status}`} onClick={() => chooseSlot(slot)}><strong>{new Date(slot.startsAt).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}</strong><span>{STATUS[slot.status]}</span><small>{slot.availableUnits} de {slot.totalUnits} {quantityLabel} disponibles</small></button>)}</div></section>}
             {selected && !receipt && <div className="tags_turnos_public_booking_overlay" onMouseDown={() => setSelected(null)}><section className="tags_turnos_public_booking_summary" onMouseDown={event => event.stopPropagation()}><button className="tags_turnos_public_booking_close" type="button" onClick={() => setSelected(null)}>×</button><h2>Confirmá tu reserva</h2><p><strong>{service?.name}</strong> · {resource?.name}</p><p>{new Date(selected.startsAt).toLocaleString("es-AR", { dateStyle: "full", timeStyle: "short" })} · {Number(selected.durationMinutes) * turnCount} minutos</p>{allowsConsecutive && <label className="tags_turnos_public_booking_quantity">Turnos consecutivos<div className="tags_turnos_public_booking_stepper"><button type="button" onClick={() => setTurnCount(Math.max(1, turnCount - 1))}>−</button><strong>{turnCount}</strong><button type="button" onClick={() => setTurnCount(Math.min(selectableTurns, turnCount + 1))}>+</button></div><small>Máximo disponible desde este horario: {selectableTurns}</small></label>}<dl className="tags_turnos_public_booking_capacity"><div><dt>Capacidad total</dt><dd>{selected.totalUnits}</dd></div><div><dt>Reservadas</dt><dd>{selected.reservedUnits}</dd></div><div><dt>Disponibles</dt><dd>{selected.availableUnits}</dd></div></dl>{shared && <label className="tags_turnos_public_booking_quantity">¿Cuántas {quantityLabel} querés reservar?<div className="tags_turnos_public_booking_stepper"><button type="button" onClick={() => setQuantity(Math.max(1, quantity - 1))}>−</button><strong>{quantity}</strong><button type="button" onClick={() => setQuantity(Math.min(Number(selected.availableUnits), quantity + 1))}>+</button></div></label>}{needsVerification && !identified ? <div className="tags_turnos_public_booking_verify"><h3>Verificá tu email para reservar</h3><input type="email" value={customer.email} onChange={event => setCustomer({ ...customer, email: event.target.value })} />{!linkRequested ? <button type="button" onClick={requestLink}>Enviar enlace</button> : <div className="tags_turnos_public_booking_verify_sent"><strong>Enlace enviado</strong><p>Revisá tu correo para continuar.</p><button type="button" onClick={() => setLinkRequested(false)}>Cambiar email o reenviar</button></div>}</div> : <div className="tags_turnos_public_booking_customer"><input placeholder="Nombre" value={customer.name} onChange={event => setCustomer({ ...customer, name: event.target.value })} /><input type="email" placeholder="Email" value={customer.email} onChange={event => setCustomer({ ...customer, email: event.target.value })} /><input placeholder="Teléfono" value={customer.phone} onChange={event => setCustomer({ ...customer, phone: event.target.value })} /><button className="tags_turnos_public_booking_primary" type="button" onClick={book} disabled={loading}>Confirmar reserva</button></div>}</section></div>}
-            {receipt && <section className="tags_turnos_public_booking_receipt"><h2>{receipt.bookingNumber}</h2><p>{receipt.status === "confirmed" ? "Reserva confirmada." : "Pendiente de confirmación."}</p><a href={receipt.manageUrl}>Ver mi reserva</a></section>}
+            {receipt && <section className="tags_turnos_public_booking_receipt"><h2>{receipt.bookingNumber}</h2><p>{receipt.status === "confirmed" ? "Reserva confirmada." : "Solicitud enviada. El establecimiento debe confirmarla."}</p><div className="tags_turnos_public_booking_receipt_actions">{pendingWhatsappUrl && <a className="is_whatsapp" href={pendingWhatsappUrl} target="_blank" rel="noreferrer">Avisar por WhatsApp al establecimiento</a>}<a href={receipt.manageUrl}>Ver mi reserva</a></div></section>}
             {message && <p className="tags_turnos_public_booking_message">{message}</p>}
         </section>
-    </main>;
+    </Root>;
 }

@@ -10,7 +10,7 @@ function publicHost(request) {
       || request.headers.get("x-forwarded-host")
       || request.headers.get("host")
       || ""
-  ).split(",")[0].trim().toLowerCase().replace(/^www\./, "");
+  ).split(",")[0].trim().toLowerCase().replace(/^www\./, "").replace(/:\d+$/, "");
 }
 
 export async function GET(request) {

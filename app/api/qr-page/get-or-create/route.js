@@ -24,6 +24,8 @@ import { safeParseJSON }
 
 import { canActivateQRPage }
     from "@/app/modules/qr-page/lib/canActivateQRPage";
+import { normalizeDirectoryDbValue }
+    from "@/app/modules/directory/lib/normalizeDirectoryDbValue";
 
 
 
@@ -463,8 +465,8 @@ export async function GET(req) {
                 ]
             );
 
-        const sectionsWithBlocks =
-            sections.map((section) => {
+        let sectionsWithBlocks =
+            normalizeDirectoryDbValue(sections.map((section) => {
 
                 return {
 
@@ -503,7 +505,38 @@ export async function GET(req) {
                                 };
                             })
                 };
-            });
+            }));
+
+        if (page.page_type === "directory") {
+            const [legacyGalleryRows] = await db.query(
+                `SELECT m.url,m.alt_text,m.source_payload
+                   FROM tags_directory_media m
+                   INNER JOIN tags_directory_listings l ON l.id=m.listing_id
+                  WHERE l.qr_page_id=? AND l.business_id=?
+                    AND m.media_type='gallery' AND m.is_active=1
+                  ORDER BY m.sort_order,m.id
+                  LIMIT 8`,
+                [page.id, business.id]
+            );
+            const legacyImages = normalizeDirectoryDbValue(legacyGalleryRows).map(item => ({
+                url: item.url,
+                alt: item.alt_text || ""
+            })).filter(item => item.url);
+            if (legacyImages.length) {
+                sectionsWithBlocks = sectionsWithBlocks.map(section => ({
+                    ...section,
+                    blocks: (section.blocks || []).map(block => {
+                        const isGallery = section.settings_json?.directoryBaseSlot === "gallery" || block.type === "gallery";
+                        const configuredImages = Array.isArray(block.content_json?.images) ? block.content_json.images.filter(item => item?.url) : [];
+                        if (!isGallery || configuredImages.length) return block;
+                        return {
+                            ...block,
+                            content_json: { ...block.content_json, images: legacyImages, maxImages: 8 }
+                        };
+                    })
+                }));
+            }
+        }
 
         return Response.json({
 
@@ -561,7 +594,10 @@ export async function GET(req) {
                 sections:
                     sectionsWithBlocks,
 
-                products
+                products: products.map(product => ({
+                    ...product,
+                    images_json: safeParseJSON(product.images_json) || []
+                }))
             }
         });
 

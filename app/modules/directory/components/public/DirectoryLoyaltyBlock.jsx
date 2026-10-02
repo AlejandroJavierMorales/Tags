@@ -8,6 +8,10 @@ import "./DirectoryLoyaltyBlock.css";
 const requirement = reward => reward.required_points ? `${reward.required_points} puntos` : reward.required_stamps ? `${reward.required_stamps} sellos` : reward.required_visits ? `${reward.required_visits} visitas` : "Consultar condiciones";
 
 export default function DirectoryLoyaltyBlock({ program, content = {}, styles = {} }) {
+    if (Array.isArray(program)) {
+        return <div className="tags_directory_loyalty_programs">{program.map(item => <DirectoryLoyaltyBlock key={item.id} program={item} content={content} styles={styles} />)}</div>;
+    }
+    if (!program) return null;
     const [membership, setMembership] = useState({ authenticated: false, joined: false });
     const [busy, setBusy] = useState(false);
     useEffect(() => {
@@ -18,7 +22,7 @@ export default function DirectoryLoyaltyBlock({ program, content = {}, styles = 
     async function participate() {
         if (!membership.authenticated) {
             const returnTo = window.location.pathname + window.location.search;
-            window.location.href = `/login?returnTo=${encodeURIComponent(returnTo)}`;
+            window.location.href = `/login?returnTo=${encodeURIComponent(returnTo)}&choose=1`;
             return;
         }
         if (membership.joined) {

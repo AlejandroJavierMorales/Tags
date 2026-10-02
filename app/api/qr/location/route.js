@@ -1,4 +1,6 @@
 import { db } from "@/app/lib/tags-db";
+import { cookies } from "next/headers";
+import { getDirectoryPointScanContext, resolveDirectoryPointScan } from "@/app/modules/directory-points/server/directoryPointScanService";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,6 +21,33 @@ function distanceKm(lat1, lon1, lat2, lon2) {
   return earthRadius * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+async function visitorIdFromCookie() {
+  const cookieStore = await cookies();
+  return cookieStore.get("visitor_id")?.value || "";
+}
+
+export async function GET(req) {
+  try {
+    const clickId = Number(new URL(req.url).searchParams.get("clickId") || 0);
+    if (!Number.isInteger(clickId) || clickId <= 0) {
+      return Response.json({ ok: false, error: "Click inválido" }, { status: 400 });
+    }
+    const context = await getDirectoryPointScanContext({ clickId, visitorId: await visitorIdFromCookie() });
+    if (!context) return Response.json({ ok: true, sharedPointQr: false });
+    return Response.json({
+      ok: true,
+      sharedPointQr: context.shared,
+      typeName: context.typeName,
+      colorHex: context.colorHex,
+      markerIconUrl: context.markerIconUrl,
+      destinationUrl: context.destinationUrl,
+    });
+  } catch (error) {
+    console.error("QR location context error:", error);
+    return Response.json({ ok: false, error: "No se pudo obtener el contexto del QR" }, { status: 500 });
+  }
+}
+
 export async function POST(req) {
   try {
     const body = await req.json().catch(() => ({}));
@@ -28,7 +57,7 @@ export async function POST(req) {
     }
 
     const [[click]] = await db.query(
-      `SELECT c.id, c.created_at, q.final_url, q.destination_url
+      `SELECT c.id, c.created_at, c.visitor_id, q.id qr_code_id, q.final_url, q.destination_url
        FROM tags_clicks c
        INNER JOIN tags_qr_codes q ON q.id = c.qr_code_id
        WHERE c.id = ? AND c.created_at >= NOW() - INTERVAL 15 MINUTE
@@ -38,6 +67,20 @@ export async function POST(req) {
 
     if (!click) {
       return Response.json({ ok: false, error: "Click vencido" }, { status: 404 });
+    }
+
+    const visitorId = await visitorIdFromCookie();
+    const pointContext = await getDirectoryPointScanContext({ clickId, visitorId });
+    let pointAttribution = null;
+    if (pointContext?.shared) {
+      pointAttribution = await resolveDirectoryPointScan({
+        context: pointContext,
+        latitude: body.latitude,
+        longitude: body.longitude,
+        accuracy: body.accuracy,
+        printedSuffix: body.printedSuffix,
+        declined: body.declined === true,
+      });
     }
 
     const latitude = Number(body.latitude);
@@ -78,7 +121,8 @@ export async function POST(req) {
 
     return Response.json({
       ok: true,
-      destinationUrl: click.final_url || click.destination_url || "/"
+      destinationUrl: click.final_url || click.destination_url || "/",
+      pointAttribution,
     });
   } catch (error) {
     console.error("QR browser geolocation error:", error);

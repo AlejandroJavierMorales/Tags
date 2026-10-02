@@ -10,6 +10,13 @@ import { sendMail } from "@/app/lib/sendMail";
 import { directoryEmailBranding, directoryEmailHeader } from "@/app/modules/directory/lib/directoryEmailBranding";
 
 const escapeHtml = value => String(value || "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
+const jsonText = value => {
+  if (value == null) return "{}";
+  if (typeof value === "string") {
+    try { JSON.parse(value); return value; } catch { return "{}"; }
+  }
+  try { return JSON.stringify(value); } catch { return "{}"; }
+};
 
 async function notifySubscriptionState({ businessId, planId, status, previousStatus }) {
   if (status === previousStatus || !["inactive", "active", "cancelled", "past_due"].includes(status)) return;
@@ -91,23 +98,64 @@ export async function PUT(req) {
     const effectiveDuration = requestedDuration || Number(subscription.duration_months || 1);
     await conn.query("UPDATE tags_subscriptions SET plan_id=?,status=?,amount=?,payment_provider=?,duration_months=?,expires_at=?,next_billing_at=?,auto_renew=?,updated_at=NOW() WHERE id=?", [effectivePlanId, status, amount, effectiveProvider, effectiveDuration, expiresAt, effectiveProvider === "mercadopago" ? expiresAt : null, effectiveProvider === "mercadopago" ? 1 : 0, id]);
     const addonStatus = ["active", "trial"].includes(status) ? "active" : "inactive";
-    await conn.query(`UPDATE tags_business_addons ba INNER JOIN tags_subscription_addon_grants g ON g.business_addon_id=ba.id SET ba.status=?,ba.expires_at=?,ba.updated_at=NOW(),g.status=?,g.expires_at=?,g.updated_at=NOW() WHERE g.subscription_id=?`, [addonStatus, expiresAt, addonStatus, expiresAt, id]);
+    const hasAddonSelection = Object.prototype.hasOwnProperty.call(body || {}, "addons");
+    if (!hasAddonSelection) await conn.query(`UPDATE tags_business_addons ba INNER JOIN tags_subscription_addon_grants g ON g.business_addon_id=ba.id SET ba.status=?,ba.expires_at=?,ba.updated_at=NOW(),g.status=?,g.expires_at=?,g.updated_at=NOW() WHERE g.subscription_id=? AND g.status<>'removed'`, [addonStatus, expiresAt, addonStatus, expiresAt, id]);
     const [[profile]] = await conn.query("SELECT current_version_id FROM tags_plan_profiles WHERE plan_id=? AND status='active' LIMIT 1", [effectivePlanId]);
-    if (profile?.current_version_id) {
-      await conn.query("UPDATE tags_subscription_addon_grants g INNER JOIN tags_business_addons ba ON ba.id=g.business_addon_id SET g.status='inactive',g.expires_at=?,g.updated_at=NOW(),ba.status='inactive',ba.expires_at=?,ba.updated_at=NOW() WHERE g.subscription_id=?", [expiresAt, expiresAt, id]);
+    if (hasAddonSelection) {
+      const requested = Object.entries(body.addons || {}).filter(([, quantity]) => Number(quantity) > 0).map(([code, quantity]) => ({ code: String(code), quantity: Math.min(999, Math.max(1, Number(quantity))) }));
+      const [availableRows] = await conn.query("SELECT code FROM tags_addons WHERE is_active=1");
+      const available = new Set(availableRows.map(item => item.code));
+      const invalid = requested.find(item => !available.has(item.code));
+      if (invalid) throw Object.assign(new Error(`La funcionalidad ${invalid.code} no está disponible`), { status: 409 });
+      const desired = new Map(requested.map(item => [item.code, item]));
+      const [currentGrants] = await conn.query("SELECT id,business_addon_id,addon_code,status FROM tags_subscription_addon_grants WHERE subscription_id=? FOR UPDATE", [id]);
+      for (const grant of currentGrants) {
+        const selected = desired.get(grant.addon_code);
+        if (!selected) {
+          await conn.query("UPDATE tags_subscription_addon_grants SET status='removed',updated_at=NOW() WHERE id=?", [grant.id]);
+          await conn.query("UPDATE tags_business_addons SET status='inactive',updated_at=NOW() WHERE id=? AND business_id=?", [grant.business_addon_id, subscription.business_id]);
+          continue;
+        }
+        await conn.query("UPDATE tags_subscription_addon_grants SET quantity=?,status=?,expires_at=?,updated_at=NOW() WHERE id=?", [selected.quantity, addonStatus, expiresAt, grant.id]);
+        await conn.query("UPDATE tags_business_addons SET quantity=?,status=?,expires_at=?,updated_at=NOW() WHERE id=? AND business_id=?", [selected.quantity, addonStatus, expiresAt, grant.business_addon_id, subscription.business_id]);
+        desired.delete(grant.addon_code);
+      }
+      const [planConfigs] = profile?.current_version_id ? await conn.query("SELECT addon_code,entitlement_config_json FROM tags_plan_version_addons WHERE plan_version_id=?", [profile.current_version_id]) : [[]];
+      const configs = new Map(planConfigs.map(item => [item.addon_code, jsonText(item.entitlement_config_json)]));
+      for (const selected of desired.values()) {
+        const [unlinkedAddons] = await conn.query(`SELECT ba.id FROM tags_business_addons ba
+          LEFT JOIN tags_subscription_addon_grants linked ON linked.business_addon_id=ba.id
+          WHERE ba.business_id=? AND ba.addon_code=? AND linked.id IS NULL
+          ORDER BY (ba.status='active') DESC,ba.id DESC FOR UPDATE`, [subscription.business_id, selected.code]);
+        let businessAddonId = unlinkedAddons[0]?.id;
+        if (businessAddonId) {
+          await conn.query("UPDATE tags_business_addons SET quantity=?,status=?,expires_at=?,notes='Vinculado a la suscripción existente',updated_at=NOW() WHERE id=? AND business_id=?", [selected.quantity, addonStatus, expiresAt, businessAddonId, subscription.business_id]);
+          for (const duplicate of unlinkedAddons.slice(1)) {
+            await conn.query("UPDATE tags_business_addons SET status='inactive',notes='Asignación duplicada reemplazada al vincular la suscripción',updated_at=NOW() WHERE id=? AND business_id=?", [duplicate.id, subscription.business_id]);
+          }
+        } else {
+          const [createdAddon] = await conn.query("INSERT INTO tags_business_addons (business_id,addon_code,quantity,status,started_at,expires_at,amount,currency,notes,created_at,updated_at) VALUES (?,?,?,?,NOW(),?,0,?,'Agregado a la suscripción',NOW(),NOW())", [subscription.business_id, selected.code, selected.quantity, addonStatus, expiresAt, subscription.currency || "ARS"]);
+          businessAddonId = createdAddon.insertId;
+        }
+        await conn.query("INSERT INTO tags_subscription_addon_grants (subscription_id,business_id,business_addon_id,addon_code,quantity,status,starts_at,expires_at,entitlement_snapshot_json) VALUES (?,?,?,?,?,?,NOW(),?,?)", [id, subscription.business_id, businessAddonId, selected.code, selected.quantity, addonStatus, expiresAt, configs.get(selected.code) || "{}"]);
+      }
+    }
+    if (!hasAddonSelection && profile?.current_version_id && effectivePlanId !== Number(subscription.plan_id)) {
+      await conn.query("UPDATE tags_subscription_addon_grants g INNER JOIN tags_business_addons ba ON ba.id=g.business_addon_id SET g.status='inactive',g.expires_at=?,g.updated_at=NOW(),ba.status='inactive',ba.expires_at=?,ba.updated_at=NOW() WHERE g.subscription_id=? AND g.status<>'removed'", [expiresAt, expiresAt, id]);
       const [planAddons] = await conn.query("SELECT addon_code,quantity,entitlement_config_json FROM tags_plan_version_addons WHERE plan_version_id=?", [profile.current_version_id]);
       for (const addon of planAddons) {
+        const [[grant]] = await conn.query("SELECT id,status FROM tags_subscription_addon_grants WHERE subscription_id=? AND addon_code=? LIMIT 1", [id, addon.addon_code]);
+        if (grant?.status === "removed") continue;
         const [[existingAddon]] = await conn.query("SELECT id FROM tags_business_addons WHERE business_id=? AND addon_code=? ORDER BY id DESC LIMIT 1", [subscription.business_id, addon.addon_code]);
         let businessAddonId = existingAddon?.id;
         if (businessAddonId) await conn.query("UPDATE tags_business_addons SET quantity=?,status=?,expires_at=?,updated_at=NOW() WHERE id=?", [Number(addon.quantity || 1), addonStatus, expiresAt, businessAddonId]);
         else { const [createdAddon] = await conn.query("INSERT INTO tags_business_addons (business_id,addon_code,quantity,status,expires_at,amount,currency,notes,created_at,updated_at) VALUES (?,?,?, ?,?,0,?,'Asignado por suscripción',NOW(),NOW())", [subscription.business_id, addon.addon_code, Number(addon.quantity || 1), addonStatus, expiresAt, subscription.currency || "ARS"]); businessAddonId = createdAddon.insertId; }
-        const [[grant]] = await conn.query("SELECT id FROM tags_subscription_addon_grants WHERE subscription_id=? AND addon_code=? LIMIT 1", [id, addon.addon_code]);
-        if (grant) await conn.query("UPDATE tags_subscription_addon_grants SET business_addon_id=?,quantity=?,status=?,starts_at=COALESCE(starts_at,NOW()),expires_at=?,entitlement_snapshot_json=?,updated_at=NOW() WHERE id=?", [businessAddonId, Number(addon.quantity || 1), addonStatus, expiresAt, addon.entitlement_config_json || "{}", grant.id]);
-        else await conn.query("INSERT INTO tags_subscription_addon_grants (subscription_id,business_id,business_addon_id,addon_code,quantity,status,starts_at,expires_at,entitlement_snapshot_json) VALUES (?,?,?,?,?,?,NOW(),?,?)", [id, subscription.business_id, businessAddonId, addon.addon_code, Number(addon.quantity || 1), addonStatus, expiresAt, addon.entitlement_config_json || "{}"]);
+        if (grant) await conn.query("UPDATE tags_subscription_addon_grants SET business_addon_id=?,quantity=?,status=?,starts_at=COALESCE(starts_at,NOW()),expires_at=?,entitlement_snapshot_json=?,updated_at=NOW() WHERE id=?", [businessAddonId, Number(addon.quantity || 1), addonStatus, expiresAt, jsonText(addon.entitlement_config_json), grant.id]);
+        else await conn.query("INSERT INTO tags_subscription_addon_grants (subscription_id,business_id,business_addon_id,addon_code,quantity,status,starts_at,expires_at,entitlement_snapshot_json) VALUES (?,?,?,?,?,?,NOW(),?,?)", [id, subscription.business_id, businessAddonId, addon.addon_code, Number(addon.quantity || 1), addonStatus, expiresAt, jsonText(addon.entitlement_config_json)]);
       }
     }
     await conn.query("UPDATE tags_businesses SET plan_id=?,subscription_status=?,plan_expires_at=?,updated_at=NOW() WHERE id=?", [effectivePlanId, status, expiresAt, subscription.business_id]);
-    await conn.query("UPDATE tags_subscription_payments SET plan_id=?,amount=?,updated_at=NOW() WHERE subscription_id=? AND status='pending'", [effectivePlanId, amount, id]);
+    await conn.query("UPDATE tags_subscription_payments SET plan_id=?,amount=? WHERE subscription_id=? AND status='pending'", [effectivePlanId, amount, id]);
     await conn.query("INSERT INTO tags_subscription_audit_events (subscription_id,business_id,event_code,actor_type,actor_id,previous_state_json,next_state_json) VALUES (?,?,?,'admin',?,?,?)", [id, subscription.business_id, status === "inactive" ? "subscription.suspended" : status === "active" && subscription.status === "inactive" ? "subscription.reactivated" : "subscription.updated", Number(access.session?.businessId || 0) || null, JSON.stringify({status:subscription.status,amount:subscription.amount,expiresAt:subscription.expires_at}), JSON.stringify({status,amount,expiresAt})]);
     changedSubscription = { businessId: subscription.business_id, planId: effectivePlanId, status, previousStatus: subscription.status };
     await conn.commit();

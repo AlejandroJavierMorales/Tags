@@ -4,6 +4,7 @@ import { getDirectoryWebPageData } from "@/app/modules/directory/lib/getDirector
 import DirectoryProviderRenderer from "@/app/modules/directory/components/public/DirectoryProviderRenderer";
 import DirectoryEmbeddedStore from "@/app/modules/directory/components/public/DirectoryEmbeddedStore";
 import DirectoryEmbeddedResto from "@/app/modules/directory/components/public/DirectoryEmbeddedResto";
+import DirectoryEmbeddedTurnos from "@/app/modules/directory/components/public/DirectoryEmbeddedTurnos";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,5 +20,5 @@ export default async function DirectoryPreviewPage({params}){
   const [media]=await db.query("SELECT id,media_type,url,alt_text,sort_order FROM tags_directory_media WHERE listing_id=? AND is_active=1 ORDER BY sort_order,id",[listing.id]);
   const web=await getDirectoryWebPageData(listing.page_id,{includeDraft:true});
   const data={listing,media,taxonomy:[]},modules=web?.page?.global_styles?.directoryModules||{};
-  return <DirectoryProviderRenderer data={data} web={web} standalone embeddedStoreName={web?.embeddedStore?.store?.name||"Tienda"} embeddedStoreContent={web?.embeddedStore&&modules.store?.enabled!==false?<DirectoryEmbeddedStore data={web.embeddedStore} returnUrl="#directory-section-store"/>:null} embeddedRestoName={web?.embeddedResto?.store?.name||"Gastronomía"} embeddedRestoContent={web?.embeddedResto&&modules.resto?.enabled!==false?<DirectoryEmbeddedResto data={web.embeddedResto} returnUrl="#directory-section-resto"/>:null}/>;
+  return <DirectoryProviderRenderer data={data} web={web} standalone embeddedStoreName={web?.embeddedStore?.store?.name||"Tienda"} embeddedStoreContent={web?.embeddedStore&&modules.store?.enabled!==false?<DirectoryEmbeddedStore data={web.embeddedStore} returnUrl="#directory-section-store"/>:null} embeddedRestoName={web?.embeddedResto?.store?.name||"Gastronomía"} embeddedRestoContent={web?.embeddedResto&&modules.resto?.enabled!==false?<DirectoryEmbeddedResto data={web.embeddedResto} returnUrl="#directory-section-resto"/>:null} embeddedTurnosName={modules.turnos?.content?.menuLabel||(web?.embeddedTurnos?.length===1?web.embeddedTurnos[0].name:"Reservas")} embeddedTurnosContent={web?.embeddedTurnos?.length&&modules.turnos?.enabled!==false?<DirectoryEmbeddedTurnos apps={web.embeddedTurnos} presentation={modules.turnos?.content}/>:null}/>;
 }

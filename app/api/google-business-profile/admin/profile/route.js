@@ -10,12 +10,19 @@ const clean = (value, max = 1000) => String(value ?? "").trim().slice(0, max);
 const array = value => Array.isArray(value) ? value.filter(item => String(item || "").trim()).slice(0, 100) : [];
 
 async function payload(businessId) {
-    const [businessRows, profileRows, answerRows, places, selected] = await Promise.all([
+    const [businessRows, profileRows, answerRows, places, selected, directoryRows] = await Promise.all([
         db.query("SELECT id,name,display_name,email,phone,description,logo_url,cover_url,whatsapp,address,postal_code,latitude,longitude,website_url,instagram_url,facebook_url,tiktok_url,youtube_url,linkedin_url,google_reviews_url,maps_url FROM tags_businesses WHERE id=? LIMIT 1", [businessId]),
         db.query("SELECT * FROM tags_google_business_profiles WHERE business_id=? LIMIT 1", [businessId]),
         db.query("SELECT question_code,value_json FROM tags_google_business_profile_answers WHERE business_id=?", [businessId]),
         db.query("SELECT id,parent_id,place_type,name,slug,country_code,latitude,longitude FROM tags_geo_places WHERE is_active=1 ORDER BY name", []),
-        db.query("SELECT place_id,relation_type,is_primary FROM tags_business_places WHERE business_id=? ORDER BY is_primary DESC,place_id", [businessId])
+        db.query("SELECT place_id,relation_type,is_primary FROM tags_business_places WHERE business_id=? ORDER BY is_primary DESC,place_id", [businessId]),
+        db.query(`SELECT s.id,s.name,s.code,s.primary_host
+                    FROM tags_directory_listings l
+                    INNER JOIN tags_directory_site_listings sl ON sl.listing_id=l.id
+                    INNER JOIN tags_directory_sites s ON s.id=sl.site_id AND s.is_active=1
+                   WHERE l.business_id=?
+                   ORDER BY (sl.publication_status='published') DESC,s.id
+                   LIMIT 1`, [businessId])
     ]);
     const business = businessRows[0][0] || null;
     const profile = normalizeProfile(profileRows[0][0]);
@@ -23,6 +30,7 @@ async function payload(businessId) {
     const presence = calculatePresenceScore(business, profile, answers);
     return {
         business,
+        directory: directoryRows[0][0] || null,
         profile: { ...profile, completion_score: presence.score },
         answers,
         questions: questionPayload(profile.business_type, answers),

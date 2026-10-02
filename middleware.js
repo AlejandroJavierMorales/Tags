@@ -120,6 +120,15 @@ export async function middleware(request) {
         .replace(/^www\./, "");
 
     if (
+        forwardedHost.startsWith("muchi.") &&
+        request.nextUrl.pathname === "/"
+    ) {
+        const target = request.nextUrl.clone();
+        target.pathname = "/muchi";
+        return NextResponse.rewrite(target);
+    }
+
+    if (
         forwardedHost === "calamuchita.ar" &&
         request.nextUrl.pathname === "/"
     ) {

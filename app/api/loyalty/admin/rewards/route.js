@@ -17,12 +17,13 @@ export async function GET(request) {
         const { searchParams } = new URL(request.url);
         const { businessId } = await getLoyaltyAdminScope(searchParams.get("business_id"));
         await requireActiveLoyaltyAddon(businessId);
+        const programId = Number(searchParams.get("program_id") || 0);
         const [rows] = await db.query(
             `SELECT r.* FROM tags_loyalty_rewards r
              INNER JOIN tags_loyalty_programs p ON p.id=r.program_id
-             WHERE p.business_id=?
+             WHERE p.business_id=? ${programId ? "AND p.id=?" : ""}
              ORDER BY r.status='active' DESC,r.created_at DESC`,
-            [businessId]
+            programId ? [businessId, programId] : [businessId]
         );
         return Response.json({ success: true, rewards: rows });
     } catch (error) {
@@ -36,7 +37,8 @@ export async function POST(request) {
         const body = await request.json().catch(() => null);
         const { businessId } = await getLoyaltyAdminScope(body?.business_id);
         await requireActiveLoyaltyAddon(businessId);
-        const [[program]] = await db.query(`SELECT id FROM tags_loyalty_programs WHERE business_id=? LIMIT 1`, [businessId]);
+        const requestedProgramId = Number(body?.program_id || 0);
+        const [[program]] = await db.query(`SELECT id FROM tags_loyalty_programs WHERE business_id=? ${requestedProgramId ? "AND id=?" : ""} ORDER BY status='active' DESC,id ASC LIMIT 1`, requestedProgramId ? [businessId, requestedProgramId] : [businessId]);
         if (!program) throw new Error("Primero configurá el programa de fidelización");
         const name = String(body?.name || "").trim();
         const rewardType = String(body?.reward_type || "custom").trim();

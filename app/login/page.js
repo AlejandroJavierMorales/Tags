@@ -25,13 +25,14 @@ export default async function LoginPage({ searchParams }) {
 
   const requestedEmail = String(searchParams?.email || "").trim().toLowerCase();
   const returnTo = String(searchParams?.returnTo || "");
+  const chooseAccount = String(searchParams?.choose || "") === "1";
   const session = cookies().get("tags_session");
 
   // =========================
   // NO SESSION
   // =========================
 
-  if (!session || requestedEmail) {
+  if (!session || requestedEmail || chooseAccount) {
     return <LoginForm channel={channel} initialEmail={requestedEmail} returnTo={returnTo} />;
   }
 

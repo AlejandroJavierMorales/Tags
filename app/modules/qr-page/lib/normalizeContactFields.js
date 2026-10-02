@@ -7,17 +7,27 @@ export function normalizeArgentinaWhatsapp(value) {
 
     if (!phone) return "";
 
-    if (phone.startsWith("549")) {
-        return phone;
+    if (phone.startsWith("00")) phone = phone.slice(2);
+    const hadArgentinaCountryCode = phone.startsWith("54");
+    if (hadArgentinaCountryCode) phone = phone.slice(2);
+    if ((hadArgentinaCountryCode || phone.length === 11) && phone.startsWith("9")) phone = phone.slice(1);
+    phone = phone.replace(/^0+/, "");
+
+    // Formato nacional antiguo: código de área + 15 + número local.
+    // El número móvil argentino sin prefijos siempre queda en 10 dígitos.
+    if (phone.length > 10) {
+        for (let position = 2; position <= 4; position += 1) {
+            const candidate = `${phone.slice(0, position)}${phone.slice(position + 2)}`;
+            if (phone.slice(position, position + 2) === "15" && candidate.length === 10) {
+                phone = candidate;
+                break;
+            }
+        }
     }
 
-    if (phone.startsWith("54")) {
-        phone = phone.slice(2);
-    }
-
-    if (phone.startsWith("9")) {
-        phone = phone.slice(1);
-    }
+    // Algunos registros comerciales usan una numeración nacional de 11
+    // dígitos. WhatsApp admite el destino completo y debemos conservarlo.
+    if (phone.length < 8 || phone.length > 12) return "";
 
     return `549${phone}`;
 }

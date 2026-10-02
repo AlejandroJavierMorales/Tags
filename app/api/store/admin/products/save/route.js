@@ -16,6 +16,7 @@ import {
     getRestoAccess,
     restoAccessResponse
 } from "@/app/modules/resto/lib/staff/getRestoAccess";
+import { refreshDestinationBusinessProjection } from "@/app/modules/destination-ai/server/refreshDestinationBusinessProjection";
 
 const VALID_APP_TYPES = [
     "store",
@@ -611,6 +612,8 @@ export async function POST(req) {
 
         transactionStarted =
             false;
+
+        await refreshDestinationBusinessProjection(businessId).catch(error => console.error("DESTINATION PROJECTION STORE PRODUCT SYNC ERROR", { businessId, error }));
 
         return Response.json({
             ok: true,

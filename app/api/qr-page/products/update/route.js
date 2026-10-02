@@ -12,6 +12,7 @@ import { db }
 
 import { requireQRPageAccess }
     from "@/app/modules/qr-page/lib/requireQRPageAccess";
+import { refreshDestinationBusinessProjection } from "@/app/modules/destination-ai/server/refreshDestinationBusinessProjection";
 
 const MAX_PRODUCT_IMAGES = 12;
 
@@ -87,7 +88,9 @@ export async function POST(req) {
             await db.query(
                 `
                 SELECT
-                    pr.id
+                    pr.id,
+                    pr.image_url,
+                    pr.images_json
                 FROM
                     tags_qr_page_products pr
                 INNER JOIN
@@ -113,12 +116,25 @@ export async function POST(req) {
             );
         }
 
-        const finalImages =
-            Array.isArray(images_json)
-                ? images_json
-                    .filter((image) => image?.url)
-                    .slice(0, MAX_PRODUCT_IMAGES)
-                : [];
+        let storedImages = [];
+        try {
+            const parsed = typeof products[0].images_json === "string"
+                ? JSON.parse(products[0].images_json || "[]")
+                : products[0].images_json;
+            if (Array.isArray(parsed)) storedImages = parsed;
+        } catch {}
+
+        if (!storedImages.length && products[0].image_url) {
+            storedImages = [{ url: products[0].image_url, alt: title || "" }];
+        }
+
+        const requestedImages = Array.isArray(images_json)
+            ? images_json
+            : storedImages;
+
+        const finalImages = requestedImages
+            .filter((image) => image?.url)
+            .slice(0, MAX_PRODUCT_IMAGES);
 
         const mainImage =
             finalImages[0]?.url ||
@@ -172,6 +188,8 @@ export async function POST(req) {
                 pageId
             ]
         );
+
+        await refreshDestinationBusinessProjection(businessId).catch(error => console.error("DESTINATION PROJECTION PRODUCT UPDATE SYNC ERROR", { businessId, error }));
 
         return Response.json({
             ok: true

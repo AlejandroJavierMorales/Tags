@@ -16,7 +16,7 @@ export async function getDirectoryPublicData(searchParams = {}, siteCode = "cala
   const query = String(searchParams.q || "").trim().slice(0, 120);
 
   const [sites] = await db.execute(
-    "SELECT id,code,name,primary_host,brand_config,seo_config FROM tags_directory_sites WHERE code=? AND is_active=1 LIMIT 1",
+    "SELECT id,code,name,primary_host,brand_config,seo_config,directory_config FROM tags_directory_sites WHERE code=? AND is_active=1 LIMIT 1",
     [siteCode]
   );
   const site = normalizeDirectoryDbValue(sites[0] || null);
@@ -55,7 +55,7 @@ export async function getDirectoryPublicData(searchParams = {}, siteCode = "cala
   const parentId = selectedCategory?.id || null;
   const [categoriesRows] = await db.execute(
     `SELECT n.id,n.name,n.slug,n.depth,n.image_url,n.description,
-            COUNT(DISTINCT sl.listing_id) listing_count
+            COUNT(DISTINCT l.id) listing_count
      FROM tags_directory_taxonomy_nodes n
      LEFT JOIN tags_directory_taxonomy_closure c ON c.ancestor_id=n.id
      LEFT JOIN tags_directory_listing_taxonomy lt ON lt.taxonomy_node_id=c.descendant_id
@@ -63,28 +63,17 @@ export async function getDirectoryPublicData(searchParams = {}, siteCode = "cala
      LEFT JOIN tags_directory_listings l ON l.id=sl.listing_id AND l.status='published'
      WHERE n.parent_id <=> ? AND n.is_active=1
        AND EXISTS (
-         SELECT 1 FROM tags_directory_taxonomy_closure visible_c
-         INNER JOIN tags_directory_listing_taxonomy visible_lt ON visible_lt.taxonomy_node_id=visible_c.descendant_id
-         INNER JOIN tags_directory_site_listings visible_sl ON visible_sl.listing_id=visible_lt.listing_id
-         WHERE visible_c.ancestor_id=n.id AND visible_sl.site_id=? AND visible_sl.publication_status='published'
+       SELECT 1 FROM tags_directory_taxonomy_closure visible_c
+        INNER JOIN tags_directory_listing_taxonomy visible_lt ON visible_lt.taxonomy_node_id=visible_c.descendant_id
+        INNER JOIN tags_directory_site_listings visible_sl ON visible_sl.listing_id=visible_lt.listing_id AND visible_sl.site_id=? AND visible_sl.publication_status='published'
+        INNER JOIN tags_directory_listings visible_l ON visible_l.id=visible_sl.listing_id AND visible_l.status='published'
+        WHERE visible_c.ancestor_id=n.id
        )
      GROUP BY n.id,n.name,n.slug,n.depth,n.image_url,n.description,n.sort_order
      ORDER BY n.sort_order,n.name`,
     [site.id, parentId, site.id]
   );
   const categories = normalizeDirectoryDbValue(categoriesRows);
-
-  const [localitiesRows] = await db.execute(
-    `SELECT p.id,p.name,COUNT(DISTINCT lp.listing_id) listing_count
-     FROM tags_geo_places p
-     INNER JOIN tags_directory_listing_places lp ON lp.place_id=p.id AND lp.relation_type='location'
-     INNER JOIN tags_directory_site_listings sl ON sl.listing_id=lp.listing_id AND sl.site_id=? AND sl.publication_status='published'
-     INNER JOIN tags_directory_listings l ON l.id=sl.listing_id AND l.status='published'
-     WHERE p.place_type='locality' AND p.is_active=1
-     GROUP BY p.id,p.name ORDER BY p.name`,
-    [site.id]
-  );
-  const localities = normalizeDirectoryDbValue(localitiesRows);
 
   const where = ["sl.site_id=?", "sl.publication_status='published'", "l.status='published'"];
   const values = [site.id];
@@ -95,10 +84,6 @@ export async function getDirectoryPublicData(searchParams = {}, siteCode = "cala
       WHERE flt.listing_id=l.id AND fc.ancestor_id=?
     )`);
     values.push(selectedCategory.id);
-  }
-  if (localityId) {
-    where.push("EXISTS (SELECT 1 FROM tags_directory_listing_places fp WHERE fp.listing_id=l.id AND fp.place_id=? AND fp.relation_type='location')");
-    values.push(localityId);
   }
   if (query) {
     const terms = query.split(/\s+/).map(term => term.trim()).filter(Boolean).slice(0, 6);
@@ -119,6 +104,27 @@ export async function getDirectoryPublicData(searchParams = {}, siteCode = "cala
       )`);
       values.push(like, like, like, like, like, like, like);
     }
+  }
+
+  const localityWhere = [...where];
+  const localityValues = [...values];
+  const [localitiesRows] = await db.execute(
+    `SELECT p.id,p.name,COUNT(DISTINCT l.id) listing_count
+     FROM tags_directory_listings l
+     INNER JOIN tags_directory_site_listings sl ON sl.listing_id=l.id
+     INNER JOIN tags_directory_listing_places lp ON lp.listing_id=l.id AND lp.relation_type='location'
+     INNER JOIN tags_geo_places p ON p.id=lp.place_id AND p.place_type='locality' AND p.is_active=1
+     WHERE ${localityWhere.join(" AND ")}
+     GROUP BY p.id,p.name
+     HAVING COUNT(DISTINCT l.id)>0
+     ORDER BY p.name`,
+    localityValues
+  );
+  const localities = normalizeDirectoryDbValue(localitiesRows);
+
+  if (localityId) {
+    where.push("EXISTS (SELECT 1 FROM tags_directory_listing_places fp WHERE fp.listing_id=l.id AND fp.place_id=? AND fp.relation_type='location')");
+    values.push(localityId);
   }
 
   const isHome = !selectedCategory && !localityId && !query;
@@ -150,7 +156,8 @@ export async function getDirectoryPublicData(searchParams = {}, siteCode = "cala
   const safePage = Math.min(page, totalPages);
   const offset = (safePage - 1) * PAGE_SIZE;
   const [listingRows] = isHome ? [[]] : await db.execute(
-    `SELECT l.id,COALESCE(NULLIF(b.display_name,''),b.name) AS display_name,l.short_description,b.phone,b.whatsapp,b.address,b.latitude,b.longitude,
+    `SELECT l.id,COALESCE(NULLIF(b.display_name,''),b.name) AS display_name,l.short_description,b.phone,b.whatsapp,b.address,
+            COALESCE(l.latitude,b.latitude) AS latitude,COALESCE(l.longitude,b.longitude) AS longitude,
             sl.slug,sl.is_free,
             (SELECT p.name FROM tags_directory_listing_places lp INNER JOIN tags_geo_places p ON p.id=lp.place_id WHERE lp.listing_id=l.id AND lp.relation_type='location' ORDER BY lp.is_primary DESC LIMIT 1) locality_name,
             COALESCE(NULLIF(b.logo_url,''),(SELECT m.url FROM tags_directory_media m WHERE m.listing_id=l.id AND m.is_active=1 ORDER BY FIELD(m.media_type,'logo','cover','gallery'),m.sort_order,m.id LIMIT 1)) image_url
@@ -165,12 +172,18 @@ export async function getDirectoryPublicData(searchParams = {}, siteCode = "cala
   const listings = normalizeDirectoryDbValue(listingRows);
 
   const [mapRows] = isHome ? [[]] : await db.execute(
-    `SELECT l.id,COALESCE(NULLIF(b.display_name,''),b.name) AS display_name,l.short_description,b.phone,b.whatsapp,b.address,b.latitude,b.longitude,sl.slug,sl.is_free,
+    `SELECT l.id,COALESCE(NULLIF(b.display_name,''),b.name) AS display_name,l.short_description,b.phone,b.whatsapp,b.address,
+            COALESCE(l.latitude,b.latitude) AS latitude,COALESCE(l.longitude,b.longitude) AS longitude,sl.slug,sl.is_free,
             (SELECT p.name FROM tags_directory_listing_places lp INNER JOIN tags_geo_places p ON p.id=lp.place_id WHERE lp.listing_id=l.id AND lp.relation_type='location' ORDER BY lp.is_primary DESC LIMIT 1) locality_name
      FROM tags_directory_listings l
      INNER JOIN tags_directory_site_listings sl ON sl.listing_id=l.id
      INNER JOIN tags_businesses b ON b.id=l.business_id
-     WHERE ${where.join(" AND ")} AND l.latitude IS NOT NULL AND l.longitude IS NOT NULL
+     WHERE ${where.join(" AND ")}
+       AND COALESCE(l.latitude,b.latitude) IS NOT NULL
+       AND COALESCE(l.longitude,b.longitude) IS NOT NULL
+       AND COALESCE(l.latitude,b.latitude) BETWEEN -90 AND 90
+       AND COALESCE(l.longitude,b.longitude) BETWEEN -180 AND 180
+       AND NOT (COALESCE(l.latitude,b.latitude)=0 AND COALESCE(l.longitude,b.longitude)=0)
      ORDER BY display_name LIMIT 500`,
     values
   );
@@ -181,7 +194,7 @@ export async function getDirectoryPublicData(searchParams = {}, siteCode = "cala
 
 export async function getDirectoryListingBySlug(slug, siteCode = "calamuchitar") {
   const [rows] = await db.execute(
-    `SELECT l.*,b.name business_name,b.display_name business_display_name,b.email business_email,b.phone business_phone,b.whatsapp business_whatsapp,b.address business_address,b.latitude business_latitude,b.longitude business_longitude,b.website_url business_website_url,b.instagram_url business_instagram_url,b.facebook_url business_facebook_url,b.description business_description,b.logo_url business_logo_url,b.cover_url business_cover_url,sl.slug,sl.seo_title,sl.seo_description,s.id site_id,s.name site_name,s.code site_code,s.primary_host,
+    `SELECT l.*,b.name business_name,b.display_name business_display_name,b.email business_email,b.phone business_phone,b.whatsapp business_whatsapp,b.address business_address,b.latitude business_latitude,b.longitude business_longitude,b.website_url business_website_url,b.instagram_url business_instagram_url,b.facebook_url business_facebook_url,b.description business_description,b.logo_url business_logo_url,b.cover_url business_cover_url,sl.slug,sl.seo_title,sl.seo_description,s.id site_id,s.name site_name,s.code site_code,s.primary_host,s.directory_config,
             (SELECT p.name FROM tags_directory_listing_places lp INNER JOIN tags_geo_places p ON p.id=lp.place_id WHERE lp.listing_id=l.id AND lp.relation_type='location' ORDER BY lp.is_primary DESC LIMIT 1) locality_name
      FROM tags_directory_site_listings sl
      INNER JOIN tags_directory_sites s ON s.id=sl.site_id AND s.code=? AND s.is_active=1

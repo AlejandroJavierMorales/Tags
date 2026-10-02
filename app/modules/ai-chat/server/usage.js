@@ -68,13 +68,13 @@ export async function getMonthlyChatUsage(businessId, start = firstDayOfMonth())
     };
 }
 
-export async function recordChatUsage({ businessId, requestId, model, source = "public", usage, status = "completed", errorCode = null }) {
+export async function recordChatUsage({ businessId, requestId, model, source = "public", usage, status = "completed", errorCode = null, estimatedCostUsd = null }) {
     const tokens = usageTokens(usage);
     await db.query(
         `INSERT INTO tags_ai_chatbot_usage
           (business_id,request_id,model,source,status,input_tokens,output_tokens,total_tokens,estimated_cost_usd,error_code)
          VALUES (?,?,?,?,?,?,?,?,?,?)`,
-        [businessId || null, requestId, model || null, source, status, tokens.inputTokens, tokens.outputTokens, tokens.totalTokens, estimateCostUsd(usage), errorCode]
+        [businessId || null, requestId, model || null, source, status, tokens.inputTokens, tokens.outputTokens, tokens.totalTokens, estimatedCostUsd == null ? estimateCostUsd(usage) : Math.max(0, Number(estimatedCostUsd) || 0), errorCode]
     );
     return tokens;
 }

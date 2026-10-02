@@ -1,0 +1,1 @@
+.tags_loyalty_push_button{display:inline-flex;align-items:center;gap:7px;margin-top:12px;padding:9px 12px;border:1px solid #cfe2d5;border-radius:9px;background:#f3faf5;color:#17683b;font-size:12px;font-weight:850}.tags_loyalty_push_button.is_active{background:#dff7e8}.tags_loyalty_push_button.is_error,.tags_loyalty_push_button.is_denied{background:#fff0ee;color:#983c34}

@@ -1,5 +1,6 @@
 import { db } from "@/app/lib/tags-db";
 import { getAiChatAdminAccess, aiChatAdminError } from "@/app/modules/ai-chat/server/getAiChatAdminAccess";
+import { refreshDestinationBusinessProjection } from "@/app/modules/destination-ai/server/refreshDestinationBusinessProjection";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -35,6 +36,7 @@ export async function POST(request) {
     const id = Number(body?.id || 0);
     if (id) {
         await db.query("UPDATE tags_ai_chatbot_knowledge SET title=?,slug=?,topics=?,content=?,is_active=?,sort_order=?,updated_at=NOW() WHERE id=? AND business_id=?", [title, slug, topics, content, isActive, sortOrder, id, businessId]);
+        await refreshDestinationBusinessProjection(businessId);
         const [rows] = await db.query("SELECT id,title,slug,topics,content,is_active,sort_order FROM tags_ai_chatbot_knowledge WHERE id=? AND business_id=? LIMIT 1", [id, businessId]);
         return Response.json({ ok: true, document: rows[0] });
     }
@@ -44,6 +46,7 @@ export async function POST(request) {
          ON DUPLICATE KEY UPDATE title=VALUES(title),topics=VALUES(topics),content=VALUES(content),is_active=VALUES(is_active),sort_order=VALUES(sort_order),updated_at=NOW()`,
         [businessId, title, slug, topics, content, isActive, sortOrder]
     );
+    await refreshDestinationBusinessProjection(businessId);
     const [rows] = await db.query("SELECT id,title,slug,topics,content,is_active,sort_order FROM tags_ai_chatbot_knowledge WHERE business_id=? AND slug=? LIMIT 1", [businessId, slug]);
     return Response.json({ ok: true, document: rows[0] });
 }
@@ -56,5 +59,6 @@ export async function DELETE(request) {
     const id = Number(body?.id || 0);
     if (!id) return Response.json({ ok: false, error: "Documento inválido" }, { status: 400 });
     await db.query("DELETE FROM tags_ai_chatbot_knowledge WHERE id=? AND business_id=?", [id, businessId]);
+    await refreshDestinationBusinessProjection(businessId);
     return Response.json({ ok: true });
 }

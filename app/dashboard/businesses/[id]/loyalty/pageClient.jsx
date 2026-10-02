@@ -8,9 +8,11 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Scanner } from "@yudiel/react-qr-scanner";
-import { FaArrowsRotate, FaAward, FaClockRotateLeft, FaGear, FaPen, FaQrcode, FaTrash, FaUsers } from "react-icons/fa6";
+import { FaArrowsRotate, FaAward, FaChartLine, FaClockRotateLeft, FaGear, FaPen, FaQrcode, FaTrash, FaUsers } from "react-icons/fa6";
 import showAlert from "@/app/components/showAlert";
+import MediaUploader from "@/app/components/MediaUploader";
 import LoyaltyMerchantClaimsAdmin from "@/app/modules/loyalty/components/LoyaltyMerchantClaimsAdmin";
+import PushNotificationButton from "@/app/modules/notifications/components/PushNotificationButton";
 import "../../../../styles/tags_dashboard.css";
 import "./loyalty.css";
 import "./loyalty-scanner.css";
@@ -19,7 +21,8 @@ const EMPTY_PROGRAM = {
     name: "",
     description: "",
     mechanic: "points",
-    directory_site_id: ""
+    directory_site_id: "",
+    stamp_asset_id: ""
 };
 
 const EMPTY_ACCREDIT = {
@@ -52,15 +55,25 @@ async function readPayload(response) {
     return payload;
 }
 
+function StampAssetPicker({ assets, value, onChange }) {
+    return <div className="tags_loyalty_stamp_picker" role="listbox" aria-label="Seleccionar sello del programa"><button type="button" className={!value ? "is_selected" : ""} onClick={() => onChange("")} aria-label="Sin sello">Sin sello</button>{assets.map(asset => <button type="button" key={asset.id} className={String(value) === String(asset.id) ? "is_selected" : ""} onClick={() => onChange(String(asset.id))} title={asset.name} aria-label={`Sello ${asset.name}`} aria-selected={String(value) === String(asset.id)}><img src={asset.image_url} alt={asset.name} /></button>)}</div>;
+}
+
 export default function LoyaltyAdminPageClient({ businessId, isAdmin }) {
     const router = useRouter();
+    const [programs, setPrograms] = useState([]);
+    const [selectedProgramId, setSelectedProgramId] = useState("");
+    const [accreditProgramId, setAccreditProgramId] = useState("");
     const [program, setProgram] = useState(EMPTY_PROGRAM);
+    const [stampAssets, setStampAssets] = useState([]);
     const [members, setMembers] = useState([]);
     const [accredit, setAccredit] = useState(EMPTY_ACCREDIT);
     const [rewards, setRewards] = useState([]);
+    const [allRewards, setAllRewards] = useState([]);
     const [movements, setMovements] = useState([]);
+    const [report, setReport] = useState({ summary: {}, rewards: [] });
     const [reward, setReward] = useState(EMPTY_REWARD);
-    const [redemption, setRedemption] = useState({ account_id: "", reward_id: "", notes: "" });
+    const [redemption, setRedemption] = useState({ program_id: "", account_id: "", reward_id: "", notes: "" });
     const [search, setSearch] = useState("");
     const [scannerOpen, setScannerOpen] = useState(false);
     const [loading, setLoading] = useState(true);
@@ -73,20 +86,39 @@ export default function LoyaltyAdminPageClient({ businessId, isAdmin }) {
     async function load() {
         setLoading(true);
         try {
-            const [programResponse, membersResponse, rewardsResponse, movementsResponse] = await Promise.all([
+            const [programResponse, membersResponse, rewardsResponse, movementsResponse, reportResponse, stampAssetsResponse] = await Promise.all([
                 fetch(`/api/loyalty/admin/program${query}`),
                 fetch(`/api/loyalty/admin/members${query}`),
                 fetch(`/api/loyalty/admin/rewards${query}`),
-                fetch(`/api/loyalty/admin/movements${query}`)
+                fetch(`/api/loyalty/admin/movements${query}`),
+                fetch(`/api/loyalty/admin/report${query}`),
+                fetch(`/api/loyalty/admin/stamp-assets${query}`)
             ]);
             const programPayload = await readPayload(programResponse);
             const membersPayload = await readPayload(membersResponse);
             const rewardsPayload = await readPayload(rewardsResponse);
             const movementsPayload = await readPayload(movementsResponse);
-            if (programPayload.program) setProgram({ ...EMPTY_PROGRAM, ...programPayload.program, directory_site_id: programPayload.program.directory_site_id || "" });
+            const reportPayload = await readPayload(reportResponse);
+            const stampAssetsPayload = await readPayload(stampAssetsResponse);
+            setStampAssets(stampAssetsPayload.assets || []);
+            const loadedPrograms = programPayload.programs || (programPayload.program ? [programPayload.program] : []);
+            setPrograms(loadedPrograms);
+            const firstProgram = loadedPrograms[0];
+            if (firstProgram) {
+                setSelectedProgramId(String(firstProgram.id));
+                setRedemption(current => ({ ...current, program_id: String(firstProgram.id), account_id: "", reward_id: "" }));
+                setProgram({ ...EMPTY_PROGRAM, ...firstProgram, directory_site_id: firstProgram.directory_site_id || "", stamp_asset_id: firstProgram.stamp_asset_id || "" });
+            } else {
+                setSelectedProgramId("");
+                setRedemption(current => ({ ...current, program_id: "", account_id: "", reward_id: "" }));
+                setProgram({ ...EMPTY_PROGRAM, stamp_asset_id: "" });
+            }
             setMembers(membersPayload.members || []);
-            setRewards(rewardsPayload.rewards || []);
+            const loadedRewards = rewardsPayload.rewards || [];
+            setAllRewards(loadedRewards);
+            setRewards(firstProgram ? loadedRewards.filter(item => Number(item.program_id) === Number(firstProgram.id)) : loadedRewards);
             setMovements(movementsPayload.movements || []);
+            setReport({ summary: reportPayload.summary || {}, rewards: reportPayload.rewards || [] });
         } catch (error) {
             await showAlert({ title: "No se pudo cargar Fidelización", text: error.message, icon: "error" });
         } finally {
@@ -145,14 +177,32 @@ export default function LoyaltyAdminPageClient({ businessId, isAdmin }) {
             const payload = await readPayload(await fetch("/api/loyalty/admin/program", {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ ...program, business_id: businessId })
+                body: JSON.stringify({ ...program, program_id: selectedProgramId || null, business_id: businessId })
             }));
             setProgram({ ...program, ...payload.program });
+            setPrograms(current => current.some(item => Number(item.id) === Number(payload.program.id)) ? current.map(item => Number(item.id) === Number(payload.program.id) ? payload.program : item) : [...current, payload.program]);
+            setSelectedProgramId(String(payload.program.id));
             await showAlert({ title: "Programa guardado", icon: "success", timer: 1400 });
         } catch (error) {
             await showAlert({ title: "No se pudo guardar", text: error.message, icon: "error" });
         } finally {
             setSaving(false);
+        }
+    }
+
+    async function saveStampAsset(media) {
+        if (!media?.url) return;
+        try {
+            const payload = await readPayload(await fetch("/api/loyalty/admin/stamp-assets", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ business_id: businessId, name: media.filename?.replace(/\.[^.]+$/, "") || "Sello personalizado", image_url: media.url, storage_path: media.storagePath || null, mime_type: media.mimeType || "image/webp" })
+            }));
+            setStampAssets(current => [...current, payload.asset]);
+            setProgram(current => ({ ...current, stamp_asset_id: payload.asset.id }));
+            await showAlert({ title: "Sello agregado", text: "Quedó disponible para este comercio.", icon: "success", timer: 1400 });
+        } catch (error) {
+            await showAlert({ title: "No se pudo guardar el sello", text: error.message, icon: "error" });
         }
     }
 
@@ -168,7 +218,7 @@ export default function LoyaltyAdminPageClient({ businessId, isAdmin }) {
         if (!confirmed) return;
         setSaving(true);
         try {
-            const payload = await readPayload(await fetch("/api/loyalty/admin/program", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...program, business_id: businessId, status: nextStatus }) }));
+            const payload = await readPayload(await fetch("/api/loyalty/admin/program", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...program, program_id: selectedProgramId || null, business_id: businessId, status: nextStatus }) }));
             setProgram({ ...program, ...payload.program });
             await showAlert({ title: nextStatus === "active" ? "Programa activado" : "Programa desactivado", icon: "success", timer: 1400 });
         } catch (error) { await showAlert({ title: "No se pudo cambiar el estado", text: error.message, icon: "error" }); }
@@ -186,7 +236,7 @@ export default function LoyaltyAdminPageClient({ businessId, isAdmin }) {
             await readPayload(await fetch("/api/loyalty/admin/accredit", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ ...accredit, business_id: businessId })
+                body: JSON.stringify({ ...accredit, program_id: accreditProgramId || (programs.length === 1 ? selectedProgramId : null), business_id: businessId })
             }));
             setAccredit(EMPTY_ACCREDIT);
             await load();
@@ -206,7 +256,7 @@ export default function LoyaltyAdminPageClient({ businessId, isAdmin }) {
             await readPayload(await fetch("/api/loyalty/admin/rewards", {
                 method: editing ? "PATCH" : "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ ...reward, business_id: businessId })
+                body: JSON.stringify({ ...reward, program_id: selectedProgramId || null, business_id: businessId })
             }));
             setReward(EMPTY_REWARD);
             await load();
@@ -286,7 +336,7 @@ export default function LoyaltyAdminPageClient({ businessId, isAdmin }) {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ business_id: businessId, ...redemption })
             }));
-            setRedemption({ account_id: "", reward_id: "", notes: "" });
+            setRedemption({ program_id: selectedProgramId || "", account_id: "", reward_id: "", notes: "" });
             await load();
             await showAlert({ title: "Canje registrado", text: "El beneficio fue descontado del saldo del miembro.", icon: "success", timer: 1600 });
         } catch (error) {
@@ -317,23 +367,28 @@ export default function LoyaltyAdminPageClient({ businessId, isAdmin }) {
                 <button type="button" className={activeTab === "members" ? "active" : ""} onClick={() => setActiveTab("members")}><FaUsers /><span>Clientes</span></button>
                 <button type="button" className={activeTab === "rewards" ? "active" : ""} onClick={() => setActiveTab("rewards")}><FaAward /><span>Recompensas</span></button>
                 <button type="button" className={activeTab === "movements" ? "active" : ""} onClick={() => setActiveTab("movements")}><FaClockRotateLeft /><span>Movimientos</span></button>
+                <button type="button" className={activeTab === "report" ? "active" : ""} onClick={() => setActiveTab("report")}><FaChartLine /><span>Reportes</span></button>
             </nav>
 
+            <PushNotificationButton businessId={businessId} />
             <section className="tags_loyalty_quick_access" hidden={activeTab !== "operations"}>
                 <div><span>ACCESO RÁPIDO</span><h2>Atender a un cliente</h2><p>Escaneá su QR personal o ingresá el código que aparece debajo.</p></div>
                 <nav><button type="button" onClick={() => setScannerOpen(true)}>Escanear QR</button><button type="button" onClick={focusMemberCode}>Ingresar código</button></nav>
             </section>
 
-            {!loading && program?.id && activeTab === "operations" && <LoyaltyMerchantClaimsAdmin businessId={businessId} isAdmin={isAdmin} />}
+            {!loading && program?.id && activeTab === "operations" && <LoyaltyMerchantClaimsAdmin businessId={businessId} isAdmin={isAdmin} programId={selectedProgramId} />}
 
             {loading ? <div className="tags_loyalty_loading">Cargando programa...</div> : (activeTab === "configuration" || activeTab === "operations") && (
                 <div className="tags_loyalty_grid">
                     <section className="tags_loyalty_card" hidden={activeTab !== "configuration"}>
-                        <div className="tags_loyalty_card_header"><div><span>CONFIGURACIÓN</span><h2>Mi programa</h2></div><button type="button" className={`tags_loyalty_status_btn ${program.status === "active" ? "is_active" : "is_inactive"}`} onClick={toggleProgram} disabled={saving}>{program.status === "active" ? "Programa activo" : "Programa desactivado"}</button></div>
+                        <div className="tags_loyalty_card_header"><div><span>CONFIGURACIÓN</span><h2>Programas de fidelización</h2></div><button type="button" className={`tags_loyalty_status_btn ${program.status === "active" ? "is_active" : "is_inactive"}`} onClick={toggleProgram} disabled={saving}>{program.status === "active" ? "Programa activo" : "Programa desactivado"}</button></div>
+                        <div className="tags_loyalty_program_selector"><label>Programa seleccionado<select value={selectedProgramId} onChange={event => { const next = programs.find(item => String(item.id) === event.target.value); setSelectedProgramId(event.target.value); setRewards(allRewards.filter(item => Number(item.program_id) === Number(event.target.value))); setProgram(next ? { ...EMPTY_PROGRAM, ...next, directory_site_id: next.directory_site_id || "", stamp_asset_id: next.stamp_asset_id || "" } : { ...EMPTY_PROGRAM, stamp_asset_id: "" }); }}><option value="">Nuevo programa</option>{programs.map(item => <option key={item.id} value={item.id}>{item.name} · {item.status === "active" ? "Activo" : "Inactivo"}</option>)}</select></label><button type="button" className="tags_loyalty_secondary_btn" onClick={() => { setSelectedProgramId(""); setRewards([]); setProgram({ ...EMPTY_PROGRAM, stamp_asset_id: "" }); }}>Crear otro programa</button></div>
                         <form onSubmit={saveProgram} className="tags_loyalty_form">
                             <label>Nombre del programa<input required value={program.name || ""} onChange={event => setProgram({ ...program, name: event.target.value })} placeholder="Ej. Club de clientes" /></label>
                             <label>Descripción<textarea value={program.description || ""} onChange={event => setProgram({ ...program, description: event.target.value })} placeholder="Contale a tus clientes cómo funciona." /></label>
                             <label>Modalidad principal<select value={program.mechanic || "points"} onChange={event => setProgram({ ...program, mechanic: event.target.value })}><option value="points">Puntos</option><option value="stamps">Sellos</option><option value="visits">Visitas</option></select></label>
+                            {program.mechanic === "stamps" && <div className="tags_loyalty_stamp_config"><label>Sello del programa<select value={program.stamp_asset_id || ""} onChange={event => setProgram({ ...program, stamp_asset_id: event.target.value })}><option value="">Seleccionar sello</option>{stampAssets.map(asset => <option key={asset.id} value={asset.id}>{asset.name}{asset.business_id ? " · Propio" : " · Galería"}</option>)}</select></label><div className="tags_loyalty_stamp_preview">{program.stamp_asset_id && stampAssets.find(asset => String(asset.id) === String(program.stamp_asset_id))?.image_url ? <img src={stampAssets.find(asset => String(asset.id) === String(program.stamp_asset_id)).image_url} alt="Sello seleccionado" /> : <span>Elegí una imagen cuadrada para mostrar los sellos.</span>}<MediaUploader businessId={businessId} module="directory" variant="stamp" accept="image/jpeg,image/png,image/webp,image/avif" label="Subir sello propio" onChange={saveStampAsset} /></div></div>}
+                            {program.mechanic === "stamps" && <StampAssetPicker assets={stampAssets} value={program.stamp_asset_id || ""} onChange={value => setProgram({ ...program, stamp_asset_id: value })} />}
                             <button className="tags_loyalty_primary_btn" disabled={saving}>{saving ? "Guardando..." : "Guardar programa"}</button>
                         </form>
                     </section>
@@ -341,6 +396,7 @@ export default function LoyaltyAdminPageClient({ businessId, isAdmin }) {
                     <section className="tags_loyalty_card" hidden={activeTab !== "operations"}>
                         <div className="tags_loyalty_card_header"><div><span>ACREDITAR</span><h2>Registrar un consumo</h2></div></div>
                         <form onSubmit={submitAccreditation} className="tags_loyalty_form">
+                            {programs.length > 1 && <label>Programa<select required value={accreditProgramId} onChange={event => setAccreditProgramId(event.target.value)}><option value="">Seleccionar programa</option>{programs.filter(item => item.status === "active").map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>}
                             <div className="tags_loyalty_scan_row"><label>Código del miembro<input ref={codeInputRef} value={accredit.member_code} onChange={event => setAccredit({ ...accredit, member_code: event.target.value.trim().toUpperCase(), email: "" })} placeholder="MEM-..." /></label><button type="button" className="tags_loyalty_secondary_btn" onClick={() => setScannerOpen(true)}>Leer QR personal</button><label>Tipo<select value={accredit.transaction_type} onChange={event => setAccredit({ ...accredit, transaction_type: event.target.value })}><option value="CREDIT_POINTS">Acreditar puntos</option><option value="ADD_STAMP">Agregar sello</option><option value="ADD_VISIT">Registrar visita</option></select></label></div>
                             <label>Email del miembro (alternativa)<input type="email" value={accredit.email} onChange={event => setAccredit({ ...accredit, email: event.target.value, member_code: "" })} placeholder="cliente@email.com" /></label>
                             <div className="tags_loyalty_member_code_actions"><button type="button" className="tags_loyalty_secondary_btn" onClick={() => lookupMember(accredit.member_code)}>Validar código</button>{accredit.member_code && <p className="tags_loyalty_selected_member">{accredit.email || accredit.first_name ? "Miembro seleccionado" : "Código ingresado"}: <strong>{accredit.member_code}</strong></p>}</div>
@@ -366,12 +422,25 @@ export default function LoyaltyAdminPageClient({ businessId, isAdmin }) {
                 <div className="tags_loyalty_table_wrap"><table className="tags_loyalty_table"><thead><tr><th>Fecha</th><th>Miembro</th><th>Movimiento</th><th>Variación</th><th>Saldo</th><th>Detalle</th></tr></thead><tbody>{movements.map(item => <tr key={item.id}><td>{new Date(item.created_at).toLocaleString("es-AR")}</td><td><strong>{item.display_name || `${item.first_name} ${item.last_name}`}</strong><small>{item.email}</small></td><td>{item.transaction_type}</td><td>{item.points_delta ? `Puntos ${item.points_delta > 0 ? "+" : ""}${item.points_delta}` : item.stamps_delta ? `Sellos ${item.stamps_delta > 0 ? "+" : ""}${item.stamps_delta}` : `Visitas ${item.visits_delta > 0 ? "+" : ""}${item.visits_delta}`}</td><td>{item.points_balance_after || 0} pts · {item.stamps_balance_after || 0} sellos · {item.visits_balance_after || 0} visitas</td><td>{item.description || "-"}</td></tr>)}{!movements.length && <tr><td colSpan="6" className="tags_loyalty_empty">Todavía no hay movimientos.</td></tr>}</tbody></table></div>
             </section>
 
+            <section className="tags_loyalty_card tags_loyalty_standalone_card" hidden={activeTab !== "report"}>
+                <div className="tags_loyalty_card_header"><div><span>RESUMEN</span><h2>Actividad del programa</h2></div></div>
+                <div className="tags_loyalty_report_grid">
+                    <article><strong>{report.summary.members || 0}</strong><span>Miembros activos</span></article>
+                    <article><strong>{report.summary.pending_claims || 0}</strong><span>Canjes pendientes</span></article>
+                    <article><strong>{report.summary.confirmed_30d || 0}</strong><span>Solicitudes confirmadas (30 días)</span></article>
+                    <article><strong>{report.summary.redemptions_30d || 0}</strong><span>Canjes realizados (30 días)</span></article>
+                </div>
+                <h3>Recompensas más utilizadas</h3>
+                <div className="tags_loyalty_table_wrap"><table className="tags_loyalty_table"><thead><tr><th>Recompensa</th><th>Canjes</th></tr></thead><tbody>{report.rewards.map(item => <tr key={item.name}><td>{item.name}</td><td>{item.redemptions}</td></tr>)}{!report.rewards.length && <tr><td colSpan="2" className="tags_loyalty_empty">Todavía no hay canjes registrados.</td></tr>}</tbody></table></div>
+            </section>
+
             <section className="tags_loyalty_card tags_loyalty_standalone_card" hidden={activeTab !== "operations"}>
                 <div className="tags_loyalty_card_header"><div><span>CANJEAR</span><h2>Registrar un beneficio entregado</h2></div></div>
                 <form onSubmit={redeemReward} className="tags_loyalty_form">
                     <div className="tags_loyalty_form_row">
-                        <label>Miembro<select required value={redemption.account_id} onChange={event => setRedemption({ ...redemption, account_id: event.target.value })}><option value="">Seleccionar miembro</option>{members.map(item => <option key={item.account_id} value={item.account_id}>{item.display_name || `${item.first_name} ${item.last_name}`} · {item.email}</option>)}</select></label>
-                        <label>Recompensa<select required value={redemption.reward_id} onChange={event => setRedemption({ ...redemption, reward_id: event.target.value })}><option value="">Seleccionar recompensa</option>{rewards.filter(item => item.status === "active").map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+                        <label>Programa<select required value={redemption.program_id} onChange={event => setRedemption({ ...redemption, program_id: event.target.value, account_id: "", reward_id: "" })}><option value="">Seleccionar programa</option>{programs.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+                        <label>Miembro<select required value={redemption.account_id} onChange={event => setRedemption({ ...redemption, account_id: event.target.value })}><option value="">Seleccionar miembro</option>{members.filter(item => Number(item.program_id) === Number(redemption.program_id)).map(item => <option key={`${item.program_id}-${item.account_id}`} value={item.account_id}>{item.display_name || `${item.first_name} ${item.last_name}`} · {item.email}</option>)}</select></label>
+                        <label>Recompensa<select required value={redemption.reward_id} onChange={event => setRedemption({ ...redemption, reward_id: event.target.value })}><option value="">Seleccionar recompensa</option>{rewards.filter(item => item.status === "active" && Number(item.program_id) === Number(redemption.program_id)).map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
                     </div>
                     <label>Nota del canje (opcional)<input value={redemption.notes} onChange={event => setRedemption({ ...redemption, notes: event.target.value })} placeholder="Ej. Beneficio entregado en mostrador" /></label>
                     <button className="tags_loyalty_primary_btn" disabled={saving}>Registrar canje</button>

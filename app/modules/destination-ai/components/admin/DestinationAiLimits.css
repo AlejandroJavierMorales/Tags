@@ -1,0 +1,8 @@
+.tags_destination_limit_notice{margin:0 0 15px;border:1px solid #e5b85d;border-radius:12px;background:#fff7df;padding:12px 14px;color:#6f4b08}
+.tags_destination_limit_notice.is_blocked{border-color:#e09a9a;background:#fff0f0;color:#962a2a}
+.tags_destination_limit_fields{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+.tags_destination_limit_fields input:disabled{background:#f1f3f2;color:#89938e}
+.tags_destination_limit_resume{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.tags_destination_limit_resume span{border-radius:999px;background:#edf5f0;padding:7px 10px;color:#496157;font-size:.76rem}
+.tags_destination_limit_help{margin:10px 0 0;color:#687970;font-size:.78rem;line-height:1.5}
+@media(max-width:700px){.tags_destination_limit_fields{grid-template-columns:1fr}}

@@ -82,3 +82,5 @@
     flex-direction: column;
   }
 }
+.tags_subscription_contract_button{min-height:34px;padding:7px 13px;border:0;border-radius:8px;background:#e2f4e9;color:#176c40;font-weight:850;cursor:pointer}.tags_subscription_contract_button:hover{background:#ccebd8}
+.tags_subscription_expiry{display:flex;align-items:center;gap:8px}.tags_subscription_expiry a,.tags_subscription_expiry button{padding:6px 9px;border:0;border-radius:7px;background:#e2f4e9;color:#176c40;font-size:11px;font-weight:850;text-decoration:none;white-space:nowrap}.tags_subscription_expiry button:disabled{background:#edf0ee;color:#7b8781;cursor:not-allowed}

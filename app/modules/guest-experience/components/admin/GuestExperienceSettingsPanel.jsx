@@ -6,6 +6,7 @@ import TagsSpinner from "@/app/components/TagsSpinner";
 import showAlert from "@/app/components/showAlert";
 import GuestExperienceWifiManager from "./GuestExperienceWifiManager";
 import AiChatSurfaceSettings from "@/app/modules/ai-chat/components/admin/AiChatSurfaceSettings";
+import PushNotificationButton from "@/app/modules/notifications/components/PushNotificationButton";
 import "./GuestExperienceSettingsPanel.css";
 import "./GuestExperienceSettingsOperations.css";
 import "./GuestExperienceSettingsThemesCompact.css";
@@ -76,7 +77,7 @@ export default function GuestExperienceSettingsPanel({ businessId, data, onSaved
 </button>})}</div>
 </section>
 <button disabled={busy}>Guardar configuración</button>
-</form><GuestExperienceWifiManager businessId={businessId} data={data} onSaved={onSaved}/><AiChatSurfaceSettings businessId={businessId} surfaceType="guest_experience" surfaceId={data.app.id} surfaceLabel="Mi Estadía" />{slugOpen&&<div className="tags_guest_settings_backdrop" onMouseDown={()=>!busy&&setSlugOpen(false)}>
+</form><PushNotificationButton businessId={businessId}/><GuestExperienceWifiManager businessId={businessId} data={data} onSaved={onSaved}/><AiChatSurfaceSettings businessId={businessId} surfaceType="guest_experience" surfaceId={data.app.id} surfaceLabel="Mi Estadía" />{slugOpen&&<div className="tags_guest_settings_backdrop" onMouseDown={()=>!busy&&setSlugOpen(false)}>
 <section className="tags_guest_settings_modal" onMouseDown={e=>e.stopPropagation()}>
 <button className="tags_guest_settings_close" type="button" onClick={()=>setSlugOpen(false)}>
 <FaXmark/>

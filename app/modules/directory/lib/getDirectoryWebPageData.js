@@ -4,8 +4,10 @@ import { getDirectoryEmbeddedStore } from "./getDirectoryEmbeddedStore";
 import { getDirectoryEmbeddedResto } from "./getDirectoryEmbeddedResto";
 import { getDirectoryEmbeddedReviews } from "./getDirectoryEmbeddedReviews";
 import { getDirectoryModuleSettings } from "./directoryModuleSettings";
-import { getPublicLoyaltyProgramByBusiness } from "@/app/modules/loyalty/lib/loyaltyPublicService";
+import { getPublicLoyaltyProgramsByBusiness } from "@/app/modules/loyalty/lib/loyaltyPublicService";
 import { normalizeDirectoryDbValue } from "./normalizeDirectoryDbValue";
+import { getDirectoryEmbeddedTurnos } from "./getDirectoryEmbeddedTurnos";
+import { getPublicAiChatConfig } from "@/app/modules/ai-chat/server/getPublicAiChatConfig";
 
 export async function getDirectoryWebPageData(pageId, { includeDraft = false } = {}) {
     if (!pageId) return null;
@@ -18,7 +20,7 @@ export async function getDirectoryWebPageData(pageId, { includeDraft = false } =
         10,
         Number(directoryModules.reviewsSlider?.content?.limit || 10)
     );
-    const [sectionResult, blockResult, productResult, embeddedStore, embeddedResto, embeddedReviews, benefitResult, loyalty] = await Promise.all([
+    const [sectionResult, blockResult, productResult, embeddedStore, embeddedResto, embeddedReviews, benefitResult, loyalty, embeddedTurnos, aiChatConfig] = await Promise.all([
         db.query("SELECT * FROM tags_qr_page_sections WHERE page_id=? AND is_visible=1 ORDER BY sort_order,id", [page.id]),
         db.query("SELECT b.* FROM tags_qr_page_blocks b INNER JOIN tags_qr_page_sections s ON s.id=b.section_id WHERE s.page_id=? AND s.is_visible=1 AND b.is_visible=1 ORDER BY b.sort_order,b.id", [page.id]),
         db.query("SELECT * FROM tags_qr_page_products WHERE page_id=? AND is_visible=1 ORDER BY sort_order,id", [page.id]),
@@ -26,10 +28,15 @@ export async function getDirectoryWebPageData(pageId, { includeDraft = false } =
         getDirectoryEmbeddedResto(page.business_id),
         getDirectoryEmbeddedReviews(page.business_id, reviewLimit),
         db.query(`SELECT * FROM tags_directory_benefits WHERE listing_id=(SELECT id FROM tags_directory_listings WHERE qr_page_id=? AND business_id=? LIMIT 1) AND is_active=1 ${includeDraft ? "" : "AND valid_from<=CURDATE() AND valid_until>=CURDATE()"} ORDER BY sort_order,id`, [page.id, page.business_id]).catch(error => { if (error?.code === "ER_NO_SUCH_TABLE") return [[]]; throw error; }),
-        getPublicLoyaltyProgramByBusiness(page.business_id).catch(error => {
-            if (["ER_NO_SUCH_TABLE", "ER_BAD_FIELD_ERROR"].includes(error?.code)) return null;
+        getPublicLoyaltyProgramsByBusiness(page.business_id).catch(error => {
+            if (["ER_NO_SUCH_TABLE", "ER_BAD_FIELD_ERROR"].includes(error?.code)) return [];
             throw error;
-        })
+        }),
+        getDirectoryEmbeddedTurnos(page.business_id).catch(error => {
+            if (["ER_NO_SUCH_TABLE", "ER_BAD_FIELD_ERROR"].includes(error?.code)) return [];
+            throw error;
+        }),
+        getPublicAiChatConfig(page.business_id, "directory", page.id)
     ]);
     const sections = normalizeDirectoryDbValue(sectionResult[0]);
     const blocks = normalizeDirectoryDbValue(blockResult[0]);
@@ -47,6 +54,8 @@ export async function getDirectoryWebPageData(pageId, { includeDraft = false } =
         embeddedResto,
         embeddedReviews,
         benefits: benefits || [],
-        loyalty
+        loyalty,
+        embeddedTurnos,
+        aiChatConfig
     });
 }

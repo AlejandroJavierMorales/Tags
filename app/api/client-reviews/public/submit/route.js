@@ -9,6 +9,7 @@ export const dynamic = "force-dynamic";
 
 import crypto from "crypto";
 import { db } from "@/app/lib/tags-db";
+import { sendBusinessPush } from "@/app/modules/notifications/server/sendBusinessPush";
 
 function hashIP(ip) {
     if (!ip) return null;
@@ -378,6 +379,19 @@ export async function POST(req) {
         await conn.commit();
 
         transactionStarted = false;
+
+        await sendBusinessPush({
+            businessId: form.business_id,
+            moduleCode: "client_reviews",
+            eventCode: "response_received",
+            entityType: "review_response",
+            entityId: responseId,
+            title: "Nueva opinión recibida",
+            body: `${cleanCustomerName || "Un cliente"} dejó una calificación de ${average.toFixed(1)} estrellas`,
+            url: `/dashboard/businesses/${form.business_id}/client-reviews`,
+            idempotencyKey: `client-review:${responseId}`,
+            audience: "admin"
+        });
 
         return Response.json({
             ok: true,

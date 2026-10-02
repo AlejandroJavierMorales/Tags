@@ -8,57 +8,62 @@ export const dynamic = "force-dynamic";
 
 import { db } from "@/app/lib/tags-db";
 import { getSessionUser } from "@/app/modules/users/lib/userSession";
-import { getChannelContextFromHost, getRequestHost } from "@/app/lib/channelContext";
 
 export async function GET(request) {
     const session = await getSessionUser();
     if (!session) return Response.json({ success: false, error: "No autenticado" }, { status: 401 });
-    const channel = await getChannelContextFromHost(getRequestHost(request));
-
     const [programs] = await db.query(
-        `SELECT p.id AS program_id,p.name AS program_name,p.description AS program_description,p.mechanic,
+        `SELECT p.id AS program_id,p.name AS program_name,p.description AS program_description,p.mechanic,p.stamp_asset_id,
                 b.id AS business_id,b.display_name AS business_name,b.logo_url AS business_logo,
+                sa.image_url AS stamp_asset_url,
                 a.id AS account_id,a.points_balance,a.stamps_balance,a.visits_balance
            FROM tags_loyalty_members lm
-           INNER JOIN tags_loyalty_accounts a ON a.member_id=lm.id AND a.status='active'
+           INNER JOIN tags_loyalty_accounts a ON a.member_id=lm.id
            INNER JOIN tags_loyalty_programs p ON p.id=a.program_id AND p.status='active'
            INNER JOIN tags_businesses b ON b.id=p.business_id
+           LEFT JOIN tags_loyalty_stamp_assets sa ON sa.id=p.stamp_asset_id AND sa.status='active'
           WHERE lm.user_id=?
           ORDER BY b.display_name,p.name`,
         [session.userId]
     );
 
-    let availablePrograms = [];
-    if (channel?.siteId) {
-        const [rows] = await db.query(
-            `SELECT p.id AS program_id,p.name AS program_name,p.description AS program_description,p.mechanic,
-                    b.id AS business_id,b.display_name AS business_name,b.logo_url AS business_logo
-               FROM tags_loyalty_programs p
-               INNER JOIN tags_businesses b ON b.id=p.business_id
-               INNER JOIN tags_business_addons ba
-                       ON ba.business_id=p.business_id
-                      AND ba.addon_code='loyalty'
-                      AND ba.status='active'
-                      AND (ba.expires_at IS NULL OR ba.expires_at>=NOW())
-              WHERE p.directory_site_id=?
-                AND p.status='active'
-                AND NOT EXISTS (
+    const [availablePrograms] = await db.query(
+        `SELECT p.id AS program_id,p.name AS program_name,p.description AS program_description,p.mechanic,p.stamp_asset_id,
+                b.id AS business_id,b.display_name AS business_name,b.logo_url AS business_logo,
+                sa.image_url AS stamp_asset_url,
+                EXISTS (
                     SELECT 1
                       FROM tags_loyalty_members lm
-                      INNER JOIN tags_loyalty_accounts a ON a.member_id=lm.id AND a.program_id=p.id AND a.status='active'
+                      INNER JOIN tags_loyalty_accounts a ON a.member_id=lm.id AND a.program_id=p.id
                      WHERE lm.user_id=? AND lm.status='active'
+                ) AS joined
+           FROM tags_loyalty_programs p
+           INNER JOIN tags_businesses b ON b.id=p.business_id
+           LEFT JOIN tags_loyalty_stamp_assets sa ON sa.id=p.stamp_asset_id AND sa.status='active'
+           INNER JOIN tags_business_addons ba
+                   ON ba.business_id=p.business_id
+                  AND ba.addon_code='loyalty'
+                  AND ba.status='active'
+                  AND (ba.expires_at IS NULL OR ba.expires_at>=NOW())
+          WHERE (
+                p.directory_site_id IS NOT NULL
+                OR EXISTS (
+                    SELECT 1
+                      FROM tags_directory_listings dl
+                      INNER JOIN tags_directory_site_listings dsl ON dsl.listing_id=dl.id
+                     WHERE dl.business_id=p.business_id
                 )
-              ORDER BY b.display_name,p.name`,
-            [channel.siteId, session.userId]
-        );
-        availablePrograms = rows;
-    }
+            )
+            AND p.status='active'
+          ORDER BY b.display_name,p.name`,
+        [session.userId]
+    );
 
     const [rewards] = await db.query(
         `SELECT r.id,r.program_id,r.name,r.description,r.reward_type,r.reward_value,
                 r.required_points,r.required_stamps,r.required_visits
            FROM tags_loyalty_members lm
-           INNER JOIN tags_loyalty_accounts a ON a.member_id=lm.id AND a.status='active'
+           INNER JOIN tags_loyalty_accounts a ON a.member_id=lm.id
            INNER JOIN tags_loyalty_rewards r ON r.program_id=a.program_id AND r.status='active'
           WHERE lm.user_id=?
             AND (r.valid_from IS NULL OR r.valid_from<=NOW())

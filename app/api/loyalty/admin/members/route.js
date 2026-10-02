@@ -38,6 +38,8 @@ export async function GET(request) {
                 u.email,
                 u.profile_image_url,
                 a.id AS account_id,
+                p.id AS program_id,
+                p.name AS program_name,
                 a.points_balance,
                 a.stamps_balance,
                 a.visits_balance,

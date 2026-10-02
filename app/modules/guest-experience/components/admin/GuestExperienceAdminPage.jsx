@@ -1,8 +1,8 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FaArrowLeft, FaBed, FaCalendarCheck, FaCalendarDays, FaComments, FaDoorOpen, FaEye, FaGear, FaGift, FaHotel, FaLocationDot, FaMoneyBillWave, FaPlus, FaShop, FaStar, FaUtensils, FaUserCheck } from "react-icons/fa6";
+import { FaArrowLeft, FaBed, FaCalendarCheck, FaCalendarDays, FaComments, FaDoorOpen, FaEye, FaGear, FaGift, FaHotel, FaLocationDot, FaMoneyBillWave, FaPlus, FaShop, FaStar, FaUsers, FaUtensils, FaUserCheck } from "react-icons/fa6";
 import TagsSpinner from "@/app/components/TagsSpinner";
 import showAlert from "@/app/components/showAlert";
 import { normalizeArgentinaWhatsapp } from "@/app/modules/qr-page/lib/normalizeContactFields";
@@ -20,6 +20,8 @@ import GuestExperienceCommerceManager from "./GuestExperienceCommerceManager";
 import GuestExperienceCommerceOrders from "./GuestExperienceCommerceOrders";
 import GuestExperienceReviewsManager from "./GuestExperienceReviewsManager";
 import GuestExperienceAdminNavigation from "./GuestExperienceAdminNavigation";
+import GuestExperienceTeamManager from "./GuestExperienceTeamManager";
+import PushNotificationButton from "@/app/modules/notifications/components/PushNotificationButton";
 import "./GuestExperienceAdminPage.css";
 import "./GuestExperienceAdminHeader.css";
 const UNIT = {
@@ -62,6 +64,10 @@ export default function GuestExperienceAdminPage({
       });
       setMissing(false);
       setData(p);
+      if (p.access?.isStaff) {
+        const permissions = p.access.permissions || [];
+        setTab(permissions.includes("guest.stays.view") ? "reservations" : permissions.includes("guest.messages.view") ? "messages" : permissions.includes("guest.accounts.view") ? "finance" : "reservations");
+      }
     } finally {
       if (!silent) setLoading(false);
     }
@@ -231,7 +237,24 @@ export default function GuestExperienceAdminPage({
     }, next === "published" ? "Página publicada." : "Página despublicada.");
   }
   async function saveCheckin(body, success) {
-    return Boolean(await request("/api/guest-experience/admin/checkin", "POST", body, success));
+    setBusy(true);
+    try {
+      async function send(confirmOutstanding = false) {
+        const response = await fetch("/api/guest-experience/admin/checkin", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ businessId, guestAppId: data.app.id, ...body, confirmOutstanding }) });
+        return { response, payload: await response.json().catch(() => ({})) };
+      }
+      let result = await send();
+      if (result.payload.code === "outstanding_balance") {
+        const amount = Number(result.payload.balance || 0).toLocaleString("es-AR", { style: "currency", currency: data.app.currency || "ARS" });
+        const proceed = await showAlert({ title: "La estadía tiene saldo pendiente", text: `Quedan ${amount} sin registrar como pagados. Podés volver para cargar el pago o confirmar el ingreso igualmente.`, icon: "warning", showCancelButton: true, confirmButtonText: "Confirmar igualmente", cancelButtonText: "Registrar pago primero" });
+        if (!proceed) return false;
+        result = await send(true);
+      }
+      if (!result.response.ok || !result.payload.ok) { await showAlert({ title: "No se pudo completar", text: result.payload.error || "Revisá la información.", icon: "error" }); return false; }
+      await showAlert({ title: "Listo", text: success, icon: "success", timer: 1500 });
+      await load(true);
+      return true;
+    } finally { setBusy(false); }
   }
   async function checkoutReservation(item) {
     const first = await showAlert({ title: "¿Confirmar checkout?", text: "La estadía pasará a estado concluido y se ocultarán las claves WiFi.", icon: "warning", showCancelButton: true, confirmButtonText: "Confirmar checkout", cancelButtonText: "Cancelar" });
@@ -260,12 +283,34 @@ export default function GuestExperienceAdminPage({
     }
     setExternalStayId(value);
   }
-  const adminGroups = [{ key:"stays",label:"Reservas / Estadías",icon:FaCalendarDays,items:[{key:"reservations",label:"Grilla de ocupación",icon:FaCalendarDays},{key:"arrivals",label:"Ingresos",icon:FaDoorOpen},{key:"finance",label:"Estadías y pagos",icon:FaMoneyBillWave},{key:"checkin",label:"Checkin",icon:FaUserCheck},{key:"active",label:"Estadías en curso",icon:FaBed}]},{key:"configuration",label:"Configuración",icon:FaGear,items:[{key:"settings",label:"General",icon:FaGear},{key:"units",label:"Unidades / Habitaciones",icon:FaHotel}]},{key:"guest_services",label:"Servicios al huésped",icon:FaGift,items:[{key:"turnos",label:"Reservas de amenities",icon:FaCalendarCheck},{key:"commerce",label:"Tienda y gastronomía",icon:FaShop},{key:"store_orders",label:"Pedidos de tienda",icon:FaShop},{key:"resto_orders",label:"Pedidos de gastronomía",icon:FaUtensils},{key:"messages",label:"Mensajes / Solicitudes",icon:FaComments},{key:"nearby",label:"Lugares cercanos",icon:FaLocationDot},{key:"benefits",label:"Beneficios",icon:FaGift},{key:"reviews",label:"Reseñas",icon:FaStar}]}];
+  if (loading) return <TagsSpinner size={120} logoSize={66} borderSize={5} background="rgba(255,255,255,.82)" />;
+  if (!data && !missing) return <main className="tags_guest_admin"><section className="tags_guest_admin_panel"><h2>No se pudo cargar Mi Estadía</h2><p>Volvé a intentar en unos segundos.</p></section></main>;
+  const can = permission => data?.access?.isOwner || data?.access?.permissions?.includes(permission);
+  const adminGroups = [
+    { key:"stays",label:"Reservas / Estadías",icon:FaCalendarDays,items:[
+      can("guest.stays.view")&&{key:"reservations",label:"Grilla de ocupación",icon:FaCalendarDays},
+      can("guest.stays.view")&&{key:"arrivals",label:"Ingresos",icon:FaDoorOpen},
+      can("guest.accounts.view")&&{key:"finance",label:"Estadías y pagos",icon:FaMoneyBillWave},
+      can("guest.checkin.manage")&&{key:"checkin",label:"Checkin",icon:FaUserCheck},
+      can("guest.stays.view")&&{key:"active",label:"Estadías en curso",icon:FaBed},
+    ].filter(Boolean)},
+    data?.access?.isOwner&&{ key:"configuration",label:"Configuración",icon:FaGear,items:[{key:"settings",label:"General",icon:FaGear},{key:"units",label:"Unidades / Habitaciones",icon:FaHotel},{key:"team",label:"Equipo y accesos",icon:FaUsers}]},
+    { key:"guest_services",label:"Servicios al huésped",icon:FaGift,items:[
+      data?.access?.isOwner&&{key:"turnos",label:"Reservas de amenities",icon:FaCalendarCheck},
+      data?.access?.isOwner&&{key:"commerce",label:"Tienda y gastronomía",icon:FaShop},
+      data?.access?.isOwner&&{key:"store_orders",label:"Pedidos de tienda",icon:FaShop},
+      data?.access?.isOwner&&{key:"resto_orders",label:"Pedidos de gastronomía",icon:FaUtensils},
+      can("guest.messages.view")&&{key:"messages",label:"Mensajes / Solicitudes",icon:FaComments},
+      data?.access?.isOwner&&{key:"nearby",label:"Lugares cercanos",icon:FaLocationDot},
+      data?.access?.isOwner&&{key:"benefits",label:"Beneficios",icon:FaGift},
+      data?.access?.isOwner&&{key:"reviews",label:"Reseñas",icon:FaStar},
+    ].filter(Boolean)},
+  ].filter(group=>group&&group.items.length);
   const adminNavigation = <GuestExperienceAdminNavigation groups={adminGroups} active={tab} onChange={setTab}/>;
   if (!missing && tab === "commerce_resto") return <main className="tags_guest_admin"><header className="tags_guest_admin_hero"><div className="tags_guest_admin_identity"><span className="tags_guest_admin_icon"><FaUtensils /></span><div><small>GASTRONOMÍA</small><h1>{data.app.name}</h1><p>Configuración de instancia de Resto</p></div></div></header>{adminNavigation}<GuestExperienceCommerceManager businessId={businessId} data={data} moduleType="resto" /></main>;
   if (!missing && tab === "reviews") return <main className="tags_guest_admin"><header className="tags_guest_admin_hero"><div className="tags_guest_admin_identity"><span className="tags_guest_admin_icon"><FaStar /></span><div><small>EXPERIENCIA DEL HUÉSPED</small><h1>{data.app.name}</h1><p>Reseñas de huéspedes</p></div></div></header>{adminNavigation}<GuestExperienceReviewsManager businessId={businessId} data={data} /></main>;
+  if (!missing && tab === "team" && data.access?.isOwner) return <main className="tags_guest_admin"><header className="tags_guest_admin_hero"><div className="tags_guest_admin_identity"><span className="tags_guest_admin_icon"><FaUsers /></span><div><small>ADMINISTRACIÓN</small><h1>{data.app.name}</h1><p>Equipo y accesos</p></div></div></header>{adminNavigation}<GuestExperienceTeamManager businessId={businessId} data={data} /></main>;
   if (!missing && (tab === "store_orders" || tab === "resto_orders")) return <main className="tags_guest_admin"><header className="tags_guest_admin_hero"><div className="tags_guest_admin_identity"><span className="tags_guest_admin_icon">{tab === "store_orders" ? <FaShop /> : <FaUtensils />}</span><div><small>SERVICIOS AL HUÉSPED</small><h1>{data.app.name}</h1><p>{tab === "store_orders" ? "Pedidos de tienda" : "Pedidos de gastronomía"}</p></div></div><div className="tags_guest_admin_hero_actions"><button type="button" onClick={() => setTab(tab === "store_orders" ? "commerce" : "commerce_resto")}><FaArrowLeft /> Volver a configuración</button></div></header>{adminNavigation}<GuestExperienceCommerceOrders businessId={businessId} guestAppId={data.app.id} moduleType={tab === "store_orders" ? "store" : "resto"} /></main>;
-  if (loading) return <TagsSpinner size={120} logoSize={66} borderSize={5} background="rgba(255,255,255,.82)" />;
   if (!missing && tab === "checkin") return <main className="tags_guest_admin">
 <header className="tags_guest_admin_hero">
 <div className="tags_guest_admin_identity">
@@ -314,7 +359,7 @@ export default function GuestExperienceAdminPage({
 </section>
 </main>;
   if (!missing && tab === "arrivals") return <main className="tags_guest_admin"><header className="tags_guest_admin_hero"><div className="tags_guest_admin_identity"><span className="tags_guest_admin_icon"><FaHotel /></span><div><small>RECEPCIÓN</small><h1>{data.app.name}</h1><p>Ingresos previstos</p></div></div></header>{adminNavigation}<GuestExperienceArrivalsPanel data={data} onBack={() => setTab("reservations")} onReminder={item=>invite(item,"reminder")} onCheckin={stayId => { sessionStorage.setItem("tags_guest_checkin_stay", String(stayId)); setTab("checkin"); }} /></main>;
-  if (!missing && tab === "finance") return <main className="tags_guest_admin"><header className="tags_guest_admin_hero"><div className="tags_guest_admin_identity"><span className="tags_guest_admin_icon"><FaHotel /></span><div><small>ADMINISTRACIÓN</small><h1>{data.app.name}</h1><p>Estadías, ventas y pagos</p></div></div></header>{adminNavigation}<GuestExperienceFinanceReport businessId={businessId} data={data} onBack={() => setTab("reservations")} onManage={financeManage} />{externalStayId&&<GuestExperienceReservationsPanel overlayOnly stayId={externalStayId} onClose={()=>setExternalStayId(null)} data={data} busy={busy} onCreate={createReservation} onUpdate={updateReservation} onDelete={deleteReservation} onInvite={invite} onDeleteCommunication={deleteCommunication} onCheckout={checkoutReservation}/>}</main>;
+  if (!missing && tab === "finance") return <main className="tags_guest_admin"><header className="tags_guest_admin_hero"><div className="tags_guest_admin_identity"><span className="tags_guest_admin_icon"><FaHotel /></span><div><small>ADMINISTRACIÓN</small><h1>{data.app.name}</h1><p>Estadías, ventas y pagos</p></div></div></header>{adminNavigation}<GuestExperienceFinanceReport businessId={businessId} data={data} onBack={() => setTab("reservations")} onManage={financeManage} />{externalStayId&&<GuestExperienceReservationsPanel canManage={can("guest.stays.manage")} canCheckin={can("guest.checkin.manage")} overlayOnly stayId={externalStayId} onClose={()=>setExternalStayId(null)} data={data} busy={busy} onCreate={createReservation} onUpdate={updateReservation} onDelete={deleteReservation} onInvite={invite} onDeleteCommunication={deleteCommunication} onCheckout={checkoutReservation}/>}</main>;
   if (missing) return <main className="tags_guest_admin">
 <header className="tags_guest_admin_hero">
 <div className="tags_guest_admin_identity">
@@ -366,7 +411,7 @@ export default function GuestExperienceAdminPage({
 <FaEye /> Ver página</a>
 </div>
 </header>
-{adminNavigation}{tab === "reservations" && <GuestExperienceReservationsPanel data={data} busy={busy} onCreate={createReservation} onUpdate={updateReservation} onDelete={deleteReservation} onInvite={invite} onDeleteCommunication={deleteCommunication} onCheckout={checkoutReservation} />} {tab === "checkin" && <section className="tags_guest_admin_panel">
+{adminNavigation}{data.access?.isStaff&&tab==="reservations"&&<PushNotificationButton businessId={businessId}/>} {tab === "reservations" && <GuestExperienceReservationsPanel canManage={can("guest.stays.manage")} canCheckin={can("guest.checkin.manage")} data={data} busy={busy} onCreate={createReservation} onUpdate={updateReservation} onDelete={deleteReservation} onInvite={invite} onDeleteCommunication={deleteCommunication} onCheckout={checkoutReservation} />} {tab === "checkin" && <section className="tags_guest_admin_panel">
 <h2>Pre-check-in y check-in</h2>
 <p>Las reservas pendientes aparecerán aquí para completar acompañantes, vehículo y confirmar el ingreso.</p>
 </section>}{tab === "active" && <section className="tags_guest_admin_panel">
@@ -408,4 +453,3 @@ export default function GuestExperienceAdminPage({
 </article>)}</div>
 </section>}{tab === "nearby" && <GuestExperienceNearbyManager businessId={businessId} data={data}/>} {tab === "benefits" && <GuestExperienceBenefitsManager businessId={businessId} data={data}/>} {tab === "turnos" && <GuestExperienceTurnosManager businessId={businessId} data={data}/>} {tab === "commerce" && <GuestExperienceCommerceManager businessId={businessId} data={data} moduleType="store"/>} {tab === "messages" && <GuestExperienceMessagesManager businessId={businessId} data={data}/>} {tab === "settings" && <GuestExperienceSettingsPanel businessId={businessId} data={data} onSaved={() => load(true)} />} {busy && <TagsSpinner size={120} logoSize={66} borderSize={5} background="rgba(255,255,255,.72)" />}</main>;
 }
-

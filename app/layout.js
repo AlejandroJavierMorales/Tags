@@ -1,6 +1,10 @@
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./styles/tags_global.css";
 import "./components/ui/styles_ui.css"
+import { Suspense } from "react";
+import { headers } from "next/headers";
+import { getChannelContextFromHost, getHeadersHost } from "@/app/lib/channelContext";
+import PublicAudienceTracker from "@/app/modules/audience/components/PublicAudienceTracker";
 
 import {
     Inter,
@@ -55,7 +59,7 @@ const bebasNeue = Bebas_Neue({
     variable: "--font-bebas"
 });
 
-export const metadata = {
+const defaultMetadata = {
     title: "Tags",
     description: "App de QR dinámicos",
     robots: {
@@ -63,6 +67,21 @@ export const metadata = {
         follow: true
     }
 };
+
+export async function generateMetadata() {
+    try {
+        const requestHeaders = await headers();
+        const channel = await getChannelContextFromHost(getHeadersHost(requestHeaders));
+        const directoryName = channel?.brandConfig?.displayName || channel?.name;
+        if (directoryName && !channel?.isTags) {
+            return {
+                ...defaultMetadata,
+                title: directoryName
+            };
+        }
+    } catch {}
+    return defaultMetadata;
+}
 
 export default function RootLayout({ children }) {
 
@@ -83,6 +102,9 @@ export default function RootLayout({ children }) {
                 <div className="app_container">
                     {children}
                 </div>
+                <Suspense fallback={null}>
+                    <PublicAudienceTracker />
+                </Suspense>
             </body>
         </html>
     );

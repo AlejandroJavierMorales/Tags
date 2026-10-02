@@ -16,6 +16,9 @@ const DIRECTORY_PATHS = [
   { path: "/beneficios", priority: 0.8, changeFrequency: "daily" },
   { path: "/experiencias-digitales", priority: 0.95, changeFrequency: "weekly" },
   { path: "/que-ofrecemos", priority: 0.95, changeFrequency: "weekly" },
+  { path: "/enlaces", priority: 0.8, changeFrequency: "weekly" },
+  { path: "/mapa", priority: 0.85, changeFrequency: "daily" },
+  { path: "/puntos", priority: 0.85, changeFrequency: "daily" },
   { path: "/experiencias-digitales/qr-dinamicos", priority: 0.9, changeFrequency: "monthly" },
   { path: "/experiencias-digitales/pagina-web", priority: 0.9, changeFrequency: "monthly" },
   { path: "/experiencias-digitales/catalogo-tienda", priority: 0.9, changeFrequency: "monthly" },
@@ -112,6 +115,9 @@ export async function getPublicSitemapEntries(context) {
   }
 
   const staticRoutes = DIRECTORY_PATHS.map((item) => route(context.baseUrl, item.path, now, item.priority, item.changeFrequency));
+  const assistantRoutes = context.site.code === "calamuchitar"
+    ? [route("https://muchi.calamuchita.ar", "/", now, 1, "daily")]
+    : [];
   const localityPaths = await getDirectoryLocalitySitemapPaths(context.site.code);
   const [listings] = await db.query(`
     SELECT sl.slug, sl.updated_at, l.updated_at AS listing_updated_at
@@ -129,6 +135,7 @@ export async function getPublicSitemapEntries(context) {
 
   return [
     ...staticRoutes,
+    ...assistantRoutes,
     ...localityPaths.map((path) => route(context.baseUrl, path, now, 0.75, "daily")),
     ...listings.map((listing) => route(context.baseUrl, `/${listing.slug}`, listing.updated_at || listing.listing_updated_at, 0.8, "weekly")),
   ];

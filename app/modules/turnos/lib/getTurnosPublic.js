@@ -5,7 +5,7 @@ export async function getTurnosBySlug(slug, connection = db) {
     const [rows] = await connection.query(
         `SELECT a.*, p.title AS page_title, p.description AS page_description,
                 p.global_styles, p.header_config, p.footer_config, p.status AS page_status,
-                b.name AS business_name, b.email AS business_email, b.phone AS business_phone
+                b.name AS business_name, b.email AS business_email, b.phone AS business_phone, b.whatsapp AS business_whatsapp
          FROM tags_turnos_apps a
          INNER JOIN tags_qr_pages p ON p.id = a.page_id AND p.page_type = 'turnos'
          INNER JOIN tags_businesses b ON b.id = a.business_id
@@ -50,4 +50,3 @@ export async function getPublicLocations(turnosId, connection = db) {
     );
     return rows;
 }
-

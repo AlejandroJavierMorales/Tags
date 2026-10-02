@@ -10,6 +10,9 @@ import DirectoryResultsMap from "@/app/modules/directory/components/public/Direc
 import DirectoryPublicFooter from "@/app/modules/directory/components/public/DirectoryPublicFooter";
 import DirectoryInstallPrompt from "@/app/modules/directory/components/public/DirectoryInstallPrompt";
 import DirectoryResultsHeading from "@/app/modules/directory/components/public/DirectoryResultsHeading";
+import ChatWidget from "@/app/modules/ai-chat/components/ChatWidget";
+import { getDestinationAssistantConfig } from "@/app/modules/destination-ai/config/getDestinationAssistantConfig";
+import { applyDestinationUsagePolicy } from "@/app/modules/destination-ai/server/getDestinationUsageState";
 import DirectoryLocalityFilter from "@/app/modules/directory/components/public/DirectoryLocalityFilter";
 import { getDirectoryPublicData, getDirectorySiteByCode, getDirectorySiteCodeByHost } from "@/app/modules/directory/lib/getDirectoryPublicData";
 import { getHeadersHost } from "@/app/lib/channelContext";
@@ -72,6 +75,8 @@ export default async function DirectoryPublicPage({ searchParams }) {
   const navigationTrail = [{ label: "Inicio", href: "/directorio" }, ...data.breadcrumbs.map(item => ({ label: item.name, href: href(data.filters, { categoria: item.id, pagina: 1 }) }))];
   if (!data.breadcrumbs.length && data.filters.query) navigationTrail.push({ label: `Resultados para “${data.filters.query}”`, href: returnHref });
 
+  const destinationAssistant = isHome ? await applyDestinationUsagePolicy(getDestinationAssistantConfig(data.site, data.site.code === "calamuchitar" ? { initialOpen: false, launchHref: "https://muchi.calamuchita.ar", dismissible: true, characterTitle: "", characterButtonLabel: "Hablar con Muchi" } : { initialOpen: String(filters.muchi || "") === "1" }), data.site.code) : null;
+
   return <main className="tags_directory_page">
     <DirectoryPublicHeader site={data.site} query={data.filters.query} compact={!isHome} />
     <div className="tags_directory_content">
@@ -105,5 +110,6 @@ export default async function DirectoryPublicPage({ searchParams }) {
     </div>
     <DirectoryPublicFooter site={data.site} />
     {data.site.code === "calamuchitar" && <DirectoryInstallPrompt />}
+    {destinationAssistant && <ChatWidget config={destinationAssistant} />}
   </main>;
 }

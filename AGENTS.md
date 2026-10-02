@@ -10,6 +10,9 @@ Este archivo resume el contexto funcional y técnico conocido del proyecto para 
 
 ## Reglas permanentes de trabajo
 
+- No crear archivos dentro de un mismo directorio cuyos nombres difieran solamente por mayúsculas/minúsculas o por una extensión que el resolver complete automáticamente (`Componente.jsx` frente a `componente.js`). Antes de cerrar un módulo nuevo, verificar colisiones case-insensitive y que cada import resuelva al archivo esperado.
+- La base de producción puede ejecutar MariaDB 10.11. No usar expresiones exclusivas de MySQL como `CAST(? AS JSON)` sin comprobar compatibilidad; para actualizar documentos JSON compartidos, leerlos bajo transacción, combinar en la aplicación y guardar el JSON completo preservando las demás claves.
+
 - Trabajar siempre sobre la arquitectura y los componentes existentes.
 - No inventar APIs, componentes, tablas ni módulos paralelos si ya existe infraestructura reutilizable.
 - No hacer refactors innecesarios ni modificar Tags Store al trabajar sobre Tags Resto, Reviews o futuros addons.

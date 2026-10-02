@@ -21,11 +21,17 @@ export async function GET() {
     const currentFilter = `s.id=(SELECT MAX(s2.id) FROM tags_subscriptions s2 WHERE s2.business_id=s.business_id)`;
     const [[summaryRows], [subscriptions], [payments], [plans], [addons], [businesses]] = await Promise.all([
       db.query(`SELECT COUNT(*) total,SUM((${EFFECTIVE_STATUS})='active') active,SUM((${EFFECTIVE_STATUS})='trial') trial,SUM((${EFFECTIVE_STATUS})='past_due') past_due,SUM((${EFFECTIVE_STATUS})='expired') expired,SUM((${EFFECTIVE_STATUS})='paused') paused,SUM((${EFFECTIVE_STATUS})='cancelled') cancelled,SUM(s.payment_provider='mercadopago') automatic FROM tags_subscriptions s WHERE ${currentFilter}`),
-      db.query(`SELECT s.id,s.business_id,s.plan_id,s.status,${EFFECTIVE_STATUS} effective_status,IF(${currentFilter},1,0) is_current,s.payment_provider,s.duration_months,s.amount,s.currency,s.started_at,s.expires_at,s.auto_renew,s.external_subscription_id,b.name business_name,b.email business_email,p.code plan_code,p.name plan_name,p.is_free FROM tags_subscriptions s INNER JOIN tags_businesses b ON b.id=s.business_id INNER JOIN tags_plans p ON p.id=s.plan_id ORDER BY s.id DESC LIMIT 250`),
+      db.query(`SELECT s.id,s.business_id,s.plan_id,s.status,${EFFECTIVE_STATUS} effective_status,IF(${currentFilter},1,0) is_current,s.payment_provider,s.duration_months,s.amount,s.currency,s.started_at,s.expires_at,s.auto_renew,s.external_subscription_id,b.name business_name,b.email business_email,b.whatsapp business_whatsapp,p.code plan_code,p.name plan_name,p.is_free FROM tags_subscriptions s INNER JOIN tags_businesses b ON b.id=s.business_id INNER JOIN tags_plans p ON p.id=s.plan_id ORDER BY s.id DESC LIMIT 250`),
       db.query(`SELECT pay.id,pay.subscription_id,pay.business_id,pay.plan_id,pay.amount,pay.currency,pay.provider,pay.status,pay.paid_at,pay.period_start,pay.period_end,pay.notes,pay.created_at,b.name business_name,p.name plan_name FROM tags_subscription_payments pay INNER JOIN tags_businesses b ON b.id=pay.business_id INNER JOIN tags_plans p ON p.id=pay.plan_id ORDER BY COALESCE(pay.paid_at,pay.created_at) DESC,pay.id DESC LIMIT 100`),
       db.query("SELECT id,code,name,description,price,currency,max_qr_codes,is_active,is_public,is_free,sort_order FROM tags_plans ORDER BY is_active DESC,sort_order,name"),
       db.query("SELECT id,code,name,description,default_quantity,addon_type,page_type,is_active FROM tags_addons WHERE is_active=1 ORDER BY name"),
-      db.query(`SELECT b.id,b.name,b.display_name,b.email,b.phone,b.whatsapp,b.address,b.postal_code,b.description,b.logo_url,b.website_url,b.instagram_url,b.facebook_url,b.latitude,b.longitude,(SELECT sl.site_id FROM tags_directory_listings l INNER JOIN tags_directory_site_listings sl ON sl.listing_id=l.id WHERE l.business_id=b.id ORDER BY sl.id LIMIT 1) directory_site_id FROM tags_businesses b ORDER BY b.name,b.email`),
+      db.query(`SELECT b.id,b.name,b.display_name,b.email,b.phone,b.whatsapp,b.address,b.postal_code,b.description,b.logo_url,b.website_url,b.instagram_url,b.facebook_url,b.latitude,b.longitude,
+        (SELECT l.id FROM tags_directory_listings l WHERE l.business_id=b.id ORDER BY l.id LIMIT 1) directory_listing_id,
+        (SELECT sl.site_id FROM tags_directory_listings l INNER JOIN tags_directory_site_listings sl ON sl.listing_id=l.id WHERE l.business_id=b.id ORDER BY sl.id LIMIT 1) directory_site_id,
+        (SELECT GROUP_CONCAT(DISTINCT sl.site_id ORDER BY sl.site_id) FROM tags_directory_listings l INNER JOIN tags_directory_site_listings sl ON sl.listing_id=l.id WHERE l.business_id=b.id) directory_site_ids,
+        (SELECT lp.place_id FROM tags_directory_listings l INNER JOIN tags_directory_listing_places lp ON lp.listing_id=l.id AND lp.relation_type='location' WHERE l.business_id=b.id ORDER BY lp.is_primary DESC LIMIT 1) directory_place_id,
+        (SELECT GROUP_CONCAT(DISTINCT lt.taxonomy_node_id ORDER BY lt.sort_order,lt.taxonomy_node_id) FROM tags_directory_listings l INNER JOIN tags_directory_listing_taxonomy lt ON lt.listing_id=l.id WHERE l.business_id=b.id) directory_taxonomy_ids
+        FROM tags_businesses b ORDER BY b.name,b.email`),
     ]);
     let directoryPrices = [];
     try {
@@ -40,7 +46,11 @@ export async function GET() {
     let auditEvents = [];
     let planAddons = [];
     let planPrices = [];
-    const [directorySites] = await db.query("SELECT id,name,code,primary_host FROM tags_directory_sites WHERE is_active=1 ORDER BY name");
+    let subscriptionGrants = [];
+    const [[directorySites], [directoryTaxonomy]] = await Promise.all([
+      db.query("SELECT id,name,code,primary_host FROM tags_directory_sites WHERE is_active=1 ORDER BY name"),
+      db.query("SELECT n.id,n.parent_id,n.site_id,n.name,n.depth,NOT EXISTS(SELECT 1 FROM tags_directory_taxonomy_nodes child WHERE child.parent_id=n.id) is_leaf FROM tags_directory_taxonomy_nodes n WHERE n.is_active=1 ORDER BY n.depth,n.name")
+    ]);
     if (foundation.ready) {
       [offers] = await db.query(`SELECT o.*,b.name business_name,p.name plan_name FROM tags_subscription_offers o LEFT JOIN tags_businesses b ON b.id=o.business_id INNER JOIN tags_plans p ON p.id=o.plan_id ORDER BY o.created_at DESC LIMIT 50`);
       [versionedPlans] = await db.query(`SELECT p.id,p.code,p.name,p.description,p.currency,p.max_qr_codes,p.is_active,p.is_free,COALESCE(pr.visibility,IF(p.is_public=1,'public','private')) visibility,pr.owner_business_id,pr.current_version_id,b.name owner_business_name,v.version_number,v.status version_status,(pr.plan_id IS NOT NULL) is_versioned,(SELECT COUNT(*) FROM tags_plan_version_addons va WHERE va.plan_version_id=pr.current_version_id) addon_count,(SELECT COUNT(*) FROM tags_plan_version_prices vp WHERE vp.plan_version_id=pr.current_version_id AND vp.is_active=1) price_count FROM tags_plans p LEFT JOIN tags_plan_profiles pr ON pr.plan_id=p.id LEFT JOIN tags_businesses b ON b.id=pr.owner_business_id LEFT JOIN tags_plan_versions v ON v.id=pr.current_version_id ORDER BY p.is_active DESC,p.name`);
@@ -52,8 +62,9 @@ export async function GET() {
       [auditEvents] = await db.query(`SELECT e.id,e.subscription_id,e.business_id,e.event_code,e.actor_type,e.actor_id,e.previous_state_json,e.next_state_json,e.context_json,e.created_at,b.name business_name,b.email business_email,p.name plan_name FROM tags_subscription_audit_events e LEFT JOIN tags_businesses b ON b.id=e.business_id LEFT JOIN tags_subscriptions s ON s.id=e.subscription_id LEFT JOIN tags_plans p ON p.id=s.plan_id ORDER BY e.created_at DESC,e.id DESC LIMIT 500`);
       [planAddons] = await db.query("SELECT pr.plan_id,a.plan_version_id,a.addon_code,a.quantity,a.entitlement_config_json FROM tags_plan_profiles pr INNER JOIN tags_plan_version_addons a ON a.plan_version_id=pr.current_version_id ORDER BY pr.plan_id,a.addon_code");
       [planPrices] = await db.query("SELECT pr.plan_id,p.* FROM tags_plan_profiles pr INNER JOIN tags_plan_version_prices p ON p.plan_version_id=pr.current_version_id WHERE p.is_active=1 ORDER BY pr.plan_id,p.duration_months,p.calendar_month,p.id");
+      [subscriptionGrants] = await db.query("SELECT g.subscription_id,g.business_id,g.addon_code,g.quantity,g.status,g.expires_at,a.name addon_name FROM tags_subscription_addon_grants g INNER JOIN tags_subscriptions s ON s.id=g.subscription_id LEFT JOIN tags_addons a ON BINARY a.code=BINARY g.addon_code ORDER BY s.id DESC,g.addon_code LIMIT 2000");
     }
-    return Response.json({ ok: true, foundation, summary: summaryRows[0] || {}, subscriptions, payments, plans, addons, businesses, directorySites, directoryPrices, offers, versionedPlans, offerPrices, auditEvents, planAddons, planPrices });
+    return Response.json({ ok: true, foundation, summary: summaryRows[0] || {}, subscriptions, payments, plans, addons, businesses, directorySites, directoryTaxonomy, directoryPrices, offers, versionedPlans, offerPrices, auditEvents, planAddons, planPrices, subscriptionGrants });
   } catch (error) {
     console.error("SUBSCRIPTION CENTER BOOTSTRAP ERROR", error);
     return Response.json({ ok: false, error: "No se pudo cargar el Centro de Suscripciones", detail: error?.message || error?.code || "Error interno" }, { status: 500 });

@@ -5,6 +5,8 @@ import { cookies } from "next/headers";
 import { verifyTagsSession } from "@/app/lib/signTagsSession";
 import { canBusinessAccessChannel } from "@/app/lib/channelContext";
 import DirectorySearchForm from "./DirectorySearchForm";
+import DestinationAssistantMenuButton from "@/app/modules/destination-ai/components/DestinationAssistantMenuButton";
+import { getDestinationAssistantConfig } from "@/app/modules/destination-ai/config/getDestinationAssistantConfig";
 import "./DirectoryPublicHeader.css";
 import "./DirectoryPublicHeaderChannels.css";
 import "./DirectoryVisualOverrides.css";
@@ -27,6 +29,7 @@ export default async function DirectoryPublicHeader({ site, query = "", compact 
   const panelHref = session?.role === "admin" ? "/dashboard" : `/dashboard/businesses/${session?.businessId}`;
   const personalUser = session?.role === "user";
   const isCalamuchitar = site.code === "calamuchitar";
+  const destinationAssistant = getDestinationAssistantConfig(site);
   const territoryName = isCalamuchitar ? "Calamuchita" : site.name;
   let searchContent = null;
 
@@ -59,15 +62,16 @@ export default async function DirectoryPublicHeader({ site, query = "", compact 
           <Link href="/que-ofrecemos"><FaBriefcase /> Herramientas</Link>
           <Link href="/directorio#rubros"><FaMagnifyingGlass /> Explorar</Link>
           <Link href="/programas-de-fidelizacion"><FaAward /> Beneficios y Recompensas</Link>
+          {destinationAssistant && <DestinationAssistantMenuButton label={isCalamuchitar ? "Muchi - Asistente Virtual" : destinationAssistant.menuLabel} href={isCalamuchitar ? "https://muchi.calamuchita.ar" : ""} />}
           <Link href="/publicar-mi-negocio" className="is_publish"><FaBriefcase /> Publicar mi negocio</Link>
-          {personalUser ? <><Link href="/mi-cuenta" className="is_login"><FaUser /> Mi cuenta</Link><a href="/logout" className="is_logout"><FaRightFromBracket /> Cerrar sesión</a></> : authenticated ? <><a href={panelHref} className="is_login"><FaGaugeHigh /> Mi Panel</a><a href="/logout" className="is_logout"><FaRightFromBracket /> Cerrar sesión</a></> : <Link href="/login" className="is_login"><FaRightToBracket /> Ingresar</Link>}
+          {personalUser ? <><Link href="/mi-cuenta" className="is_login"><FaUser /> Mi cuenta</Link><a href="/logout" className="is_logout"><FaRightFromBracket /> Cerrar sesión</a></> : authenticated ? <><a href={panelHref} className="is_login"><FaGaugeHigh /> Mi Panel</a><a href="/logout" className="is_logout"><FaRightFromBracket /> Cerrar sesión</a></> : <Link href="/login?choose=1" className="is_login"><FaRightToBracket /> Ingresar</Link>}
         </nav>
         <details className="tags_directory_mobile_nav">
           <summary><FaBars className="is_open" /><FaXmark className="is_close" /><span className="sr_only">Abrir menú</span></summary>
           <nav>
             <div className="tags_directory_drawer_brand"><Image src="/directory/calamuchitar/LogoCalamuchitar.webp" alt="CalamuchitAr" width={210} height={70} sizes="210px" /><span>La Plataforma Comercial de Calamuchita</span></div>
-            <div className="tags_directory_drawer_links"><Link href="/directorio"><FaHouse /> Inicio</Link><Link href="/experiencias-digitales"><FaCircleInfo /> Experiencias digitales</Link><Link href="/que-ofrecemos"><FaBriefcase /> Herramientas para Comercios y Prestadores</Link><Link href="/directorio#rubros"><FaMagnifyingGlass /> Explorar rubros</Link><Link href="/programas-de-fidelizacion"><FaAward /> Beneficios y Recompensas</Link><Link href="/publicar-mi-negocio" className="is_publish"><FaBriefcase /> Publicar mi negocio</Link>{personalUser ? <Link href="/mi-cuenta"><FaUser /> Mi cuenta</Link> : authenticated && <a href={panelHref}><FaGaugeHigh /> Mi Panel</a>}</div>
-            {personalUser || authenticated ? <a href="/logout" className="tags_directory_drawer_login"><FaRightFromBracket /> Cerrar sesión</a> : <Link href="/login" className="tags_directory_drawer_login"><FaRightToBracket /> Ingresar</Link>}
+            <div className="tags_directory_drawer_links"><Link href="/directorio"><FaHouse /> Inicio</Link><Link href="/experiencias-digitales"><FaCircleInfo /> Experiencias digitales</Link><Link href="/que-ofrecemos"><FaBriefcase /> Herramientas para Comercios y Prestadores</Link><Link href="/directorio#rubros"><FaMagnifyingGlass /> Explorar rubros</Link><Link href="/programas-de-fidelizacion"><FaAward /> Beneficios y Recompensas</Link>{destinationAssistant && <DestinationAssistantMenuButton mobile label={isCalamuchitar ? "Muchi - Asistente Virtual" : destinationAssistant.menuLabel} href={isCalamuchitar ? "https://muchi.calamuchita.ar" : ""} />}<Link href="/publicar-mi-negocio" className="is_publish"><FaBriefcase /> Publicar mi negocio</Link>{personalUser ? <Link href="/mi-cuenta"><FaUser /> Mi cuenta</Link> : authenticated && <a href={panelHref}><FaGaugeHigh /> Mi Panel</a>}</div>
+            {personalUser || authenticated ? <a href="/logout" className="tags_directory_drawer_login"><FaRightFromBracket /> Cerrar sesión</a> : <Link href="/login?choose=1" className="tags_directory_drawer_login"><FaRightToBracket /> Ingresar</Link>}
           </nav>
         </details>
       </div>

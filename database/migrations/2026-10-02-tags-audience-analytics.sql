@@ -1,0 +1,35 @@
+-- Analítica propia de páginas públicas de Tags y sus directorios.
+-- No almacena direcciones IP ni datos personales del visitante.
+
+CREATE TABLE IF NOT EXISTS tags_audience_events (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  site_id BIGINT UNSIGNED NULL,
+  business_id BIGINT NULL,
+  page_id BIGINT UNSIGNED NULL,
+  listing_id BIGINT UNSIGNED NULL,
+  event_type VARCHAR(40) NOT NULL,
+  surface VARCHAR(60) NOT NULL,
+  public_host VARCHAR(190) NOT NULL,
+  path VARCHAR(1000) NOT NULL,
+  visitor_hash CHAR(64) NULL,
+  session_hash CHAR(64) NULL,
+  event_key VARCHAR(120) NULL,
+  event_label VARCHAR(255) NULL,
+  target_url VARCHAR(2000) NULL,
+  search_query VARCHAR(500) NULL,
+  referrer VARCHAR(1000) NULL,
+  utm_source VARCHAR(190) NULL,
+  utm_medium VARCHAR(190) NULL,
+  utm_campaign VARCHAR(190) NULL,
+  device_type VARCHAR(30) NULL,
+  metadata_json LONGTEXT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_tags_audience_created (created_at),
+  KEY idx_tags_audience_site_created (site_id,created_at),
+  KEY idx_tags_audience_business_created (business_id,created_at),
+  KEY idx_tags_audience_page_created (page_id,created_at),
+  KEY idx_tags_audience_event_created (event_type,created_at),
+  KEY idx_tags_audience_host_created (public_host,created_at),
+  KEY idx_tags_audience_search_created (search_query(120),created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -8,7 +8,7 @@ import { parseGuestJson, guestError } from "@/app/modules/guest-experience/lib/g
 export async function GET(req) {
     const params = new URL(req.url).searchParams;
     const businessId = Number(params.get("businessId") || 0);
-    const access = await getGuestAdminAccess({ businessId });
+    const access = await getGuestAdminAccess({ businessId, permission: "guest.dashboard.view" });
     if (!access.allowed) return guestAdminAccessResponse(access);
     const [apps] = await db.query("SELECT * FROM tags_guest_apps WHERE business_id=? LIMIT 1", [businessId]);
     const app = apps[0];
@@ -38,5 +38,7 @@ export async function GET(req) {
     const [themes] = await db.query("SELECT id,code,name,css_tokens FROM tags_qr_page_themes WHERE is_active=1 ORDER BY sort_order,id");
     const [wifiNetworks] = await db.query("SELECT * FROM tags_guest_wifi_networks WHERE guest_app_id=? ORDER BY sort_order,id", [app.id]);
     const [portals] = await db.query("SELECT theme_code FROM tags_portals WHERE business_id=? LIMIT 1", [businessId]);
-    return Response.json({ ok: true, app: { ...app, settings: parseGuestJson(app.settings_json), styles: parseGuestJson(app.styles_json) }, units, guests, stays: staysWithCommunications, wifiNetworks, themes: themes.map(item => ({ ...item, css_tokens: parseGuestJson(item.css_tokens) })), portalThemeCode: portals[0]?.theme_code || null });
+    const canSeeStays = access.isOwner || access.permissions?.includes("guest.stays.view");
+    const canManageSettings = access.isOwner || access.permissions?.includes("guest.settings.manage");
+    return Response.json({ ok: true, access: { isOwner: access.isOwner, isStaff: access.isStaff, permissions: access.permissions || [] }, app: { ...app, settings: canManageSettings ? parseGuestJson(app.settings_json) : {}, styles: canManageSettings ? parseGuestJson(app.styles_json) : {} }, units: canSeeStays || canManageSettings ? units : [], guests: canSeeStays ? guests : [], stays: canSeeStays ? staysWithCommunications : [], wifiNetworks: canManageSettings ? wifiNetworks : [], themes: canManageSettings ? themes.map(item => ({ ...item, css_tokens: parseGuestJson(item.css_tokens) })) : [], portalThemeCode: canManageSettings ? portals[0]?.theme_code || null : null });
 }

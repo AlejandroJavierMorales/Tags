@@ -1,5 +1,5 @@
 import { db } from "@/app/lib/tags-db";
-import { encryptGoogleSecret, exchangeGoogleCode, getGoogleUserEmail, listGoogleAccounts, logGoogleAction, readOAuthState } from "@/app/modules/google-business-profile/server/googleBusinessApi";
+import { encryptGoogleSecret, exchangeGoogleCode, listGoogleAccounts, logGoogleAction, readOAuthState } from "@/app/modules/google-business-profile/server/googleBusinessApi";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,10 +24,14 @@ export async function GET(request) {
         const code = url.searchParams.get("code");
         if (!code) return dashboard(request, businessId, "missing_code", returnOrigin);
         const tokens = await exchangeGoogleCode(code);
-        const [email, accounts] = await Promise.all([
-            getGoogleUserEmail(tokens.access_token).catch(() => null),
-            listGoogleAccounts(tokens.access_token)
-        ]);
+        let accounts = [];
+        try {
+            accounts = await listGoogleAccounts(tokens.access_token);
+        } catch (error) {
+            error.message = `${error.message}. Permisos otorgados por Google: ${tokens.scope || "no informados"}`;
+            throw error;
+        }
+        const email = null;
         const expiresAt = new Date(Date.now() + Number(tokens.expires_in || 3600) * 1000);
         const [existing] = await db.query("SELECT encrypted_refresh_token FROM tags_google_business_connections WHERE business_id=? LIMIT 1", [businessId]);
         const refreshToken = tokens.refresh_token ? encryptGoogleSecret(tokens.refresh_token) : existing[0]?.encrypted_refresh_token || null;

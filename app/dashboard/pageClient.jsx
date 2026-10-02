@@ -510,7 +510,7 @@ export default function DashboardAdminClient({ session }) {
 
       <div className="row d-flex justify-content-start align-items-center">
         <div className="tags_navbar mt-3 col-12 col-md-6">
-          <Link href="/dashboard/pwa-installations"><span className="tags_dashboard_nav_icon" aria-hidden="true">📱</span> Instalaciones</Link>
+          <Link href="/dashboard/pwa-installations"><span className="tags_dashboard_nav_icon" aria-hidden="true">📊</span> Audiencia e instalaciones</Link>
           <Link href="/dashboard/businesses"><span className="tags_dashboard_nav_icon" aria-hidden="true">👤</span> Clientes</Link>
           <Link href="/dashboard/subscriptions-center"><span className="tags_dashboard_nav_icon" aria-hidden="true">💳</span> Suscripciones</Link>
           <Link href="/dashboard/directory"><span className="tags_dashboard_nav_icon" aria-hidden="true">🌐</span> Directorios</Link>
@@ -640,7 +640,7 @@ export default function DashboardAdminClient({ session }) {
               <th>Acciones</th>
               <th>Destino/Enlace</th>
               <th onClick={() => handleSort("business_name")}>Cliente</th>
-              <th onClick={() => handleSort("label")}>Nombre</th>
+              <th onClick={() => handleSort("business_email")}>Email</th>
             </tr>
           </thead>
 
@@ -863,8 +863,8 @@ export default function DashboardAdminClient({ session }) {
                       </div>
                     </td>
                     <td className="truncate">{qr.final_url || "-"}</td>
-                    <td>{qr.email || "-"}</td>
-                    <td>{qr.business_name || "-"}</td>
+                    <td>{qr.business_name || (qr.business_id ? `Cliente #${qr.business_id}` : "-")}</td>
+                    <td>{qr.business_email || qr.email || "-"}</td>
                   </tr>
                 );
               })}
@@ -1111,7 +1111,13 @@ export default function DashboardAdminClient({ session }) {
 
                 <input
                   className="tags_modal_input tags_modal_input_disabled"
-                  value={editQR?.email || "- sin cliente -"}
+                  value={
+                    editQR?.business_name
+                      ? `${editQR.business_name}${editQR.business_email || editQR.email ? ` · ${editQR.business_email || editQR.email}` : ""}`
+                      : editQR?.business_id
+                        ? `Cliente #${editQR.business_id}`
+                        : "- sin cliente -"
+                  }
                   disabled
                 />
 

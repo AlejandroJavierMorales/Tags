@@ -6,6 +6,7 @@ import { bucket } from "@/app/modules/files/lib/googleStorage";
 import { deleteFile } from "@/app/modules/files/lib/deleteFile";
 import { requireDirectoryAdmin, directoryAdminError } from "@/app/modules/directory/lib/requireDirectoryAdmin";
 import { updateDirectoryMercadoPagoPreapproval } from "@/app/modules/directory/lib/directoryMercadoPago";
+import { removeDestinationBusinessProjection } from "@/app/modules/destination-ai/server/refreshDestinationBusinessProjection";
 
 const ALLOWED_ADDONS = new Set(["directory", "client_reviews"]);
 const ALLOWED_PLAN_CODES = new Set(["directory_web", "directory_web_plus"]);
@@ -305,6 +306,7 @@ export async function DELETE(req) {
         await deleteByBusiness(conn, "tags_portal_routes", businessId);
 
         await deleteByIds(conn, "tags_legacy_routes", "listing_id", inventory.listingIds);
+        await removeDestinationBusinessProjection({ businessId, listingIds: inventory.listingIds, connection: conn });
         await deleteByIds(conn, "tags_directory_media", "listing_id", inventory.listingIds);
         await deleteByIds(conn, "tags_directory_listing_places", "listing_id", inventory.listingIds);
         await deleteByIds(conn, "tags_directory_listing_taxonomy", "listing_id", inventory.listingIds);

@@ -40,7 +40,7 @@ export async function redeemLoyaltyReward({ businessId, rewardId, accountId, per
         }
 
         const nextPoints = Number(account.points_balance) - pointsCost;
-        const nextStamps = Number(account.stamps_balance) - stampsCost;
+        const nextStamps = stampsCost > 0 ? 0 : Number(account.stamps_balance);
         const nextVisits = Number(account.visits_balance) - visitsCost;
         await connection.query(
             `UPDATE tags_loyalty_accounts SET points_balance=?,stamps_balance=?,visits_balance=?,updated_at=NOW() WHERE id=?`,

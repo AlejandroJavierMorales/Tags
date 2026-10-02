@@ -18,7 +18,7 @@ export default function TurnosAdminTabs({ value, onChange, sportsEnabled = false
     const items = sportsEnabled ? [
         ["agenda", "Agenda"], ["reservations", "Reservas"], ["courts", "Canchas"],
         ["coaches", "Profesores"], ["activities", "Actividades"], ["availability", "Horarios"],
-        ["blocks", "Bloqueos"], ["publication", "Página pública"], ["chatbot", "Chatbot IA"]
+        ["blocks", "Bloqueos"], ["settings", "Configuración"], ["publication", "Página pública"], ["chatbot", "Chatbot IA"]
     ] : ITEMS;
     return <nav className="tags_turnos_admin_tabs" aria-label="Administración del turnero">
         {items.map(([id, label]) => <button key={id} type="button" className={value === id ? "is_active" : ""} onClick={() => onChange(id)}>{label}</button>)}

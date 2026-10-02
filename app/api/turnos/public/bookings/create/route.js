@@ -16,6 +16,7 @@ import {
     resolveDepositPolicy
 } from "@/app/modules/turnos/lib/turnosService";
 import { deliverTurnosNotification } from "@/app/modules/turnos/lib/deliverTurnosNotification";
+import { sendBusinessPush } from "@/app/modules/notifications/server/sendBusinessPush";
 import { getGuestPublicSession } from "@/app/modules/guest-experience/lib/getGuestPublicSession";
 import { getSportsBookingPolicy } from "@/app/modules/sports/lib/getSportsBookingPolicy";
 import { calculateSportsDurationPrice, validateSportsDuration } from "@/app/modules/sports/lib/sportsDurationPolicy";
@@ -210,6 +211,7 @@ export async function POST(req) {
         if (email) await deliverTurnosNotification({ turnosId: app.id, bookingId, customerId, eventCode: "booking_created", recipient: email, idempotencyKey: `booking:${bookingId}:created:customer`, subject: `${status === "confirmed" ? "Turno confirmado" : "Solicitud recibida"} · ${app.name}`, html: `<p>Hola ${name},</p><p>${status === "confirmed" ? "Tu turno está confirmado." : "Recibimos tu solicitud y está pendiente de confirmación."}</p><p><strong>${service.name}</strong><br>${starts.toLocaleString("es-AR")}</p><p><a href="${new URL(req.url).origin}/p/${app.slug}/reserva/${publicToken}">Ver mi reserva</a></p>`, text: `Reserva ${bookingNumber}: ${status === "confirmed" ? "confirmada" : "pendiente"}.` });
         const [owners] = await db.query("SELECT email FROM tags_businesses WHERE id=? AND email IS NOT NULL LIMIT 1", [app.business_id]);
         if (owners[0]?.email) await deliverTurnosNotification({ turnosId: app.id, bookingId, customerId, eventCode: "booking_created_owner", recipient: owners[0].email, idempotencyKey: `booking:${bookingId}:created:owner`, subject: `Nueva reserva · ${app.name}`, html: `<p>Nueva reserva de <strong>${name}</strong> para ${service.name}.</p><p>${starts.toLocaleString("es-AR")}</p>`, text: `Nueva reserva ${bookingNumber}.` });
+        if (status === "pending") await sendBusinessPush({ businessId: app.business_id, moduleCode: "turnos", eventCode: "booking_requested", entityType: "booking", entityId: bookingId, title: `Nueva solicitud · ${app.name}`, body: `${name} solicitó ${service.name} para ${starts.toLocaleString("es-AR", { dateStyle: "short", timeStyle: "short" })}.`, url: `/dashboard/businesses/${app.business_id}/turnos?turnosId=${app.id}`, payload: { turnosId: app.id, bookingId, bookingNumber }, idempotencyKey: `turnos:booking:${bookingId}:requested` });
         return Response.json({ ok: true, booking: { id: bookingId, bookingNumber, status, paymentStatus, depositRequired, depositAmount, token: publicToken, manageUrl: `/p/${app.slug}/reserva/${publicToken}` } }, { status: 201 });
     } catch (error) {
         if (connection) await connection.rollback();

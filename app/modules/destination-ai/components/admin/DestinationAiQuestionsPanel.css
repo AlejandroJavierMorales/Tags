@@ -1,0 +1,39 @@
+.tags_destination_questions{display:grid;gap:15px}
+.tags_destination_questions>header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.tags_destination_questions h3,.tags_destination_questions h4,.tags_destination_questions p{margin:0}
+.tags_destination_questions>header p{margin-top:5px;color:#65776e}
+.tags_destination_questions>header button,.tags_destination_questions_filters>button,.tags_destination_questions_pagination button{border:0;border-radius:9px;background:#2f7958;padding:9px 13px;color:#fff;font-weight:850}
+.tags_destination_questions_filters{display:grid;grid-template-columns:170px 190px minmax(240px,1fr) auto;align-items:flex-end;gap:8px}
+.tags_destination_questions_filters label{display:grid;gap:5px;color:#52685c;font-size:.7rem;font-weight:850}
+.tags_destination_questions_filters input,.tags_destination_questions_filters select{width:100%;min-width:0;border:1px solid #d4e0d9;border-radius:9px;background:#fff;padding:9px;color:#18372a}
+.tags_destination_questions_loading{display:grid;min-height:280px;place-items:center}
+.tags_destination_questions_error{display:grid;gap:5px;border:1px solid #eecaca;border-radius:12px;background:#fff4f4;padding:17px;color:#8c3434}
+.tags_destination_questions_summary{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+.tags_destination_questions_summary article{display:grid;gap:3px;border:1px solid #dce7e1;border-radius:12px;background:#f7fbf8;padding:12px}
+.tags_destination_questions_summary b{font-size:1.18rem}
+.tags_destination_questions_summary span{color:#65776e;font-size:.68rem}
+.tags_destination_questions_timeline{display:grid;gap:8px;border:1px solid #dce7e1;border-radius:13px;background:#fff;padding:13px}
+.tags_destination_questions_timeline>div{display:flex;height:150px;align-items:flex-end;gap:4px;overflow-x:auto}
+.tags_destination_questions_timeline>div>span{display:grid;min-width:22px;height:100%;grid-template-rows:1fr auto;align-items:flex-end;gap:4px}
+.tags_destination_questions_timeline i{display:block;min-height:5px;border-radius:5px 5px 2px 2px;background:#ef7d22}
+.tags_destination_questions_timeline small{color:#718178;font-size:.56rem;transform:rotate(-45deg);white-space:nowrap}
+.tags_destination_questions_grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.tags_destination_questions_list,.tags_destination_questions_table{border:1px solid #dce7e1;border-radius:13px;background:#fff;padding:13px}
+.tags_destination_questions_list ol{display:grid;gap:0;margin:9px 0 0;padding:0;list-style:none}
+.tags_destination_questions_list li{display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid #e8eeea;padding:8px 0}
+.tags_destination_questions_list li div,.tags_destination_questions_list strong,.tags_destination_questions_list small{display:block}
+.tags_destination_questions_list strong{font-size:.74rem}
+.tags_destination_questions_list small{margin-top:2px;color:#718178;font-size:.64rem}
+.tags_destination_questions_list li>b{color:#2f7958}
+.tags_destination_questions_table{display:grid;gap:9px;overflow:hidden}
+.tags_destination_questions_table>div{overflow:auto}
+.tags_destination_questions_table table{width:100%;border-collapse:collapse;font-size:.7rem}
+.tags_destination_questions_table th,.tags_destination_questions_table td{max-width:340px;border-bottom:1px solid #e5ece8;padding:8px;text-align:left;vertical-align:top}
+.tags_destination_questions_table th{background:#f4f8f6;color:#496356;white-space:nowrap}
+.tags_destination_questions_table td:nth-child(2){min-width:260px;white-space:normal}
+.tags_destination_questions_pagination{display:flex;align-items:center;justify-content:center;gap:12px}
+.tags_destination_questions_pagination button:disabled{opacity:.5}
+.tags_destination_questions_pagination span{font-size:.75rem;font-weight:800}
+@media(max-width:1100px){.tags_destination_questions_summary{grid-template-columns:repeat(3,1fr)}.tags_destination_questions_grid{grid-template-columns:1fr 1fr}.tags_destination_questions_grid article:last-child{grid-column:1/-1}}
+@media(max-width:720px){.tags_destination_questions>header{flex-direction:column}.tags_destination_questions>header>button{width:100%}.tags_destination_questions_filters{grid-template-columns:1fr 1fr}.tags_destination_questions_filters .search{grid-column:1/-1}.tags_destination_questions_summary{grid-template-columns:1fr 1fr}.tags_destination_questions_grid{grid-template-columns:1fr}.tags_destination_questions_grid article:last-child{grid-column:auto}}
+@media(max-width:460px){.tags_destination_questions_filters{grid-template-columns:1fr}.tags_destination_questions_filters .search{grid-column:auto}}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { FaArrowDown, FaArrowUp, FaCommentDots, FaEye, FaEyeSlash, FaPen, FaStar, FaStore, FaUtensils } from "react-icons/fa6";
+import { FaArrowDown, FaArrowUp, FaCalendarDays, FaCommentDots, FaEye, FaEyeSlash, FaPen, FaRobot, FaStar, FaStore, FaUtensils } from "react-icons/fa6";
 import TagsSpinner from "@/app/components/TagsSpinner";
 import showAlert from "@/app/components/showAlert";
 import StoreBlockEditor from "@/app/modules/store/components/admin/builder/StoreBlockEditor";
@@ -9,6 +9,7 @@ import { getStoreModuleDefinition } from "@/app/modules/store/lib/storeModuleDef
 import { RESTO_BUILDER_DEFINITIONS } from "@/app/modules/resto/lib/restoBuilderDefinitions";
 import { getDirectoryModuleSettings } from "../../lib/directoryModuleSettings";
 import DirectoryReviewsModuleEditor from "./DirectoryReviewsModuleEditor";
+import DirectoryTurnosModuleEditor from "./DirectoryTurnosModuleEditor";
 import "./DirectoryCommerceVisualBuilder.css";
 
 const ALLOWED = {
@@ -19,6 +20,8 @@ const ALLOWED = {
 const MODULE_META = {
   store: [FaStore, "Tienda", "Store embebido"],
   resto: [FaUtensils, "Gastronomía", "Resto embebido"],
+  turnos: [FaCalendarDays, "Reservas", "Turnos dentro de la Web"],
+  chatbot: [FaRobot, "Chatbot IA", "Asistente dentro de la Web"],
   reviewsInvitation: [FaCommentDots, "Invitar a reseñar", "Formulario de experiencia"],
   reviewsSlider: [FaStar, "Reseñas públicas", "Slider de opiniones visibles"]
 };
@@ -29,13 +32,16 @@ export default function DirectoryCommerceVisualBuilder({businessId,pageId,web,on
   const availableStore=web?.embeddedStore?.store||null;
   const availableResto=web?.embeddedResto?.store||null;
   const availableReviews=web?.embeddedReviews?.form||null;
+  const availableTurnos=Boolean(web?.embeddedTurnos?.length);
+  const availableChatbot=Boolean(web?.aiChatConfig);
   const [active,setActive]=useState(availableStore?"store":"resto");
   const [data,setData]=useState({store:null,resto:null});
   const [selected,setSelected]=useState(null);
   const [reviewEditor,setReviewEditor]=useState(null);
+  const [turnosEditor,setTurnosEditor]=useState(false);
   const [busy,setBusy]=useState(false);
   const settings=getDirectoryModuleSettings(web?.page?.global_styles||{});
-  const available={store:Boolean(availableStore),resto:Boolean(availableResto),reviewsInvitation:Boolean(availableReviews),reviewsSlider:Boolean(availableReviews)};
+  const available={store:Boolean(availableStore),resto:Boolean(availableResto),turnos:availableTurnos,chatbot:availableChatbot,reviewsInvitation:Boolean(availableReviews),reviewsSlider:Boolean(availableReviews)};
   const orderedCodes=Object.keys(MODULE_META).filter(code=>available[code]).sort((a,b)=>Number(settings[a]?.sortOrder||0)-Number(settings[b]?.sortOrder||0));
 
   async function loadBuilders(){
@@ -87,7 +93,7 @@ export default function DirectoryCommerceVisualBuilder({businessId,pageId,web,on
     }catch(error){await showAlert({title:"No se pudo actualizar",text:error.message,icon:"error"});}finally{setBusy(false);}
   }
 
-  if(!available.store&&!available.resto&&!available.reviewsInvitation)return <div className="tags_directory_commerce_empty"><h2>Módulos visuales</h2><p>Cuando el negocio active Store, Resto o Tags Reviews, sus bloques visuales aparecerán aquí.</p></div>;
+  if(!available.store&&!available.resto&&!available.turnos&&!available.chatbot&&!available.reviewsInvitation)return <div className="tags_directory_commerce_empty"><h2>Módulos visuales</h2><p>Cuando el negocio active una funcionalidad pública, aparecerá aquí para incorporarla a su Web.</p></div>;
   const source=data[active];
   return <div className="tags_directory_commerce_builder">
     {busy&&<div className="tags_directory_commerce_busy"><TagsSpinner /></div>}
@@ -95,7 +101,7 @@ export default function DirectoryCommerceVisualBuilder({businessId,pageId,web,on
     <div className="tags_directory_commerce_cards">
       {orderedCodes.map((code,index)=>{const [Icon,title,subtitle]=MODULE_META[code];return <article className={settings[code].enabled?"is_enabled":""} key={code}>
         <Icon /><div><strong>{title}</strong><small>{subtitle}</small></div>
-        <div className="tags_directory_module_order"><button type="button" onClick={()=>moveModule(code,-1)} disabled={index===0} title="Subir"><FaArrowUp /></button><button type="button" onClick={()=>moveModule(code,1)} disabled={index===orderedCodes.length-1} title="Bajar"><FaArrowDown /></button>{code.startsWith("reviews")&&<button type="button" onClick={()=>setReviewEditor(code)} title="Editar textos"><FaPen /></button>}</div>
+        <div className="tags_directory_module_order"><button type="button" onClick={()=>moveModule(code,-1)} disabled={index===0} title="Subir"><FaArrowUp /></button><button type="button" onClick={()=>moveModule(code,1)} disabled={index===orderedCodes.length-1} title="Bajar"><FaArrowDown /></button>{code==="turnos"&&<button type="button" onClick={()=>setTurnosEditor(true)} title="Editar Reservas"><FaPen /></button>}{code.startsWith("reviews")&&<button type="button" onClick={()=>setReviewEditor(code)} title="Editar textos"><FaPen /></button>}</div>
         <label><input type="checkbox" checked={settings[code].enabled} onChange={()=>toggleModule(code)} />Mostrar en la Web</label>
       </article>})}
     </div>
@@ -108,5 +114,6 @@ export default function DirectoryCommerceVisualBuilder({businessId,pageId,web,on
     </>}
     {selected&&<StoreBlockEditor businessId={businessId} entity={{name:(selected.module==="store"?availableStore:availableResto)?.name||"Negocio",description:(selected.module==="store"?availableStore:availableResto)?.description||"",categories:data[selected.module]?.categories||[],products:data[selected.module]?.products||[]}} section={(data[selected.module]?.sections||[]).find(section=>Number(section.id)===Number(selected.block.section_id))} block={selected.block} moduleDefinition={selected.module==="store"?getStoreModuleDefinition(selected.block.block_type):(()=>{const module=(data.resto?.modules||[]).find(item=>item.type===selected.block.block_type)||{};return {...module,name:module.name||module.label,editor:RESTO_BUILDER_DEFINITIONS[selected.block.block_type]};})()} updateEndpoint={selected.module==="store"?"/api/store/admin/builder/blocks/update":"/api/resto/admin/builder/blocks/update"} onClose={()=>setSelected(null)} onBlockUpdated={async updated=>{setSelected(current=>current?{...current,block:{...current.block,...updated}}:current);await loadBuilders();await onReload();}} />}
     {reviewEditor&&<DirectoryReviewsModuleEditor code={reviewEditor} value={settings[reviewEditor]} onClose={()=>setReviewEditor(null)} onSave={content=>saveReviewContent(reviewEditor,content)} />}
+    {turnosEditor&&<DirectoryTurnosModuleEditor value={settings.turnos} apps={web?.embeddedTurnos||[]} onClose={()=>setTurnosEditor(false)} onSave={content=>{setTurnosEditor(false);saveReviewContent("turnos",content);}} />}
   </div>;
 }

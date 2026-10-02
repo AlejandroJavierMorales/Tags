@@ -69,7 +69,10 @@ export function googleAuthorizationUrl(businessId, returnOrigin = "") {
         access_type: "offline",
         prompt: "consent",
         include_granted_scopes: "true",
-        scope: `${OAUTH_SCOPE} openid email`,
+        // El permiso empresarial es el único imprescindible. Solicitarlo solo
+        // evita que el consentimiento granular termine otorgando únicamente
+        // identidad/email y produzca luego un token incapaz de listar cuentas.
+        scope: OAUTH_SCOPE,
         state: createOAuthState(businessId, returnOrigin)
     });
     return `https://accounts.google.com/o/oauth2/v2/auth?${query}`;
@@ -85,6 +88,17 @@ async function googleJson(url, options = {}) {
         throw error;
     }
     return payload;
+}
+
+export async function googleBusinessRequest(accessToken, url, options = {}) {
+    return googleJson(url, {
+        ...options,
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+            ...(options.body ? { "Content-Type": "application/json" } : {}),
+            ...(options.headers || {})
+        }
+    });
 }
 
 export async function exchangeGoogleCode(code) {
@@ -115,6 +129,13 @@ export async function listGoogleLocations(accessToken, accountName) {
     const readMask = ["name", "title", "storeCode", "phoneNumbers", "websiteUri", "categories", "storefrontAddress", "latlng", "regularHours", "serviceArea", "metadata"].join(",");
     const payload = await googleJson(`${BUSINESS_INFO_API}/${accountName}/locations?pageSize=100&readMask=${encodeURIComponent(readMask)}`, { headers: { Authorization: `Bearer ${accessToken}` } });
     return payload.locations || [];
+}
+
+export async function getGoogleLocation(accessToken, locationName) {
+    const readMask = ["name", "title", "storeCode", "phoneNumbers", "websiteUri", "profile", "categories", "storefrontAddress", "latlng", "regularHours", "serviceArea", "metadata"].join(",");
+    return googleJson(`${BUSINESS_INFO_API}/${locationName}?readMask=${encodeURIComponent(readMask)}`, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+    });
 }
 
 export async function searchGoogleCategories(accessToken, query, regionCode = "AR", languageCode = "es-419") {

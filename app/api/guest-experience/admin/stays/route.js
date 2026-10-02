@@ -65,7 +65,7 @@ export async function POST(req) {
 
     const starts = new Date(`${body.startsAt}T12:00:00`), ends = new Date(`${body.endsAt}T12:00:00`);
 
-    const access = await getGuestAdminAccess({ businessId, guestAppId });
+    const access = await getGuestAdminAccess({ businessId, guestAppId, permission: "guest.stays.manage" });
 
     if (!access.allowed) return guestAdminAccessResponse(access);
 
@@ -167,7 +167,7 @@ if(!body)return guestError("Cuerpo JSON inválido");
 
     const firstName=cleanGuestText(body.firstName,100),lastName=cleanGuestText(body.lastName,100),documentNumber=cleanGuestText(body.documentNumber,80),email=cleanGuestText(body.email,190)?.toLowerCase(),phone=cleanGuestText(body.phone,60);
 
-    const access=await getGuestAdminAccess({businessId,guestAppId});
+    const access=await getGuestAdminAccess({businessId,guestAppId,permission:"guest.stays.manage"});
 if(!access.allowed)return guestAdminAccessResponse(access);
 
     if(!stayId||!unitId||!firstName||!lastName||!documentNumber||!email||!phone||Number.isNaN(starts.getTime())||Number.isNaN(ends.getTime())||ends<=starts)return guestError("Completá correctamente titular, unidad y fechas");
@@ -195,7 +195,7 @@ return Response.json({ok:false,error:"No se pudo modificar la reserva"},{status:
 export async function DELETE(req) {
     const body=await req.json().catch(()=>null);
 if(!body)return guestError("Cuerpo JSON inválido");
-const businessId=Number(body.businessId||0),guestAppId=Number(body.guestAppId||0),stayId=Number(body.stayId||0),access=await getGuestAdminAccess({businessId,guestAppId});
+const businessId=Number(body.businessId||0),guestAppId=Number(body.guestAppId||0),stayId=Number(body.stayId||0),access=await getGuestAdminAccess({businessId,guestAppId,permission:"guest.stays.manage"});
 if(!access.allowed)return guestAdminAccessResponse(access);
 
     const connection=await db.getConnection();

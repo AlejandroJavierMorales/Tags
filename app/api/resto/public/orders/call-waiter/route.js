@@ -10,6 +10,7 @@ export const dynamic = "force-dynamic";
 import {
     db
 } from "@/app/lib/tags-db";
+import { sendBusinessPush } from "@/app/modules/notifications/server/sendBusinessPush";
 
 export async function POST(
     req
@@ -60,12 +61,14 @@ export async function POST(
             await connection.query(
                 `
                 SELECT
-                    id,
-                    store_id,
-                    status,
-                    service_mode,
-                    payment_status
-                FROM tags_resto_sessions
+                    rs.id,
+                    rs.store_id,
+                    rs.status,
+                    rs.service_mode,
+                    rs.payment_status,
+                    st.business_id
+                FROM tags_resto_sessions rs
+                INNER JOIN tags_stores st ON st.id=rs.store_id
                 WHERE session_token = ?
                 LIMIT 1
                 `,
@@ -222,6 +225,8 @@ export async function POST(
                 session.id
             ]
         );
+
+        await sendBusinessPush({ businessId: session.business_id, moduleCode: "resto", eventCode: "waiter_called", entityType: "service_request", entityId: request.id, title: "Llamado desde una mesa", body: request.notes || "Un cliente solicitó atención", url: `/dashboard/businesses/${session.business_id}/resto/waiter`, idempotencyKey: `resto-waiter:${request.id}`, audience: "admin" });
 
         return Response.json({
             success:

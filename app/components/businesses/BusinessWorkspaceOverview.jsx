@@ -96,6 +96,7 @@ export default function BusinessWorkspaceOverview({
     businessId,
     isAdmin,
     qrs = [],
+    portalEnabled = false,
     onReloadPortal
 }) {
     const [showAvailable, setShowAvailable] = useState(false);
@@ -495,7 +496,7 @@ export default function BusinessWorkspaceOverview({
                 <small>Las tarjetas de “Mis funcionalidades contratadas” siguen disponibles para acceder a cualquier herramienta activa.</small>
             </section>
 
-            <section className={`tags_workspace_portal ${portalActive ? "is_active" : ""}`}>
+            {portalEnabled && <section className={`tags_workspace_portal ${portalActive ? "is_active" : ""}`}>
                 <div className="tags_workspace_portal_heading">
                     <div className="tags_workspace_portal_icon"><FaGlobe /></div>
                     <div>
@@ -543,7 +544,7 @@ export default function BusinessWorkspaceOverview({
                         <FaGlobe /> {portalFeature?.active ? "Activar Portal" : "Portal no contratado"}
                     </button>
                 )}
-            </section>
+            </section>}
 
             <section className="tags_workspace_section">
                 <div className="tags_workspace_section_heading">
@@ -570,7 +571,7 @@ export default function BusinessWorkspaceOverview({
                 </div>
             </section>
 
-            {portal && (
+            {portalEnabled && portal && (
                 <section className="tags_workspace_section">
                     <div className="tags_workspace_section_heading">
                         <div><span>Composición del sitio</span><h2>Páginas y navegación del Portal</h2><p>Incorporá páginas, definí el menú, su orden, la Home y revisá el QR asociado.</p></div>
@@ -626,7 +627,7 @@ export default function BusinessWorkspaceOverview({
                 </section>
             )}
 
-            {portalSlugOpen && (
+            {portalEnabled && portalSlugOpen && (
                 <div className="tags_workspace_modal_backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setPortalSlugOpen(false)}>
                     <div className="tags_workspace_modal" role="dialog" aria-modal="true" aria-labelledby="portal-slug-title">
                         <button type="button" className="tags_workspace_modal_close" onClick={() => setPortalSlugOpen(false)}>×</button>
@@ -638,7 +639,7 @@ export default function BusinessWorkspaceOverview({
                 </div>
             )}
 
-            {pageSlugEditor && (
+            {portalEnabled && pageSlugEditor && (
                 <div className="tags_workspace_modal_backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setPageSlugEditor(null)}>
                     <div className="tags_workspace_modal" role="dialog" aria-modal="true" aria-labelledby="page-slug-title">
                         <button type="button" className="tags_workspace_modal_close" onClick={() => setPageSlugEditor(null)}>×</button>

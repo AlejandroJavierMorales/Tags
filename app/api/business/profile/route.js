@@ -4,6 +4,8 @@ export const dynamic = "force-dynamic";
 import { db } from "@/app/lib/tags-db";
 import { requireQRPageAccess } from "@/app/modules/qr-page/lib/requireQRPageAccess";
 import { normalizeArgentinaWhatsapp, normalizeWebsite, normalizeSocialUser } from "@/app/modules/qr-page/lib/normalizeContactFields";
+import { normalizeDirectoryDbValue } from "@/app/modules/directory/lib/normalizeDirectoryDbValue";
+import { refreshDestinationBusinessProjection } from "@/app/modules/destination-ai/server/refreshDestinationBusinessProjection";
 
 const clean = (value, max = 50000) => String(value || "").trim().slice(0, max) || null;
 
@@ -17,7 +19,7 @@ async function profilePayload(businessId) {
     db.query("SELECT id,parent_id,place_type,name,slug,country_code,latitude,longitude FROM tags_geo_places WHERE is_active=1 ORDER BY name"),
     db.query("SELECT bp.place_id,bp.relation_type,bp.is_primary FROM tags_business_places bp WHERE bp.business_id=? ORDER BY bp.is_primary DESC,bp.place_id", [businessId])
   ]);
-  return { business: businessRows[0][0] || null, places: places[0], selectedPlaces: selected[0] };
+  return normalizeDirectoryDbValue({ business: businessRows[0][0] || null, places: places[0], selectedPlaces: selected[0] });
 }
 
 export async function GET(request) {
@@ -43,9 +45,13 @@ export async function POST(request) {
   const longitude = body.longitude === "" || body.longitude == null ? null : Number(body.longitude);
   if ((latitude != null && (!Number.isFinite(latitude) || latitude < -90 || latitude > 90)) || (longitude != null && (!Number.isFinite(longitude) || longitude < -180 || longitude > 180))) return Response.json({ error: "Coordenadas inválidas" }, { status: 400 });
 
+  const normalizedWhatsapp = normalizeArgentinaWhatsapp(body.whatsapp);
+  if (clean(body.whatsapp, 80) && !normalizedWhatsapp) {
+    return Response.json({ error: "Ingresá el WhatsApp completo con código de área. Ejemplo: +54 9 3546 40-1234." }, { status: 400 });
+  }
   const values = {
     description: clean(body.description), logo: clean(body.logoUrl, 2000), cover: clean(body.coverUrl, 2000), phone: clean(body.phone, 50),
-    whatsapp: normalizeArgentinaWhatsapp(body.whatsapp), address: clean(body.address, 1000), postalCode: clean(body.postalCode, 32),
+    whatsapp: normalizedWhatsapp || null, address: clean(body.address, 1000), postalCode: clean(body.postalCode, 32),
     website: normalizeWebsite(body.websiteUrl), instagram: normalizeSocialUser("instagram", body.instagramUrl), facebook: normalizeSocialUser("facebook", body.facebookUrl)
   };
   const connection = await db.getConnection();
@@ -98,6 +104,7 @@ export async function POST(request) {
       );
     }
     await connection.commit();
+    await refreshDestinationBusinessProjection(businessId).catch(error => console.error("DESTINATION PROJECTION PROFILE SYNC ERROR", { businessId, error }));
     return Response.json({ ok: true, ...(await profilePayload(businessId)) });
   } catch (error) {
     await connection.rollback();

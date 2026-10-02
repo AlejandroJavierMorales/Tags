@@ -1,13 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { FaBuilding, FaFolderTree, FaGlobe, FaLocationDot, FaMoneyBillTransfer, FaPen, FaPlus, FaTrash, FaWhatsapp } from "react-icons/fa6";
+import { FaBuilding, FaFileImport, FaFolderTree, FaGlobe, FaLocationDot, FaMoneyBillTransfer, FaPen, FaPlus, FaRobot, FaTrash, FaWhatsapp } from "react-icons/fa6";
 import TagsSpinner from "@/app/components/TagsSpinner";
 import MediaUploader from "@/app/components/MediaUploader";
 import showAlert from "@/app/components/showAlert";
+import DestinationAiAdminPanel from "@/app/modules/destination-ai/components/admin/DestinationAiAdminPanel";
+import DirectoryPointsAdminPanel from "@/app/modules/directory-points/components/DirectoryPointsAdminPanel";
+import ProductImportAdminPanel from "@/app/modules/product-import/components/admin/ProductImportAdminPanel";
 import "./directoryAdmin.css";
 
-const EMPTY_SITE = { name: "", code: "", primaryHost: "", territoryPlaceId: "", logoUrl: "", slogan: "", primaryColor: "#2f7958", emailFrom: "", replyTo: "", notificationEmail: "", whatsapp: "", phone: "", isActive: true };
+const EMPTY_SITE = { name: "", code: "", primaryHost: "", territoryPlaceId: "", logoUrl: "", slogan: "", primaryColor: "#2f7958", emailFrom: "", replyTo: "", notificationEmail: "", whatsapp: "", phone: "", destinationAssistantEnabled: false, voiceResponseEnabled: false, isActive: true };
 const EMPTY_TAXONOMY = { parentId: "", name: "", slug: "", imageUrl: "", description: "", sortOrder: 0, isActive: true };
 const EMPTY_PLACE = { parentId: "", placeType: "locality", name: "", slug: "", countryCode: "AR", latitude: "", longitude: "", isActive: true };
 const EMPTY_LISTING = { listingId: "", businessId: "", slug: "", siteIds: [], lockedSiteIds: [], taxonomyIds: [], placeId: "", isPublished: false };
@@ -167,6 +170,12 @@ export default function DirectoryAdminClient() {
 
     function openSubscription(item = null) {
         const businessId = item?.business_id || item?.id || "";
+        if (!item?.subscription_id || item?.effective_status === "cancelled") {
+            const query = new URLSearchParams({ newSubscription: "1" });
+            if (businessId) query.set("businessId", String(businessId));
+            window.location.assign(`/dashboard/subscriptions-center?${query.toString()}`);
+            return;
+        }
         const business = subscriptions.businesses?.find(entry => String(entry.id) === String(businessId));
         const siteIds = String(business?.site_ids || item?.site_ids || "").split(",").filter(Boolean);
         const editing = Boolean(item?.subscription_id);
@@ -342,7 +351,7 @@ export default function DirectoryAdminClient() {
         if (entity === "site") {
             const config = parseConfig(item?.directory_config);
             const brand = parseConfig(item?.brand_config);
-            setForm(item ? { id: item.id, name: item.name, code: item.code, primaryHost: item.primary_host, territoryPlaceId: config.territoryPlaceId || "", logoUrl: brand.logoUrl || brand.logo_url || "", slogan: brand.slogan || "", primaryColor: brand.primaryColor || "#2f7958", emailFrom: brand.emailFrom || "", replyTo: brand.replyTo || "", notificationEmail: brand.notificationEmail || brand.replyTo || "", whatsapp: brand.whatsapp || brand.contactWhatsapp || "", phone: brand.phone || "", isActive: Boolean(Number(item.is_active)) } : EMPTY_SITE);
+            setForm(item ? { id: item.id, name: item.name, code: item.code, primaryHost: item.primary_host, territoryPlaceId: config.territoryPlaceId || "", logoUrl: brand.logoUrl || brand.logo_url || "", slogan: brand.slogan || "", primaryColor: brand.primaryColor || "#2f7958", emailFrom: brand.emailFrom || "", replyTo: brand.replyTo || "", notificationEmail: brand.notificationEmail || brand.replyTo || "", whatsapp: brand.whatsapp || brand.contactWhatsapp || "", phone: brand.phone || "", destinationAssistantEnabled: config.destinationAssistant?.enabled === true || config.destinationAssistant?.enabled === 1 || (item.code === "calamuchitar" && config.destinationAssistant?.enabled !== false), voiceResponseEnabled: config.destinationAssistant?.voiceResponseEnabled === true || config.destinationAssistant?.voiceResponseEnabled === 1, isActive: Boolean(Number(item.is_active)) } : EMPTY_SITE);
         }
         if (entity === "taxonomy") {
             setForm(item ? { id: item.id, parentId: item.parent_id || "", name: item.name, slug: item.slug, imageUrl: item.image_url || "", description: item.description || "", sortOrder: item.sort_order || 0, isActive: Boolean(Number(item.is_active)) } : EMPTY_TAXONOMY);
@@ -355,13 +364,14 @@ export default function DirectoryAdminClient() {
 
     function openListing(item = null) {
         const existingSiteIds = item ? String(item.site_ids || "").split(",").filter(Boolean) : [];
+        const selectableTaxonomyIds = new Set((data.taxonomy || []).filter(node => Boolean(Number(node.is_selectable_leaf))).map(node => String(node.id)));
         setForm(item ? {
             listingId: item.id,
             businessId: item.business_id || "",
             slug: "",
             siteIds: existingSiteIds,
             lockedSiteIds: existingSiteIds,
-            taxonomyIds: String(item.taxonomy_ids || "").split(",").filter(Boolean),
+            taxonomyIds: String(item.taxonomy_ids || "").split(",").filter(id => selectableTaxonomyIds.has(id)),
             placeId: item.place_id || "",
             isPublished: Number(item.published_count || 0) > 0
         } : EMPTY_LISTING);
@@ -431,6 +441,9 @@ export default function DirectoryAdminClient() {
         ["sites", FaGlobe, "Directorios"],
         ["taxonomy", FaFolderTree, "Rubros"],
         ["places", FaLocationDot, "Ubicaciones"],
+        ["destination-ai", FaRobot, "Muchi / IA"],
+        ["directory-points", FaLocationDot, "Puntos QR"],
+        ["product-import", FaFileImport, "Importar productos"],
         ["pricing", FaGlobe, "Planes Directorio"],
         ["subscriptions", FaMoneyBillTransfer, "Suscripciones"],
         ["automatic-subscriptions", FaMoneyBillTransfer, "Automáticas MP"],
@@ -454,6 +467,9 @@ export default function DirectoryAdminClient() {
         {tab === "sites" && <EntitySection title="Directorios o canales" text="Cada canal define su territorio y dominio público." items={data.sites} onAdd={() => openEntity("site")} render={item => <><div><strong>{item.name}</strong><small>{item.code} · {item.primary_host}</small></div><Actions onEdit={() => openEntity("site", item)} onDelete={() => remove("site", item)} /></>} />}
         {tab === "taxonomy" && <section><SectionHead title="Rubros" text="Árbol global de rubros. Solo el último nivel de cada rama se puede asignar a una ficha." onAdd={() => openEntity("taxonomy")} /><div className="tags_directory_taxonomy_tree"><TaxonomyBranch parentKey="root" tree={taxonomyTree} onEdit={item => openEntity("taxonomy", item)} onDelete={item => remove("taxonomy", item)} /></div></section>}
         {tab === "places" && <section><SectionHead title="Ubicaciones" text="Cargá y administrá Países, Provincias, Regiones y Localidades en una jerarquía clara." onAdd={() => openEntity("place")} /><div className="tags_directory_taxonomy_tree"><PlaceBranch parentKey="root" tree={placesTree} onEdit={item => openEntity("place", item)} onDelete={item => remove("place", item)} /></div></section>}
+        {tab === "destination-ai" && <DestinationAiAdminPanel />}
+        {tab === "directory-points" && <DirectoryPointsAdminPanel />}
+        {tab === "product-import" && <ProductImportAdminPanel />}
         {tab === "pricing" && <DirectoryPricing pricing={pricing} onSave={savePricing} />}
         {tab === "subscriptions" && <DirectorySubscriptions data={subscriptions} filters={subscriptionFilters} setFilters={setSubscriptionFilters} onCreate={openSubscription} onConfirm={confirmManualPayment} onAction={updateSubscription} onNotify={notifySubscription} />}
         {tab === "automatic-subscriptions" && <DirectoryAutomaticSubscriptions data={automaticSubscriptions} filters={automaticFilters} setFilters={setAutomaticFilters} onAction={automaticSubscriptionAction} />}
@@ -560,7 +576,7 @@ function ListingForm({ data, form, setForm, toggleArray, onSubmit, busy }) {
         }
         return parts.join(" / ");
     }
-    const leaves = data.taxonomy.filter(item => Boolean(Number(item.is_leaf))).map(item => ({ item, label: taxonomyLabel(item) })).sort((a, b) => a.label.localeCompare(b.label, "es", { sensitivity: "base" }));
+    const leaves = data.taxonomy.filter(item => Boolean(Number(item.is_selectable_leaf))).map(item => ({ item, label: taxonomyLabel(item) })).sort((a, b) => a.label.localeCompare(b.label, "es", { sensitivity: "base" }));
     const visibleLeaves = leaves.filter(({ label }) => !taxonomySearch.trim() || label.toLowerCase().includes(taxonomySearch.trim().toLowerCase()));
     return <form onSubmit={onSubmit}>
         <label>Cliente Tags<select required value={form.businessId} onChange={event => setForm({ ...form, businessId: event.target.value })}><option value="">Seleccionar</option>{data.businesses.map(item => <option value={item.id} key={item.id}>{item.name} · {item.email}</option>)}</select></label>

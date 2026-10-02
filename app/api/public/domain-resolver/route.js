@@ -171,7 +171,7 @@ export async function POST(req) {
                         AND r.is_active = 1
 
                         AND a.is_active = 1
-                        AND a.addon_type = 'page'
+                        AND (a.addon_type = 'page' OR a.code = 'loyalty')
 
                         AND (
                             r.path = ?
@@ -251,7 +251,9 @@ export async function POST(req) {
         const applicationBase =
             route.addon_code === "guest_experience"
                 ? `/p/${encodedSlug}/mi-estadia`
-                : `/p/${encodedSlug}`;
+                : route.addon_code === "loyalty"
+                    ? "/fidelizacion"
+                    : `/p/${encodedSlug}`;
 
         const target =
             `${applicationBase}${suffix}`;

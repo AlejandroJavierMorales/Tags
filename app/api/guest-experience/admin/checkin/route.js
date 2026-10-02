@@ -4,13 +4,14 @@ export const dynamic = "force-dynamic";
 import { db } from "@/app/lib/tags-db";
 import { getGuestAdminAccess, guestAdminAccessResponse } from "@/app/modules/guest-experience/lib/getGuestAdminAccess";
 import { cleanGuestText, guestError, parseGuestJson } from "@/app/modules/guest-experience/lib/guestExperienceService";
+import { sendBusinessPush } from "@/app/modules/notifications/server/sendBusinessPush";
 
 export async function GET(req) {
     const q = new URL(req.url).searchParams;
     const businessId = Number(q.get("businessId") || 0);
     const guestAppId = Number(q.get("guestAppId") || 0);
     const stayId = Number(q.get("stayId") || 0);
-    const access = await getGuestAdminAccess({ businessId, guestAppId });
+    const access = await getGuestAdminAccess({ businessId, guestAppId, permission: "guest.stays.view" });
     if (!access.allowed) return guestAdminAccessResponse(access);
 
     const [stays] = await db.query(`SELECT s.*,u.name unit_name,g.name guest_name,g.email guest_email,g.phone guest_phone,g.document_number,
@@ -29,15 +30,16 @@ export async function POST(req) {
     const guestAppId = Number(body.guestAppId || 0);
     const stayId = Number(body.stayId || 0);
     const complete = body.complete === true;
+    const confirmOutstanding = body.confirmOutstanding === true;
     const action = String(body.action || "");
-    const access = await getGuestAdminAccess({ businessId, guestAppId });
+    const access = await getGuestAdminAccess({ businessId, guestAppId, permission: "guest.checkin.manage" });
     if (!access.allowed) return guestAdminAccessResponse(access);
     const companions = Array.isArray(body.companions) ? body.companions : [];
     const connection = await db.getConnection();
 
     try {
         await connection.beginTransaction();
-        const [stays] = await connection.query(`SELECT s.id,s.status,s.adults,s.children,s.starts_at,s.ends_at,a.settings_json
+        const [stays] = await connection.query(`SELECT s.id,s.status,s.adults,s.children,s.starts_at,s.ends_at,s.primary_guest_id,a.settings_json,a.slug
             FROM tags_guest_stays s INNER JOIN tags_guest_apps a ON a.id=s.guest_app_id AND a.business_id=?
             WHERE s.id=? AND s.guest_app_id=? LIMIT 1 FOR UPDATE`, [businessId, stayId, guestAppId]);
         const stay = stays[0];
@@ -79,6 +81,16 @@ export async function POST(req) {
             await connection.rollback();
             return guestError(`Para confirmar el check-in deben cargarse ${Math.max(0, Number(stay.adults) + Number(stay.children) - 1)} acompañantes`);
         }
+        if (complete && !confirmOutstanding) {
+            const [[account]] = await connection.query(`SELECT COALESCE(SUM(CASE WHEN e.status='confirmed' THEN e.total_amount ELSE 0 END),0) balance
+                FROM tags_guest_accounts ac LEFT JOIN tags_guest_account_entries e ON e.account_id=ac.id
+                WHERE ac.stay_id=? AND ac.guest_app_id=?`, [stayId, guestAppId]);
+            const balance = Number(account?.balance || 0);
+            if (balance > 0.009) {
+                await connection.rollback();
+                return Response.json({ ok: false, code: "outstanding_balance", balance, error: "La estadía todavía tiene saldo pendiente." }, { status: 409 });
+            }
+        }
         await connection.query(`INSERT INTO tags_guest_precheckins (guest_app_id,stay_id,status,vehicle_plate,vehicle_make_model,vehicle_color,guest_notes,internal_notes,submitted_at)
             VALUES (?,?,'reviewed',?,?,?,?,?,NOW()) ON DUPLICATE KEY UPDATE status='reviewed',vehicle_plate=VALUES(vehicle_plate),vehicle_make_model=VALUES(vehicle_make_model),vehicle_color=VALUES(vehicle_color),guest_notes=VALUES(guest_notes),internal_notes=VALUES(internal_notes),submitted_at=NOW()`, [guestAppId, stayId, cleanGuestText(body.vehiclePlate, 30) || null, cleanGuestText(body.vehicleMakeModel, 190) || null, cleanGuestText(body.vehicleColor, 80) || null, cleanGuestText(body.guestNotes, 2000) || null, cleanGuestText(body.internalNotes, 2000) || null]);
         await connection.query("UPDATE tags_guest_stays SET expected_arrival_text=?,updated_at=NOW() WHERE id=?", [cleanGuestText(body.expectedArrivalText, 120) || null, stayId]);
@@ -98,6 +110,19 @@ export async function POST(req) {
         }
         await connection.query("INSERT INTO tags_guest_audit_log (guest_app_id,stay_id,actor_type,actor_id,action,entity_type,entity_id) VALUES (?,?,'owner',?,?,'reservation',?)", [guestAppId, stayId, access.session?.id || access.session?.userId || null, complete ? "checkin.completed" : "precheckin.saved", stayId]);
         await connection.commit();
+        await sendBusinessPush({
+            businessId,
+            moduleCode: "guest_experience",
+            eventCode: complete ? "checkin_completed" : "precheckin_reviewed",
+            entityType: "stay",
+            entityId: stayId,
+            title: complete ? "Check-in confirmado" : "Pre-check-in revisado",
+            body: complete ? "El alojamiento confirmó tu ingreso." : "El alojamiento revisó los datos de tu pre-check-in.",
+            url: "pre-checkin",
+            idempotencyKey: `guest-${complete ? "checkin" : "precheckin-reviewed"}:${stayId}`,
+            audience: "guest",
+            recipientId: stay.primary_guest_id
+        });
         return Response.json({ ok: true, status: complete ? "active" : "reserved" });
     } catch (error) {
         await connection.rollback();

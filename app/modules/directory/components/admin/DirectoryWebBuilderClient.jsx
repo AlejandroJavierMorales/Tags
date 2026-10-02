@@ -32,6 +32,16 @@ async function responsePayload(response) {
   try { return text ? JSON.parse(text) : {}; } catch { return {}; }
 }
 
+function isCatalogSection(section) {
+  let settings = section?.settings_json;
+  if (typeof settings === "string") {
+    try { settings = JSON.parse(settings); } catch { settings = {}; }
+  }
+  return settings?.directoryBaseSlot === "catalog"
+    || section?.blocks?.some(block => block.type === "catalog")
+    || section?.type === "catalog";
+}
+
 export default function DirectoryWebBuilderClient({ businessId, qrCodeId, business, publicUrl, directoryData }) {
   const [qrPage, setQrPage] = useState(null);
   const [profile, setProfile] = useState(null);
@@ -198,7 +208,7 @@ export default function DirectoryWebBuilderClient({ businessId, qrCodeId, busine
         <label><span>Email</span><input type="email" value={profile?.email || ""} onChange={event => profileField("email", event.target.value)} /></label>
         <label><span>Teléfono</span><input value={profile?.phone || ""} onChange={event => profileField("phone", event.target.value)} /></label>
         <label><span>WhatsApp</span><input value={profile?.whatsapp || ""} onChange={event => profileField("whatsapp", event.target.value)} /></label>
-        <label className="wide"><span>Descripción</span><textarea value={profile?.description || ""} onChange={event => profileField("description", event.target.value)} /></label>
+        <label className="wide"><span>Descripción general</span><textarea value={profile?.description || ""} onChange={event => profileField("description", event.target.value)} /><small>Se muestra en la presentación pública y, si está habilitada, también en el pie de la Web.</small></label>
         <div className="tags_directory_web_location wide"><h3>Ubicación compartida</h3><p>La utilizan Directory y los demás módulos del negocio.</p><div>
           <label><span>País</span><select value={geo.countryId} onChange={event => setGeo({ countryId: event.target.value, provinceId: "", regionId: "", localityId: "" })}><option value="">Seleccionar</option>{places.filter(place => place.place_type === "country").map(place => <option key={place.id} value={place.id}>{place.name}</option>)}</select></label>
           <label><span>Provincia</span><select value={geo.provinceId} disabled={!geo.countryId} onChange={event => setGeo(current => ({ ...current, provinceId: event.target.value, regionId: "", localityId: "" }))}><option value="">Seleccionar</option>{places.filter(place => Number(place.parent_id) === Number(geo.countryId) && ["state","province"].includes(place.place_type)).map(place => <option key={place.id} value={place.id}>{place.name}</option>)}</select></label>
@@ -219,7 +229,7 @@ export default function DirectoryWebBuilderClient({ businessId, qrCodeId, busine
 
     {tab === "content" && <section className="tags_directory_web_panel"><DirectoryStructureManager businessId={businessId} pageId={page.id} sections={qrPage.sections || []} onReload={load} /></section>}
 
-    {tab === "catalog" && <section className="tags_directory_web_panel"><DirectoryCatalogManager businessId={businessId} pageId={page.id} products={qrPage.products || []} catalogSection={(qrPage.sections || []).find(section => section.blocks?.some(block => block.type === "catalog") || section.type === "catalog")} onReload={load} /></section>}
+    {tab === "catalog" && <section className="tags_directory_web_panel"><DirectoryCatalogManager businessId={businessId} pageId={page.id} products={qrPage.products || []} catalogSection={(qrPage.sections || []).find(isCatalogSection)} onReload={load} /></section>}
 
     {tab === "modules" && <section className="tags_directory_web_panel"><DirectoryCommerceVisualBuilder businessId={businessId} pageId={page.id} web={moduleWeb} onReload={load} /></section>}
 

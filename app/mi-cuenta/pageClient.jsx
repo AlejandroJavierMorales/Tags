@@ -15,7 +15,7 @@ function ProfileValue({ icon: Icon, label, value, wide = false }) {
     return <div className={`tags_my_account_profile_value${wide ? " is_wide" : ""}${missing ? " is_pending" : ""}`}><Icon/><div><small>{label}</small><span>{pending(value)}</span></div></div>;
 }
 
-export default function MyAccountPageClient({ channel = null }) {
+export default function MyAccountPageClient({ channel = null, directoryShell = false }) {
     const brand = channel?.brandConfig || {};
     const brandName = brand.displayName || channel?.name || "Tags";
     const brandLogo = brand.logoUrl || brand.logo_url || (channel?.code === "calamuchitar" ? "/directory/calamuchitar/LogoCalamuchitar.webp" : "/logo_tags_transparente.webp");
@@ -66,7 +66,7 @@ export default function MyAccountPageClient({ channel = null }) {
     const fullName=`${user.first_name||""} ${user.last_name||""}`.trim()||"Usuario";
 
     return <main className="tags_my_account_page" style={{"--tags-account-primary":primaryColor}}>
-        <header className="tags_my_account_header"><div className="tags_my_account_brand"><Image src={brandLogo} alt={brandName} width={160} height={90} priority/><span>{slogan}</span></div><a href="/logout" className="tags_my_account_logout">Cerrar sesión</a></header>
+        {!directoryShell && <header className="tags_my_account_header"><div className="tags_my_account_brand"><Image src={brandLogo} alt={brandName} width={160} height={90} priority/><span>{slogan}</span></div><a href="/logout" className="tags_my_account_logout">Cerrar sesión</a></header>}
         <section className="tags_my_account_intro"><div><p>MI CUENTA</p><h1>Hola, {user.first_name||"bienvenido"}</h1><span>Este es tu espacio personal dentro de {brandName}.</span></div><div className="tags_my_account_completion"><strong>{completion}%</strong><span>Perfil completo</span><i><b style={{width:`${completion}%`}}/></i></div></section>
 
         <section className="tags_my_account_profile_card">
@@ -75,7 +75,7 @@ export default function MyAccountPageClient({ channel = null }) {
         </section>
 
         <section className="tags_my_account_tools"><header><div><small>MIS HERRAMIENTAS</small><h2>Todo lo que tenés disponible</h2></div><p>Accedé rápidamente a cada espacio desde acá.</p></header><div className="tags_my_account_tools_grid">
-            {hasLoyalty&&<a href="/fidelizacion" className="tags_my_account_tool is_available"><i><FaGift/></i><span><strong>Fidelización y beneficios</strong><small>Beneficios, puntos y recompensas disponibles.</small></span><FaArrowRight/></a>}
+            {hasLoyalty&&<a href="/mi-cuenta/fidelizacion" className="tags_my_account_tool is_available"><i><FaGift/></i><span><strong>Fidelización y beneficios</strong><small>Beneficios, puntos y recompensas disponibles.</small></span><FaArrowRight/></a>}
             <article className="tags_my_account_tool is_coming"><i><FaHeart/></i><span><strong>Mis favoritos</strong><small>Próximamente vas a poder guardar tus lugares preferidos.</small></span><em>Próximamente</em></article>
             {!hasLoyalty&&<div className="tags_my_account_tools_empty"><FaGift/><p>Cuando tengas nuevas herramientas habilitadas, aparecerán en este espacio.</p></div>}
         </div></section>

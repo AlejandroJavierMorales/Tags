@@ -1,0 +1,23 @@
+.tags_directory_map_pin {
+  overflow: hidden;
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+.tags_directory_map_pin img {
+  display: block;
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+
+.tags_directory_map_pagination {
+  z-index: 10;
+  pointer-events: auto;
+}
+
+.tags_directory_map_is_open .tags_destination_widget[data-open="false"],
+.tags_directory_map_is_open .tags_destination_widget[data-open="false"] .tags_destination_character_shell,
+.tags_directory_map_is_open .tags_destination_widget[data-open="false"] .tags_destination_character {
+  pointer-events: none !important;
+}

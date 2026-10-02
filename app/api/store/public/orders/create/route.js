@@ -10,6 +10,7 @@ export const dynamic = "force-dynamic";
 import { db } from "@/app/lib/tags-db";
 import { randomBytes } from "node:crypto";
 import { sendStoreOrderEmail } from "@/app/modules/store/lib/sendStoreOrderEmail";
+import { sendBusinessPush } from "@/app/modules/notifications/server/sendBusinessPush";
 import {
     getReservedStockForProduct,
     getReservedStockForVariant
@@ -816,6 +817,19 @@ export async function POST(req) {
         }
 
         await conn.commit();
+
+        await sendBusinessPush({
+            businessId: store.business_id,
+            moduleCode: "store",
+            eventCode: "order_created",
+            entityType: "order",
+            entityId: orderId,
+            title: "Nuevo pedido en la tienda",
+            body: `${customer.name || "Cliente"} realizó el pedido ${orderNumber}`,
+            url: `/dashboard/businesses/${store.business_id}/store/orders`,
+            idempotencyKey: `store-order:${orderId}`,
+            audience: "admin"
+        });
 
         if (customer.email) {
 

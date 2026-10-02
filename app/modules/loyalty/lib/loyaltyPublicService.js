@@ -2,11 +2,13 @@ import { db } from "@/app/lib/tags-db";
 
 export async function getPublicLoyaltyProgram(programId, connection = db) {
     const [rows] = await connection.query(
-        `SELECT p.id,p.business_id,p.directory_site_id,p.name,p.description,p.mechanic,
+        `SELECT p.id,p.business_id,p.directory_site_id,p.stamp_asset_id,p.name,p.description,p.mechanic,
                 p.points_currency,p.points_per_currency,p.stamp_target,p.visit_target,p.settings_json,
-                b.display_name AS business_name,b.logo_url AS business_logo,b.phone,b.whatsapp,b.email
+                b.display_name AS business_name,b.logo_url AS business_logo,b.phone,b.whatsapp,b.email,
+                sa.name AS stamp_asset_name,sa.image_url AS stamp_asset_url
            FROM tags_loyalty_programs p
            INNER JOIN tags_businesses b ON b.id=p.business_id
+           LEFT JOIN tags_loyalty_stamp_assets sa ON sa.id=p.stamp_asset_id AND sa.status='active'
            INNER JOIN tags_business_addons ba
                    ON ba.business_id=p.business_id
                   AND ba.addon_code='loyalty'
@@ -38,4 +40,14 @@ export async function getPublicLoyaltyProgramByBusiness(businessId, connection =
         [businessId]
     );
     return rows[0] ? getPublicLoyaltyProgram(rows[0].id, connection) : null;
+}
+
+export async function getPublicLoyaltyProgramsByBusiness(businessId, connection = db) {
+    const [rows] = await connection.query(
+        `SELECT id FROM tags_loyalty_programs
+          WHERE business_id=? AND status='active'
+          ORDER BY id`,
+        [businessId]
+    );
+    return Promise.all(rows.map(row => getPublicLoyaltyProgram(row.id, connection)));
 }

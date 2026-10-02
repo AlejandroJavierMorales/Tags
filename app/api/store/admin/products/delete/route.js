@@ -20,6 +20,7 @@ import {
     getRestoAccess,
     restoAccessResponse
 } from "@/app/modules/resto/lib/staff/getRestoAccess";
+import { refreshDestinationBusinessProjection } from "@/app/modules/destination-ai/server/refreshDestinationBusinessProjection";
 
 const VALID_APP_TYPES = [
     "store",
@@ -212,6 +213,8 @@ export async function POST(req) {
 
         transactionStarted =
             false;
+
+        await refreshDestinationBusinessProjection(businessId).catch(error => console.error("DESTINATION PROJECTION STORE PRODUCT DELETE SYNC ERROR", { businessId, error }));
 
         /*
          * La eliminación del producto en base de datos

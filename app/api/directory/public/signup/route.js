@@ -10,10 +10,12 @@ import { directoryMercadoPagoBaseUrl, ensureDirectoryMercadoPagoSubscription } f
 import { getRequestBaseUrl, getRequestHost } from "@/app/lib/channelContext";
 import { activateClientReviewsForBusiness } from "@/app/modules/client-reviews/lib/activateClientReviewsForBusiness";
 import { currentDirectoryMonth, directoryCalendarAmount } from "@/app/modules/directory/lib/directoryCalendarPricing";
+import { refreshDestinationBusinessProjection } from "@/app/modules/destination-ai/server/refreshDestinationBusinessProjection";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const DEFAULT_BUSINESS_IMAGE = "/directory/calamuchitar/imagen-generica-prestador.webp";
 const clean = (value, max = 500) => String(value || "").trim().slice(0, max);
 function normalizePhone(value) {
   const digits = String(value || "").replace(/\D/g, "");
@@ -62,21 +64,26 @@ export async function POST(req) {
   const logoStoragePath = clean(body.logoStoragePath, 1000).replace(/^\/+/, "");
   const normalizedPhone = normalizePhone(body.phone);
   const normalizedWhatsapp = normalizeArgentinaWhatsapp(body.whatsapp);
+  const whatsappGroupOptInRequested = body.whatsappGroupOptIn === true;
   const latitude = body.latitude === "" || body.latitude == null ? null : Number(body.latitude);
   const longitude = body.longitude === "" || body.longitude == null ? null : Number(body.longitude);
   const mode = body.mode === "deferred" ? "deferred" : "free";
   if (!name || !/^\S+@\S+\.\S+$/.test(email) || !placeId || !taxonomyId || !planId) return Response.json({ error: "Completá nombre, email, localidad, rubro y modalidad" }, { status: 400 });
 
-  if (!logoUrl) return Response.json({ error: "El logo es obligatorio" }, { status: 400 });
   if (name.length < 2) return Response.json({ error: "El nombre del negocio no es válido" }, { status: 400 });
   if (body.phone && (!normalizedPhone || normalizedPhone.replace(/\D/g, "").length < 8)) return Response.json({ error: "El teléfono no tiene un formato válido" }, { status: 400 });
-  if (body.whatsapp && (!normalizedWhatsapp || normalizedWhatsapp.length < 11 || normalizedWhatsapp.length > 15)) return Response.json({ error: "El WhatsApp no tiene un formato válido" }, { status: 400 });
+  if (body.whatsapp && (!normalizedWhatsapp || normalizedWhatsapp.length < 11 || normalizedWhatsapp.length > 15)) return Response.json({ error: "El WhatsApp no tiene un formato válido", fieldErrors: { whatsapp: "Ingresá un WhatsApp argentino válido, con código de área y número." } }, { status: 400 });
   if ((latitude === null) !== (longitude === null) || (latitude !== null && (!Number.isFinite(latitude) || !Number.isFinite(longitude) || latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180))) return Response.json({ error: "Las coordenadas deben ser válidas y cargarse juntas" }, { status: 400 });
-  const expectedLogoUrl = `https://storage.googleapis.com/${process.env.GOOGLE_STORAGE_BUCKET}/${logoStoragePath}`;
-  if (!logoStoragePath.startsWith("directory/public-signups/") || logoUrl !== expectedLogoUrl) return Response.json({ error: "El logo no es válido" }, { status: 400 });
+  if (logoUrl || logoStoragePath) {
+    const expectedLogoUrl = `https://storage.googleapis.com/${process.env.GOOGLE_STORAGE_BUCKET}/${logoStoragePath}`;
+    if (!logoUrl || !logoStoragePath.startsWith("directory/public-signups/") || logoUrl !== expectedLogoUrl) return Response.json({ error: "El logo no es válido" }, { status: 400 });
+  }
   const host = getRequestHost(req);
   const site = await resolveSite({ host, placeId });
   if (!site) return Response.json({ error: "Directorio no disponible" }, { status: 409 });
+  const whatsappGroupOptIn = whatsappGroupOptInRequested;
+  if (whatsappGroupOptIn && !normalizedWhatsapp) return Response.json({ error: "Para formar parte del grupo necesitás ingresar un WhatsApp válido", fieldErrors: { whatsapp: "Ingresá un WhatsApp argentino válido para formar parte del grupo." } }, { status: 400 });
+  const effectiveLogoUrl = logoUrl || DEFAULT_BUSINESS_IMAGE;
 
   const [existing] = await db.query("SELECT id FROM tags_businesses WHERE LOWER(email)=? LIMIT 1", [email]);
   if (existing.length) return Response.json({ error: "Este email ya está registrado. Ingresá desde el acceso de clientes." }, { status: 409 });
@@ -101,6 +108,11 @@ export async function POST(req) {
     if (selectedAmount <= 0) return Response.json({ error: "La opción de pago seleccionada no está disponible para este plan." }, { status: 400 });
   }
   const now = new Date();
+  const listingSourcePayload = JSON.stringify({
+    source: "public_signup",
+    whatsapp_group_opt_in: whatsappGroupOptIn,
+    whatsapp_group_opt_in_at: whatsappGroupOptIn ? now.toISOString() : null,
+  });
   const expires = mode === "deferred" ? new Date(now.getTime() + 72 * 60 * 60 * 1000) : null;
   const conn = await db.getConnection();
   let businessId;
@@ -111,7 +123,7 @@ export async function POST(req) {
   try {
     await conn.beginTransaction();
     signupStage = "cliente";
-    const [businessResult] = await conn.query("INSERT INTO tags_businesses (name,display_name,email,phone,whatsapp,logo_url,description,address,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,NOW(),NOW())", [name, name, email, normalizedPhone, normalizedWhatsapp, logoUrl, clean(body.description, 1000) || null, clean(body.address, 500) || null]);
+    const [businessResult] = await conn.query("INSERT INTO tags_businesses (name,display_name,email,phone,whatsapp,logo_url,description,address,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,NOW(),NOW())", [name, name, email, normalizedPhone, normalizedWhatsapp, effectiveLogoUrl, clean(body.description, 1000) || null, clean(body.address, 500) || null]);
     businessId = businessResult.insertId;
     signupStage = "ubicacion";
     await conn.query("INSERT INTO tags_business_places (business_id,place_id,relation_type,is_primary) VALUES (?,?,'location',1)", [businessId, placeId]);
@@ -125,9 +137,9 @@ export async function POST(req) {
     if (mode === "deferred" && plan.code === "directory_web_plus") {
       await conn.query("INSERT INTO tags_business_addons (business_id,addon_code,quantity,status,started_at,expires_at,amount,currency,notes,created_at,updated_at) VALUES (?,?,1,'active',?,?,?,?,?,NOW(),NOW())", [businessId, "client_reviews", now, expires, 0, plan.currency || "ARS", `Incluido en ${plan.name}`]);
     }
-    const [listingResult] = await conn.query("INSERT INTO tags_directory_listings (business_id,display_name,short_description,description,email,phone,whatsapp,address,latitude,longitude,status) VALUES (?,?,?,?,?,?,?,?,?,?, 'published')", [businessId, name, clean(body.description, 500) || null, clean(body.description, 1000) || null, email, normalizedPhone, normalizedWhatsapp, clean(body.address, 500) || null, latitude, longitude]);
+    const [listingResult] = await conn.query("INSERT INTO tags_directory_listings (business_id,display_name,short_description,description,email,phone,whatsapp,address,latitude,longitude,source_payload,status) VALUES (?,?,?,?,?,?,?,?,?,?,?, 'published')", [businessId, name, clean(body.description, 500) || null, clean(body.description, 1000) || null, email, normalizedPhone, normalizedWhatsapp, clean(body.address, 500) || null, latitude, longitude, listingSourcePayload]);
     const listingId = listingResult.insertId;
-    await conn.query("INSERT INTO tags_directory_media (listing_id,media_type,url,alt_text,sort_order,source_payload) VALUES (?, 'logo', ?, ?, 0, ?)", [listingId, logoUrl, name, JSON.stringify({ source: "public_signup", storagePath: logoStoragePath })]);
+    await conn.query("INSERT INTO tags_directory_media (listing_id,media_type,url,alt_text,sort_order,source_payload) VALUES (?, 'logo', ?, ?, 0, ?)", [listingId, effectiveLogoUrl, name, JSON.stringify({ source: "public_signup", storagePath: logoStoragePath || null, isDefault: !logoUrl })]);
     const slug = createSlug(name) || `negocio-${businessId}`;
     await conn.query("INSERT INTO tags_directory_site_listings (site_id,listing_id,slug,publication_status,is_free,is_featured,sort_order,published_at) VALUES (?,?,?,'published',?,0,0,NOW())", [site.id, listingId, slug, Number(plan.is_free) === 1 ? 1 : 0]);
     await conn.query("INSERT INTO tags_directory_listing_taxonomy (listing_id,taxonomy_node_id,is_primary,sort_order) VALUES (?,?,1,0)", [listingId, taxonomyId]);
@@ -166,6 +178,8 @@ export async function POST(req) {
     }, { status: 500 });
   } finally { conn.release(); }
 
+  await refreshDestinationBusinessProjection(businessId).catch(error => console.error("DESTINATION PROJECTION SIGNUP SYNC ERROR", { businessId, error }));
+
   const mpSubscription = mode === "deferred" && paymentMethod === "mercadopago"
     ? await ensureDirectoryMercadoPagoSubscription({ subscriptionId, baseUrl: directoryMercadoPagoBaseUrl(req) })
     : null;
@@ -191,6 +205,8 @@ export async function POST(req) {
   const [admins] = await db.query("SELECT email FROM tags_businesses WHERE role='admin' AND email IS NOT NULL");
   const adminRecipients = [...new Set([brand.notificationEmail, brand.replyTo, ...admins.map(item => item.email)].map(value => String(value || "").trim().toLowerCase()).filter(Boolean))];
   const adminSubject = `${mode === "deferred" ? "Nueva inscripción paga pendiente" : "Nueva alta gratuita"} · ${brand.name}`;
-  const adminNotice = adminRecipients.length ? await sendMail({ to: adminRecipients, fromName: brand.name, fromEmail: brand.fromEmail, replyTo: brand.replyTo, subject: adminSubject, text: `${adminSubject}. Negocio: ${name}. Email: ${email}. Localidad: ${place.name}. Rubro: ${leaf.name}. Plan: ${plan.name}. Importe: ${formattedAmount}.`, html: `<div style="max-width:620px;margin:auto;font-family:Arial;color:#183226">${directoryEmailHeader(brand, adminSubject)}<main style="padding:24px"><p>Se registró un nuevo negocio desde la inscripción pública.</p><p><strong>Negocio:</strong> ${name}<br><strong>Email:</strong> ${email}<br><strong>Localidad:</strong> ${place.name}<br><strong>Rubro:</strong> ${leaf.name}<br><strong>Plan:</strong> ${plan.name}<br><strong>Período:</strong> ${periodLabel}<br><strong>Importe:</strong> ${formattedAmount}<br><strong>Modalidad:</strong> ${mode === "deferred" ? "Paga · pendiente de contacto y pago" : "Gratuita"}</p>${expires ? `<p><strong>Vencimiento:</strong> ${expires.toLocaleString("es-AR")}</p>` : ""}</main></div>` }) : { ok: false };
-  return Response.json({ ok: true, businessId, emailSent: sent.ok, platformNotified: adminNotice.ok, pendingPayment: mode === "deferred", expiresAt: expires, accessLink: link, accessPath, checkoutUrl: mpSubscription?.init_point || null, webActivated: mode === "deferred", reviewsActivated });
+  const whatsappGroupAdminText = ` WhatsApp: ${normalizedWhatsapp || "no informado"}. Solicita ingresar al grupo: ${whatsappGroupOptIn ? "sí" : "no"}.`;
+  const whatsappGroupAdminHtml = `<br><strong>WhatsApp:</strong> ${normalizedWhatsapp || "No informado"}<br><strong>Grupo de Comercios y Prestadores:</strong> ${whatsappGroupOptIn ? "Sí, solicita ser incorporado" : "No"}`;
+  const adminNotice = adminRecipients.length ? await sendMail({ to: adminRecipients, fromName: brand.name, fromEmail: brand.fromEmail, replyTo: brand.replyTo, subject: adminSubject, text: `${adminSubject}. Negocio: ${name}. Email: ${email}. Localidad: ${place.name}. Rubro: ${leaf.name}. Plan: ${plan.name}. Importe: ${formattedAmount}.${whatsappGroupAdminText}`, html: `<div style="max-width:620px;margin:auto;font-family:Arial;color:#183226">${directoryEmailHeader(brand, adminSubject)}<main style="padding:24px"><p>Se registró un nuevo negocio desde la inscripción pública.</p><p><strong>Negocio:</strong> ${name}<br><strong>Email:</strong> ${email}<br><strong>Localidad:</strong> ${place.name}<br><strong>Rubro:</strong> ${leaf.name}<br><strong>Plan:</strong> ${plan.name}<br><strong>Período:</strong> ${periodLabel}<br><strong>Importe:</strong> ${formattedAmount}<br><strong>Modalidad:</strong> ${mode === "deferred" ? "Paga · pendiente de contacto y pago" : "Gratuita"}${whatsappGroupAdminHtml}</p>${expires ? `<p><strong>Vencimiento:</strong> ${expires.toLocaleString("es-AR")}</p>` : ""}</main></div>` }) : { ok: false };
+  return Response.json({ ok: true, businessId, emailSent: sent.ok, platformNotified: adminNotice.ok, whatsappGroupOptIn, pendingPayment: mode === "deferred", expiresAt: expires, accessLink: link, accessPath, checkoutUrl: mpSubscription?.init_point || null, webActivated: mode === "deferred", reviewsActivated });
 }

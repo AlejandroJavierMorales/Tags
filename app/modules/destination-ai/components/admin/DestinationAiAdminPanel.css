@@ -1,0 +1,41 @@
+.tags_destination_admin{position:relative}
+.tags_destination_admin>header{display:flex;align-items:flex-end;justify-content:space-between;gap:15px;margin-bottom:16px}
+.tags_destination_admin>header h2,.tags_destination_admin>header p{margin:0 0 5px}
+.tags_destination_admin>header>div:last-child{display:flex;gap:8px}
+.tags_destination_admin label{display:grid;gap:5px;color:#496157;font-size:.76rem;font-weight:800}
+.tags_destination_admin input,.tags_destination_admin select,.tags_destination_admin textarea{border:1px solid #d5e2da;border-radius:9px;background:#fff;padding:9px;color:#243c31;font:inherit}
+.tags_destination_admin textarea{min-height:90px;resize:vertical}
+.tags_destination_usage{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:15px}
+.tags_destination_usage article{border:1px solid #dce8e1;border-radius:12px;background:#f7fbf8;padding:14px}
+.tags_destination_usage span,.tags_destination_usage small{display:block;color:#66776e;font-size:.72rem}
+.tags_destination_usage strong{display:block;margin:5px 0;color:#245e43;font-size:1.35rem}
+.tags_destination_admin form{display:grid;gap:12px}
+.tags_destination_admin form>section,.tags_destination_usage_detail{border:1px solid #dce7e1;border-radius:13px;padding:15px}
+.tags_destination_admin h3{margin:0 0 12px;color:#285e46}
+.tags_destination_admin .check{display:flex;align-items:center;gap:9px}
+.tags_destination_admin .check input{width:auto}
+.tags_destination_admin .check span,.tags_destination_admin .check strong,.tags_destination_admin .check small{display:block}
+.tags_destination_modes_admin{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.tags_destination_modes_admin label{position:relative;border:1px solid #d8e4dd;border-radius:11px;padding:12px;cursor:pointer}
+.tags_destination_modes_admin label[data-active=true]{border-color:#2f7958;background:#edf7f1;box-shadow:0 0 0 2px #2f795820}
+.tags_destination_modes_admin input{position:absolute;right:10px;top:10px}
+.tags_destination_modes_admin strong,.tags_destination_modes_admin small{display:block;padding-right:22px}
+.tags_destination_modes_admin small{margin-top:5px;color:#65776e;font-weight:500;line-height:1.4}
+.tags_destination_form_grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.tags_destination_form_grid .wide{grid-column:1/-1}
+.tags_destination_admin form footer{display:flex;justify-content:flex-end}
+.tags_destination_admin form footer button{border:0;border-radius:10px;background:#2f7958;padding:11px 17px;color:#fff;font-weight:850;cursor:pointer}
+.tags_destination_usage_detail{margin-top:15px;overflow:auto}
+.tags_destination_usage_detail table{width:100%;border-collapse:collapse}
+.tags_destination_usage_detail th,.tags_destination_usage_detail td{border-bottom:1px solid #e2eae5;padding:9px;text-align:left}
+.tags_destination_admin_busy{position:absolute;z-index:5;inset:0;display:grid;place-items:center;background:#ffffffaa}
+.tags_destination_admin_loading{display:grid;min-height:300px;place-items:center}
+.tags_destination_admin_tabs{display:flex;gap:5px;border-bottom:1px solid #dce7e1;overflow-x:auto}
+.tags_destination_admin_tabs button{border:0;border-bottom:3px solid transparent;background:transparent;padding:10px 12px;color:#64776d;font-weight:850;white-space:nowrap;cursor:pointer}
+.tags_destination_admin_tabs button.active{border-color:#2f7958;color:#2f7958}
+@media(max-width:700px){
+  .tags_destination_admin>header{align-items:stretch;flex-direction:column}
+  .tags_destination_admin>header>div:last-child{display:grid;grid-template-columns:1fr}
+  .tags_destination_usage,.tags_destination_modes_admin,.tags_destination_form_grid{grid-template-columns:1fr}
+  .tags_destination_form_grid .wide{grid-column:auto}
+}

@@ -82,6 +82,20 @@ const IMAGE_PRESETS = {
         generateOG: false,
         defaultFileName: "avatar"
     },
+    stamp: {
+        maxDimension: 750,
+        quality: 86,
+        maxFinalSize: 750 * 1024,
+        generateOG: false,
+        defaultFileName: "stamp"
+    },
+    directory_point: {
+        maxDimension: 1200,
+        quality: 82,
+        maxFinalSize: 1200 * 1024,
+        generateOG: false,
+        defaultFileName: "point"
+    },
     default: {
         maxDimension: 1200,
         quality: 80,
@@ -181,7 +195,8 @@ export async function POST(req) {
             "resto",
             "turnos",
             "reservas",
-            "directory"
+            "directory",
+            "google-business-profile"
         ];
 
         const normalizedModule =
@@ -431,14 +446,19 @@ export async function POST(req) {
                     ? 78
                     : 82;
 
+        const isStampPreset =
+            hasNewFormat &&
+            String(variant).toLowerCase() === "stamp";
+
         let webpBuffer =
             await sharp(originalBuffer)
                 .rotate()
                 .resize({
                     width: maxImageDimension,
                     height: maxImageDimension,
-                    fit: "inside",
-                    withoutEnlargement: true
+                    fit: isStampPreset ? "cover" : "inside",
+                    position: "centre",
+                    withoutEnlargement: !isStampPreset
                 })
                 .webp({
                     quality,

@@ -21,6 +21,7 @@ import {
     getRestoProductAvailability
 } from "@/app/modules/resto/lib/products/restoProductAvailability";
 import { getGuestPublicSession } from "@/app/modules/guest-experience/lib/getGuestPublicSession";
+import { sendBusinessPush } from "@/app/modules/notifications/server/sendBusinessPush";
 
 function createToken() {
 
@@ -1291,6 +1292,9 @@ RECALCULAR TOTALES DE LA SESIÓN
         }
 
         await conn.commit();
+
+        const [[restoStore]] = await conn.query("SELECT business_id FROM tags_stores WHERE id=? LIMIT 1", [session.store_id]);
+        if (restoStore?.business_id) await sendBusinessPush({ businessId: restoStore.business_id, moduleCode: "resto", eventCode: "order_created", entityType: "resto_session", entityId: session.id, title: "Nuevo pedido en gastronomía", body: `${session.customer_name || "Cliente"} realizó un pedido`, url: `/dashboard/businesses/${restoStore.business_id}/resto/orders/${session.id}`, idempotencyKey: `resto-order:${session.id}:${Date.now()}`, audience: "admin" });
 
         const [itemsRows] =
             await conn.query(

@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic";
 import { db } from "@/app/lib/tags-db";
 import { requireQRPageAccess } from "@/app/modules/qr-page/lib/requireQRPageAccess";
 import { normalizeArgentinaWhatsapp, normalizeWebsite, normalizeSocialUser } from "@/app/modules/qr-page/lib/normalizeContactFields";
+import { refreshDestinationBusinessProjection } from "@/app/modules/destination-ai/server/refreshDestinationBusinessProjection";
 
 function text(value, max = 10000) {
   return String(value || "").trim().slice(0, max) || null;
@@ -51,6 +52,7 @@ export async function POST(request) {
       [title, description?.slice(0, 500) || null, description, email, phone, whatsapp, website, address, JSON.stringify({ instagram: instagram || null, facebook: facebook || null }), listings[0].id, businessId]
     );
     await connection.commit();
+    await refreshDestinationBusinessProjection(businessId).catch(error => console.error("DESTINATION PROJECTION WEB SYNC ERROR", { businessId, error }));
     return Response.json({ ok: true });
   } catch (error) {
     await connection.rollback();

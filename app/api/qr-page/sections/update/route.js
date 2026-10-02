@@ -13,6 +13,17 @@ import { db }
 import { requireQRPageAccess }
     from "@/app/modules/qr-page/lib/requireQRPageAccess";
 
+function jsonObject(value) {
+    if (value && typeof value === "object" && !Array.isArray(value)) return value;
+    if (typeof value === "string") {
+        try {
+            const parsed = JSON.parse(value);
+            if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) return parsed;
+        } catch {}
+    }
+    return {};
+}
+
 export async function POST(req) {
 
     try {
@@ -118,8 +129,8 @@ export async function POST(req) {
                 type || null,
                 title || null,
                 is_visible ? 1 : 0,
-                JSON.stringify(settings_json || {}),
-                JSON.stringify(styles_json || {}),
+                JSON.stringify(jsonObject(settings_json)),
+                JSON.stringify(jsonObject(styles_json)),
                 sectionId,
                 pageId
             ]

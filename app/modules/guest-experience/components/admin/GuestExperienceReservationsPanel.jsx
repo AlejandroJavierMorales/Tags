@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useEffect,useMemo,useState } from "react";
-import { FaBell,FaDoorOpen,FaEnvelope, FaLink, FaPlus, FaTrash, FaWhatsapp, FaXmark } from "react-icons/fa6";
+import { FaBell,FaDoorOpen,FaEnvelope,FaPen, FaLink, FaPlus, FaTrash, FaWhatsapp, FaXmark } from "react-icons/fa6";
 import GuestExperienceOccupancyGrid from "./GuestExperienceOccupancyGrid";
 import GuestExperienceAccountPanel from "./GuestExperienceAccountPanel";
 import showAlert from "@/app/components/showAlert";
@@ -18,7 +18,7 @@ const plusDay = value => { const date = new Date(`${value}T12:00:00`); date.setD
 const localDay = value => new Date(`${String(value||"").slice(0,10)}T12:00:00`);
 const communicationName = code => code==="arrival_reminder_24h" ? "Recordatorio de ingreso · 24 horas" : code==="arrival_reminder" ? "Recordatorio de ingreso · 48 horas" : code==="access_link" ? "Acceso a Mi Estadía" : code;
 
-export default function GuestExperienceReservationsPanel({ data, busy, onCreate, onUpdate, onDelete, onInvite, onDeleteCommunication, onCheckout, overlayOnly=false, stayId=0, onClose }) {
+export default function GuestExperienceReservationsPanel({ data, busy, onCreate, onUpdate, onDelete, onInvite, onDeleteCommunication, onCheckout, overlayOnly=false, stayId=0, onClose, canManage=true, canCheckin=true }) {
     const [form, setForm] = useState(EMPTY), [open, setOpen] = useState(false), [selected, setSelected] = useState(null), [editingId,setEditingId]=useState(null), [visibleRange,setVisibleRange]=useState(null);
     function changeStart(value) { setForm(current => ({ ...current, startsAt: value, endsAt: !current.endsAt || current.endsAt <= value ? plusDay(value) : current.endsAt })); }
     const defaultDeposit=Number(data.app.settings?.depositPercentage||0);
@@ -40,10 +40,10 @@ export default function GuestExperienceReservationsPanel({ data, busy, onCreate,
 <h2>Reservas del alojamiento</h2>
 <p>La reserva nace con su titular y ocupa la unidad hasta el check-out o la cancelación.</p>
 </div>
-<button type="button" onClick={newReservation}>
-<FaPlus /> Nueva reserva</button>
+{canManage&&<button type="button" onClick={newReservation}>
+<FaPlus /> Nueva reserva</button>}
 </header>
-        <GuestExperienceOccupancyGrid units={data.units.filter(item => Number(item.is_active) === 1)} stays={data.stays} settings={data.app.settings||{}} onReservationClick={setSelected} onAvailableClick={startFromGrid} onRangeChange={setVisibleRange} />
+        <GuestExperienceOccupancyGrid units={data.units.filter(item => Number(item.is_active) === 1)} stays={data.stays} settings={data.app.settings||{}} onReservationClick={setSelected} onAvailableClick={canManage?startFromGrid:undefined} onRangeChange={setVisibleRange} />
         <div className="tags_guest_reservations_list">{listedStays.map(item => <article key={item.id}>
 <div>
 <strong>{item.guest_name}</strong>
@@ -51,17 +51,18 @@ export default function GuestExperienceReservationsPanel({ data, busy, onCreate,
 <small>DNI {item.document_number || "sin informar"} · {item.guest_phone} · {item.guest_email} · {item.stay_code}</small>
 </div>
 <div className="tags_guest_reservation_list_actions">
-<button title="Enviar acceso por email" onClick={() => onInvite(item, "email")}>
+{canManage&&<><button title="Enviar acceso por email" onClick={() => onInvite(item, "email")}>
 <FaEnvelope />
 </button>
 <button title="Abrir WhatsApp" onClick={() => onInvite(item, "whatsapp")}>WA</button>
 <button title="Copiar acceso" onClick={() => onInvite(item, "manual")}>
 <FaLink />
 </button>
-<button className={reminderReady(item)?"is_reminder_ready":""} disabled={!reminderReady(item)} title={reminderReady(item)?"Enviar recordatorio":"Se habilita 48 horas antes"} onClick={()=>onInvite(item,"reminder")}><FaBell/></button>
-<button className="tags_guest_reservation_checkout_icon" title={item.status === "active" ? "Confirmar checkout" : "Se habilita después del check-in"} disabled={item.status !== "active"} onClick={() => onCheckout?.(item)}><FaDoorOpen /></button>
+<button className={reminderReady(item)?"is_reminder_ready":""} disabled={!reminderReady(item)} title={reminderReady(item)?"Enviar recordatorio":"Se habilita 48 horas antes"} onClick={()=>onInvite(item,"reminder")}><FaBell/></button></>}
+<button title="Ver reserva" onClick={()=>setSelected(item)}><FaPen/></button>
+{canCheckin&&<button className="tags_guest_reservation_checkout_icon" title={item.status === "active" ? "Confirmar checkout" : "Se habilita después del check-in"} disabled={item.status !== "active"} onClick={() => onCheckout?.(item)}><FaDoorOpen /></button>}
 </div>
-<details className="tags_guest_reservation_communications"><summary>Comunicaciones enviadas ({item.communications?.length||0})</summary><div>{item.communications?.map(record=><div key={record.id}><strong>{communicationName(record.event_code)}</strong><span>{record.channel} · {record.status} · {new Date(record.created_at).toLocaleString("es-AR")}</span><small>{record.recipient||"Sin destinatario"}{record.subject?` · ${record.subject}`:""}</small>{record.last_error&&<em>{record.last_error}</em>}<button type="button" className="tags_guest_communication_delete" title="Eliminar comunicación" onClick={() => onDeleteCommunication?.(record, item)}><FaTrash /> Eliminar</button></div>)}{!item.communications?.length&&<p>No hay comunicaciones registradas.</p>}</div></details>
+<details className="tags_guest_reservation_communications"><summary>Comunicaciones enviadas ({item.communications?.length||0})</summary><div>{item.communications?.map(record=><div key={record.id}><strong>{communicationName(record.event_code)}</strong><span>{record.channel} · {record.status} · {new Date(record.created_at).toLocaleString("es-AR")}</span><small>{record.recipient||"Sin destinatario"}{record.subject?` · ${record.subject}`:""}</small>{record.last_error&&<em>{record.last_error}</em>}{canManage&&<button type="button" className="tags_guest_communication_delete" title="Eliminar comunicación" onClick={() => onDeleteCommunication?.(record, item)}><FaTrash /> Eliminar</button>}</div>)}{!item.communications?.length&&<p>No hay comunicaciones registradas.</p>}</div></details>
 </article>)}{!listedStays.length&&<p className="tags_guest_reservations_empty">No hay reservas vigentes dentro del período visible.</p>}</div>
         {open && <div className="tags_guest_reservations_backdrop" onMouseDown={() => !busy && setOpen(false)}>
 <section className="tags_guest_reservations_modal" onMouseDown={event => event.stopPropagation()}>
@@ -156,10 +157,10 @@ export default function GuestExperienceReservationsPanel({ data, busy, onCreate,
 </dl>
 <a className="tags_guest_reservation_whatsapp" href={`https://wa.me/${normalizeArgentinaWhatsapp(selected.guest_phone)}`} target="_blank" rel="noreferrer">
 <FaWhatsapp /> Contactar por WhatsApp</a>
-<button className="tags_guest_reservation_checkout" type="button" disabled={selected.status !== "active"} title={selected.status === "active" ? "Confirmar checkout" : "Se habilita después del check-in confirmado"} onClick={() => onCheckout?.(selected)}><FaDoorOpen /> {selected.status === "active" ? "Confirmar checkout" : "Checkout disponible después del check-in"}</button>
-{!["active","checked_out"].includes(selected.status)&&<button className="tags_guest_reservation_checkin" type="button" onClick={()=>{sessionStorage.setItem("tags_guest_checkin_stay",String(selected.id));window.dispatchEvent(new CustomEvent("tags-guest-open-checkin",{detail:selected.id}));setSelected(null)}}>Hacer / confirmar check-in</button>}
-{!["active","checked_out"].includes(selected.status)&&<button className={`tags_guest_reservation_reminder ${reminderReady(selected)?"is_ready":""}`} disabled={!reminderReady(selected)} type="button" onClick={()=>onInvite(selected,"reminder")}><FaBell/> {selected.last_reminder_sent_at?`Último recordatorio: ${new Date(selected.last_reminder_sent_at).toLocaleString("es-AR")}`:"Enviar recordatorio de ingreso"}</button>}
-{!["active","checked_out"].includes(selected.status)&&<><button className="tags_guest_reservation_edit" type="button" onClick={()=>editReservation(selected)}>Modificar reserva</button><button className="tags_guest_reservation_delete" type="button" onClick={()=>deleteReservation(selected)}>Eliminar reserva</button></>}
+{canCheckin&&<button className="tags_guest_reservation_checkout" type="button" disabled={selected.status !== "active"} title={selected.status === "active" ? "Confirmar checkout" : "Se habilita después del check-in confirmado"} onClick={() => onCheckout?.(selected)}><FaDoorOpen /> {selected.status === "active" ? "Confirmar checkout" : "Checkout disponible después del check-in"}</button>}
+{canCheckin&&!["active","checked_out"].includes(selected.status)&&<button className="tags_guest_reservation_checkin" type="button" onClick={()=>{sessionStorage.setItem("tags_guest_checkin_stay",String(selected.id));window.dispatchEvent(new CustomEvent("tags-guest-open-checkin",{detail:selected.id}));setSelected(null)}}>Hacer / confirmar check-in</button>}
+{canManage&&!["active","checked_out"].includes(selected.status)&&<button className={`tags_guest_reservation_reminder ${reminderReady(selected)?"is_ready":""}`} disabled={!reminderReady(selected)} type="button" onClick={()=>onInvite(selected,"reminder")}><FaBell/> {selected.last_reminder_sent_at?`Último recordatorio: ${new Date(selected.last_reminder_sent_at).toLocaleString("es-AR")}`:"Enviar recordatorio de ingreso"}</button>}
+{canManage&&!["active","checked_out"].includes(selected.status)&&<><button className="tags_guest_reservation_edit" type="button" onClick={()=>editReservation(selected)}>Modificar reserva</button><button className="tags_guest_reservation_delete" type="button" onClick={()=>deleteReservation(selected)}>Eliminar reserva</button></>}
 <GuestExperienceAccountPanel businessId={data.app.business_id} guestAppId={data.app.id} stayId={selected.id}/>
 </section>
 </div>}

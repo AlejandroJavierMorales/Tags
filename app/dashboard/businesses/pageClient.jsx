@@ -471,7 +471,7 @@ export default function BusinessesPageClient({ session }) {
                     <button
                         className="tags_btn rounded ms-4 tags_text_normal"
                         style={{ maxWidth: "150px" }}
-                        onClick={() => setOpen(true)}
+                        onClick={() => router.push("/dashboard/subscriptions-center?newClient=1")}
                     >
                         ✚ Nuevo cliente
                     </button>

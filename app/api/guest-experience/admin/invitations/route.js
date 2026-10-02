@@ -16,7 +16,7 @@ export async function POST(req) {
     if (!body) return guestError("Cuerpo JSON inválido");
     const businessId = Number(body.businessId || 0), guestAppId = Number(body.guestAppId || 0), stayId = Number(body.stayId || 0);
     const eventCode = body.eventCode === "arrival_reminder" ? "arrival_reminder" : "access_link";
-    const access = await getGuestAdminAccess({ businessId, guestAppId });
+    const access = await getGuestAdminAccess({ businessId, guestAppId, permission: "guest.stays.manage" });
     if (!access.allowed) return guestAdminAccessResponse(access);
     const [rows] = await db.query(`SELECT s.id,s.primary_guest_id,s.stay_code,s.starts_at,s.ends_at,s.adults,s.children,s.expected_arrival_text,s.lodging_total,s.deposit_required_amount,a.slug,a.name app_name,a.logo_url,a.currency,a.settings_json,u.name unit_name,g.name guest_name,g.email,g.phone FROM tags_guest_stays s INNER JOIN tags_guest_apps a ON a.id=s.guest_app_id AND a.business_id=? INNER JOIN tags_guest_people g ON g.id=s.primary_guest_id LEFT JOIN tags_guest_units u ON u.id=s.unit_id WHERE s.id=? AND s.guest_app_id=? LIMIT 1`, [businessId, stayId, guestAppId]);
     const stay = rows[0];

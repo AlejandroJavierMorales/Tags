@@ -1,0 +1,95 @@
+.tags_muchi_taxonomy_field {
+  display: grid;
+  gap: 6px;
+  color: #496157;
+  font-size: 0.76rem;
+}
+
+.tags_muchi_taxonomy_field > small {
+  color: #687a71;
+  font-weight: 500;
+}
+
+.tags_muchi_taxonomy_tree {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-height: 290px;
+  gap: 6px;
+  overflow: auto;
+  border: 1px solid #d5e2da;
+  border-radius: 10px;
+  background: #f9fbfa;
+  padding: 9px;
+}
+
+.tags_muchi_taxonomy_tree label {
+  display: flex;
+  grid-template-columns: none;
+  align-items: flex-start;
+  gap: 7px;
+  border-radius: 7px;
+  background: #fff;
+  padding: 8px;
+}
+
+.tags_muchi_taxonomy_tree input {
+  width: auto;
+  margin: 2px 0 0;
+  padding: 0;
+}
+
+.tags_muchi_category_list article.is_parent_category {
+  border: 1px solid #e7c176;
+  background: #fff9e9;
+}
+
+.tags_muchi_category_intro {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.tags_muchi_category_intro p {
+  margin: 0;
+}
+
+.tags_muchi_category_intro button {
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 9px;
+  background: #2f7958;
+  padding: 9px 12px;
+  color: #fff;
+  font-weight: 800;
+}
+
+.tags_muchi_category_editor {
+  display: grid !important;
+  grid-template-columns: minmax(220px, 1fr) auto auto;
+  align-items: center;
+  gap: 6px;
+  width: min(620px, 100%);
+}
+
+.tags_muchi_parent_discarded {
+  color: #8a6827;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+@media (max-width: 800px) {
+  .tags_muchi_category_intro {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .tags_muchi_category_editor {
+    grid-template-columns: 1fr;
+  }
+
+  .tags_muchi_taxonomy_tree {
+    grid-template-columns: 1fr;
+  }
+}

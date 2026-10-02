@@ -13,6 +13,7 @@ import { db }
 import { requireQRPageAccess }
     from "@/app/modules/qr-page/lib/requireQRPageAccess";
 import { normalizeWebSectionBlock } from "@/app/modules/qr-page/lib/normalizeWebSectionBlock";
+import { refreshDestinationBusinessProjection } from "@/app/modules/destination-ai/server/refreshDestinationBusinessProjection";
 
 export async function POST(req) {
 
@@ -142,6 +143,8 @@ export async function POST(req) {
                 }
             }
         }
+
+        if (blocks[0].page_type === "directory") await refreshDestinationBusinessProjection(businessId).catch(error => console.error("DESTINATION PROJECTION BLOCK SYNC ERROR", { businessId, error }));
 
         return Response.json({
             ok: true

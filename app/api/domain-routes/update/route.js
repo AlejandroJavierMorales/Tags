@@ -15,7 +15,7 @@ export async function POST(req) {
         if (!id || !domainId || !addonCode || !targetSlug) return Response.json({ error: "ID, dominio, addon y slug son obligatorios" }, { status: 400 });
 
         const [[addon], [duplicate]] = await Promise.all([
-            db.query("SELECT code FROM tags_addons WHERE code = ? AND is_active = 1 AND addon_type = 'page' LIMIT 1", [addonCode]),
+            db.query("SELECT code FROM tags_addons WHERE code = ? AND is_active = 1 AND (addon_type = 'page' OR code = 'loyalty') LIMIT 1", [addonCode]),
             db.query("SELECT id FROM tags_domain_routes WHERE domain_id = ? AND path = ? AND id <> ? LIMIT 1", [domainId, path, id])
         ]);
         if (!addon.length) return Response.json({ error: "El addon debe ser una aplicación pública activa" }, { status: 400 });

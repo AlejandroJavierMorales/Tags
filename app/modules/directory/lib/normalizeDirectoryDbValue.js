@@ -2,6 +2,16 @@
 // heredada tiene charset/collation binario. Nunca debemos enviar esos valores
 // directamente a React: se serializan como `base64:type...`.
 export function normalizeDirectoryDbValue(value) {
+  if (typeof value === "string") {
+    const encoded = value.match(/^base64:type\d+:([\s\S]+)$/);
+    if (encoded && typeof Buffer !== "undefined") {
+      try {
+        return Buffer.from(encoded[1].replace(/\s+/g, ""), "base64").toString("utf8");
+      } catch {}
+    }
+    return value;
+  }
+
   if (typeof Buffer !== "undefined" && Buffer.isBuffer(value)) {
     return value.toString("utf8");
   }

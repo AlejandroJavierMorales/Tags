@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic";
 import { db } from "@/app/lib/tags-db";
 import { getGuestPublicSession } from "@/app/modules/guest-experience/lib/getGuestPublicSession";
 import { cleanGuestText, guestError } from "@/app/modules/guest-experience/lib/guestExperienceService";
+import { sendBusinessPush } from "@/app/modules/notifications/server/sendBusinessPush";
 
 const validEmail = value => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
 const validPhone = value => String(value || "").replace(/\D/g, "").length >= 8;
@@ -61,6 +62,7 @@ export async function PATCH(req) {
         const [locked]=await connection.query("SELECT s.id,s.status,s.primary_guest_id,a.business_id FROM tags_guest_stays s INNER JOIN tags_guest_apps a ON a.id=s.guest_app_id WHERE s.id=? AND s.guest_app_id=? LIMIT 1 FOR UPDATE",[session.stay_id,session.id]);
         if (!locked[0]) { await connection.rollback(); return guestError("Estadía no encontrada",404); }
         const [currentRecords]=await connection.query("SELECT status FROM tags_guest_precheckins WHERE stay_id=? LIMIT 1 FOR UPDATE",[session.stay_id]);
+        const notifySubmission=submit&&currentRecords[0]?.status!=="submitted";
         if (["reviewed","checked_in"].includes(currentRecords[0]?.status)) { await connection.rollback(); return guestError("El pre-check-in ya fue revisado y no puede modificarse",409); }
         if (primary.documentNumber) {
             const [duplicate]=await connection.query("SELECT id FROM tags_guest_people WHERE business_id=? AND document_number=? AND id<>? LIMIT 1",[session.business_id,primary.documentNumber,session.guest_id]);
@@ -89,8 +91,9 @@ export async function PATCH(req) {
         await connection.query(`INSERT INTO tags_guest_precheckins (guest_app_id,stay_id,status,vehicle_plate,vehicle_make_model,vehicle_color,guest_notes,submitted_at) VALUES (?,?,?,?,?,?,?,IF(?='submitted',NOW(),NULL)) ON DUPLICATE KEY UPDATE status=VALUES(status),vehicle_plate=VALUES(vehicle_plate),vehicle_make_model=VALUES(vehicle_make_model),vehicle_color=VALUES(vehicle_color),guest_notes=VALUES(guest_notes),submitted_at=IF(VALUES(status)='submitted',NOW(),submitted_at)`,[session.id,session.stay_id,targetStatus,cleanGuestText(body.vehicle?.plate,30)||null,cleanGuestText(body.vehicle?.makeModel,190)||null,cleanGuestText(body.vehicle?.color,80)||null,cleanGuestText(body.guestNotes,2000)||null,targetStatus]);
         await connection.query("UPDATE tags_guest_stays SET expected_arrival_text=?,updated_at=NOW() WHERE id=?",[cleanGuestText(body.expectedArrivalText,120)||null,session.stay_id]);
         await connection.query("INSERT INTO tags_guest_audit_log (guest_app_id,stay_id,actor_type,actor_id,action,entity_type,entity_id,metadata_json) VALUES (?,?,'guest',?,?, 'precheckin',?,?)",[session.id,session.stay_id,session.guest_id,submit?"precheckin.submitted":"precheckin.draft_saved",session.stay_id,JSON.stringify({passengers:1+keepIds.length})]);
-        if (submit&&currentRecords[0]?.status!=="submitted") await connection.query("INSERT INTO tags_guest_communications (guest_app_id,stay_id,guest_id,event_code,direction,channel,status,sent_at,attempts,created_by_type) VALUES (?,?,?,'precheckin_submitted','inbound','web','completed',NOW(),1,'guest')",[session.id,session.stay_id,session.guest_id]);
+        if (notifySubmission) await connection.query("INSERT INTO tags_guest_communications (guest_app_id,stay_id,guest_id,event_code,direction,channel,status,sent_at,attempts,created_by_type) VALUES (?,?,?,'precheckin_submitted','inbound','web','completed',NOW(),1,'guest')",[session.id,session.stay_id,session.guest_id]);
         await connection.commit();
+        if (notifySubmission) await sendBusinessPush({businessId:session.business_id,moduleCode:"guest_experience",eventCode:"precheckin_submitted",entityType:"stay",entityId:session.stay_id,title:"Pre-check-in recibido",body:`${session.guest_name||"Un huésped"} envió los datos de la estadía ${session.stay_code}`,url:`/dashboard/businesses/${session.business_id}/guest-experience?tab=checkin`,idempotencyKey:`guest-precheckin-admin:${session.stay_id}`,audience:"admin"});
         return Response.json({ok:true,status:targetStatus,message:submit?"Pre-check-in enviado correctamente":"Borrador guardado"});
     } catch(error) {
         await connection.rollback();

@@ -4,6 +4,8 @@ export const dynamic = "force-dynamic";
 import { db } from "@/app/lib/tags-db";
 import { requireDirectoryAdmin, directoryAdminError } from "@/app/modules/directory/lib/requireDirectoryAdmin";
 import { createSlug } from "@/app/modules/qr-page/lib/createSlug";
+import { reconcileDirectoryPlanForBusiness } from "@/app/modules/directory/lib/reconcileDirectoryPlanForBusiness";
+import { refreshDestinationBusinessProjection } from "@/app/modules/destination-ai/server/refreshDestinationBusinessProjection";
 
 export async function POST(req) {
     const access = await requireDirectoryAdmin();
@@ -32,13 +34,23 @@ export async function POST(req) {
 
         if (taxonomyIds.length) {
             const placeholders = taxonomyIds.map(() => "?").join(",");
-            const [validTaxonomy] = await conn.query(
-                `SELECT id FROM tags_directory_taxonomy_nodes n WHERE n.id IN (${placeholders}) AND n.is_active=1 AND NOT EXISTS (SELECT 1 FROM tags_directory_taxonomy_nodes child WHERE child.parent_id=n.id)`,
+            const [taxonomyRows] = await conn.query(
+                `SELECT n.id,n.name,n.is_active,NOT EXISTS (SELECT 1 FROM tags_directory_taxonomy_nodes child WHERE child.parent_id=n.id) is_leaf
+                   FROM tags_directory_taxonomy_nodes n
+                  WHERE n.id IN (${placeholders})`,
                 taxonomyIds
             );
-            if (validTaxonomy.length !== taxonomyIds.length) {
+            const taxonomyById = new Map(taxonomyRows.map(item => [Number(item.id), item]));
+            const invalidTaxonomy = taxonomyIds.map(id => {
+                const item = taxonomyById.get(Number(id));
+                if (!item) return `ID ${id} (ya no existe)`;
+                if (!Number(item.is_active)) return `${item.name} (inactivo)`;
+                if (!Number(item.is_leaf)) return `${item.name} (tiene subrubros)`;
+                return null;
+            }).filter(Boolean);
+            if (invalidTaxonomy.length) {
                 await conn.rollback();
-                return Response.json({ error: "Uno o más rubros seleccionados no son válidos" }, { status: 400 });
+                return Response.json({ error: `No se pueden asignar estos rubros: ${invalidTaxonomy.join(", ")}` }, { status: 400 });
             }
         }
 
@@ -115,8 +127,14 @@ export async function POST(req) {
             await conn.query("INSERT INTO tags_directory_listing_places (listing_id,place_id,relation_type,is_primary) VALUES (?,?,'location',1)", [listingId, placeId]);
         }
 
+        const [[site]] = await conn.query("SELECT primary_host FROM tags_directory_sites WHERE id=? AND is_active=1 LIMIT 1", [siteIds[0]]);
+        const configuredHost = String(site?.primary_host || "").trim().replace(/^https?:\/\//i, "").replace(/\/+$/, "");
+        const publicOrigin = configuredHost ? `https://${configuredHost}` : new URL(req.url).origin;
+        const reconciliation = await reconcileDirectoryPlanForBusiness({ conn, businessId, siteId: siteIds[0], origin: publicOrigin });
+
         await conn.commit();
-        return Response.json({ ok: true, listingId });
+        await refreshDestinationBusinessProjection(businessId).catch(error => console.error("DESTINATION PROJECTION SYNC ERROR", { businessId, error }));
+        return Response.json({ ok: true, listingId, reconciliation });
     } catch (error) {
         await conn.rollback();
         return Response.json({ error: error.code === "ER_DUP_ENTRY" ? "La ficha, ruta o asignación ya existe" : error.message }, { status: 500 });

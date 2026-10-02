@@ -14,7 +14,7 @@ export async function GET(req) {
     const from = query.get("from"), to = query.get("to");
     const search = String(query.get("search") || "").trim();
     const documentSearch = search.replace(/\D/g, "");
-    const access = await getGuestAdminAccess({ businessId, guestAppId });
+    const access = await getGuestAdminAccess({ businessId, guestAppId, permission: "guest.accounts.view" });
     if (!access.allowed) return guestAdminAccessResponse(access);
     if (!validDate(from) || !validDate(to) || from > to) return guestError("El período no es válido");
 

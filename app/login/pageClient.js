@@ -32,6 +32,10 @@ export default function LoginForm({ channel = null, initialEmail = "", returnTo 
 
     setLoading(true);
     try {
+      if (accountType === "register") {
+        window.location.href = `/registro?email=${encodeURIComponent(email.trim().toLowerCase())}`;
+        return;
+      }
       let selectedType = accountType;
       if (!selectedType) {
         const optionsResponse = await fetch("/api/auth/account-options", {

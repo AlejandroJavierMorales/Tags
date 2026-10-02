@@ -1,11 +1,26 @@
 export const DIRECTORY_MODULE_CODES = [
     "store",
     "resto",
+    "turnos",
+    "chatbot",
     "reviewsInvitation",
     "reviewsSlider"
 ];
 
 const DEFAULT_CONTENT = {
+    turnos: {
+        menuLabel: "Reservas",
+        eyebrow: "RESERVAS ONLINE",
+        title: "Reservá tu próximo turno",
+        description: "Elegí la actividad, el día y el horario que prefieras.",
+        showIntro: true,
+        backgroundColor: "#f3f7f5",
+        surfaceColor: "#ffffff",
+        textColor: "#17231d",
+        accentColor: "#26734f",
+        borderRadius: "18px",
+        padding: "24px"
+    },
     reviewsInvitation: {
         eyebrow: "TU EXPERIENCIA",
         title: "¿Cómo fue tu experiencia?",

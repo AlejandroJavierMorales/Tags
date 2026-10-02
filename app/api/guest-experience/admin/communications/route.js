@@ -14,7 +14,7 @@ export async function DELETE(req) {
     const communicationId = Number(body.communicationId || 0);
     if (!communicationId) return guestError("Comunicación inválida", 400);
 
-    const access = await getGuestAdminAccess({ businessId, guestAppId });
+    const access = await getGuestAdminAccess({ businessId, guestAppId, permission: "guest.stays.manage" });
     if (!access.allowed) return guestAdminAccessResponse(access);
 
     const [result] = await db.query(

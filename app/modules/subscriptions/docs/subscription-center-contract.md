@@ -38,6 +38,16 @@ declaran en `tags_plan_version_prices` y admiten:
 - mensual recurrente de Mercado Pago;
 - precios privados para un cliente.
 
+El plan funciona como plantilla comercial. Una suscripción administrativa puede
+agregar, quitar o cambiar cantidades de addons y definir un importe excepcional.
+La composición final aceptada se congela en sus términos y grants, sin obligar a
+crear un plan distinto para cada combinación vendida.
+
+Cuando la entrega corresponda a una Web de Directorio, todas las funcionalidades
+contratadas deberán quedar accesibles desde esa web mediante los bloques, rutas o
+integraciones existentes. Ningún addon contratado debe quedar como una experiencia
+pública aislada fuera del Directorio.
+
 ## Ofertas
 
 Una oferta es una propuesta inmutable con token aleatorio, vencimiento y
@@ -69,4 +79,3 @@ Toda operación nueva debe ejecutarse en transacción y actualizar, en este orde
 4. resumen del negocio;
 5. pago, cuando corresponda;
 6. auditoría.
-

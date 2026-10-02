@@ -12,6 +12,7 @@ import { db }
 
 import { requireQRPageAccess }
     from "@/app/modules/qr-page/lib/requireQRPageAccess";
+import { refreshDestinationBusinessProjection } from "@/app/modules/destination-ai/server/refreshDestinationBusinessProjection";
 
 const MAX_PRODUCT_IMAGES = 12;
 
@@ -199,6 +200,8 @@ export async function POST(req) {
                     seo_description || null
                 ]
             );
+
+        await refreshDestinationBusinessProjection(businessId).catch(error => console.error("DESTINATION PROJECTION PRODUCT CREATE SYNC ERROR", { businessId, error }));
 
         return Response.json({
             ok: true,

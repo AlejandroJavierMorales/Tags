@@ -8,6 +8,7 @@ import { getChannelContextFromHost } from "@/app/lib/channelContext";
 import crypto from "crypto";
 import { directoryCalendarAmount } from "@/app/modules/directory/lib/directoryCalendarPricing";
 import { notifySubscriptionCreated } from "./subscriptionNotifications";
+import { existingSubscriptionError, findCurrentBusinessSubscription } from "./findCurrentBusinessSubscription";
 
 const parseJson = value => {
   if (!value) return {};
@@ -122,7 +123,19 @@ export async function createAdminSubscription(input, actorId = null) {
     const [[business]] = await conn.query("SELECT id,name,email FROM tags_businesses WHERE id=? LIMIT 1 FOR UPDATE", [businessId]);
     const [[plan]] = await conn.query("SELECT id,code,name,max_qr_codes FROM tags_plans WHERE id=? AND is_active=1 LIMIT 1", [planId]);
     if (!business || !plan) throw Object.assign(new Error("Cliente o plan inexistente"), { status: 404 });
-    const [addons] = await conn.query("SELECT addon_code,quantity,entitlement_config_json FROM tags_plan_version_addons WHERE plan_version_id=? ORDER BY addon_code", [resolved.versionId]);
+    const currentSubscription = await findCurrentBusinessSubscription(conn, businessId);
+    if (currentSubscription) throw existingSubscriptionError(currentSubscription);
+    const [planAddonRows] = await conn.query("SELECT addon_code,quantity,entitlement_config_json FROM tags_plan_version_addons WHERE plan_version_id=? ORDER BY addon_code", [resolved.versionId]);
+    let selectedAddons = planAddonRows.map(item => ({ code: item.addon_code, quantity: Number(item.quantity || 1), config: parseJson(item.entitlement_config_json) }));
+    if (Object.prototype.hasOwnProperty.call(input, "addons")) {
+      const requested = Object.entries(input.addons || {}).filter(([, quantity]) => Number(quantity) > 0).map(([code, quantity]) => ({ code: String(code), quantity: Math.min(999, Math.max(1, Number(quantity))) }));
+      const [availableRows] = await conn.query("SELECT code FROM tags_addons WHERE is_active=1");
+      const available = new Set(availableRows.map(item => item.code));
+      const invalid = requested.find(item => !available.has(item.code));
+      if (invalid) throw Object.assign(new Error(`La funcionalidad ${invalid.code} no está disponible`), { status: 409 });
+      const planConfig = new Map(planAddonRows.map(item => [item.addon_code, parseJson(item.entitlement_config_json)]));
+      selectedAddons = requested.map(item => ({ ...item, config: planConfig.get(item.code) || {} }));
+    }
     const provider = resolved.price.billing_mode === "recurring" ? "mercadopago" : "manual";
     const [subscription] = await conn.query(
       `INSERT INTO tags_subscriptions (business_id,plan_id,status,payment_provider,amount,currency,started_at,expires_at,duration_months,source,next_billing_at,auto_renew,auto_disable_on_expire,grace_days,admin_override_until,created_at,updated_at) VALUES (?,?,'inactive',?,?,?,?,?,?,'manual',NULL,?,1,?,?,NOW(),NOW())`,
@@ -133,7 +146,7 @@ export async function createAdminSubscription(input, actorId = null) {
       schemaVersion: 1,
       plan: { id: planId, versionId: resolved.versionId, code: plan.code, name: plan.name, maxQrCodes: Number(plan.max_qr_codes || 0) },
       price: { id: Number(resolved.price.id), code: resolved.priceCode, billingMode: resolved.price.billing_mode, provider, durationMonths: Number(resolved.price.duration_months || 1), amount: Number(resolved.price.amount), currency: resolved.price.currency || "ARS", settings: parseJson(resolved.price.settings_json) },
-      addons: addons.map(item => ({ code: item.addon_code, quantity: Number(item.quantity || 1), config: parseJson(item.entitlement_config_json) })),
+      addons: selectedAddons,
       policy: { graceDays, requestedExpiresAt },
       createdBy: "admin"
     };

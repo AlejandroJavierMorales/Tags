@@ -457,6 +457,10 @@ export default function BusinessDetailClient({ session, isAdmin, channel = null,
     setDirectoryActivateOpen
   });
 
+  const hasPortalPublicAddon = businessAddons.some(
+    addon => String(addon?.addon_code || "").toLowerCase().replace(/[\s-]+/g, "_") === "portal_public"
+  );
+
   if (loading) {
     return (
       <div className="tags_dashboard_page">
@@ -496,11 +500,13 @@ export default function BusinessDetailClient({ session, isAdmin, channel = null,
           <div>
 
             <h1 className="tags_dashboard_title">
-              Portal Digital 👤
+              {hasPortalPublicAddon ? "Portal Digital 👤" : "Panel del negocio 👤"}
             </h1>
 
             <p className="tags_dashboard_subtitle">
-              Panel de control del negocio, funcionalidades y accesos QR
+              {hasPortalPublicAddon
+                ? "Panel de control del negocio, Portal, funcionalidades y accesos QR"
+                : "Panel de control del negocio, funcionalidades y accesos QR"}
             </p>
 
           </div>
@@ -864,14 +870,14 @@ export default function BusinessDetailClient({ session, isAdmin, channel = null,
       {/* ===================================== */}
       {/* PORTAL FEATURES */}
       {/* ===================================== */}
-      <PortalDashboard
+      {hasPortalPublicAddon && <PortalDashboard
         business={business}
         portal={portal}
         portalRoutes={portalRoutes}
         activePortalFeatures={activePortalFeatures}
         inactivePortalFeatures={inactivePortalFeatures}
         onReload={loadPortal}
-      />
+      />}
       </>}
 
       <BusinessWorkspaceOverview
@@ -885,6 +891,7 @@ export default function BusinessDetailClient({ session, isAdmin, channel = null,
         businessId={id}
         isAdmin={isAdmin}
         qrs={qrs}
+        portalEnabled={hasPortalPublicAddon}
         onReloadPortal={loadPortal}
       />
 
@@ -892,8 +899,9 @@ export default function BusinessDetailClient({ session, isAdmin, channel = null,
         <div>
           <h2>Accesos QR del negocio</h2>
           <p>
-            Accesos físicos o digitales del negocio. Pueden apuntar al Portal,
-            a una funcionalidad o a un enlace externo.
+            {hasPortalPublicAddon
+              ? "Accesos físicos o digitales del negocio. Pueden apuntar al Portal, a una funcionalidad o a un enlace externo."
+              : "Accesos físicos o digitales del negocio. Pueden apuntar a una funcionalidad o a un enlace externo."}
           </p>
         </div>
         <button
@@ -1330,7 +1338,7 @@ export default function BusinessDetailClient({ session, isAdmin, channel = null,
         }}
       />
 
-      <WorkspaceAppCreateModal
+      {hasPortalPublicAddon && <WorkspaceAppCreateModal
         open={portalActivateOpen}
         businessId={id}
         title="Portal Público"
@@ -1344,7 +1352,7 @@ export default function BusinessDetailClient({ session, isAdmin, channel = null,
           await loadPortal();
           setPortalActivateOpen(false);
         }}
-      />
+      />}
 
       <WorkspaceAppCreateModal
         open={tagsIdActivateOpen}

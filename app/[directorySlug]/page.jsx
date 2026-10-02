@@ -10,6 +10,7 @@ import DirectoryPublicFooter from "@/app/modules/directory/components/public/Dir
 import DirectoryProviderRenderer from "@/app/modules/directory/components/public/DirectoryProviderRenderer";
 import DirectoryEmbeddedStore from "@/app/modules/directory/components/public/DirectoryEmbeddedStore";
 import DirectoryEmbeddedResto from "@/app/modules/directory/components/public/DirectoryEmbeddedResto";
+import DirectoryEmbeddedTurnos from "@/app/modules/directory/components/public/DirectoryEmbeddedTurnos";
 import { getDirectoryListingBySlug, getDirectorySiteCodeByHost } from "@/app/modules/directory/lib/getDirectoryPublicData";
 import { getDirectoryWebPageData } from "@/app/modules/directory/lib/getDirectoryWebPageData";
 import { getPublicEntitlement } from "@/app/modules/subscriptions/lib/publicEntitlement";
@@ -122,6 +123,7 @@ export default async function DirectoryStandaloneProviderPage({ params, searchPa
     id: data.listing.site_id,
     name: data.listing.site_name,
     code: data.listing.site_code,
+    directory_config: data.listing.directory_config,
   };
   const returnUrl = `/${data.listing.slug}`;
 
@@ -145,6 +147,10 @@ export default async function DirectoryStandaloneProviderPage({ params, searchPa
       embeddedRestoName={web?.embeddedResto?.store?.name || "Gastronomía"}
       embeddedRestoContent={web?.embeddedResto && modules.resto?.enabled !== false
         ? <DirectoryEmbeddedResto data={web.embeddedResto} returnUrl={`${returnUrl}#directory-section-resto`} />
+        : null}
+      embeddedTurnosName={modules.turnos?.content?.menuLabel || (web?.embeddedTurnos?.length === 1 ? web.embeddedTurnos[0].name : "Reservas")}
+      embeddedTurnosContent={web?.embeddedTurnos?.length && modules.turnos?.enabled !== false
+        ? <DirectoryEmbeddedTurnos apps={web.embeddedTurnos} returnUrl={`${returnUrl}#directory-section-turnos`} presentation={modules.turnos?.content} />
         : null}
     />
     {internal && <DirectoryPublicFooter site={site} />}

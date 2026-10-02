@@ -185,6 +185,7 @@ export async function GET(req) {
                     SUM(
                         CASE
                             WHEN app_type = 'store'
+                              OR app_type IS NULL
                             THEN 1
                             ELSE 0
                         END

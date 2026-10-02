@@ -21,6 +21,7 @@ export async function POST(request) {
         const options = [];
         if (businessRows[0]) options.push({ type: "business", label: "Panel de mi negocio" });
         if (userRows[0]?.status === "active") options.push({ type: "user", label: "Mi cuenta personal" });
+        if (businessRows[0] && !userRows[0]) options.push({ type: "register", label: "Crear mi cuenta personal" });
 
         if (!options.length) {
             return Response.json({ error: "No encontramos una cuenta con ese email" }, { status: 404 });

@@ -5,7 +5,7 @@ import PwaInstallationsClient from "./pageClient";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Instalaciones de aplicaciones | Tags", robots: { index: false, follow: false } };
+export const metadata = { title: "Audiencia e instalaciones | Tags", robots: { index: false, follow: false } };
 
 export default async function PwaInstallationsPage() {
   const cookie = (await cookies()).get("tags_session");

@@ -1,5 +1,8 @@
 const TAGS_ORIGIN = "https://tags.com.ar";
 const DIRECTORY_CHANNEL_HOSTS = new Set(["calamuchita.ar"]);
+const DESTINATION_ASSISTANT_HOSTS = new Map([
+  ["muchi.calamuchita.ar", { siteHost: "calamuchita.ar", entryPath: "/muchi" }],
+]);
 const ORIGIN_CANONICAL_WWW_HOSTS = new Set(["cabanasecosdelvalle.com.ar"]);
 
 function cleanHost(hostname) {
@@ -130,11 +133,12 @@ export default {
 
     const publicHost = cleanPublicHost;
     const isDirectoryChannel = DIRECTORY_CHANNEL_HOSTS.has(publicHost);
+    const destinationAssistant = DESTINATION_ASSISTANT_HOSTS.get(publicHost);
 
     // El navegador solicita el favicon en el dominio público, antes de que
     // exista cualquier HTML reescrito por el proxy.
     if (url.pathname === "/favicon.ico" || url.pathname === "/icon.ico") {
-      return resolvePublicFavicon(publicHost, request);
+      return resolvePublicFavicon(destinationAssistant?.siteHost || publicHost, request);
     }
 
     // URL canónica del Directorio: la plataforma vive en / y las fichas en /[slug].
@@ -157,6 +161,16 @@ export default {
         `${TAGS_ORIGIN}${realPath}${url.search}`,
         proxyHeaders(request, publicHost)
       ));
+    }
+
+    if (destinationAssistant) {
+      const internalPath = url.pathname === "/" ? destinationAssistant.entryPath : url.pathname;
+      const response = await fetch(proxyRequest(
+        request,
+        `${TAGS_ORIGIN}${internalPath}${url.search}`,
+        proxyHeaders(request, publicHost)
+      ));
+      return publicResponse(response, publicHost, url.pathname);
     }
 
     // Todas las APIs deben conservar el canal, incluidos login y webhooks.

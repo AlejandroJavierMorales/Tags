@@ -73,9 +73,10 @@ export async function GET(req) {
                     channelCode: channel.code,
                     channelSiteId: channel.siteId,
                 };
-                const baseUrl = getRequestBaseUrl(req);
-                if (!baseUrl) throw new Error("AUTH_PUBLIC_URL_UNAVAILABLE");
-                const response = NextResponse.redirect(`${baseUrl}${safeReturnTo || "/mi-cuenta"}`);
+                // La redirección relativa conserva exactamente el host que recibió
+                // el magic link y evita perder la cookie cuando el proxy informa
+                // un x-forwarded-host diferente al dominio público.
+                const response = NextResponse.redirect(new URL(safeReturnTo || "/mi-cuenta", req.url));
                 const sessionValue = JSON.stringify(session);
                 const sessionSignature = signTagsSession(sessionValue);
 

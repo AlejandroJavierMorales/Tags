@@ -2,6 +2,7 @@ import { db } from "@/app/lib/tags-db";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { getGeo, getCachedGeo, setCachedGeo } from "@/app/utils/geo/geo-loader";
+import { startDirectoryPointScan } from "@/app/modules/directory-points/server/directoryPointScanService";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -157,6 +158,7 @@ export async function GET(req, { params }) {
     // 🚀 TRACKING
     // =============================
     let clickId = null;
+    let directoryPointScanMode = "none";
 
     try {
       // 🔥 IP REAL (mejor fallback)
@@ -340,6 +342,11 @@ export async function GET(req, { params }) {
       console.log("Error tracking:", e.message);
     }
 
+    if (clickId) {
+      const pointScan = await startDirectoryPointScan({ clickId, qrCodeId: qr.id });
+      directoryPointScanMode = pointScan.mode;
+    }
+
 
     // =====================================
     // TAGS RESTO
@@ -405,13 +412,14 @@ export async function GET(req, { params }) {
       ? configuredOrigin
       : "";
     let res;
-    if (clickId && Number(qr.browser_geolocation_enabled) === 1) {
+    if (clickId && (directoryPointScanMode === "shared" || Number(qr.browser_geolocation_enabled) === 1)) {
       try {
         const publicOrigin = forwardedHost && !/^localhost(?::|$)|^127\.0\.0\.1(?::|$)/i.test(forwardedHost)
           ? `${forwardedProto}://${forwardedHost}`
           : (safeConfiguredOrigin || requestUrl.origin);
         const locationUrl = new URL("/qr-location", publicOrigin);
         locationUrl.searchParams.set("clickId", String(clickId));
+        if (directoryPointScanMode === "shared") locationUrl.searchParams.set("point", "shared");
         res = NextResponse.redirect(locationUrl);
       } catch (redirectError) {
         console.error("QR location redirect error:", redirectError.message);

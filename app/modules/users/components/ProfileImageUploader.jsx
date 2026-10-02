@@ -6,10 +6,11 @@
 "use client";
 
 import MediaUploader from "@/app/components/MediaUploader";
+import "./ProfileImageUploader.css";
 
 export default function ProfileImageUploader({ userId, value, onChange }) {
     return (
-        <div>
+        <div className="tags_profile_image_uploader">
             <p className="small text-muted mb-2">Imagen cuadrada de 750×750 px. Máximo 2 MB.</p>
             <MediaUploader
                 businessId={userId}

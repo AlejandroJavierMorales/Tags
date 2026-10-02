@@ -5,9 +5,10 @@
 
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import showAlert from "@/app/components/showAlert";
 import TagsSpinner from "@/app/components/TagsSpinner";
+import "../../styles/tagsModals.css";
 
 function makeSlug(value) {
     return String(value || "")
@@ -34,6 +35,8 @@ export default function WorkspaceAppCreateModal({
     allowEmptySlug = false,
     hidePublicPathPreview = false,
     businessProfileOptions = [],
+    initialName = "",
+    initialSlug = "",
 }) {
     const [pageName, setPageName] = useState("");
     const [menuName, setMenuName] = useState("");
@@ -45,6 +48,14 @@ export default function WorkspaceAppCreateModal({
         () => makeSlug(allowCustomSlug ? customSlug : pageName),
         [allowCustomSlug, customSlug, pageName]
     );
+
+    useEffect(() => {
+        if (!open) return;
+        setPageName(initialName);
+        setMenuName(initialName);
+        setCustomSlug(makeSlug(initialSlug || initialName));
+        setBusinessProfileCode(businessProfileOptions[0]?.value || "");
+    }, [open, initialName, initialSlug]);
 
     async function createPage() {
         if (!pageName.trim() || (!cleanSlug && !allowEmptySlug)) {

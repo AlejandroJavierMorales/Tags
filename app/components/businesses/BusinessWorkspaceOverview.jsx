@@ -109,6 +109,9 @@ export default function BusinessWorkspaceOverview({
     const [labels, setLabels] = useState({});
     const [panelEntry, setPanelEntry] = useState("panel");
     const [panelEntryOptions, setPanelEntryOptions] = useState([]);
+    const [panelVisibleKeys, setPanelVisibleKeys] = useState([]);
+    const [panelAccessLoaded, setPanelAccessLoaded] = useState(false);
+    const [panelAccessRestricted, setPanelAccessRestricted] = useState(false);
     const [panelEntryBusy, setPanelEntryBusy] = useState(false);
 
     useEffect(() => setPortalSlug(portal?.slug || ""), [portal?.slug]);
@@ -121,10 +124,13 @@ export default function BusinessWorkspaceOverview({
             .then(payload => {
                 if (payload.ok) {
                     setPanelEntry(payload.selected || "panel");
-                    setPanelEntryOptions(payload.options || []);
+                    setPanelEntryOptions(payload.configurableOptions || payload.options || []);
+                    setPanelVisibleKeys(payload.visibleKeys || (payload.options || []).map(option => option.key));
+                    setPanelAccessRestricted(Boolean(payload.restricted));
                 }
             })
-            .catch(() => {});
+            .catch(() => {})
+            .finally(() => setPanelAccessLoaded(true));
     }, [businessId]);
 
     useEffect(() => {
@@ -137,8 +143,11 @@ export default function BusinessWorkspaceOverview({
 
     const portalFeature = activeFeatures.find((item) => item.key === "portal_public")
         || inactiveFeatures.find((item) => item.key === "portal_public");
-    const contractedApps = activeFeatures.filter((item) => item.key !== "portal_public");
-    const availableApps = inactiveFeatures.filter((item) => item.key !== "portal_public");
+    const visiblePanelKeySet = new Set(panelVisibleKeys);
+    const canSeePanelApp = key => isAdmin || !panelAccessLoaded || !panelAccessRestricted || visiblePanelKeySet.has(key);
+    const contractedApps = activeFeatures.filter((item) => item.key !== "portal_public" && canSeePanelApp(item.key));
+    const availableApps = isAdmin ? inactiveFeatures.filter((item) => item.key !== "portal_public") : [];
+    const showPortalWorkspace = portalEnabled && canSeePanelApp("portal_public");
     const portalActive = portal?.status === "published";
 
     const quickAccessEntries = useMemo(() => {
@@ -216,21 +225,37 @@ export default function BusinessWorkspaceOverview({
         if (onReloadPortal) await onReloadPortal();
     }
 
-    async function savePanelEntry(event) {
-        const key = event.target.value;
-        setPanelEntry(key);
+    function togglePanelVisibility(key) {
+        setPanelVisibleKeys((current) => {
+            const next = current.includes(key)
+                ? current.filter((item) => item !== key)
+                : [...current, key];
+            if (next.length && !next.includes(panelEntry)) setPanelEntry(next[0]);
+            return next;
+        });
+    }
+
+    async function savePanelExperience() {
+        if (!panelVisibleKeys.length) {
+            await showAlert({ title: "Seleccioná al menos una herramienta", icon: "warning" });
+            return;
+        }
+        if (!panelVisibleKeys.includes(panelEntry)) {
+            await showAlert({ title: "La pantalla inicial debe estar visible", icon: "warning" });
+            return;
+        }
         setPanelEntryBusy(true);
         try {
             const response = await fetch("/api/business/panel-entry", {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ businessId, key })
+                body: JSON.stringify({ businessId, key: panelEntry, visibleKeys: panelVisibleKeys })
             });
             const payload = await readPayload(response);
             if (!response.ok) throw new Error(payload.error || "No se pudo guardar");
-            await showAlert({ title: "Preferencia guardada", text: "El próximo acceso abrirá el destino seleccionado.", icon: "success", timer: 1400 });
+            setPanelVisibleKeys(payload.visibleKeys || panelVisibleKeys);
+            await showAlert({ title: "Panel del cliente actualizado", text: "Al ingresar verá solamente las herramientas elegidas.", icon: "success", timer: 1600 });
         } catch (error) {
-            setPanelEntry("panel");
             await showAlert({ title: "No se pudo guardar", text: error.message, icon: "error" });
         } finally {
             setPanelEntryBusy(false);
@@ -479,24 +504,43 @@ export default function BusinessWorkspaceOverview({
                 </nav>
             )}
 
-            <section className="tags_workspace_section tags_workspace_entry_preference">
+            {isAdmin && <section className="tags_workspace_section tags_workspace_entry_preference">
                 <div className="tags_workspace_section_heading">
                     <div>
-                        <span>Acceso rápido</span>
-                        <h2>Destino al ingresar al Panel</h2>
-                        <p>Elegí qué pantalla querés abrir automáticamente después de ingresar.</p>
+                        <span>Configuración administrativa</span>
+                        <h2>Experiencia del cliente en su panel</h2>
+                        <p>Definí qué herramientas verá el cliente y cuál se abrirá automáticamente al ingresar.</p>
                     </div>
                 </div>
+                <div className="tags_workspace_visibility_options">
+                    {panelEntryOptions.map((option) => {
+                        const checked = panelVisibleKeys.includes(option.key);
+                        return (
+                            <label key={option.key} className={checked ? "is_selected" : ""}>
+                                <input
+                                    type="checkbox"
+                                    checked={checked}
+                                    onChange={() => togglePanelVisibility(option.key)}
+                                    disabled={panelEntryBusy}
+                                />
+                                <span>{option.label}</span>
+                            </label>
+                        );
+                    })}
+                </div>
                 <label className="tags_workspace_entry_select">
-                    <span>Al ingresar, abrir</span>
-                    <select value={panelEntry} onChange={savePanelEntry} disabled={panelEntryBusy || !panelEntryOptions.length}>
-                        {panelEntryOptions.map(option => <option key={option.key} value={option.key}>{option.label}</option>)}
+                    <span>Aplicación inicial</span>
+                    <select value={panelEntry} onChange={(event) => setPanelEntry(event.target.value)} disabled={panelEntryBusy || !panelVisibleKeys.length}>
+                        {panelEntryOptions.filter((option) => panelVisibleKeys.includes(option.key)).map(option => <option key={option.key} value={option.key}>{option.label}</option>)}
                     </select>
                 </label>
-                <small>Las tarjetas de “Mis funcionalidades contratadas” siguen disponibles para acceder a cualquier herramienta activa.</small>
-            </section>
+                <button type="button" className="tags_workspace_save_experience" onClick={savePanelExperience} disabled={panelEntryBusy || !panelVisibleKeys.length}>
+                    {panelEntryBusy ? <TagsSpinner /> : <FaCog />} Guardar configuración del panel
+                </button>
+                <small>Esta configuración simplifica la navegación del cliente. No elimina ni modifica sus addons contratados.</small>
+            </section>}
 
-            {portalEnabled && <section className={`tags_workspace_portal ${portalActive ? "is_active" : ""}`}>
+            {showPortalWorkspace && <section className={`tags_workspace_portal ${portalActive ? "is_active" : ""}`}>
                 <div className="tags_workspace_portal_heading">
                     <div className="tags_workspace_portal_icon"><FaGlobe /></div>
                     <div>
@@ -571,7 +615,7 @@ export default function BusinessWorkspaceOverview({
                 </div>
             </section>
 
-            {portalEnabled && portal && (
+            {showPortalWorkspace && portal && (
                 <section className="tags_workspace_section">
                     <div className="tags_workspace_section_heading">
                         <div><span>Composición del sitio</span><h2>Páginas y navegación del Portal</h2><p>Incorporá páginas, definí el menú, su orden, la Home y revisá el QR asociado.</p></div>
@@ -627,7 +671,7 @@ export default function BusinessWorkspaceOverview({
                 </section>
             )}
 
-            {portalEnabled && portalSlugOpen && (
+            {showPortalWorkspace && portalSlugOpen && (
                 <div className="tags_workspace_modal_backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setPortalSlugOpen(false)}>
                     <div className="tags_workspace_modal" role="dialog" aria-modal="true" aria-labelledby="portal-slug-title">
                         <button type="button" className="tags_workspace_modal_close" onClick={() => setPortalSlugOpen(false)}>×</button>
@@ -639,7 +683,7 @@ export default function BusinessWorkspaceOverview({
                 </div>
             )}
 
-            {portalEnabled && pageSlugEditor && (
+            {showPortalWorkspace && pageSlugEditor && (
                 <div className="tags_workspace_modal_backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setPageSlugEditor(null)}>
                     <div className="tags_workspace_modal" role="dialog" aria-modal="true" aria-labelledby="page-slug-title">
                         <button type="button" className="tags_workspace_modal_close" onClick={() => setPageSlugEditor(null)}>×</button>

@@ -22,7 +22,8 @@ export function getDefaultDirectoryTemplate(business) {
                 primaryColor: "#26734f",
                 secondaryColor: "#e9f3ed",
                 fontFamily: "Arial",
-                borderRadius: "18px"
+                borderRadius: "18px",
+                contentAnimation: "slide-up"
             },
             header_config: {
                 isVisible: true,
@@ -60,6 +61,7 @@ export function getDefaultDirectoryTemplate(business) {
                     type: "web_section",
                     sort_order: 1,
                     content_json: {
+                        contentManaged: true,
                         title: business.name,
                         eyebrow: "PRESENTACIÓN",
                         subtitle: "",

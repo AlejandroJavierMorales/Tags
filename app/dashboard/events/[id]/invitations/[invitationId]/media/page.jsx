@@ -17,17 +17,10 @@ export default async function Page({
     const session =
         await requireEventLogin();
 
-    if (
-        session.role === "admin"
-        ||
-        session.role === "event_client"
-    ) {
-
-        await requireEventOwnership(
-            session,
-            params.id
-        );
-    }
+    await requireEventOwnership(
+        session,
+        params.id
+    );
 
     const modules =
         await getVisibleEventModules({

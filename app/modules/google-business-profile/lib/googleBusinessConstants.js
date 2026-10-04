@@ -24,10 +24,10 @@ const COMMON_QUESTIONS = [
 
 const TYPE_QUESTIONS = {
     accommodation: [
-        { code: "accommodation_type", label: "Tipo de alojamiento", type: "text" },
-        { code: "units_count", label: "Cantidad de unidades", type: "number" },
-        { code: "max_capacity", label: "Capacidad maxima", type: "number" },
-        { code: "amenities", label: "Servicios y comodidades", type: "textarea", help: "WiFi, pileta, desayuno, estacionamiento, parrilla, cocina, mascotas, etc." },
+        { code: "accommodation_type", label: "Tipo de alojamiento del establecimiento", type: "text", help: "Ej.: cabañas, hotel, hostería, posada, camping o departamentos." },
+        { code: "units_count", label: "Cantidad total de unidades para alojar", type: "number", help: "Sumá todas las cabañas, habitaciones, departamentos o unidades disponibles." },
+        { code: "max_capacity", label: "Capacidad máxima total del establecimiento", type: "number", help: "Cantidad total de personas que pueden alojarse al mismo tiempo sumando todas las unidades. Si el complejo admite 23 huéspedes, ingresá 23." },
+        { code: "amenities", label: "Servicios y comodidades del alojamiento", type: "textarea", help: "Ej.: WiFi, pileta, desayuno, estacionamiento, parrilla, cocina o admisión de mascotas. Estos datos se guardan en el perfil local; los atributos hoteleros oficiales de Google se administran por separado." },
         { code: "ideal_guests", label: "Para que tipo de huespedes es ideal?", type: "textarea" },
         { code: "nearby_attractions", label: "Atractivos cercanos", type: "textarea" }
     ],

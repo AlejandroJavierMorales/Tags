@@ -141,6 +141,14 @@ export async function POST(req) {
     const listingId = listingResult.insertId;
     await conn.query("INSERT INTO tags_directory_media (listing_id,media_type,url,alt_text,sort_order,source_payload) VALUES (?, 'logo', ?, ?, 0, ?)", [listingId, effectiveLogoUrl, name, JSON.stringify({ source: "public_signup", storagePath: logoStoragePath || null, isDefault: !logoUrl })]);
     const slug = createSlug(name) || `negocio-${businessId}`;
+    const [slugConflicts] = await conn.query(
+      `SELECT id FROM tags_directory_site_listings WHERE site_id=? AND slug=?
+       UNION ALL
+       SELECT id FROM tags_directory_slug_redirects WHERE site_id=? AND old_slug=?
+       LIMIT 1`,
+      [site.id, slug, site.id, slug]
+    );
+    if (slugConflicts.length) throw new Error("Ya existe una Web con ese nombre o esa dirección pertenece a una Web anterior");
     await conn.query("INSERT INTO tags_directory_site_listings (site_id,listing_id,slug,publication_status,is_free,is_featured,sort_order,published_at) VALUES (?,?,?,'published',?,0,0,NOW())", [site.id, listingId, slug, Number(plan.is_free) === 1 ? 1 : 0]);
     await conn.query("INSERT INTO tags_directory_listing_taxonomy (listing_id,taxonomy_node_id,is_primary,sort_order) VALUES (?,?,1,0)", [listingId, taxonomyId]);
     if (mode === "deferred") {

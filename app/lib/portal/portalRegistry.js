@@ -97,8 +97,8 @@ export const portalRegistry = {
 
     google_business_profile: {
         key: "google_business_profile",
-        title: "Tags Google Maps Profile",
-        description: "Centro de presencia digital y administracion de Google Business Profile.",
+        title: "Perfil de Empresa en Google Maps",
+        description: "Administrá y optimizá la presencia del negocio en Google y Google Maps.",
         canHaveMultiple: false,
         adminPath: ({ businessId }) =>
             `/dashboard/businesses/${businessId}/google-business-profile`

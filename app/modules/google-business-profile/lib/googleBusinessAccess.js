@@ -19,7 +19,7 @@ export async function getGoogleBusinessAdminAccess(requestedBusinessId) {
         [businessId, GOOGLE_BUSINESS_ADDON_CODE]
     );
     if (!rows[0] && session.role !== "admin") {
-        return { allowed: false, status: 403, error: "El negocio no tiene Tags Google Maps Profile activo" };
+        return { allowed: false, status: 403, error: "El negocio no tiene activo el Perfil de Empresa en Google Maps" };
     }
     return { allowed: true, session, businessId, addon: rows[0] || null };
 }

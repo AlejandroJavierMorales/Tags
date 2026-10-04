@@ -5,7 +5,13 @@ export async function getTurnosBySlug(slug, connection = db) {
     const [rows] = await connection.query(
         `SELECT a.*, p.title AS page_title, p.description AS page_description,
                 p.global_styles, p.header_config, p.footer_config, p.status AS page_status,
-                b.name AS business_name, b.email AS business_email, b.phone AS business_phone, b.whatsapp AS business_whatsapp
+                b.name AS business_name, b.display_name AS business_display_name,
+                COALESCE(NULLIF(b.logo_url,''),(
+                    SELECT m.url FROM tags_directory_listings dl
+                    INNER JOIN tags_directory_media m ON m.listing_id=dl.id AND m.media_type='logo' AND m.is_active=1
+                    WHERE dl.business_id=b.id ORDER BY m.sort_order,m.id LIMIT 1
+                )) AS business_logo_url, b.email AS business_email,
+                b.phone AS business_phone, b.whatsapp AS business_whatsapp
          FROM tags_turnos_apps a
          INNER JOIN tags_qr_pages p ON p.id = a.page_id AND p.page_type = 'turnos'
          INNER JOIN tags_businesses b ON b.id = a.business_id

@@ -19,20 +19,10 @@ export default async function Page({
         await requireEventLogin();
     
 /* console.log('LA SESSION ACA ES ::::::: ' + JSON.stringify(session,2,null)) */
-    // OWNER / ADMIN
-    if (
-
-        session.role === "admin"
-        ||
-        session.role === "event_client"
-
-    ) {
-
-        await requireEventOwnership(
-            session,
-            params.id
-        );
-    } 
+    await requireEventOwnership(
+        session,
+        params.id
+    );
 
     const modules =
         await getVisibleEventModules({

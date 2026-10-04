@@ -55,6 +55,7 @@ export default function EventScannerPage({
             // =========================
 
             let code = "";
+            let token = "";
 
             try {
 
@@ -62,17 +63,28 @@ export default function EventScannerPage({
                     new URL(rawValue);
 
                 const parts =
-                    url.pathname.split("/");
+                    url.pathname
+                        .split("/")
+                        .filter(Boolean);
 
-                code =
-                    parts[2];
+                if (
+                    parts[0] === "e"
+                    && parts[1] === "access"
+                    && parts[2]
+                ) {
+                    token =
+                        parts[2];
+                } else {
+                    code =
+                        parts.at(-1) || "";
+                }
 
             } catch {
 
                 code = rawValue;
             }
 
-            if (!code) {
+            if (!code && !token) {
 
                 showAlert({
 
@@ -104,7 +116,9 @@ export default function EventScannerPage({
 
                         body:
                             JSON.stringify({
-                                code
+                                code,
+                                token,
+                                event_id: eventId
                             })
                     }
                 );

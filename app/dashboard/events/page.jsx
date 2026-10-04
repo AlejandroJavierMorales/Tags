@@ -1,6 +1,3 @@
-import { cookies }
-    from "next/headers";
-
 import { redirect }
     from "next/navigation";
 
@@ -9,6 +6,8 @@ import EventsPageClient
 
 import { getStaffPermissions }
     from "@/app/modules/e-events/lib/getStaffPermissions";
+import { requireEventLogin }
+    from "@/app/modules/e-events/lib/requireEventLogin";
 
 export default async function EventsPage() {
 
@@ -16,34 +15,8 @@ export default async function EventsPage() {
     // SESSION
     // =========================
 
-    const cookieStore =
-        await cookies();
-
-    const sessionCookie =
-        cookieStore.get(
-            "tags_session"
-        );
-
-    if (!sessionCookie) {
-
-        redirect("/login");
-    }
-
-    let session = null;
-
-    try {
-
-        session =
-            JSON.parse(
-                sessionCookie.value
-            );
-
-    } catch (err) {
-
-        console.log(err);
-
-        redirect("/login");
-    }
+    const session =
+        await requireEventLogin();
 
     // =========================
     // STAFF SESSION
@@ -79,16 +52,11 @@ export default async function EventsPage() {
     // =========================
 
     const allowedRoles = [
-
         "admin",
         "event_client"
     ];
 
-    if (
-        !allowedRoles.includes(
-            session.role
-        )
-    ) {
+    if (!allowedRoles.includes(session.role)) {
 
         redirect("/login");
     }

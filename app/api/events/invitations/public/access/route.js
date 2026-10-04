@@ -53,7 +53,8 @@ export async function GET(req) {
                     i.is_active,
 
                     e.id AS event_id,
-                    e.name AS event_name
+                    e.name AS event_name,
+                    e.status AS event_status
 
                 FROM
                     tags_event_invitation_guests g
@@ -110,6 +111,16 @@ export async function GET(req) {
                 {
                     status: 403
                 }
+            );
+        }
+
+        if (guest.event_status === "cancelled") {
+            return Response.json(
+                {
+                    valid: false,
+                    error: "El evento está cancelado"
+                },
+                { status: 409 }
             );
         }
 

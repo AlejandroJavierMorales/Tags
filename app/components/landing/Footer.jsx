@@ -95,6 +95,12 @@ export default function TagsFooter() {
             <PoweredBy />
           </div>
 
+          <nav className="d-flex flex-wrap justify-content-center gap-3 mt-4 pt-3 border-top border-secondary" aria-label="Información legal">
+            <a href="/politica-de-privacidad" style={{ color: "#d9d6d6", fontSize: ".78rem" }}>Política de Privacidad</a>
+            <a href="/terminos-y-condiciones" style={{ color: "#d9d6d6", fontSize: ".78rem" }}>Términos y Condiciones</a>
+            <a href="/gestion-de-datos" style={{ color: "#d9d6d6", fontSize: ".78rem" }}>Gestión y eliminación de datos</a>
+          </nav>
+
         </div>
       </div>
     </footer>

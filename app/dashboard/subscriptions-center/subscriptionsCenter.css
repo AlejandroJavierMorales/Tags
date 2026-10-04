@@ -54,6 +54,33 @@
   margin-top: 2px;
 }
 
+.tags_subscription_preview_notify {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  margin-top: 18px;
+  padding: 14px 16px;
+  border: 1px solid #f0c36a;
+  border-radius: 12px;
+  background: #fff8e6;
+  cursor: pointer;
+}
+
+.tags_subscription_preview_notify input {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  accent-color: #e98318;
+}
+
+.tags_subscription_preview_notify span {
+  display: grid;
+  gap: 3px;
+}
+
+.tags_subscription_preview_notify strong { color: #6f4b13; }
+.tags_subscription_preview_notify small { color: #765f38; line-height: 1.35; }
+
 @media (max-width: 640px) {
   .tags_subscription_taxonomy_grid { grid-template-columns: 1fr; }
 }

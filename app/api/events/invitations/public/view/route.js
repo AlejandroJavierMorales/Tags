@@ -72,6 +72,7 @@ export async function GET(req) {
 
                     e.id AS event_id,
                     e.name AS event_name,
+                    e.status AS event_status,
                     e.starts_at,
                     e.location
 
@@ -128,6 +129,13 @@ export async function GET(req) {
                 {
                     status: 403
                 }
+            );
+        }
+
+        if (guest.event_status === "cancelled") {
+            return Response.json(
+                { error: "El evento está cancelado" },
+                { status: 409 }
             );
         }
 

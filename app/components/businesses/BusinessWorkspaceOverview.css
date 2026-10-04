@@ -38,6 +38,13 @@
 .tags_workspace_entry_select span{font-weight:800;color:#284638}
 .tags_workspace_entry_select select{min-height:42px;padding:9px 12px;border:1px solid #cfdcd5;border-radius:9px;background:#fff;color:#17231e;font:inherit}
 .tags_workspace_entry_preference>small{color:#65736c}
+.tags_workspace_visibility_options{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:9px}
+.tags_workspace_visibility_options label{display:flex;align-items:center;gap:9px;min-height:42px;padding:9px 12px;border:1px solid #d8e2dc;border-radius:10px;background:#fff;color:#415249;font-weight:700;cursor:pointer}
+.tags_workspace_visibility_options label.is_selected{border-color:#2e7652;background:#eff8f2;color:#194d34}
+.tags_workspace_visibility_options input{width:17px;height:17px;accent-color:#2e7652}
+.tags_workspace_save_experience{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:max-content;min-height:42px;padding:9px 16px;border:0;border-radius:10px;background:#225f43;color:#fff;font:inherit;font-weight:800;cursor:pointer}
+.tags_workspace_save_experience:disabled{opacity:.6;cursor:not-allowed}
+.tags_workspace_save_experience .tags_spinner{width:18px;height:18px}
 @media(max-width:700px){.tags_workspace_entry_select{grid-template-columns:1fr;gap:6px}}
 .tags_workspace_quick_access{position:sticky;top:12px;z-index:20;display:flex;align-items:stretch;gap:8px;overflow-x:auto;padding:8px;border:1px solid #dfe8e3;border-radius:16px;background:rgba(255,255,255,.96);box-shadow:0 10px 25px rgba(21,47,33,.09);scrollbar-width:thin}
 .tags_workspace_quick_access button{display:grid;justify-items:center;align-content:center;gap:4px;min-width:78px;min-height:68px;padding:8px 10px;border:1px solid #d7e7dc;border-radius:12px;background:#eff9f2;color:#176b3b;font:inherit;cursor:pointer;transition:transform .18s ease,background .18s ease,box-shadow .18s ease}

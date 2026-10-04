@@ -30,10 +30,26 @@ function googleSpecialHours(hours) {
     return periods.length ? { specialHourPeriods: periods } : undefined;
 }
 
+function googleServiceItems(services, categoryId) {
+    const normalizedCategoryId = String(categoryId || "").replace(/^categories\//, "").trim();
+    if (!normalizedCategoryId) return undefined;
+    const items = (Array.isArray(services) ? services : [])
+        .map(item => {
+            if (item && typeof item === "object" && (item.kind === "structured" || item.serviceTypeId)) {
+                const serviceTypeId = String(item.serviceTypeId || "").trim();
+                return serviceTypeId ? { structuredServiceItem: { serviceTypeId } } : null;
+            }
+            const displayName = String(typeof item === "string" ? item : item?.displayName || item?.name || "").trim().slice(0, 140);
+            return displayName ? { freeFormServiceItem: { categoryId: normalizedCategoryId, label: { displayName } } } : null;
+        })
+        .filter(Boolean);
+    return items.length ? items : undefined;
+}
+
 export async function buildGoogleLocationPayload(businessId, { requireCategory = true } = {}) {
     const [businessRows, profileRows, placeRows] = await Promise.all([
         db.query("SELECT name,display_name,phone,address,postal_code,latitude,longitude,website_url,description FROM tags_businesses WHERE id=? LIMIT 1", [businessId]),
-        db.query("SELECT primary_category_id,secondary_categories_json,is_service_area_business,service_areas_json,regular_hours_json,special_hours_json FROM tags_google_business_profiles WHERE business_id=? LIMIT 1", [businessId]),
+        db.query("SELECT primary_category_id,secondary_categories_json,is_service_area_business,service_areas_json,regular_hours_json,special_hours_json,services_json FROM tags_google_business_profiles WHERE business_id=? LIMIT 1", [businessId]),
         db.query(`SELECT locality.name locality,province.name administrative_area,COALESCE(country.country_code,'AR') region_code
                     FROM tags_business_places bp
                     INNER JOIN tags_geo_places locality ON locality.id=bp.place_id
@@ -49,9 +65,11 @@ export async function buildGoogleLocationPayload(businessId, { requireCategory =
     if (requireCategory && !profile.primary_category_id) { const error = new Error("Selecciona primero una categoria oficial de Google"); error.status = 400; throw error; }
     let regularHours = {};
     let specialHours = [];
+    let services = [];
     let secondaryCategories = [];
     try { regularHours = typeof profile.regular_hours_json === "string" ? JSON.parse(profile.regular_hours_json || "{}") : profile.regular_hours_json || {}; } catch {}
     try { specialHours = typeof profile.special_hours_json === "string" ? JSON.parse(profile.special_hours_json || "[]") : profile.special_hours_json || []; } catch {}
+    try { services = typeof profile.services_json === "string" ? JSON.parse(profile.services_json || "[]") : profile.services_json || []; } catch {}
     try { secondaryCategories = typeof profile.secondary_categories_json === "string" ? JSON.parse(profile.secondary_categories_json || "[]") : profile.secondary_categories_json || []; } catch {}
     const additionalCategories = secondaryCategories.map(item => typeof item === "string" ? item : item?.name).filter(Boolean).filter(name => name !== profile.primary_category_id).slice(0, 9).map(name => ({ name }));
     const location = {
@@ -64,12 +82,13 @@ export async function buildGoogleLocationPayload(businessId, { requireCategory =
         storefrontAddress: business.address ? { regionCode: String(place.region_code || "AR").toUpperCase(), languageCode: "es-419", postalCode: business.postal_code || undefined, administrativeArea: place.administrative_area || undefined, locality: place.locality || undefined, addressLines: [business.address] } : undefined,
         latlng: business.latitude != null && business.longitude != null ? { latitude: Number(business.latitude), longitude: Number(business.longitude) } : undefined,
         regularHours: googleHours(regularHours),
-        specialHours: googleSpecialHours(specialHours)
+        specialHours: googleSpecialHours(specialHours),
+        serviceItems: googleServiceItems(services, profile.primary_category_id)
     };
     return JSON.parse(JSON.stringify(location));
 }
 
 export function sanitizeGoogleLocation(location) {
-    const allowed = ["title", "languageCode", "storeCode", "categories", "phoneNumbers", "websiteUri", "profile", "storefrontAddress", "latlng", "regularHours", "specialHours", "serviceArea", "labels", "openInfo"];
+    const allowed = ["title", "languageCode", "storeCode", "categories", "phoneNumbers", "websiteUri", "profile", "storefrontAddress", "latlng", "regularHours", "specialHours", "serviceArea", "serviceItems", "labels", "openInfo"];
     return Object.fromEntries(allowed.filter(key => location?.[key] != null).map(key => [key, location[key]]));
 }

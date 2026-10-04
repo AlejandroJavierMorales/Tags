@@ -3,7 +3,8 @@ export const dynamic = "force-dynamic";
 
 import { db } from "@/app/lib/tags-db";
 import { getTurnosAccess, turnosAccessResponse } from "@/app/modules/turnos/lib/access/getTurnosAccess";
-import { calculateDeposit, cleanText, createBookingNumber, createPublicToken, hashToken, jsonResponseError, resolveDepositPolicy } from "@/app/modules/turnos/lib/turnosService";
+import { calculateDeposit, cleanText, createBookingNumber, createPublicToken, hashToken, jsonResponseError, parseJson, resolveDepositPolicy } from "@/app/modules/turnos/lib/turnosService";
+import { normalizeIntakeAnswers, saveIntakeAnswers } from "@/app/modules/turnos/lib/turnosIntake";
 
 export async function GET(req) {
     const params = new URL(req.url).searchParams;
@@ -43,6 +44,16 @@ export async function GET(req) {
          ${where}
         ORDER BY b.starts_at ASC LIMIT 500`, queryParams
     );
+    if (rows.length) {
+        const placeholders = rows.map(() => "?").join(",");
+        const [answers] = await db.query(`SELECT booking_id,field_key,field_label,field_type,answer_text,sort_order FROM tags_turnos_booking_answers WHERE booking_id IN (${placeholders}) ORDER BY booking_id,sort_order,id`, rows.map(item => item.id));
+        const byBooking = new Map();
+        for (const answer of answers) {
+            if (!byBooking.has(Number(answer.booking_id))) byBooking.set(Number(answer.booking_id), []);
+            byBooking.get(Number(answer.booking_id)).push(answer);
+        }
+        for (const booking of rows) booking.intake_answers = byBooking.get(Number(booking.id)) || [];
+    }
     const [locations] = await db.query("SELECT id,name FROM tags_turnos_locations WHERE turnos_id=? AND is_active=1 ORDER BY sort_order,id", [turnosId]);
     return Response.json({ ok: true, bookings: rows, locations });
 }
@@ -73,6 +84,9 @@ export async function POST(req) {
         const [services] = await connection.query("SELECT * FROM tags_turnos_services WHERE id = ? AND turnos_id = ? AND is_active = 1 LIMIT 1", [serviceId, app?.id]);
         const service = services[0];
         if (!app || !service) { await connection.rollback(); return jsonResponseError("Servicio no encontrado", 404, "SERVICE_NOT_FOUND"); }
+        const appSettings = parseJson(app.settings_json, {});
+        const intake = normalizeIntakeAnswers(appSettings.intakeFields, body?.intakeAnswers);
+        if (!intake.ok) { await connection.rollback(); return jsonResponseError(intake.error); }
         const [chosenResources] = await connection.query(`SELECT r.id,r.capacity,r.public_metadata_json FROM tags_turnos_resources r INNER JOIN tags_turnos_service_resources sr ON sr.resource_id=r.id AND sr.service_id=? AND sr.is_active=1 WHERE r.id=? AND r.turnos_id=? AND r.is_active=1 LIMIT 1 FOR UPDATE`, [serviceId, requestedResourceId, app.id]);
         const chosenResource = chosenResources[0];
         if (!chosenResource) { await connection.rollback(); return jsonResponseError("Recurso inválido para este servicio", 400, "RESOURCE_INVALID"); }
@@ -121,6 +135,7 @@ export async function POST(req) {
         const token = createPublicToken();
         const bookingNumber = createBookingNumber();
         const [result] = await connection.query(`INSERT INTO tags_turnos_bookings (turnos_id, location_id, service_id, customer_id, booking_number, public_token_hash, status, starts_at, ends_at, timezone, party_size, price_snapshot, currency, payment_status, deposit_required, deposit_amount, deposit_due_at, payment_policy_snapshot_json, customer_notes, internal_notes, source, created_by_type, created_by_id, confirmed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'admin', 'owner', ?, ?)`, [app.id, locationId, serviceId, customerId, bookingNumber, hashToken(token), status, starts, ends, app.timezone, Math.max(1, Number(body?.partySize || 1)), service.price, service.currency || app.currency, depositRequired ? "pending" : "not_required", depositRequired ? 1 : 0, depositRequired ? depositAmount : null, depositRequired ? new Date(Date.now() + policy.holdMinutes * 60000) : null, JSON.stringify(policy), cleanText(body?.customerNotes, 1000), cleanText(body?.internalNotes, 1000), access.session?.userId || access.session?.id || null, status === "confirmed" ? new Date() : null]);
+        await saveIntakeAnswers(connection, result.insertId, intake.answers);
         for (const resource of selectedResources) await connection.query("INSERT INTO tags_turnos_booking_resources (booking_id,requirement_id,resource_id,units,starts_at,ends_at) VALUES (?,?,?,?,?,?)", [result.insertId, resource.requirementId, resource.id, resource.units, starts, ends]);
         await connection.query("INSERT INTO tags_turnos_booking_status_history (booking_id, to_status, actor_type, reason) VALUES (?, ?, 'owner', 'Reserva creada desde el panel')", [result.insertId, status]);
         await connection.commit();
@@ -154,6 +169,7 @@ export async function DELETE(req) {
         const booking = rows[0];
         if (!booking) { await connection.rollback(); return jsonResponseError("Reserva no encontrada", 404, "BOOKING_NOT_FOUND"); }
         await connection.query("DELETE FROM tags_turnos_notification_deliveries WHERE booking_id=?", [bookingId]);
+        await connection.query("DELETE FROM tags_turnos_booking_answers WHERE booking_id=?", [bookingId]);
         await connection.query("DELETE FROM tags_turnos_payment_intents WHERE booking_id=?", [bookingId]);
         await connection.query("DELETE FROM tags_turnos_booking_tokens WHERE booking_id=?", [bookingId]);
         await connection.query("DELETE FROM tags_turnos_booking_status_history WHERE booking_id=?", [bookingId]);

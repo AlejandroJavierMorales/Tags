@@ -39,19 +39,9 @@ export default function EventAccessPage() {
 
             const res =
                 await fetch(
-                    "/api/events/checkin",
+                    `/api/events/checkin?token=${encodeURIComponent(token)}`,
                     {
-                        method: "POST",
-
-                        headers: {
-                            "Content-Type":
-                                "application/json"
-                        },
-
-                        body:
-                            JSON.stringify({
-                                token
-                            })
+                        cache: "no-store"
                     }
                 );
 
@@ -117,7 +107,10 @@ export default function EventAccessPage() {
     // DUPLICATE
     // =========================
 
-    if (result?.already_used) {
+    const attendee =
+        result?.attendee;
+
+    if (attendee?.status === "checked_in") {
 
         return (
 
@@ -125,14 +118,39 @@ export default function EventAccessPage() {
                 bg="#78350f"
                 icon="⚠️"
                 title="QR ya utilizado"
-                text={`El invitado ${result.attendee.name} ya ingresó`}
+                text={`${attendee.name} ya registró su ingreso`}
+                extra={`Evento: ${attendee.event_name}`}
             />
 
         );
     }
 
     // =========================
-    // SUCCESS
+    // PENDING
+    // =========================
+
+    if (!attendee?.can_check_in) {
+
+        const pendingText =
+            attendee?.event_status !== "active"
+                ? "El evento todavía no está habilitado para acreditar ingresos"
+                : "La asistencia todavía no está confirmada";
+
+        return (
+
+            <Screen
+                bg="#78350f"
+                icon="⚠️"
+                title="Acreditación pendiente"
+                text={pendingText}
+                extra={`Evento: ${attendee?.event_name || "-"}`}
+            />
+
+        );
+    }
+
+    // =========================
+    // VALID CREDENTIAL
     // =========================
 
     return (
@@ -140,9 +158,9 @@ export default function EventAccessPage() {
         <Screen
             bg="#14532d"
             icon="✅"
-            title="Acceso aprobado"
-            text={`Bienvenido ${result.attendee.name}`}
-            extra={`Evento: ${result.attendee.event_name}`}
+            title="Acreditación válida"
+            text={`${attendee.name}, presentá este QR al personal para registrar tu ingreso.`}
+            extra={`Evento: ${attendee.event_name}`}
         />
 
     );

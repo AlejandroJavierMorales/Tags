@@ -68,7 +68,8 @@ export async function POST(req) {
 
         const access =
             await requireQRPageAccess(
-                businessId
+                businessId,
+                { skipQRPageValidation: true }
             );
 
         if (!access.ok) {
@@ -83,7 +84,8 @@ export async function POST(req) {
             await db.query(
                 `
                 SELECT
-                    s.id
+                    s.id,
+                    p.page_type
                 FROM
                     tags_qr_page_sections s
                 INNER JOIN
@@ -108,6 +110,10 @@ export async function POST(req) {
                 { error: "Sección no encontrada" },
                 { status: 404 }
             );
+        }
+
+        if (access.session?.role !== "admin" && sections[0].page_type !== "directory" && !access.business?.qr_page_enabled) {
+            return Response.json({ error: "QR-Page no está habilitado para este negocio" }, { status: 403 });
         }
 
         await db.query(

@@ -6,6 +6,7 @@ function text(value, limit) {
 
 export function normalizeWebSectionBlock(content = {}) {
     return {
+        contentManaged: content.contentManaged === true,
         eyebrow: text(content.eyebrow, 100),
         title: text(content.title, 190),
         subtitle: text(content.subtitle, 300),

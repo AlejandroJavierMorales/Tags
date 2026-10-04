@@ -20,6 +20,7 @@ import { sendBusinessPush } from "@/app/modules/notifications/server/sendBusines
 import { getGuestPublicSession } from "@/app/modules/guest-experience/lib/getGuestPublicSession";
 import { getSportsBookingPolicy } from "@/app/modules/sports/lib/getSportsBookingPolicy";
 import { calculateSportsDurationPrice, validateSportsDuration } from "@/app/modules/sports/lib/sportsDurationPolicy";
+import { normalizeIntakeAnswers, saveIntakeAnswers } from "@/app/modules/turnos/lib/turnosIntake";
 
 function validDate(value) {
     const date = new Date(value);
@@ -43,6 +44,8 @@ export async function POST(req) {
     if (!slug || !serviceId || !locationId || !starts) return jsonResponseError("slug, servicio, sede y horario son requeridos");
     const app = await getTurnosBySlug(slug);
     if (!app) return jsonResponseError("Página de Turnos no encontrada", 404, "TURNOS_NOT_FOUND");
+    const intake = normalizeIntakeAnswers(app.settings?.intakeFields, body?.intakeAnswers);
+    if (!intake.ok) return jsonResponseError(intake.error);
     let guestSession = null;
     const guestExperienceSlug = cleanText(body?.guestExperienceSlug);
     if (guestExperienceSlug) {
@@ -202,6 +205,7 @@ export async function POST(req) {
                 JSON.stringify(policy), cleanText(body?.notes, 1000), auto ? new Date() : null]
         );
         const bookingId = result.insertId;
+        await saveIntakeAnswers(connection, bookingId, intake.answers);
         for (const resource of selectedResources) {
             await connection.query("INSERT INTO tags_turnos_booking_resources (booking_id, requirement_id, resource_id, starts_at, ends_at, units) VALUES (?, ?, ?, ?, ?, ?)", [bookingId, resource.requirementId, resource.id, starts, ends, resource.units]);
         }

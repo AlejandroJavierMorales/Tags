@@ -1,6 +1,6 @@
 import { cache } from "react";
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { notFound, permanentRedirect, redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { getHeadersHost } from "@/app/lib/channelContext";
 import { db } from "@/app/lib/tags-db";
@@ -11,7 +11,7 @@ import DirectoryProviderRenderer from "@/app/modules/directory/components/public
 import DirectoryEmbeddedStore from "@/app/modules/directory/components/public/DirectoryEmbeddedStore";
 import DirectoryEmbeddedResto from "@/app/modules/directory/components/public/DirectoryEmbeddedResto";
 import DirectoryEmbeddedTurnos from "@/app/modules/directory/components/public/DirectoryEmbeddedTurnos";
-import { getDirectoryListingBySlug, getDirectorySiteCodeByHost } from "@/app/modules/directory/lib/getDirectoryPublicData";
+import { getDirectoryCurrentSlugFromHistory, getDirectoryListingBySlug, getDirectorySiteCodeByHost } from "@/app/modules/directory/lib/getDirectoryPublicData";
 import { getDirectoryWebPageData } from "@/app/modules/directory/lib/getDirectoryWebPageData";
 import { getPublicEntitlement } from "@/app/modules/subscriptions/lib/publicEntitlement";
 import PublicServicePaused from "@/app/modules/subscriptions/components/PublicServicePaused";
@@ -22,20 +22,21 @@ import "../directorio/prestador/[slug]/directoryProviderPage.css";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 const getListing = cache((slug, siteCode) => getDirectoryListingBySlug(slug, siteCode));
+const getHistoricalTarget = cache((slug, siteCode) => getDirectoryCurrentSlugFromHistory(slug, siteCode));
 async function getSiteCode() {
   const requestHeaders = await headers();
   return getDirectorySiteCodeByHost(getHeadersHost(requestHeaders));
 }
 
-async function getDomainFavicon(host, businessId) {
+async function getDomainFavicon(host) {
   const cleanHost = String(host || "").toLowerCase().split(":")[0].replace(/^www\./, "");
-  if (!cleanHost || !businessId) return null;
+  if (!cleanHost) return null;
   const [rows] = await db.query(
     `SELECT favicon_url FROM tags_domains
-      WHERE business_id=? AND is_active=1
+      WHERE is_active=1
         AND (LOWER(domain)=? OR LOWER(domain)=?)
       ORDER BY id DESC LIMIT 1`,
-    [businessId, cleanHost, `www.${cleanHost}`]
+    [cleanHost, `www.${cleanHost}`]
   );
   return rows[0]?.favicon_url || null;
 }
@@ -79,23 +80,34 @@ export async function generateMetadata({ params }) {
   const web = await getDirectoryWebPageData(data.listing.qr_page_id);
   const page = web?.page;
   const requestHeaders = await headers();
-  const favicon = await getDomainFavicon(getHeadersHost(requestHeaders), data.listing.business_id)
-    || data.listing.business_logo_url
+  const favicon = data.listing.business_logo_url
     || data.media?.find(item => item.media_type === "logo")?.url
+    || await getDomainFavicon(getHeadersHost(requestHeaders))
     || null;
   const canonical = new URL(`/${data.listing.slug}`, `${sitemapContext.baseUrl}/`).toString();
+  const seoTitle = page?.seo_title || data.listing.seo_title || data.listing.display_name;
+  const seoDescription = page?.seo_description || data.listing.seo_description || data.listing.short_description || undefined;
+  const seoKeywords = String(page?.seo_keywords || data.listing.seo_keywords || "").split(",").map(value => value.trim()).filter(Boolean);
+  const seoImage = page?.seo_image_og_url || page?.seo_image_url || data.listing.business_cover_url || data.listing.business_logo_url || null;
+  const pageAllowsIndex = page?.robots_index == null || Number(page.robots_index) === 1;
+  const pageAllowsFollow = page?.robots_follow == null || Number(page.robots_follow) === 1;
+  const shouldIndex = !sitemapContext.isTags && pageAllowsIndex;
+  const shouldFollow = !sitemapContext.isTags && pageAllowsFollow;
   return {
     metadataBase: new URL(sitemapContext.baseUrl),
-    ...(favicon ? { icons: { icon: favicon, shortcut: favicon, apple: favicon } } : {}),
-    title: page?.seo_title || data.listing.seo_title || data.listing.display_name,
-    description: page?.seo_description || data.listing.seo_description || data.listing.short_description || undefined,
+    ...(favicon ? { icons: { icon: [{ url: favicon }], shortcut: [{ url: favicon }], apple: [{ url: favicon }] } } : {}),
+    title: seoTitle,
+    description: seoDescription,
+    ...(seoKeywords.length ? { keywords: seoKeywords } : {}),
     alternates: { canonical },
+    openGraph: { type: "website", url: canonical, title: seoTitle, description: seoDescription, ...(seoImage ? { images: [{ url: seoImage }] } : {}) },
+    twitter: { card: seoImage ? "summary_large_image" : "summary", title: seoTitle, description: seoDescription, ...(seoImage ? { images: [seoImage] } : {}) },
     robots: {
-      index: !sitemapContext.isTags,
-      follow: !sitemapContext.isTags,
+      index: shouldIndex,
+      follow: shouldFollow,
       googleBot: {
-        index: !sitemapContext.isTags,
-        follow: !sitemapContext.isTags,
+        index: shouldIndex,
+        follow: shouldFollow,
         "max-image-preview": "large",
         "max-snippet": -1,
         "max-video-preview": -1,
@@ -110,6 +122,16 @@ export default async function DirectoryStandaloneProviderPage({ params, searchPa
   const siteCode = await getSiteCode();
   const data = await getListing(values.directorySlug, siteCode);
   if (!data) {
+    const currentSlug = await getHistoricalTarget(values.directorySlug, siteCode);
+    if (currentSlug) {
+      const forwarded = new URLSearchParams();
+      Object.entries(query).forEach(([key, value]) => {
+        if (Array.isArray(value)) value.forEach(item => forwarded.append(key, String(item)));
+        else if (value != null) forwarded.set(key, String(value));
+      });
+      const suffix = forwarded.toString();
+      permanentRedirect(`/${currentSlug}${suffix ? `?${suffix}` : ""}`);
+    }
     const portal = await getPortalHome(values.directorySlug);
     if (portal?.home_slug) redirect(`/p/${portal.home_slug}`);
     notFound();

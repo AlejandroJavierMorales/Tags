@@ -63,7 +63,8 @@ export async function POST(req) {
 
         const access =
             await requireQRPageAccess(
-                businessId
+                businessId,
+                { skipQRPageValidation: true }
             );
 
         if (!access.ok) {
@@ -107,6 +108,10 @@ export async function POST(req) {
                 { error: "Bloque no encontrado" },
                 { status: 404 }
             );
+        }
+
+        if (access.session?.role !== "admin" && blocks[0].page_type !== "directory" && !access.business?.qr_page_enabled) {
+            return Response.json({ error: "QR-Page no está habilitado para este negocio" }, { status: 403 });
         }
 
         await db.query(

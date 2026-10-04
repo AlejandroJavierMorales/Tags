@@ -177,8 +177,15 @@ export async function GET(req) {
         // QR URL
         // =========================
 
+        const baseUrl =
+            String(
+                process.env.NEXT_PUBLIC_APP_URL
+                || process.env.NEXT_PUBLIC_BASE_URL_PROD
+                || new URL(req.url).origin
+            ).replace(/\/+$/, "");
+
         const qrUrl =
-            `${process.env.NEXT_PUBLIC_APP_URL}/checkin/${attendee.qr_token}`;
+            `${baseUrl}/e/access/${attendee.qr_token}`;
 
         // =========================
         // GENERATE QR

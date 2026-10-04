@@ -9,6 +9,27 @@ export const dynamic = "force-dynamic";
 const clean = (value, max = 1000) => String(value ?? "").trim().slice(0, max);
 const array = value => Array.isArray(value) ? value.filter(item => String(item || "").trim()).slice(0, 100) : [];
 
+function normalizeServices(value, primaryCategoryId) {
+    const categoryId = clean(primaryCategoryId, 190).replace(/^categories\//, "");
+    const seen = new Set();
+    return (Array.isArray(value) ? value : []).map(item => {
+        if (typeof item === "string") return { kind: "custom", displayName: clean(item, 140), categoryId };
+        if (!item || typeof item !== "object") return null;
+        if (item.kind === "structured" || item.serviceTypeId) return {
+            kind: "structured",
+            serviceTypeId: clean(item.serviceTypeId, 190),
+            displayName: clean(item.displayName, 190),
+            categoryId
+        };
+        return { kind: "custom", displayName: clean(item.displayName || item.name, 140), categoryId };
+    }).filter(item => {
+        const key = item?.kind === "structured" ? `structured:${item.serviceTypeId}` : `custom:${item?.displayName?.toLowerCase()}`;
+        if (!item || (item.kind === "structured" ? !item.serviceTypeId : !item.displayName) || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    }).slice(0, 100);
+}
+
 async function payload(businessId) {
     const [businessRows, profileRows, answerRows, places, selected, directoryRows] = await Promise.all([
         db.query("SELECT id,name,display_name,email,phone,description,logo_url,cover_url,whatsapp,address,postal_code,latitude,longitude,website_url,instagram_url,facebook_url,tiktok_url,youtube_url,linkedin_url,google_reviews_url,maps_url FROM tags_businesses WHERE id=? LIMIT 1", [businessId]),
@@ -65,7 +86,7 @@ export async function PATCH(request) {
         if (!BUSINESS_TYPES.some(item => item.id === type)) return Response.json({ ok: false, error: "Selecciona un tipo de negocio valido" }, { status: 400 });
         const allowedQuestionCodes = new Set(questionsForBusinessType(type).map(item => item.code));
         const answers = body.answers && typeof body.answers === "object" ? body.answers : {};
-        const services = array(body.services).map(item => clean(item, 240));
+        const services = normalizeServices(body.services, body.primary_category_id);
         const connection = await db.getConnection();
         try {
             await connection.beginTransaction();

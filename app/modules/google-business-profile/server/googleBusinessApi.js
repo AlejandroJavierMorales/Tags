@@ -126,22 +126,31 @@ export async function listGoogleAccounts(accessToken) {
 }
 
 export async function listGoogleLocations(accessToken, accountName) {
-    const readMask = ["name", "title", "storeCode", "phoneNumbers", "websiteUri", "categories", "storefrontAddress", "latlng", "regularHours", "serviceArea", "metadata"].join(",");
+    const readMask = ["name", "title", "storeCode", "phoneNumbers", "websiteUri", "categories", "storefrontAddress", "latlng", "regularHours", "specialHours", "serviceArea", "serviceItems", "openInfo", "metadata"].join(",");
     const payload = await googleJson(`${BUSINESS_INFO_API}/${accountName}/locations?pageSize=100&readMask=${encodeURIComponent(readMask)}`, { headers: { Authorization: `Bearer ${accessToken}` } });
     return payload.locations || [];
 }
 
 export async function getGoogleLocation(accessToken, locationName) {
-    const readMask = ["name", "title", "storeCode", "phoneNumbers", "websiteUri", "profile", "categories", "storefrontAddress", "latlng", "regularHours", "serviceArea", "metadata"].join(",");
+    const readMask = ["name", "title", "storeCode", "phoneNumbers", "websiteUri", "profile", "categories", "storefrontAddress", "latlng", "regularHours", "specialHours", "serviceArea", "serviceItems", "openInfo", "metadata"].join(",");
     return googleJson(`${BUSINESS_INFO_API}/${locationName}?readMask=${encodeURIComponent(readMask)}`, {
         headers: { Authorization: `Bearer ${accessToken}` }
     });
 }
 
 export async function searchGoogleCategories(accessToken, query, regionCode = "AR", languageCode = "es-419") {
-    const params = new URLSearchParams({ regionCode, languageCode, view: "BASIC", pageSize: "100" });
+    const params = new URLSearchParams({ regionCode, languageCode, view: "FULL", pageSize: "100" });
     if (String(query || "").trim()) params.set("filter", `displayName=${String(query).trim().slice(0, 100)}`);
     const payload = await googleJson(`${BUSINESS_INFO_API}/categories?${params}`, { headers: { Authorization: `Bearer ${accessToken}` } });
+    return payload.categories || [];
+}
+
+export async function getGoogleCategories(accessToken, names, regionCode = "AR", languageCode = "es-419") {
+    const normalizedNames = (Array.isArray(names) ? names : [names]).map(name => String(name || "").replace(/^categories\//, "").trim()).filter(Boolean).slice(0, 10);
+    if (!normalizedNames.length) return [];
+    const params = new URLSearchParams({ regionCode, languageCode, view: "FULL" });
+    normalizedNames.forEach(name => params.append("names", name));
+    const payload = await googleJson(`${BUSINESS_INFO_API}/categories:batchGet?${params}`, { headers: { Authorization: `Bearer ${accessToken}` } });
     return payload.categories || [];
 }
 

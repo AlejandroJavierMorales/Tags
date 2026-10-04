@@ -1,11 +1,13 @@
 import { getGoogleBusinessAdminAccess, googleBusinessError } from "@/app/modules/google-business-profile/lib/googleBusinessAccess";
-import { accessTokenForBusiness, googleBusinessRequest, logGoogleAction } from "@/app/modules/google-business-profile/server/googleBusinessApi";
+import { accessTokenForBusiness, getGoogleLocation, googleBusinessRequest, logGoogleAction } from "@/app/modules/google-business-profile/server/googleBusinessApi";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const MY_BUSINESS_API = "https://mybusiness.googleapis.com/v4";
 const PERFORMANCE_API = "https://businessprofileperformance.googleapis.com/v1";
+const LODGING_API = "https://mybusinesslodging.googleapis.com/v1";
+const BUSINESS_INFO_API = "https://mybusinessbusinessinformation.googleapis.com/v1";
 const MEDIA_CATEGORIES = new Set(["COVER", "PROFILE", "EXTERIOR", "INTERIOR", "PRODUCT", "AT_WORK", "FOOD_AND_DRINK", "MENU", "COMMON_AREA", "ROOMS", "TEAMS", "ADDITIONAL"]);
 
 function resources(connection) {
@@ -24,10 +26,12 @@ async function optional(promise) {
     catch (error) { return { available: false, error: error.message, data: null }; }
 }
 
-function performanceUrl(locationId) {
+function performanceUrl(locationId, requestedDays = 90) {
+    const allowedDays = new Set([7, 28, 90, 180, 365]);
+    const days = allowedDays.has(Number(requestedDays)) ? Number(requestedDays) : 90;
     const end = new Date();
     const start = new Date(end);
-    start.setDate(start.getDate() - 89);
+    start.setDate(start.getDate() - (days - 1));
     const params = new URLSearchParams();
     ["BUSINESS_IMPRESSIONS_DESKTOP_MAPS", "BUSINESS_IMPRESSIONS_MOBILE_MAPS", "BUSINESS_IMPRESSIONS_DESKTOP_SEARCH", "BUSINESS_IMPRESSIONS_MOBILE_SEARCH", "WEBSITE_CLICKS", "CALL_CLICKS", "BUSINESS_DIRECTION_REQUESTS"].forEach(metric => params.append("dailyMetrics", metric));
     params.set("dailyRange.startDate.year", String(start.getFullYear()));
@@ -41,18 +45,35 @@ function performanceUrl(locationId) {
 
 export async function GET(request) {
     try {
-        const businessId = Number(new URL(request.url).searchParams.get("businessId") || 0);
+        const url = new URL(request.url);
+        const businessId = Number(url.searchParams.get("businessId") || 0);
+        const performanceDays = Number(url.searchParams.get("performanceDays") || 90);
+        const view = String(url.searchParams.get("view") || "full");
         const access = await getGoogleBusinessAdminAccess(businessId);
         if (!access.allowed) return googleBusinessError(access);
         const { connection, accessToken } = await accessTokenForBusiness(businessId);
         const { locationId, legacyLocation } = resources(connection);
-        const [reviews, media, posts, performance] = await Promise.all([
+        if (view === "summary") {
+            const [location, media, attributes, lodging, googleUpdatedLodging] = await Promise.all([
+                optional(getGoogleLocation(accessToken, connection.google_location_name)),
+                optional(googleBusinessRequest(accessToken, `${MY_BUSINESS_API}/${legacyLocation}/media?pageSize=100`)),
+                optional(googleBusinessRequest(accessToken, `${BUSINESS_INFO_API}/locations/${locationId}/attributes`)),
+                optional(googleBusinessRequest(accessToken, `${LODGING_API}/locations/${locationId}/lodging?readMask=${encodeURIComponent("*")}`)),
+                optional(googleBusinessRequest(accessToken, `${LODGING_API}/locations/${locationId}/lodging:getGoogleUpdated?readMask=${encodeURIComponent("*")}`))
+            ]);
+            return Response.json({ ok: true, location, media, attributes, lodging, googleUpdatedLodging });
+        }
+        const [reviews, media, posts, performance, location, attributes, lodging, googleUpdatedLodging] = await Promise.all([
             optional(googleBusinessRequest(accessToken, `${MY_BUSINESS_API}/${legacyLocation}/reviews?pageSize=50&orderBy=${encodeURIComponent("updateTime desc")}`)),
             optional(googleBusinessRequest(accessToken, `${MY_BUSINESS_API}/${legacyLocation}/media?pageSize=100`)),
             optional(googleBusinessRequest(accessToken, `${MY_BUSINESS_API}/${legacyLocation}/localPosts?pageSize=50`)),
-            optional(googleBusinessRequest(accessToken, performanceUrl(locationId)))
+            optional(googleBusinessRequest(accessToken, performanceUrl(locationId, performanceDays))),
+            optional(getGoogleLocation(accessToken, connection.google_location_name)),
+            optional(googleBusinessRequest(accessToken, `${BUSINESS_INFO_API}/locations/${locationId}/attributes`)),
+            optional(googleBusinessRequest(accessToken, `${LODGING_API}/locations/${locationId}/lodging?readMask=${encodeURIComponent("*")}`)),
+            optional(googleBusinessRequest(accessToken, `${LODGING_API}/locations/${locationId}/lodging:getGoogleUpdated?readMask=${encodeURIComponent("*")}`))
         ]);
-        return Response.json({ ok: true, reviews, media, posts, performance });
+        return Response.json({ ok: true, reviews, media, posts, performance, location, attributes, lodging, googleUpdatedLodging });
     } catch (error) {
         console.error("GOOGLE BUSINESS CONTENT GET ERROR", error.message);
         return googleBusinessError(error);
@@ -82,6 +103,14 @@ export async function POST(request) {
             const url = String(body?.url || "").trim();
             if (url) post.callToAction = { actionType: "LEARN_MORE", url };
             result = await googleBusinessRequest(accessToken, `${MY_BUSINESS_API}/${legacyLocation}/localPosts`, { method: "POST", body: JSON.stringify(post) });
+        } else if (action === "update_post") {
+            const postName = String(body?.postName || "");
+            const summary = String(body?.summary || "").trim().slice(0, 1500);
+            if (!postName.startsWith(`${legacyLocation}/localPosts/`) || !summary) return Response.json({ ok: false, error: "Publicación o contenido inválido" }, { status: 400 });
+            const post = { name: postName, summary };
+            const url = String(body?.url || "").trim();
+            if (url) post.callToAction = { actionType: "LEARN_MORE", url };
+            result = await googleBusinessRequest(accessToken, `${MY_BUSINESS_API}/${postName}?updateMask=${encodeURIComponent("summary,callToAction")}`, { method: "PATCH", body: JSON.stringify(post) });
         } else if (action === "delete_post") {
             const postName = String(body?.postName || "");
             if (!postName.startsWith(`${legacyLocation}/localPosts/`)) return Response.json({ ok: false, error: "Publicación inválida" }, { status: 400 });

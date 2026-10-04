@@ -73,7 +73,11 @@ export async function POST(req) {
                     a.plus_ones_allowed,
 
                     i.id AS invitation_id,
-                    i.event_id
+                    i.event_id,
+                    i.published_at,
+                    i.is_active,
+
+                    e.status AS event_status
 
                 FROM
                     tags_event_invitation_guests g
@@ -87,6 +91,10 @@ export async function POST(req) {
                     tags_event_invitations i
                         ON i.id =
                         g.invitation_id
+
+                INNER JOIN
+                    tags_events e
+                        ON e.id = i.event_id
 
                 WHERE
                     g.access_token = ?
@@ -113,6 +121,34 @@ export async function POST(req) {
 
         const guest =
             guests[0];
+
+        if (
+            !guest.published_at
+            || Number(guest.is_active) !== 1
+        ) {
+            return Response.json(
+                {
+                    error: "La invitación no está publicada"
+                },
+                { status: 403 }
+            );
+        }
+
+        if (
+            !["published", "active"].includes(
+                guest.event_status
+            )
+        ) {
+            return Response.json(
+                {
+                    error:
+                        guest.event_status === "cancelled"
+                            ? "El evento está cancelado"
+                            : "El evento no está recibiendo confirmaciones"
+                },
+                { status: 409 }
+            );
+        }
 
         const maxCompanions =
             guest.max_companions ??

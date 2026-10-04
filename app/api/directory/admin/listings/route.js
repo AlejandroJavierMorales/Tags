@@ -99,7 +99,13 @@ export async function POST(req) {
         for (const siteId of siteIds) {
             const [existing] = await conn.query("SELECT id FROM tags_directory_site_listings WHERE site_id=? AND listing_id=? LIMIT 1", [siteId, listingId]);
             if (existing.length) continue;
-            const [collision] = await conn.query("SELECT id FROM tags_directory_site_listings WHERE site_id=? AND slug=? LIMIT 1", [siteId, baseSlug]);
+            const [collision] = await conn.query(
+                `SELECT id FROM tags_directory_site_listings WHERE site_id=? AND slug=?
+                 UNION ALL
+                 SELECT id FROM tags_directory_slug_redirects WHERE site_id=? AND old_slug=?
+                 LIMIT 1`,
+                [siteId, baseSlug, siteId, baseSlug]
+            );
             if (collision.length) throw new Error(`El slug ${baseSlug} ya está utilizado en uno de los Directorios`);
             await conn.query(
                 "INSERT INTO tags_directory_site_listings (site_id,listing_id,slug,publication_status,is_free,is_featured,sort_order) VALUES (?,?,?,'draft',1,0,0)",

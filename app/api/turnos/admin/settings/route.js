@@ -5,6 +5,7 @@ import { db } from "@/app/lib/tags-db";
 import { getTurnosAccess, turnosAccessResponse } from "@/app/modules/turnos/lib/access/getTurnosAccess";
 import { jsonResponseError, parseJson } from "@/app/modules/turnos/lib/turnosService";
 import { ensureSportsApp } from "@/app/modules/sports/lib/ensureSportsApp";
+import { normalizeIntakeFields } from "@/app/modules/turnos/lib/turnosIntake";
 
 const PROFILE_TYPES = {
     spa: [["professional", "Profesionales", "Profesional", "Profesionales"], ["cabin", "Cabinas", "Cabina", "Cabinas"]],
@@ -41,7 +42,7 @@ export async function POST(req) {
     const mode = ["none", "fixed", "percentage", "full"].includes(policy.mode) ? policy.mode : "none";
     const normalizedPolicy = { ...policy, mode, amount: Math.max(0, Number(policy.amount || 0)), percentage: Math.min(100, Math.max(0, Number(policy.percentage || 0))), holdMinutes: Math.max(1, Number(policy.holdMinutes || 15)), requiredForAdmin: policy.requiredForAdmin === true, requiredForPublic: policy.requiredForPublic !== false, confirmAfterPayment: policy.confirmAfterPayment === true };
     const publicPolicy = body?.publicBookingPolicy || {};
-    const nextSettings = body?.settings || {};
+    const nextSettings = { ...(body?.settings || {}), intakeFields: normalizeIntakeFields(body?.settings?.intakeFields) };
     const profile = PROFILE_TYPES[nextSettings.turnosTemplate] ? nextSettings.turnosTemplate : "generic";
     if (!turnosId) return jsonResponseError("turnosId es requerido");
     const [result] = await db.query("UPDATE tags_turnos_apps SET business_profile_code = ?, settings_json = ?, public_booking_policy_json = ?, deposit_policy_json = ?, updated_at = NOW() WHERE id = ? AND business_id = ?", [profile, JSON.stringify(nextSettings), JSON.stringify(publicPolicy), JSON.stringify(normalizedPolicy), turnosId, businessId]);

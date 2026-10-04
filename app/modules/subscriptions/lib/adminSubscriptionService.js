@@ -105,6 +105,7 @@ async function resolveSelection(input, actorId) {
 export async function createAdminSubscription(input, actorId = null) {
   const businessId = Number(input.businessId || 0);
   const planId = Number(input.planId || 0);
+  const notifyClient = input.notifyClient !== false;
   const paymentState = input.paymentState === "paid" ? "paid" : "pending";
   const graceDays = Math.min(30, Math.max(0, Number(input.graceDays || 0)));
   const requestedExpiresAt = normalizeAdminExpiration(input.expiresAt);
@@ -216,7 +217,7 @@ export async function createAdminSubscription(input, actorId = null) {
     }
   }
   const [[recipient]] = await db.query("SELECT email FROM tags_businesses WHERE id=? LIMIT 1", [businessId]);
-  if (recipient?.email && input.origin) {
+  if (notifyClient && recipient?.email && input.origin) {
     try {
       const token = crypto.randomUUID();
       await db.query("INSERT INTO tags_auth_tokens (email,token,expires_at) VALUES (?,?,DATE_ADD(NOW(),INTERVAL 15 MINUTE))", [recipient.email, token]);
@@ -236,9 +237,9 @@ export async function createAdminSubscription(input, actorId = null) {
     }
   }
   try {
-    await notifySubscriptionCreated({ subscriptionId });
+    await notifySubscriptionCreated({ subscriptionId, notifyClient });
   } catch (error) {
     console.error("SUBSCRIPTION CREATED NOTIFICATION ERROR", error);
   }
-  return { subscriptionId, paymentProvider: resolved.price.billing_mode === "recurring" ? "mercadopago" : "manual", requiresMercadoPago: resolved.price.billing_mode === "recurring" };
+  return { subscriptionId, paymentProvider: resolved.price.billing_mode === "recurring" ? "mercadopago" : "manual", requiresMercadoPago: resolved.price.billing_mode === "recurring", clientNotified: notifyClient };
 }

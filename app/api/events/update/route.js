@@ -1,74 +1,58 @@
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
 import { db } from "@/app/lib/tags-db";
+import { eventAccessError, requireEventAccess } from "@/app/modules/e-events/lib/eventApiAccess";
+
+const EVENT_STATUSES = new Set([
+    "draft",
+    "published",
+    "active",
+    "finished",
+    "cancelled"
+]);
 
 export async function PUT(req) {
+    const body =
+        await req.json().catch(() => null);
+
+    const id =
+        Number(body?.id || 0);
+
+    const access =
+        await requireEventAccess({
+            eventId: id,
+            permission: "event.update"
+        });
+
+    if (!access.ok) return eventAccessError(access);
+    if (access.isStaff) {
+        return eventAccessError({
+            status: 403,
+            error: "El personal no puede modificar el evento"
+        });
+    }
+
+    const name =
+        String(body?.name || "").trim();
+
+    if (!name) {
+        return Response.json(
+            { error: "El nombre es obligatorio" },
+            { status: 400 }
+        );
+    }
+
+    const status =
+        EVENT_STATUSES.has(body.status)
+            ? body.status
+            : access.event.status;
 
     try {
-
-        const body =
-            await req.json();
-
-        const {
-            id,
-            business_id,
-            name,
-            description,
-            location,
-            starts_at,
-            ends_at,
-            status
-        } = body;
-
-        // =========================
-        // VALIDACIONES
-        // =========================
-
-        if (!id) {
-
-            return Response.json(
-                {
-                    error: "Falta id"
-                },
-                {
-                    status: 400
-                }
-            );
-        }
-
-        if (!business_id) {
-
-            return Response.json(
-                {
-                    error: "Falta business_id"
-                },
-                {
-                    status: 400
-                }
-            );
-        }
-
-        if (!name) {
-
-            return Response.json(
-                {
-                    error: "Falta nombre"
-                },
-                {
-                    status: 400
-                }
-            );
-        }
-
-        // =========================
-        // UPDATE
-        // =========================
-
         await db.query(
             `
             UPDATE tags_events
             SET
-                business_id = ?,
                 name = ?,
                 description = ?,
                 location = ?,
@@ -77,34 +61,26 @@ export async function PUT(req) {
                 status = ?,
                 updated_at = NOW()
             WHERE id = ?
+                AND business_id = ?
             `,
             [
-                business_id,
                 name,
-                description || null,
-                location || null,
-                starts_at || null,
-                ends_at || null,
-                status || "borrador",
-                id
+                body.description || null,
+                body.location || null,
+                body.starts_at || null,
+                body.ends_at || null,
+                status,
+                id,
+                access.event.business_id
             ]
         );
 
-        return Response.json({
-            ok: true
-        });
-
-    } catch (err) {
-
-        console.log(err);
-
+        return Response.json({ ok: true });
+    } catch (error) {
+        console.error("EVENT UPDATE ERROR", error);
         return Response.json(
-            {
-                error: "Error interno"
-            },
-            {
-                status: 500
-            }
+            { error: "No se pudo actualizar el evento" },
+            { status: 500 }
         );
     }
 }

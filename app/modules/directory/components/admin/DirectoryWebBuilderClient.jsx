@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { FaArrowLeft, FaEye, FaGlobe, FaLink, FaPalette, FaPuzzlePiece, FaRobot, FaStore, FaUserPen } from "react-icons/fa6";
+import { FaArrowLeft, FaEye, FaGlobe, FaLink, FaMagnifyingGlass, FaPalette, FaPuzzlePiece, FaRobot, FaStore, FaUserPen } from "react-icons/fa6";
 import MediaUploader from "@/app/components/MediaUploader";
 import TagsSpinner from "@/app/components/TagsSpinner";
 import showAlert from "@/app/components/showAlert";
@@ -10,6 +10,7 @@ import DirectoryStructureManager from "./DirectoryStructureManager";
 import DirectoryCatalogManager from "./DirectoryCatalogManager";
 import DirectoryCommerceVisualBuilder from "./DirectoryCommerceVisualBuilder";
 import DirectoryBenefitsManager from "./DirectoryBenefitsManager";
+import DirectorySeoEditor from "./DirectorySeoEditor";
 import AiChatSurfaceSettings from "@/app/modules/ai-chat/components/admin/AiChatSurfaceSettings";
 import "@/app/styles/qr-page.css";
 import "./DirectoryWebBuilderClient.css";
@@ -22,6 +23,7 @@ const TABS = [
   ["catalog", "Catálogo", FaStore],
   ["modules", "Módulos", FaPuzzlePiece],
   ["benefits", "Beneficios", FaPuzzlePiece],
+  ["seo", "SEO", FaMagnifyingGlass],
   ["design", "Diseño", FaPalette],
   ["preview", "Vista previa", FaEye],
   ["chatbot", "Chatbot", FaRobot]
@@ -136,6 +138,15 @@ export default function DirectoryWebBuilderClient({ businessId, qrCodeId, busine
   async function savePublicSlug() {
     const slug = publicSlug.trim();
     if (slug.length < 3) return showAlert({ title: "Slug inválido", text: "Ingresá una ruta pública de al menos 3 caracteres.", icon: "warning" });
+    const confirmation = await showAlert({
+      title: "¿Cambiar la URL pública?",
+      text: `La Web pasará de /${page.slug} a /${slug}. La dirección anterior quedará redirigida permanentemente para conservar sus visitas y posicionamiento.`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Cambiar URL",
+      cancelButtonText: "Cancelar"
+    });
+    if (!confirmation) return;
     setBusy(true);
     try {
       const response = await fetch("/api/portal/admin/pages/slug", {
@@ -146,7 +157,7 @@ export default function DirectoryWebBuilderClient({ businessId, qrCodeId, busine
       const payload = await responsePayload(response);
       if (!response.ok) throw new Error(payload.error || "No se pudo cambiar el slug");
       await load();
-      await showAlert({ title: "Slug actualizado", text: "La URL pública de la página fue actualizada.", icon: "success", timer: 1400 });
+      await showAlert({ title: "URL actualizada", text: "La dirección anterior redirige permanentemente a la nueva Web.", icon: "success", timer: 1800 });
     } catch (error) {
       await showAlert({ title: "No se pudo cambiar el slug", text: error.message, icon: "error" });
     } finally { setBusy(false); }
@@ -168,7 +179,7 @@ export default function DirectoryWebBuilderClient({ businessId, qrCodeId, busine
   async function saveDesign() {
     setBusy(true);
     try {
-      const response = await fetch("/api/directory/client/design", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ businessId, pageId: qrPage.page.id, headerConfig, footerConfig, globalStyles: { borderRadius: globalStyles.borderRadius || "12px" } }) });
+      const response = await fetch("/api/directory/client/design", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ businessId, pageId: qrPage.page.id, headerConfig, footerConfig, globalStyles: { borderRadius: globalStyles.borderRadius || "12px", contentAnimation: globalStyles.contentAnimation || "slide-up" } }) });
       const payload = await responsePayload(response);
       if (!response.ok) throw new Error(payload.error || "No se pudo guardar el diseño");
       await load();
@@ -194,7 +205,7 @@ export default function DirectoryWebBuilderClient({ businessId, qrCodeId, busine
 
     <section className="tags_directory_web_slug_bar">
       <div className="tags_directory_web_slug_label"><FaLink aria-hidden="true" /><strong>URL pública de la Web</strong></div>
-      <div><FaLink /><span><strong>URL pública de la Web</strong><small>Se conserva el contenido y se actualiza la ruta del Directorio.</small></span></div>
+      <div><FaLink /><span><strong>URL pública de la Web</strong><small>Al cambiarla, las direcciones anteriores redirigen permanentemente a la URL vigente.</small></span></div>
       <label><span>/</span><input value={publicSlug} onChange={event => setPublicSlug(event.target.value)} /></label>
       <button type="button" onClick={savePublicSlug} disabled={busy || publicSlug === page.slug}>Guardar slug</button>
     </section>
@@ -227,7 +238,7 @@ export default function DirectoryWebBuilderClient({ businessId, qrCodeId, busine
       </div>
     </section>}
 
-    {tab === "content" && <section className="tags_directory_web_panel"><DirectoryStructureManager businessId={businessId} pageId={page.id} sections={qrPage.sections || []} onReload={load} /></section>}
+    {tab === "content" && <section className="tags_directory_web_panel"><DirectoryStructureManager businessId={businessId} pageId={page.id} sections={qrPage.sections || []} web={moduleWeb} presentationFallback={{ title: profile?.display_name || profile?.name || business?.display_name || business?.name || "", highlightedText: directoryData?.listing?.short_description || "", description: directoryData?.listing?.description || page?.description || profile?.description || business?.description || "" }} onReload={load} onEditModule={() => setTab("modules")} /></section>}
 
     {tab === "catalog" && <section className="tags_directory_web_panel"><DirectoryCatalogManager businessId={businessId} pageId={page.id} products={qrPage.products || []} catalogSection={(qrPage.sections || []).find(isCatalogSection)} onReload={load} /></section>}
 
@@ -235,11 +246,13 @@ export default function DirectoryWebBuilderClient({ businessId, qrCodeId, busine
 
     {tab === "benefits" && <section className="tags_directory_web_panel"><DirectoryBenefitsManager businessId={businessId} pageId={page.id} onReload={load} /></section>}
 
+    {tab === "seo" && <section className="tags_directory_web_panel"><DirectorySeoEditor businessId={businessId} page={page} business={profile || business} publicUrl={publicUrl} onReload={load} /></section>}
+
     {tab === "chatbot" && <section className="tags_directory_web_panel"><AiChatSurfaceSettings businessId={businessId} surfaceType="qr_page" surfaceId={page.id} surfaceLabel="la Página Web" /></section>}
 
     {tab === "design" && <section className="tags_directory_web_panel tags_directory_design_panel"><div className="tags_directory_web_panel_title"><div><h2>Diseño de la Web</h2><p>Elegí el tema y personalizá el encabezado y el footer.</p></div><button type="button" onClick={saveDesign}>Guardar diseño</button></div>
       <div className="tags_directory_theme_picker"><h3>Tema visual</h3><div><button type="button" className={!Number(pendingThemeId === undefined ? page.theme_id : pendingThemeId)?"active":""} onClick={()=>setPendingThemeId(null)}><span className="portal" /><b>Portal</b><small>Heredar</small></button>{themes.map(theme=>{const themeTokens=theme.css_tokens||{};const swatch=`linear-gradient(135deg,${themeTokens["--qr-bg"]||"#f6f8f7"} 0 42%,${themeTokens["--qr-surface"]||"#fff"} 42% 70%,${themeTokens["--qr-primary"]||"#26734f"} 70%)`;return <button type="button" key={theme.id} className={Number(pendingThemeId === undefined ? page.theme_id : pendingThemeId)===Number(theme.id)?"active":""} onClick={()=>setPendingThemeId(theme.id)}><span style={{background:swatch}} /><b>{theme.name}</b><small>{Number(page.theme_id)===Number(theme.id)?"Activo":"Seleccionar"}</small></button>})}</div>{pendingThemeId!==undefined&&<nav><button type="button" onClick={()=>setPendingThemeId(undefined)}>Cancelar</button><button type="button" onClick={()=>applyTheme(pendingThemeId)}>Guardar tema</button></nav>}</div>
-      <div className="tags_directory_design_cards"><section><h3>Forma de los bloques</h3><p className="tags_directory_design_help">Aplicá un radio común a las secciones. El borde superior del encabezado y el inferior del footer permanecen rectos.</p><label>Radio general<select value={globalStyles.borderRadius||"12px"} onChange={event=>setGlobalStyles(current=>({...current,borderRadius:event.target.value}))}><option value="0px">Sin bordes redondeados</option><option value="8px">Sutil</option><option value="12px">Sobrio</option><option value="18px">Redondeado</option><option value="24px">Muy redondeado</option></select></label></section><section><h3>Encabezado</h3><div className="tags_directory_design_checks">{[["isVisible","Mostrar encabezado"],["showCover","Mostrar portada"],["showLogo","Mostrar logo"],["showName","Mostrar nombre"],["showLocation","Mostrar localidad"],["showMenu","Mostrar menú"]].map(([field,label])=><label key={field}><input type="checkbox" checked={headerConfig[field]!==false} onChange={event=>setHeaderConfig(current=>({...current,[field]:event.target.checked}))} />{label}</label>)}</div><label>Texto superior<input value={headerConfig.eyebrow||""} onChange={event=>setHeaderConfig(current=>({...current,eyebrow:event.target.value}))} /></label><label>Título personalizado<input value={headerConfig.title||""} onChange={event=>setHeaderConfig(current=>({...current,title:event.target.value}))} placeholder={profile?.display_name||""} /></label><label>Subtítulo<input value={headerConfig.subtitle||""} onChange={event=>setHeaderConfig(current=>({...current,subtitle:event.target.value}))} /></label><label>El menú mobile aparece desde<select value={headerConfig.drawerDirection||"right"} onChange={event=>setHeaderConfig(current=>({...current,drawerDirection:event.target.value}))}><option value="right">La derecha</option><option value="left">La izquierda</option><option value="top">Arriba</option><option value="bottom">Abajo</option></select></label></section>
+      <div className="tags_directory_design_cards"><section><h3>Forma y movimiento</h3><p className="tags_directory_design_help">Definí la forma de las secciones y cómo aparecen mientras el visitante recorre la página.</p><label>Radio general<select value={globalStyles.borderRadius||"12px"} onChange={event=>setGlobalStyles(current=>({...current,borderRadius:event.target.value}))}><option value="0px">Sin bordes redondeados</option><option value="8px">Sutil</option><option value="12px">Sobrio</option><option value="18px">Redondeado</option><option value="24px">Muy redondeado</option></select></label><label>Animación del contenido<select value={globalStyles.contentAnimation||"slide-up"} onChange={event=>setGlobalStyles(current=>({...current,contentAnimation:event.target.value}))}><option value="slide-up">Subiendo (predeterminada)</option><option value="fade">Aparecer suavemente</option><option value="slide-left">Entrar desde la derecha</option><option value="zoom">Acercamiento suave</option><option value="none">Sin animación</option></select></label></section><section><h3>Encabezado</h3><div className="tags_directory_design_checks">{[["isVisible","Mostrar encabezado"],["showCover","Mostrar portada"],["showLogo","Mostrar logo"],["showName","Mostrar nombre"],["showLocation","Mostrar localidad"],["showMenu","Mostrar menú"]].map(([field,label])=><label key={field}><input type="checkbox" checked={headerConfig[field]!==false} onChange={event=>setHeaderConfig(current=>({...current,[field]:event.target.checked}))} />{label}</label>)}</div><label>Texto superior<input value={headerConfig.eyebrow||""} onChange={event=>setHeaderConfig(current=>({...current,eyebrow:event.target.value}))} /></label><label>Título personalizado<input value={headerConfig.title||""} onChange={event=>setHeaderConfig(current=>({...current,title:event.target.value}))} placeholder={profile?.display_name||""} /></label><label>Subtítulo<input value={headerConfig.subtitle||""} onChange={event=>setHeaderConfig(current=>({...current,subtitle:event.target.value}))} /></label><label>El menú mobile aparece desde<select value={headerConfig.drawerDirection||"right"} onChange={event=>setHeaderConfig(current=>({...current,drawerDirection:event.target.value}))}><option value="right">La derecha</option><option value="left">La izquierda</option><option value="top">Arriba</option><option value="bottom">Abajo</option></select></label></section>
       <section><h3>Footer</h3><div className="tags_directory_design_checks">{[["showFooter","Mostrar footer"],["showLogo","Mostrar logo"],["showBusinessName","Mostrar nombre"],["showDescription","Mostrar descripción"],["showContact","Mostrar contacto"],["showSocialLinks","Mostrar redes"]].map(([field,label])=><label key={field}><input type="checkbox" checked={footerConfig[field]!==false} onChange={event=>setFooterConfig(current=>({...current,[field]:event.target.checked}))} />{label}</label>)}</div><label>Título personalizado<input value={footerConfig.title||""} onChange={event=>setFooterConfig(current=>({...current,title:event.target.value}))} /></label><label>Texto del footer<textarea value={footerConfig.text||""} onChange={event=>setFooterConfig(current=>({...current,text:event.target.value}))} /></label><label>Título de contacto<input value={footerConfig.contactTitle||""} onChange={event=>setFooterConfig(current=>({...current,contactTitle:event.target.value}))} /></label><label>Título de redes<input value={footerConfig.socialTitle||""} onChange={event=>setFooterConfig(current=>({...current,socialTitle:event.target.value}))} /></label></section></div>
     </section>}
 

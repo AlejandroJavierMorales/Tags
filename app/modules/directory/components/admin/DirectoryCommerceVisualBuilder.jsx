@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { FaArrowDown, FaArrowUp, FaCalendarDays, FaCommentDots, FaEye, FaEyeSlash, FaPen, FaRobot, FaStar, FaStore, FaUtensils } from "react-icons/fa6";
+import { FaCalendarDays, FaCommentDots, FaEye, FaEyeSlash, FaPen, FaRobot, FaStar, FaStore, FaUtensils } from "react-icons/fa6";
 import TagsSpinner from "@/app/components/TagsSpinner";
 import showAlert from "@/app/components/showAlert";
 import StoreBlockEditor from "@/app/modules/store/components/admin/builder/StoreBlockEditor";
@@ -75,12 +75,6 @@ export default function DirectoryCommerceVisualBuilder({businessId,pageId,web,on
   }
 
   function toggleModule(code){saveModules({...settings,[code]:{...settings[code],enabled:!settings[code].enabled}});}
-  function moveModule(code,direction){
-    const index=orderedCodes.indexOf(code),target=index+direction;if(index<0||target<0||target>=orderedCodes.length)return;
-    const next=[...orderedCodes];[next[index],next[target]]=[next[target],next[index]];
-    const changed={...settings};next.forEach((item,position)=>{changed[item]={...changed[item],sortOrder:1000+position*10};});
-    saveModules(changed);
-  }
   function saveReviewContent(code,content){setReviewEditor(null);saveModules({...settings,[code]:{...settings[code],content}});}
 
   async function toggleBlock(block){
@@ -97,11 +91,11 @@ export default function DirectoryCommerceVisualBuilder({businessId,pageId,web,on
   const source=data[active];
   return <div className="tags_directory_commerce_builder">
     {busy&&<div className="tags_directory_commerce_busy"><TagsSpinner /></div>}
-    <header><div><h2>Módulos incorporados</h2><p>Configurá la presentación dentro de la Web. Los datos y la operación se administran desde cada addon.</p></div></header>
+    <header><div><h2>Módulos incorporados</h2><p>Configurá la presentación dentro de la Web. Su posición se ordena junto con las demás secciones desde Contenido.</p></div></header>
     <div className="tags_directory_commerce_cards">
-      {orderedCodes.map((code,index)=>{const [Icon,title,subtitle]=MODULE_META[code];return <article className={settings[code].enabled?"is_enabled":""} key={code}>
+      {orderedCodes.map(code=>{const [Icon,title,subtitle]=MODULE_META[code];return <article className={settings[code].enabled?"is_enabled":""} key={code}>
         <Icon /><div><strong>{title}</strong><small>{subtitle}</small></div>
-        <div className="tags_directory_module_order"><button type="button" onClick={()=>moveModule(code,-1)} disabled={index===0} title="Subir"><FaArrowUp /></button><button type="button" onClick={()=>moveModule(code,1)} disabled={index===orderedCodes.length-1} title="Bajar"><FaArrowDown /></button>{code==="turnos"&&<button type="button" onClick={()=>setTurnosEditor(true)} title="Editar Reservas"><FaPen /></button>}{code.startsWith("reviews")&&<button type="button" onClick={()=>setReviewEditor(code)} title="Editar textos"><FaPen /></button>}</div>
+        <div className="tags_directory_module_order">{code==="turnos"&&<button type="button" onClick={()=>setTurnosEditor(true)} title="Editar Reservas"><FaPen /></button>}{code.startsWith("reviews")&&<button type="button" onClick={()=>setReviewEditor(code)} title="Editar textos"><FaPen /></button>}</div>
         <label><input type="checkbox" checked={settings[code].enabled} onChange={()=>toggleModule(code)} />Mostrar en la Web</label>
       </article>})}
     </div>

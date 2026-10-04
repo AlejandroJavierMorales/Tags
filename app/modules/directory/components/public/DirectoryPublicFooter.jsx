@@ -13,7 +13,7 @@ const FRIENDS = [
 
 export default function DirectoryPublicFooter({ site = { code: "calamuchitar", name: "CalamuchitAr" } }) {
   if (site.code !== "calamuchitar") {
-    return <footer className="tags_directory_platform_footer"><div className="tags_directory_footer_signature"><strong>{site.name}</strong><span>Plataforma Comercial</span><small>Desarrollado con Tags</small></div><div className="tags_directory_footer_legal">© {site.name} · Todos los derechos reservados</div></footer>;
+    return <footer className="tags_directory_platform_footer"><div className="tags_directory_footer_signature"><strong>{site.name}</strong><span>Plataforma Comercial</span><small>Desarrollado con Tags</small></div><nav className="tags_directory_footer_legal_links" aria-label="Información legal"><Link href="/politica-de-privacidad">Política de Privacidad</Link><Link href="/terminos-y-condiciones">Términos y Condiciones</Link><Link href="/gestion-de-datos">Gestión de datos</Link></nav><div className="tags_directory_footer_legal">© {site.name} · Todos los derechos reservados</div></footer>;
   }
   return <footer className="tags_directory_platform_footer">
     <div className="tags_directory_footer_main">
@@ -25,6 +25,7 @@ export default function DirectoryPublicFooter({ site = { code: "calamuchitar", n
     <section className="tags_directory_footer_associated"><h2>Sitios asociados</h2><div><a href="https://www.xn--cabaasenlosreartes-q0b.com.ar/" target="_blank" rel="noreferrer"><Image src="/directory/calamuchitar/footer/LogoCabanasEnLosReartes.png" alt="Cabañas en Los Reartes" width={220} height={80} sizes="(max-width: 700px) 40vw, 220px" /><span>Cabañas en Los Reartes</span></a><a href="https://tags.com.ar/" target="_blank" rel="noreferrer"><Image src="/logo_tags_qr.webp" alt="Tags.com.ar" width={220} height={80} sizes="(max-width: 700px) 40vw, 220px" /><span>Plataforma de Experiencias Digitales Inteligentes</span></a></div></section>
     <nav className="tags_directory_footer_products" aria-label="Nuestras soluciones"><h2>Nuestras soluciones</h2><div>{DIRECTORY_PRODUCT_LINKS.map(([slug, label]) => <Link href={`/experiencias-digitales/${slug}`} key={slug}>{label}</Link>)}</div></nav>
     <div className="tags_directory_footer_signature"><span>Desarrollado por</span><Image src="/directory/calamuchitar/LogoCalamuchitar.webp" alt="CalamuchitAr" width={250} height={70} sizes="250px" /><strong>La Plataforma Comercial de Calamuchita</strong><small>www.calamuchita.ar · 3546 562855</small></div>
+    <nav className="tags_directory_footer_legal_links" aria-label="Información legal"><Link href="/politica-de-privacidad">Política de Privacidad</Link><Link href="/terminos-y-condiciones">Términos y Condiciones</Link><Link href="/gestion-de-datos">Gestión y eliminación de datos</Link></nav>
     <div className="tags_directory_footer_legal">© CalamuchitAr® · Todos los derechos reservados</div>
   </footer>;
 }

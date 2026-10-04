@@ -30,7 +30,7 @@ function normalizeIcon(value) {
 function resolveActionUrl(url, audience) {
   const value = String(url || "/dashboard");
   if (/^https?:\/\//i.test(value)) return value;
-  if (audience !== "admin") return value;
+  if (!["admin", "platform_admin"].includes(audience)) return value;
   const platformOrigin = String(process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL_PROD || "").replace(/\/+$/, "");
   return platformOrigin ? `${platformOrigin}${value.startsWith("/") ? value : `/${value}`}` : value;
 }
@@ -71,9 +71,11 @@ export async function sendBusinessPush({ businessId, moduleCode, eventCode, enti
       eventId = existing?.id;
     }
     const resolvedIcon = await resolvePushIcon(businessId, moduleCode, icon);
-    const recipientFilter = audience === "guest"
-      ? " AND recipient_type='guest' AND recipient_id=?"
-      : ` AND recipient_type<>'guest'
+    const recipientFilter = audience === "platform_admin"
+      ? "recipient_type='platform_admin'"
+      : audience === "guest"
+        ? "business_id=? AND recipient_type='guest' AND recipient_id=?"
+        : `business_id=? AND recipient_type<>'guest' AND recipient_type<>'platform_admin'
           AND (recipient_type<>'business_staff' OR EXISTS(
             SELECT 1 FROM tags_business_staff st
             INNER JOIN tags_business_staff_app_access aa
@@ -82,8 +84,12 @@ export async function sendBusinessPush({ businessId, moduleCode, eventCode, enti
               AND st.business_id=tags_push_subscriptions.business_id
               AND st.status='active' AND aa.status='active'
           ))`;
-    const recipientParams = audience === "guest" ? [recipientId] : [];
-    const [subscriptions] = await db.query(`SELECT * FROM tags_push_subscriptions WHERE business_id=? AND status='active'${recipientFilter}`, [businessId, ...recipientParams]);
+    const recipientParams = audience === "platform_admin"
+      ? []
+      : audience === "guest"
+        ? [businessId, recipientId]
+        : [businessId];
+    const [subscriptions] = await db.query(`SELECT * FROM tags_push_subscriptions WHERE ${recipientFilter} AND status='active'`, recipientParams);
     let sent = 0;
     for (const subscription of subscriptions) {
       const [delivery] = await db.query("INSERT IGNORE INTO tags_notification_deliveries (event_id,push_subscription_id) VALUES (?,?)", [eventId, subscription.id]);

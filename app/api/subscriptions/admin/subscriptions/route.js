@@ -8,6 +8,7 @@ import { getRequestBaseUrl } from "@/app/lib/channelContext";
 import { db } from "@/app/lib/tags-db";
 import { sendMail } from "@/app/lib/sendMail";
 import { directoryEmailBranding, directoryEmailHeader } from "@/app/modules/directory/lib/directoryEmailBranding";
+import { sendBusinessPush } from "@/app/modules/notifications/server/sendBusinessPush";
 
 const escapeHtml = value => String(value || "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
 const jsonText = value => {
@@ -18,7 +19,7 @@ const jsonText = value => {
   try { return JSON.stringify(value); } catch { return "{}"; }
 };
 
-async function notifySubscriptionState({ businessId, planId, status, previousStatus }) {
+async function notifySubscriptionState({ businessId, planId, status, previousStatus, notifyClient = true }) {
   if (status === previousStatus || !["inactive", "active", "cancelled", "past_due"].includes(status)) return;
   const [[context]] = await db.query(`SELECT b.name,b.email,p.name plan_name,ds.name site_name,ds.primary_host,ds.brand_config FROM tags_businesses b INNER JOIN tags_plans p ON p.id=? LEFT JOIN tags_directory_listings l ON l.business_id=b.id LEFT JOIN tags_directory_site_listings sl ON sl.listing_id=l.id LEFT JOIN tags_directory_sites ds ON ds.id=sl.site_id WHERE b.id=? ORDER BY ds.id LIMIT 1`, [planId, businessId]);
   if (!context) return;
@@ -26,13 +27,13 @@ async function notifySubscriptionState({ businessId, planId, status, previousSta
   const stateText = status === "inactive" ? "Tu suscripción fue pausada. Los productos incluidos se encuentran momentáneamente fuera de servicio hasta su reactivación." : status === "active" ? "Tu suscripción fue reactivada y los productos incluidos vuelven a estar disponibles." : status === "past_due" ? "Tu suscripción registra un pago pendiente. Regularizá la situación para evitar la interrupción del servicio." : "Tu suscripción fue cancelada y los productos incluidos dejaron de estar disponibles.";
   const subject = `${status === "active" ? "Suscripción reactivada" : status === "past_due" ? "Pago pendiente" : "Suscripción pausada"} · ${brand.name}`;
   const html = `<div style="max-width:620px;margin:auto;font-family:Arial;color:#183226;border:1px solid #dce9e1;border-radius:16px;overflow:hidden">${directoryEmailHeader(brand, subject)}<main style="padding:24px"><p>Hola <strong>${escapeHtml(context.name)}</strong>,</p><p>${escapeHtml(stateText)}</p><p><strong>Plan:</strong> ${escapeHtml(context.plan_name)}</p></main></div>`;
-  if (context.email) await sendMail({ to: context.email, fromName: brand.name, fromEmail: brand.fromEmail, replyTo: brand.replyTo, subject, text: `${stateText} Plan: ${context.plan_name}.`, html });
+  if (notifyClient && context.email) await sendMail({ to: context.email, fromName: brand.name, fromEmail: brand.fromEmail, replyTo: brand.replyTo, subject, text: `${stateText} Plan: ${context.plan_name}.`, html });
   const [admins] = await db.query("SELECT email FROM tags_businesses WHERE role='admin' AND email IS NOT NULL");
   const recipients = [...new Set([brand.notificationEmail, ...admins.map(item => item.email)].filter(Boolean))];
   if (recipients.length) await sendMail({ to: recipients, fromName: brand.name, fromEmail: brand.fromEmail, replyTo: brand.replyTo, subject: `${subject} · ${context.name}`, text: `${context.name}: ${stateText}`, html });
 }
 
-async function notifySubscriptionChange({ businessId, planId, status, provider, amount, expiresAt, durationMonths, checkoutUrl }) {
+async function notifySubscriptionChange({ subscriptionId, businessId, planId, status, provider, amount, expiresAt, durationMonths, checkoutUrl, notifyClient = true }) {
   const [[context]] = await db.query(`SELECT b.name,b.email,p.name plan_name,ds.name site_name,ds.primary_host,ds.brand_config FROM tags_businesses b INNER JOIN tags_plans p ON p.id=? LEFT JOIN tags_directory_listings l ON l.business_id=b.id LEFT JOIN tags_directory_site_listings sl ON sl.listing_id=l.id LEFT JOIN tags_directory_sites ds ON ds.id=sl.site_id WHERE b.id=? ORDER BY ds.id LIMIT 1`, [planId, businessId]);
   if (!context) return;
   const brand = directoryEmailBranding(context.site_name ? { name: context.site_name, primary_host: context.primary_host, brand_config: context.brand_config } : { name: "Tags", primary_host: "tags.com.ar", brand_config: null });
@@ -44,10 +45,24 @@ async function notifySubscriptionChange({ businessId, planId, status, provider, 
   const paymentLink = checkoutUrl ? `<p><a href="${escapeHtml(checkoutUrl)}" style="display:inline-block;padding:12px 18px;border-radius:8px;background:#168b58;color:#fff;text-decoration:none;font-weight:700">Continuar con el pago</a></p>` : "";
   const text = `Plan: ${context.plan_name}. Estado: ${stateLabel}. Modalidad: ${providerLabel}. Importe: ARS ${Number(amount || 0).toLocaleString("es-AR")}. Duración: ${durationMonths || 1} meses. Vencimiento: ${expiryLabel}.${checkoutUrl ? ` Pago online: ${checkoutUrl}` : ""}`;
   const html = `<div style="max-width:620px;margin:auto;font-family:Arial;color:#183226;border:1px solid #dce9e1;border-radius:16px;overflow:hidden">${directoryEmailHeader(brand, "Actualización de suscripción")}<main style="padding:24px"><p>Hola <strong>${escapeHtml(context.name)}</strong>,</p><p>La suscripción fue actualizada.</p><p><strong>Plan:</strong> ${escapeHtml(context.plan_name)}<br><strong>Estado:</strong> ${escapeHtml(stateLabel)}<br><strong>Modalidad:</strong> ${escapeHtml(providerLabel)}<br><strong>Importe:</strong> ARS ${Number(amount || 0).toLocaleString("es-AR")}<br><strong>Duración:</strong> ${durationMonths || 1} meses<br><strong>Vencimiento:</strong> ${expiryLabel}</p>${manual}${paymentLink}</main></div>`;
-  if (context.email) await sendMail({ to: context.email, fromName: brand.name, fromEmail: brand.fromEmail, replyTo: brand.replyTo, subject, text, html });
+  if (notifyClient && context.email) await sendMail({ to: context.email, fromName: brand.name, fromEmail: brand.fromEmail, replyTo: brand.replyTo, subject, text, html });
   const [admins] = await db.query("SELECT email FROM tags_businesses WHERE role='admin' AND email IS NOT NULL");
   const recipients = [...new Set([brand.notificationEmail, ...admins.map(item => item.email)].filter(Boolean))];
   if (recipients.length) await sendMail({ to: recipients, fromName: brand.name, fromEmail: brand.fromEmail, replyTo: brand.replyTo, subject: `${subject} · Plataforma`, text, html });
+  await sendBusinessPush({
+    businessId,
+    moduleCode: "subscriptions",
+    eventCode: "subscription.updated",
+    entityType: "subscription",
+    entityId: subscriptionId,
+    title: "Suscripción actualizada",
+    body: `${context.name} · ${context.plan_name} · ${stateLabel}`,
+    url: "/dashboard/subscriptions-center",
+    icon: brand.logo,
+    payload: { subscriptionId, businessId, status, amount, expiresAt },
+    idempotencyKey: `subscription:${subscriptionId}:updated:${Date.now()}:platform-admin`,
+    audience: "platform_admin"
+  });
 }
 
 export async function POST(req) {
@@ -82,6 +97,7 @@ export async function PUT(req) {
   const requestedPlanId = Number(body?.planId || 0);
   const requestedProvider = ["manual", "transfer", "mercadopago"].includes(String(body?.paymentProvider)) ? String(body.paymentProvider) : null;
   const requestedDuration = Number(body?.durationMonths) >= 1 && Number(body?.durationMonths) <= 12 ? Number(body.durationMonths) : null;
+  const notifyClient = body?.notifyClient !== false;
   if (!id || !allowedStatuses.has(status) || !Number.isFinite(amount) || amount < 0) {
     return Response.json({ ok: false, error: "Suscripción, estado e importe son obligatorios" }, { status: 400 });
   }
@@ -165,9 +181,9 @@ export async function PUT(req) {
       const mp = await ensureMercadoPagoSubscription(id, origin);
       checkoutUrl = mp?.init_point || null;
     }
-    await notifySubscriptionState(changedSubscription).catch(error => console.error("SUBSCRIPTION STATE NOTIFICATION ERROR", error));
-    await notifySubscriptionChange({ businessId: subscription.business_id, planId: effectivePlanId, status, provider: effectiveProvider, amount, expiresAt, durationMonths: effectiveDuration, checkoutUrl }).catch(error => console.error("SUBSCRIPTION CHANGE NOTIFICATION ERROR", error));
-    return Response.json({ ok: true, planId: effectivePlanId, paymentProvider: effectiveProvider, durationMonths: effectiveDuration, checkoutUrl });
+    await notifySubscriptionState({ ...changedSubscription, notifyClient }).catch(error => console.error("SUBSCRIPTION STATE NOTIFICATION ERROR", error));
+    await notifySubscriptionChange({ subscriptionId: id, businessId: subscription.business_id, planId: effectivePlanId, status, provider: effectiveProvider, amount, expiresAt, durationMonths: effectiveDuration, checkoutUrl, notifyClient }).catch(error => console.error("SUBSCRIPTION CHANGE NOTIFICATION ERROR", error));
+    return Response.json({ ok: true, planId: effectivePlanId, paymentProvider: effectiveProvider, durationMonths: effectiveDuration, checkoutUrl, clientNotified: notifyClient });
   } catch (error) {
     await conn.rollback();
     console.error("SUBSCRIPTION CENTER UPDATE ERROR", error);

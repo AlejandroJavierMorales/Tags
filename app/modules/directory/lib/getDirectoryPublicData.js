@@ -230,6 +230,33 @@ export async function getDirectoryListingBySlug(slug, siteCode = "calamuchitar")
   };
 }
 
+export async function getDirectoryCurrentSlugFromHistory(slug, siteCode = "calamuchitar") {
+  try {
+    const [rows] = await db.execute(
+      `SELECT current_listing.slug
+         FROM tags_directory_slug_redirects history
+         INNER JOIN tags_directory_sites site
+           ON site.id=history.site_id AND site.code=? AND site.is_active=1
+         INNER JOIN tags_directory_site_listings current_listing
+           ON current_listing.site_id=history.site_id
+          AND current_listing.listing_id=history.listing_id
+          AND current_listing.publication_status='published'
+         INNER JOIN tags_directory_listings listing
+           ON listing.id=history.listing_id AND listing.status='published'
+        WHERE history.old_slug=?
+          AND current_listing.slug<>history.old_slug
+        LIMIT 1`,
+      [siteCode, slug]
+    );
+    return rows[0]?.slug || null;
+  } catch (error) {
+    // El despliegue del codigo no rompe rutas publicas si la migracion
+    // todavia no fue ejecutada. El cambio de slug si queda bloqueado.
+    if (error?.code === "ER_NO_SUCH_TABLE") return null;
+    throw error;
+  }
+}
+
 export async function getDirectorySiteCodeByHost(rawHost) {
   const host = String(rawHost || "").toLowerCase().split(":")[0].replace(/^www\./, "");
   if (!host || host === "localhost") return "calamuchitar";

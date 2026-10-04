@@ -6,7 +6,11 @@ import { accessTokenForBusiness, getGoogleLocation, logGoogleAction, updateGoogl
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const MASK_FIELDS = ["title", "phoneNumbers", "websiteUri", "profile", "categories", "storefrontAddress", "latlng", "regularHours", "specialHours"];
+const MASK_FIELDS = ["title", "phoneNumbers", "websiteUri", "profile", "categories", "storefrontAddress", "latlng", "regularHours", "specialHours", "serviceItems"];
+
+function availableFields(preview, current) {
+    return MASK_FIELDS.filter(field => preview[field] != null && (field !== "serviceItems" || current?.metadata?.canModifyServiceList === true));
+}
 
 export async function GET(request) {
     try {
@@ -19,7 +23,7 @@ export async function GET(request) {
             buildGoogleLocationPayload(businessId, { requireCategory: false }),
             getGoogleLocation(accessToken, connection.google_location_name)
         ]);
-        return Response.json({ ok: true, preview, current, fields: MASK_FIELDS.filter(field => preview[field] != null) });
+        return Response.json({ ok: true, preview, current, fields: availableFields(preview, current) });
     } catch (error) { return googleBusinessError(error); }
 }
 
@@ -32,9 +36,12 @@ export async function POST(request) {
         if (!access.allowed) return googleBusinessError(access);
         const { connection, accessToken } = await accessTokenForBusiness(businessId);
         if (!connection.google_location_name) return Response.json({ ok: false, error: "Selecciona primero un perfil de Google" }, { status: 400 });
-        const location = await buildGoogleLocationPayload(businessId, { requireCategory: false });
+        const [location, current] = await Promise.all([
+            buildGoogleLocationPayload(businessId, { requireCategory: false }),
+            getGoogleLocation(accessToken, connection.google_location_name)
+        ]);
         const requestedFields = Array.isArray(body?.fields) ? body.fields : [];
-        const selectedFields = MASK_FIELDS.filter(field => requestedFields.includes(field) && location[field] != null);
+        const selectedFields = availableFields(location, current).filter(field => requestedFields.includes(field));
         if (!selectedFields.length) return Response.json({ ok: false, error: "Selecciona al menos un dato para sincronizar" }, { status: 400 });
         const selectedLocation = Object.fromEntries(selectedFields.map(field => [field, location[field]]));
         const mask = selectedFields.join(",");

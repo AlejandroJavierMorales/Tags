@@ -5,11 +5,28 @@ import { db } from "@/app/lib/tags-db";
 import { requireQRPageAccess } from "@/app/modules/qr-page/lib/requireQRPageAccess";
 import { getDirectoryWebPageData } from "@/app/modules/directory/lib/getDirectoryWebPageData";
 import { DIRECTORY_MODULE_CODES, getDirectoryModuleSettings } from "@/app/modules/directory/lib/directoryModuleSettings";
+import { normalizeDirectorySectionGroups } from "@/app/modules/directory/lib/directorySectionGroups";
 
 function parse(value) {
     if (!value) return {};
     if (typeof value === "object") return value;
     try { return JSON.parse(value); } catch { return {}; }
+}
+
+const LAYOUT_MODULES = new Set(["store", "resto", "turnos", "reviewsInvitation", "reviewsSlider"]);
+
+function normalizeLayoutOrder(value, groupIds = new Set(), sectionIds = new Set()) {
+    if (!Array.isArray(value)) return null;
+    const seen = new Set();
+    return value.slice(0, 100).map(item => String(item || "").trim()).filter(item => {
+        const validSection = /^section:\d+$/.test(item) && sectionIds.has(Number(item.slice(8)));
+        const validModule = item.startsWith("module:") && LAYOUT_MODULES.has(item.slice(7));
+        const validGroup = item.startsWith("group:") && groupIds.has(item.slice(6));
+        if (!validSection && !validModule && !validGroup) return false;
+        if (seen.has(item)) return false;
+        seen.add(item);
+        return true;
+    });
 }
 
 async function pageFor(businessId, pageId) {
@@ -52,7 +69,18 @@ export async function POST(request) {
         };
         return result;
     }, {});
-    const nextStyles = { ...globalStyles, directoryModules: modules };
+    const [sectionRows] = await db.query("SELECT id FROM tags_qr_page_sections WHERE page_id=?", [pageId]);
+    const allowedSectionIds = new Set(sectionRows.map(row => Number(row.id)));
+    const sectionGroups = body.sectionGroups === undefined
+        ? normalizeDirectorySectionGroups(globalStyles.directorySectionGroups, allowedSectionIds)
+        : normalizeDirectorySectionGroups(body.sectionGroups, allowedSectionIds);
+    const requestedLayout = normalizeLayoutOrder(body.layoutOrder, new Set(sectionGroups.map(group => group.id)), allowedSectionIds);
+    const nextStyles = {
+        ...globalStyles,
+        directoryModules: modules,
+        directorySectionGroups: sectionGroups,
+        ...(requestedLayout ? { directoryLayoutOrder: requestedLayout } : {})
+    };
     await db.query("UPDATE tags_qr_pages SET global_styles=?,updated_at=NOW() WHERE id=? AND business_id=? AND page_type='directory'", [JSON.stringify(nextStyles), pageId, businessId]);
     return Response.json({ ok: true, modules, globalStyles: nextStyles });
 }

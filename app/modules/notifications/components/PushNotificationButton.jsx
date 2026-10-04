@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { FaBell } from "react-icons/fa6";
 import showAlert from "@/app/components/showAlert";
 import "./PushNotificationButton.css";
@@ -11,30 +11,48 @@ function keyBytes(value) {
   return Uint8Array.from([...raw].map(char => char.charCodeAt(0)));
 }
 
-export default function PushNotificationButton({ businessId }) {
+export default function PushNotificationButton({ businessId, platformAdmin = false }) {
   const [state, setState] = useState("checking");
+  const endpoint = platformAdmin ? "/api/notifications/push/platform-subscriptions" : "/api/notifications/push/subscriptions";
+
+  const registerSubscription = useCallback(async subscription => {
+    const response = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ businessId, subscription: subscription.toJSON() }) });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.error || "No se pudo registrar este dispositivo.");
+  }, [businessId, endpoint]);
+
   useEffect(() => {
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) return setState("unsupported");
-    navigator.serviceWorker.register("/dashboard-sw.js", { scope: "/dashboard/" }).then(() => navigator.serviceWorker.ready).then(registration => registration.pushManager.getSubscription()).then(subscription => setState(subscription ? "active" : "available")).catch(() => setState("available"));
-  }, []);
+    navigator.serviceWorker.register("/dashboard-sw.js", { scope: "/dashboard/" })
+      .then(() => navigator.serviceWorker.ready)
+      .then(registration => registration.pushManager.getSubscription())
+      .then(async subscription => {
+        if (!subscription) return setState("available");
+        if (platformAdmin) await registerSubscription(subscription);
+        setState("active");
+      })
+      .catch(() => setState("available"));
+  }, [platformAdmin, registerSubscription]);
 
   async function enable() {
     try {
       const permission = await Notification.requestPermission();
       if (permission !== "granted") return setState("denied");
-      const configResponse = await fetch(`/api/notifications/push/subscriptions?businessId=${businessId}`, { cache: "no-store" });
+      const configResponse = await fetch(`${endpoint}${platformAdmin ? "" : `?businessId=${businessId}`}`, { cache: "no-store" });
       const config = await configResponse.json();
       if (!configResponse.ok || !config.publicKey) throw new Error("Faltan las claves Web Push de la plataforma.");
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(config.publicKey) });
-      const response = await fetch("/api/notifications/push/subscriptions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ businessId, subscription: subscription.toJSON() }) });
-      const result = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(result.error || "No se pudo registrar este dispositivo.");
+      await registerSubscription(subscription);
       setState("active");
-      await showAlert({ title: "Notificaciones activadas", text: "Este dispositivo recibirá los avisos de las herramientas del negocio.", icon: "success" });
+      await showAlert({ title: "Notificaciones activadas", text: platformAdmin ? "Este dispositivo recibirá los avisos del Centro de Suscripciones." : "Este dispositivo recibirá los avisos de las herramientas del negocio.", icon: "success" });
     } catch (error) { await showAlert({ title: "No se pudieron activar", text: error.message, icon: "error" }); }
   }
 
-  const detail = state === "active" ? "Este dispositivo recibirá avisos de Turnos, Mi Estadía, Tienda, Resto y Reseñas." : state === "unsupported" ? "Este navegador no admite notificaciones Web Push." : state === "denied" ? "El permiso está bloqueado en la configuración del navegador." : "Activá los avisos en este celular o computadora.";
+  const detail = state === "active"
+    ? platformAdmin ? "Este dispositivo recibirá avisos administrativos de altas y cambios de suscripciones." : "Este dispositivo recibirá avisos de Turnos, Mi Estadía, Tienda, Resto y Reseñas."
+    : state === "unsupported" ? "Este navegador no admite notificaciones Web Push."
+      : state === "denied" ? "El permiso está bloqueado en la configuración del navegador."
+        : platformAdmin ? "Activá en este teléfono los avisos del Centro de Suscripciones." : "Activá los avisos en este celular o computadora.";
   return <section className="tags_push_notification_setting"><div><FaBell /><span><strong>Notificaciones en este dispositivo</strong><small>{detail}</small></span></div><button className={`tags_push_notification_button is_${state}`} type="button" disabled={["checking","active","unsupported","denied"].includes(state)} onClick={enable}>{state === "active" ? "Activadas" : state === "unsupported" ? "No compatible" : state === "denied" ? "Permiso bloqueado" : state === "checking" ? "Verificando..." : "Activar notificaciones"}</button></section>;
 }

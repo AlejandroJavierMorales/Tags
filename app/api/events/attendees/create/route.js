@@ -100,7 +100,6 @@ export async function POST(req) {
 
         const {
             event_id,
-            business_id,
             name,
             email,
             phone
@@ -258,7 +257,7 @@ export async function POST(req) {
                 : process.env.NEXT_PUBLIC_BASE_URL_PROD;
 
         const finalUrl =
-            `${base}/e/invite/${qrToken}`;
+            `${base}/e/access/${qrToken}`;
 
         // =========================
         // CREATE QR
@@ -268,8 +267,6 @@ export async function POST(req) {
             await createQr({
 
                 business_id:
-                    business_id
-                    ||
                     session.businessId,
 
                 product_id:

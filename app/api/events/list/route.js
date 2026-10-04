@@ -1,69 +1,75 @@
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
 import { db } from "@/app/lib/tags-db";
+import { eventAccessError, requireEventSession } from "@/app/modules/e-events/lib/eventApiAccess";
 
 export async function GET(req) {
+    const access =
+        await requireEventSession();
+
+    if (!access.ok) return eventAccessError(access);
+    if (access.isStaff) {
+        return eventAccessError({
+            status: 403,
+            error: "Usá el listado de eventos asignados"
+        });
+    }
 
     try {
-
         const { searchParams } =
             new URL(req.url);
 
         const search =
-            searchParams.get("search");
+            String(
+                searchParams.get("search")
+                || ""
+            ).trim();
 
         const status =
-            searchParams.get("status");
+            String(
+                searchParams.get("status")
+                || ""
+            ).trim();
 
-        let sql = `
-            SELECT *
-            FROM tags_events
-            WHERE 1=1
-        `;
-
+        const conditions = ["1=1"];
         const params = [];
 
+        if (!access.isPlatformAdmin) {
+            conditions.push("business_id = ?");
+            params.push(access.businessId);
+        }
+
         if (search) {
-
-            sql += `
-                AND name LIKE ?
-            `;
-
+            conditions.push("name LIKE ?");
             params.push(`%${search}%`);
         }
 
         if (status) {
-
-            sql += `
-                AND status = ?
-            `;
-
+            conditions.push("status = ?");
             params.push(status);
         }
 
-        sql += `
-            ORDER BY id DESC
-        `;
-
         const [rows] =
-            await db.query(sql, params);
+            await db.query(
+                `
+                SELECT *
+                FROM tags_events
+                WHERE ${conditions.join(" AND ")}
+                ORDER BY id DESC
+                `,
+                params
+            );
 
         return Response.json({
             ok: true,
             data: rows
         });
-
-    } catch (err) {
-
-        console.log(err);
-
+    } catch (error) {
+        console.error("EVENT LIST ERROR", error);
         return Response.json(
-            {
-                error: "Error interno"
-            },
-            {
-                status: 500
-            }
+            { error: "No se pudieron cargar los eventos" },
+            { status: 500 }
         );
     }
 }

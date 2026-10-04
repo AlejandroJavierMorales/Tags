@@ -1,8 +1,7 @@
 import { cookies } from "next/headers";
-import { db } from "@/app/lib/tags-db";
+import { verifyTagsSession } from "@/app/lib/signTagsSession";
 
 export async function getEventSession() {
-
     const cookieStore =
         cookies();
 
@@ -11,7 +10,18 @@ export async function getEventSession() {
             "tags_session"
         );
 
-    if (!cookie) {
+    const signature =
+        cookieStore.get(
+            "tags_session_sig"
+        )?.value || "";
+
+    if (
+        !cookie?.value
+        || !verifyTagsSession(
+            cookie.value,
+            signature
+        )
+    ) {
 
         return null;
     }
@@ -21,10 +31,19 @@ export async function getEventSession() {
     try {
 
         session =
-            JSON.parse(cookie.value);
+            JSON.parse(
+                cookie.value
+            );
 
     } catch {
 
+        return null;
+    }
+
+    if (
+        !session
+        || typeof session !== "object"
+    ) {
         return null;
     }
 

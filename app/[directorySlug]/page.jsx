@@ -11,6 +11,7 @@ import DirectoryProviderRenderer from "@/app/modules/directory/components/public
 import DirectoryEmbeddedStore from "@/app/modules/directory/components/public/DirectoryEmbeddedStore";
 import DirectoryEmbeddedResto from "@/app/modules/directory/components/public/DirectoryEmbeddedResto";
 import DirectoryEmbeddedTurnos from "@/app/modules/directory/components/public/DirectoryEmbeddedTurnos";
+import DirectoryEventsBlock from "@/app/modules/directory/components/public/DirectoryEventsBlock";
 import { getDirectoryCurrentSlugFromHistory, getDirectoryListingBySlug, getDirectorySiteCodeByHost } from "@/app/modules/directory/lib/getDirectoryPublicData";
 import { getDirectoryWebPageData } from "@/app/modules/directory/lib/getDirectoryWebPageData";
 import { getPublicEntitlement } from "@/app/modules/subscriptions/lib/publicEntitlement";
@@ -77,6 +78,8 @@ export async function generateMetadata({ params }) {
     return portal ? { title: portal.title, description: portal.description || undefined } : {};
   }
   const sitemapContext = await getPublicSitemapContext();
+  const entitlement = await getPublicEntitlement(data.listing.business_id, "directory");
+  const serviceAvailable = data.listing.publication_status === "published" && Number(data.listing.is_free) === 0 && entitlement.allowed;
   const web = await getDirectoryWebPageData(data.listing.qr_page_id);
   const page = web?.page;
   const requestHeaders = await headers();
@@ -91,8 +94,8 @@ export async function generateMetadata({ params }) {
   const seoImage = page?.seo_image_og_url || page?.seo_image_url || data.listing.business_cover_url || data.listing.business_logo_url || null;
   const pageAllowsIndex = page?.robots_index == null || Number(page.robots_index) === 1;
   const pageAllowsFollow = page?.robots_follow == null || Number(page.robots_follow) === 1;
-  const shouldIndex = !sitemapContext.isTags && pageAllowsIndex;
-  const shouldFollow = !sitemapContext.isTags && pageAllowsFollow;
+  const shouldIndex = serviceAvailable && !sitemapContext.isTags && pageAllowsIndex;
+  const shouldFollow = serviceAvailable && !sitemapContext.isTags && pageAllowsFollow;
   return {
     metadataBase: new URL(sitemapContext.baseUrl),
     ...(favicon ? { icons: { icon: [{ url: favicon }], shortcut: [{ url: favicon }], apple: [{ url: favicon }] } } : {}),
@@ -137,7 +140,8 @@ export default async function DirectoryStandaloneProviderPage({ params, searchPa
     notFound();
   }
   const entitlement = await getPublicEntitlement(data.listing.business_id, "directory");
-  if (!entitlement.allowed) return <PublicServicePaused businessName={data.listing.display_name} />;
+  const serviceAvailable = data.listing.publication_status === "published" && Number(data.listing.is_free) === 0 && entitlement.allowed;
+  if (!serviceAvailable) return <PublicServicePaused businessName={data.listing.display_name} />;
   const web = await getDirectoryWebPageData(data.listing.qr_page_id);
   const modules = web?.page?.global_styles?.directoryModules || {};
   const { internal, trail } = getInternalNavigation(query);
@@ -173,6 +177,10 @@ export default async function DirectoryStandaloneProviderPage({ params, searchPa
       embeddedTurnosName={modules.turnos?.content?.menuLabel || (web?.embeddedTurnos?.length === 1 ? web.embeddedTurnos[0].name : "Reservas")}
       embeddedTurnosContent={web?.embeddedTurnos?.length && modules.turnos?.enabled !== false
         ? <DirectoryEmbeddedTurnos apps={web.embeddedTurnos} returnUrl={`${returnUrl}#directory-section-turnos`} presentation={modules.turnos?.content} />
+        : null}
+      embeddedEventsName={modules.events?.content?.menuLabel || "Eventos"}
+      embeddedEventsContent={web?.embeddedEvents?.length && modules.events?.enabled !== false
+        ? <DirectoryEventsBlock events={web.embeddedEvents} listingSlug={data.listing.slug} content={modules.events?.content} />
         : null}
     />
     {internal && <DirectoryPublicFooter site={site} />}

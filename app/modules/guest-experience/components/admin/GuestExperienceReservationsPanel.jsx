@@ -17,8 +17,9 @@ const EMPTY = { firstName: "", lastName: "", documentNumber: "", email: "", phon
 const plusDay = value => { const date = new Date(`${value}T12:00:00`); date.setDate(date.getDate() + 1); return date.toISOString().slice(0, 10); };
 const localDay = value => new Date(`${String(value||"").slice(0,10)}T12:00:00`);
 const communicationName = code => code==="arrival_reminder_24h" ? "Recordatorio de ingreso · 24 horas" : code==="arrival_reminder" ? "Recordatorio de ingreso · 48 horas" : code==="access_link" ? "Acceso a Mi Estadía" : code;
+const money = (value,currency="ARS") => new Intl.NumberFormat("es-AR",{style:"currency",currency,maximumFractionDigits:2}).format(Number(value||0));
 
-export default function GuestExperienceReservationsPanel({ data, busy, onCreate, onUpdate, onDelete, onInvite, onDeleteCommunication, onCheckout, overlayOnly=false, stayId=0, onClose, canManage=true, canCheckin=true }) {
+export default function GuestExperienceReservationsPanel({ data, busy, onCreate, onUpdate, onDelete, onInvite, onDeleteCommunication, onCheckout, onDataChanged, overlayOnly=false, stayId=0, onClose, canManage=true, canCheckin=true }) {
     const [form, setForm] = useState(EMPTY), [open, setOpen] = useState(false), [selected, setSelected] = useState(null), [editingId,setEditingId]=useState(null), [visibleRange,setVisibleRange]=useState(null);
     function changeStart(value) { setForm(current => ({ ...current, startsAt: value, endsAt: !current.endsAt || current.endsAt <= value ? plusDay(value) : current.endsAt })); }
     const defaultDeposit=Number(data.app.settings?.depositPercentage||0);
@@ -47,8 +48,10 @@ export default function GuestExperienceReservationsPanel({ data, busy, onCreate,
         <div className="tags_guest_reservations_list">{listedStays.map(item => <article key={item.id}>
 <div>
 <strong>{item.guest_name}</strong>
+{item.status==="active"&&<span className="tags_guest_stay_in_progress">Estadía en curso</span>}
 <span>{item.unit_name} · {new Date(item.starts_at).toLocaleDateString("es-AR")} al {new Date(item.ends_at).toLocaleDateString("es-AR")}</span>
 <small>DNI {item.document_number || "sin informar"} · {item.guest_phone} · {item.guest_email} · {item.stay_code}</small>
+{Number(item.account_balance||0)>0.009&&<div className="tags_guest_reservation_balance"><span>Abonado <strong>{money(item.paid_total,item.currency)}</strong></span><span>Saldo pendiente <strong>{money(item.account_balance,item.currency)}</strong></span><button type="button" onClick={()=>setSelected(item)}>Ver detalle</button></div>}
 </div>
 <div className="tags_guest_reservation_list_actions">
 {canManage&&<><button title="Enviar acceso por email" onClick={() => onInvite(item, "email")}>
@@ -112,6 +115,7 @@ export default function GuestExperienceReservationsPanel({ data, busy, onCreate,
 <div>
 <span>RESERVA {selected.stay_code}</span>
 <h2>{selected.guest_name}</h2>
+{selected.status==="active"&&<span className="tags_guest_stay_in_progress">Estadía en curso</span>}
 </div>
 <button type="button" aria-label="Cerrar" onClick={closeDetail}>
 <FaXmark />
@@ -161,7 +165,7 @@ export default function GuestExperienceReservationsPanel({ data, busy, onCreate,
 {canCheckin&&!["active","checked_out"].includes(selected.status)&&<button className="tags_guest_reservation_checkin" type="button" onClick={()=>{sessionStorage.setItem("tags_guest_checkin_stay",String(selected.id));window.dispatchEvent(new CustomEvent("tags-guest-open-checkin",{detail:selected.id}));setSelected(null)}}>Hacer / confirmar check-in</button>}
 {canManage&&!["active","checked_out"].includes(selected.status)&&<button className={`tags_guest_reservation_reminder ${reminderReady(selected)?"is_ready":""}`} disabled={!reminderReady(selected)} type="button" onClick={()=>onInvite(selected,"reminder")}><FaBell/> {selected.last_reminder_sent_at?`Último recordatorio: ${new Date(selected.last_reminder_sent_at).toLocaleString("es-AR")}`:"Enviar recordatorio de ingreso"}</button>}
 {canManage&&!["active","checked_out"].includes(selected.status)&&<><button className="tags_guest_reservation_edit" type="button" onClick={()=>editReservation(selected)}>Modificar reserva</button><button className="tags_guest_reservation_delete" type="button" onClick={()=>deleteReservation(selected)}>Eliminar reserva</button></>}
-<GuestExperienceAccountPanel businessId={data.app.business_id} guestAppId={data.app.id} stayId={selected.id}/>
+<GuestExperienceAccountPanel businessId={data.app.business_id} guestAppId={data.app.id} stayId={selected.id} onChanged={onDataChanged}/>
 </section>
 </div>}
     </section>;

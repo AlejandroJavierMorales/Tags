@@ -51,6 +51,9 @@ export async function GET(req) {
         [serviceId, app.id]
     );
     const service = serviceRows[0];
+    let serviceSettings = {};
+    try { serviceSettings = typeof service?.settings_json === "string" ? JSON.parse(service.settings_json || "{}") : service?.settings_json || {}; } catch {}
+    const isClubClass = serviceSettings?.sports?.activityKind === "class";
     if (!service || (!adminRequest && !publicBookingAllowed(service))) return jsonResponseError("Este servicio no está disponible", 403, "BOOKING_DISABLED");
     const durationMinutes = service.booking_mode === "rental" ? Math.max(15, Math.min(1440, Number(params.get("durationMinutes") || service.duration_minutes))) : Number(service.duration_minutes);
     const [locationRows] = await db.query(
@@ -90,6 +93,7 @@ export async function GET(req) {
         [app.id, ...activeStatuses, endDay, startDay]
     );
     const [exceptions] = await db.query(`SELECT scope_type,scope_id,starts_at,ends_at FROM tags_turnos_schedule_exceptions WHERE turnos_id=? AND exception_type='closed' AND starts_at<? AND ends_at>?`, [app.id,endDay,startDay]);
+    const [coachAvailability] = isClubClass ? await db.query(`SELECT a.*,c.resource_id coach_resource_id FROM tags_club_coach_availability a INNER JOIN tags_club_coaches c ON c.id=a.coach_id AND c.status='active' INNER JOIN tags_sports_apps sa ON sa.id=a.sports_app_id WHERE sa.turnos_id=? AND a.is_active=1`, [app.id]) : [[]];
     const [directBookings] = await db.query(
         `SELECT starts_at, ends_at, status FROM tags_turnos_bookings
          WHERE turnos_id = ? AND service_id = ? AND location_id = ?
@@ -141,9 +145,10 @@ export async function GET(req) {
                 let status = "available";
                 const outsidePolicy = !adminRequest && (time.getTime() < Date.now() + Math.max(0, Number(service.min_notice_minutes || 0)) * 60000 || time.getTime() > Date.now() + Math.max(1, Number(service.max_advance_days || 90)) * 86400000);
                 if (requirements.length) {
+                    const availablePairs = coachAvailability.filter(item => Number(item.weekday) === weekday && (!item.valid_from || day >= String(item.valid_from).slice(0,10)) && (!item.valid_until || day <= String(item.valid_until).slice(0,10)) && start >= dateTime(day,item.start_time) && end <= dateTime(day,item.end_time));
                     for (const requirement of requirements) {
                         let remaining = requestedQuantity * Math.max(1, Number(requirement.quantity_required || 1));
-                        const candidates = resourceRows.filter(resource => Number(resource.resource_type_id) === Number(requirement.resource_type_id) && (!requestedResourceId || Number(requirement.resource_type_id) !== Number(requestedResource.resource_type_id) || Number(resource.id) === requestedResourceId) && scheduleAllows(resource));
+                        const candidates = resourceRows.filter(resource => Number(resource.resource_type_id) === Number(requirement.resource_type_id) && (!requestedResourceId || Number(requirement.resource_type_id) !== Number(requestedResource.resource_type_id) || Number(resource.id) === requestedResourceId) && (!isClubClass || (requirement.resource_type_code === "coach" ? availablePairs.some(pair=>Number(pair.coach_resource_id)===Number(resource.id)) : requirement.resource_type_code === "court" ? availablePairs.some(pair=>Number(pair.court_resource_id)===Number(resource.id) && (!requestedResourceId || Number(requestedResource?.resource_type_id)===Number(requirement.resource_type_id) || Number(pair.coach_resource_id)===requestedResourceId)) : true)) && scheduleAllows(resource));
                         const capacities = candidates.map(resource => {
                             const used = booked.filter(item => Number(item.resource_id) === Number(resource.id) && new Date(item.starts_at) < end && new Date(item.ends_at) > start).reduce((sum, item) => sum + Math.max(1, Number(item.units || 1)), 0);
                             return { resource, free: Math.max(0, Math.max(1, Number(resource.capacity || 1)) - used) };

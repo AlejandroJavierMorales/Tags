@@ -2,7 +2,9 @@
 
 export default function EventOwnerHeader({
 
-    session
+    session,
+    productMode = "pro",
+    branding = null
 
 }) {
 
@@ -80,8 +82,8 @@ export default function EventOwnerHeader({
                 >
 
                     <img
-                        src="/logo_tags_transparente.webp"
-                        alt="Tags"
+                        src={branding?.logoUrl || "/logo_tags_transparente.webp"}
+                        alt={branding?.name || "Tags"}
 
                         style={{
 
@@ -115,7 +117,7 @@ export default function EventOwnerHeader({
                         }}
                     >
 
-                        Tags eEvents
+                        {productMode === "simple" ? "Eventos" : "Eventos Pro"}
 
                     </div>
 
@@ -136,7 +138,7 @@ export default function EventOwnerHeader({
                         }}
                     >
 
-                        Gestión de Eventos con Códigos QR
+                        {productMode === "simple" ? "Inscripciones, pagos y acreditación" : "Gestión integral de eventos con códigos QR"}
 
                     </div>
 

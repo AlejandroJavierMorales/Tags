@@ -203,7 +203,9 @@ export async function createAdminSubscription(input, actorId = null) {
       const origin = String(input.origin || "").replace(/\/+$/, "");
       const siteId = Number(input.siteId || context?.site_id || 0);
       if (codes.has("directory") && siteId) {
-        await activateDirectoryWebForBusiness({ conn, businessId, siteId, origin });
+        const [[site]]=await conn.query("SELECT primary_host FROM tags_directory_sites WHERE id=? LIMIT 1",[siteId]);
+        const host=String(site?.primary_host||"").replace(/^https?:\/\//i,"").replace(/\/+$/,"");
+        await activateDirectoryWebForBusiness({ conn, businessId, siteId, origin:host?`https://${host}`:origin });
       }
       if (codes.has("client_reviews")) {
         await activateClientReviewsForBusiness({ conn, businessId, title: `¿Cómo fue tu experiencia en ${context?.name || "nuestro negocio"}?`, slug: `${String(context?.name || `negocio-${businessId}`).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}-opiniones`, baseUrl: origin, allowTrial: graceDays > 0 });

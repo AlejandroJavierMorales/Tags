@@ -99,10 +99,10 @@ export default function EventNavigation({
             >
 
                 <Link
-                    href={`/dashboard/events/${eventId}`}
+                    href={modules?._productMode === "simple" && modules?._businessId ? `/dashboard/businesses/${modules._businessId}/events` : `/dashboard/events/${eventId}`}
                     style={itemStyle(
                         isActive(
-                            `/dashboard/events/${eventId}`
+                            modules?._productMode === "simple" && modules?._businessId ? `/dashboard/businesses/${modules._businessId}/events` : `/dashboard/events/${eventId}`
                         )
                     )}
                 >
@@ -138,6 +138,18 @@ export default function EventNavigation({
                             Invitados
                         </span>
 
+                    </Link>
+                )}
+
+                {modules.registration && (
+                    <Link
+                        href={`/dashboard/events/${eventId}/registration`}
+                        style={itemStyle(
+                            isActive(`/dashboard/events/${eventId}/registration`)
+                        )}
+                    >
+                        <div style={{ fontSize: "24px", lineHeight: 1 }}>📝</div>
+                        <span>Inscripciones</span>
                     </Link>
                 )}
 

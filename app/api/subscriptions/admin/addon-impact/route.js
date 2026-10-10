@@ -54,6 +54,16 @@ const QUERIES = {
     ["estadías", "SELECT COUNT(*) total FROM tags_guest_stays s INNER JOIN tags_guest_apps a ON a.id=s.guest_app_id WHERE a.business_id=?", true],
     ["movimientos de cuenta", "SELECT COUNT(*) total FROM tags_guest_account_entries e INNER JOIN tags_guest_accounts c ON c.id=e.account_id INNER JOIN tags_guest_apps a ON a.id=c.guest_app_id WHERE a.business_id=?", true]
   ],
+  events: [
+    ["eventos", "SELECT COUNT(*) total FROM tags_events WHERE business_id=?", true],
+    ["inscripciones", "SELECT COUNT(*) total FROM tags_event_registrations r INNER JOIN tags_events e ON e.id=r.event_id WHERE e.business_id=?", true],
+    ["asistentes", "SELECT COUNT(*) total FROM tags_event_attendees a INNER JOIN tags_events e ON e.id=a.event_id WHERE e.business_id=?", true]
+  ],
+  e_events: [
+    ["eventos", "SELECT COUNT(*) total FROM tags_events WHERE business_id=?", true],
+    ["asistentes", "SELECT COUNT(*) total FROM tags_event_attendees a INNER JOIN tags_events e ON e.id=a.event_id WHERE e.business_id=?", true],
+    ["invitaciones", "SELECT COUNT(*) total FROM tags_event_invitations i INNER JOIN tags_events e ON e.id=i.event_id WHERE e.business_id=?", true]
+  ],
   portal_public: [
     ["sitios públicos", "SELECT COUNT(*) total FROM tags_portals WHERE business_id=?"],
     ["accesos a funcionalidades", "SELECT COUNT(*) total FROM tags_portal_routes WHERE business_id=?"]

@@ -53,3 +53,4 @@
 .tags_workspace_quick_access button:hover{background:#dff3e6;box-shadow:0 5px 13px rgba(28,122,70,.14);transform:translateY(-1px)}
 .tags_workspace_quick_access button.is_orange{border-color:#f3c987;background:#fff5e5;color:#c06d0b}
 .tags_workspace_quick_access button.is_orange span{color:#8b4d0b}
+.tags_workspace_staff_access{display:flex;justify-content:flex-end;margin-top:18px;padding-top:16px;border-top:1px solid #f0dfc7}.tags_workspace_staff_access button{border:1px solid #e7a45d;border-radius:10px;background:#fff4e8;color:#a85b13;padding:10px 16px;font:inherit;font-size:.82rem;font-weight:850;cursor:pointer}.tags_workspace_staff_access button:hover{background:#ffe5c5;color:#88470b}

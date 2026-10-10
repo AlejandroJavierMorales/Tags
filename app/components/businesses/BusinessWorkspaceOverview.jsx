@@ -33,13 +33,15 @@ const APP_ICONS = {
     directory: FaGlobe,
     portal_public: FaGlobe,
     qr_page: FaQrcode,
-    store: FaGlobe,
-    resto: FaGlobe,
-    turnos: FaGlobe,
-    guest_experience: FaGlobe,
+    store: FaStore,
+    resto: FaUtensils,
+    turnos: FaCalendarCheck,
+    events: FaCalendarCheck,
+    e_events: FaCalendarCheck,
+    guest_experience: FaHotel,
     qr_agency: FaQrcode,
-    tags_id: FaGlobe,
-    client_reviews: FaGlobe,
+    tags_id: FaQrcode,
+    client_reviews: FaStar,
     loyalty: FaGift,
     google_business_profile: FaGoogle
 };
@@ -59,12 +61,16 @@ const PAGE_TYPE_LABELS = {
     directory: "Web del negocio",
     qr_page: "QR-Page",
     tags_id: "Tags ID",
-    store: "Tags Store",
-    resto: "Tags Resto",
-    turnos: "Tags Turnos",
-    client_reviews: "Tags Reviews",
+    store: "Tienda online",
+    resto: "Restaurant - Carta de menú",
+    turnos: "Turnos y Reservas",
+    events: "Eventos",
+    e_events: "Eventos Pro",
+    client_reviews: "Reseñas de Clientes",
     qr_agency: "Tags QR Agency"
 };
+
+const BUSINESS_MODULE_LABELS = { guest_experience: "Mi Estadía", store: "Tienda online", resto: "Restaurant - Carta de menú", turnos: "Turnos y Reservas", events: "Eventos", e_events: "Eventos Pro", client_reviews: "Reseñas de Clientes" };
 
 function statusLabel(value) {
     return STATUS_LABELS[String(value || "").toLowerCase()] || value || "Sin definir";
@@ -156,6 +162,8 @@ export default function BusinessWorkspaceOverview({
             store: FaStore,
             resto: FaUtensils,
             turnos: FaCalendarCheck,
+            events: FaCalendarCheck,
+            e_events: FaCalendarCheck,
             client_reviews: FaStar,
             ai_chatbot: FaRobot,
             google_business_profile: FaGoogle,
@@ -165,7 +173,7 @@ export default function BusinessWorkspaceOverview({
         };
         const entries = contractedApps
             .filter(feature => feature.key !== "qr_page" && feature.key !== "portal_public")
-            .map(feature => ({ key: feature.key, label: feature.title, Icon: icons[feature.key] || FaGlobe, onClick: feature.onClick }));
+            .map(feature => ({ key: feature.key, label: BUSINESS_MODULE_LABELS[feature.key] || feature.title, Icon: icons[feature.key] || FaGlobe, onClick: feature.onClick }));
         const qrEntries = qrs
             .filter(qr => qr.qr_page_type === "qr_page" && qr.qr_page_slug)
             .map(qr => ({
@@ -175,7 +183,7 @@ export default function BusinessWorkspaceOverview({
                 onClick: () => window.location.assign(`/dashboard/businesses/${businessId}/qrs/${qr.id}/qr-page`)
             }));
         return [...entries, ...qrEntries];
-    }, [businessId, contractedApps, qrs]);
+    }, [businessId, contractedApps, qrs, panelEntryOptions, canSeePanelApp]);
 
     const pageRows = useMemo(() => {
         const routeByPage = new Map(
@@ -211,6 +219,7 @@ export default function BusinessWorkspaceOverview({
     }, [portalPages, portalRoutes]);
 
     const usage = subscriptionSummary?.usage || {};
+    const hasAddon = code => (subscriptionSummary?.addons || []).some(addon => addon.addon_code === code && Number(addon.quantity || 0) > 0);
     const usageItems = [
         ["QR", usage.qrs_used, usage.qrs_total],
         ["QR-Page", usage.qr_pages_used, usage.qr_pages_total],
@@ -480,7 +489,7 @@ export default function BusinessWorkspaceOverview({
             </section>
 
             <section className="tags_workspace_usage" aria-label="Consumo del plan">
-                {usageItems.map(([label, used, total]) => {
+                {usageItems.filter((item, index) => index === 0 || hasAddon(["qr_page", "tagsid", "store", "resto", "turnos", "client_reviews"][index - 1])).map(([label, used, total]) => {
                     const numericTotal = Number(total || 0);
                     const numericUsed = Number(used || 0);
                     const percent = numericTotal > 0 ? Math.min(100, (numericUsed / numericTotal) * 100) : 0;
@@ -601,7 +610,7 @@ export default function BusinessWorkspaceOverview({
                             <article className="tags_workspace_app" key={feature.key}>
                                 <div className="tags_workspace_app_icon"><Icon /></div>
                                 <div className="tags_workspace_app_content">
-                                    <h3>{feature.title}</h3>
+                                    <h3>{BUSINESS_MODULE_LABELS[feature.key] || feature.title}</h3>
                                     <p>{feature.description}</p>
                                     <span>{feature.status || "Contratado"}</span>
                                 </div>
@@ -613,6 +622,7 @@ export default function BusinessWorkspaceOverview({
                         );
                     })}
                 </div>
+                {panelEntryOptions.some(option => option.key === "staff") && <div className="tags_workspace_staff_access"><button type="button" onClick={() => window.location.assign(`/dashboard/businesses/${businessId}/staff`)}>Administrar colaboradores</button></div>}
             </section>
 
             {showPortalWorkspace && portal && (

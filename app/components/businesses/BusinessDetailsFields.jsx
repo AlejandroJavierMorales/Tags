@@ -12,7 +12,7 @@ export const EMPTY_BUSINESS_DETAILS = {
 export default function BusinessDetailsFields({ values, onChange, businessId = null, places = [], showLocation = true }) {
   const update = (field, value) => onChange(current => ({ ...current, [field]: value }));
   const fields = [
-    ["display_name", "Nombre visible"], ["whatsapp", "WhatsApp"], ["website_url", "Sitio web"],
+    ["contact_name", "Persona de contacto"], ["display_name", "Nombre visible"], ["whatsapp", "WhatsApp"], ["website_url", "Sitio web"],
     ["instagram_url", "Instagram"], ["facebook_url", "Facebook"], ["tiktok_url", "TikTok"],
     ["youtube_url", "YouTube"], ["linkedin_url", "LinkedIn"], ["google_reviews_url", "Google Reviews"], ["maps_url", "Google Maps"]
   ];

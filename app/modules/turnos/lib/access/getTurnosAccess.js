@@ -15,6 +15,7 @@ export async function getTurnosAccess({ businessId, turnosId = 0, permission = n
     if (!session) return { allowed: false, status: 401, permissions: [], session: null };
     const owner = session.role === "admin" || (
         session.type !== "turnos_staff" &&
+        session.type !== "business_staff" &&
         String(session.business_id || session.businessId || "") === String(businessId)
     );
     if (owner) {
@@ -23,6 +24,32 @@ export async function getTurnosAccess({ businessId, turnosId = 0, permission = n
             if (!appRows.length) return { allowed: false, status: 404, permissions: [], session };
         }
         return { allowed: true, isOwner: true, isStaff: false, permissions: ["*"], session };
+    }
+    if (session.type === "business_staff") {
+        const [appTypeRows] = turnosId ? await db.query(
+            "SELECT business_profile_code FROM tags_turnos_apps WHERE id=? AND business_id=? LIMIT 1",
+            [turnosId, businessId]
+        ) : [[]];
+        const staffAppCode = appTypeRows[0]?.business_profile_code === "sports_club" ? "club" : "turnos";
+        const [centralRows] = await db.query(
+            `SELECT st.id,st.name,st.email,aa.app_instance_id,aa.role_code,aa.permissions_json
+               FROM tags_business_staff st
+               INNER JOIN tags_business_staff_app_access aa
+                 ON aa.staff_id=st.id AND aa.business_id=st.business_id
+              WHERE st.id=? AND st.business_id=? AND st.status='active'
+                AND aa.app_code=? AND aa.status='active'
+                AND (?=0 OR aa.app_instance_id=0 OR aa.app_instance_id=?)
+              ORDER BY aa.app_instance_id DESC,aa.id DESC LIMIT 1`,
+            [session.staffId || 0, businessId, staffAppCode, turnosId, turnosId]
+        );
+        const centralStaff = centralRows[0];
+        if (centralStaff) {
+            let permissions = [];
+            try { permissions = Array.isArray(centralStaff.permissions_json) ? centralStaff.permissions_json : JSON.parse(centralStaff.permissions_json || "[]"); } catch {}
+            const requested = Array.isArray(permission) ? permission : permission ? [permission] : [];
+            const allowed = requested.length === 0 || requested.some(code => permissions.includes(code));
+            return { allowed, status: allowed ? 200 : 403, isOwner: false, isStaff: true, staff: { ...centralStaff, id: centralStaff.id, central: true }, permissions, session: { ...session, name: centralStaff.name, email: centralStaff.email } };
+        }
     }
     if (session.type !== "turnos_staff") return { allowed: false, status: 403, permissions: [], session };
 

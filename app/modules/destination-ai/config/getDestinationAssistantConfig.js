@@ -34,7 +34,7 @@ export function getDestinationAssistantConfig(site, overrides = {}) {
     assistantType: "destination",
     siteCode: site.code,
     title: configured.title || (isMuchi ? "Muchi · Tu asistente del Valle" : `Asistente de ${site.name}`),
-    subtitle: configured.subtitle || "Información real del directorio",
+    subtitle: configured.subtitle || (isMuchi ? "Tu guía para descubrir Calamuchita" : `Información útil de ${site.name}`),
     greeting: configured.greeting || (isMuchi
       ? "¡Hola! Soy Muchi. ¿Estás de visita o vivís en Calamuchita?"
       : `¡Hola! Soy el asistente de ${site.name}. ¿Estás de visita o vivís en la zona?`),

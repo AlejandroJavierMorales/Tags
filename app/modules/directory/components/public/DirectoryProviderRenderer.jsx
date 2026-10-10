@@ -35,7 +35,7 @@ function baseSlot(section) {
   return "web";
 }
 
-export default function DirectoryProviderRenderer({ data, web = null, standalone = false, embeddedStoreContent = null, embeddedStoreName = "Tienda", embeddedRestoContent = null, embeddedRestoName = "Gastronomía", embeddedTurnosContent = null, embeddedTurnosName = "Reservas" }) {
+export default function DirectoryProviderRenderer({ data, web = null, standalone = false, embeddedStoreContent = null, embeddedStoreName = "Tienda", embeddedRestoContent = null, embeddedRestoName = "Gastronomía", embeddedTurnosContent = null, embeddedTurnosName = "Reservas", embeddedEventsContent = null, embeddedEventsName = "Eventos" }) {
   const { listing, media = [] } = data;
   const page = web?.page || null;
   const sections = [...(web?.sections || [])].sort((a,b)=>Number(a.sort_order)-Number(b.sort_order));
@@ -57,6 +57,7 @@ export default function DirectoryProviderRenderer({ data, web = null, standalone
     embeddedStoreContent && moduleSettings.store?.enabled !== false ? { code: "store", title: embeddedStoreName, sortOrder: Number(moduleSettings.store?.sortOrder || 1000), content: embeddedStoreContent } : null,
     embeddedRestoContent && moduleSettings.resto?.enabled !== false ? { code: "resto", title: embeddedRestoName, sortOrder: Number(moduleSettings.resto?.sortOrder || 1010), content: embeddedRestoContent } : null,
     embeddedTurnosContent && moduleSettings.turnos?.enabled !== false ? { code: "turnos", title: embeddedTurnosName, sortOrder: Number(moduleSettings.turnos?.sortOrder || 1020), content: embeddedTurnosContent } : null,
+    embeddedEventsContent && moduleSettings.events?.enabled !== false ? { code: "events", title: embeddedEventsName, sortOrder: Number(moduleSettings.events?.sortOrder || 1030), content: embeddedEventsContent } : null,
     reviews && moduleSettings.reviewsInvitation?.enabled !== false ? { code: "reviewsInvitation", anchorCode: "reviews-invitation", title: moduleSettings.reviewsInvitation?.content?.menuLabel || "Dejar una reseña", sortOrder: Number(moduleSettings.reviewsInvitation?.sortOrder || 1040), content: <DirectoryReviewsModule variant="invitation" data={reviews} content={moduleSettings.reviewsInvitation?.content} useOwnTheme={reviewUsesOwnTheme} directoryThemeTokens={tokens} /> } : null,
     reviews && moduleSettings.reviewsSlider?.enabled !== false ? { code: "reviewsSlider", anchorCode: "reviews-slider", title: moduleSettings.reviewsSlider?.content?.menuLabel || "Opiniones", sortOrder: Number(moduleSettings.reviewsSlider?.sortOrder || 1050), content: <DirectoryReviewsModule variant="slider" data={reviews} content={moduleSettings.reviewsSlider?.content} useOwnTheme={reviewUsesOwnTheme} directoryThemeTokens={tokens} /> } : null
   ].filter(Boolean).sort((a, b) => a.sortOrder - b.sortOrder);
@@ -136,7 +137,7 @@ export default function DirectoryProviderRenderer({ data, web = null, standalone
       return <DirectoryProviderGallery images={galleryImages(section)} providerName={mergedListing.display_name} content={content} styles={styles} />;
     }
     if (slot === "contact") return <DirectoryContactBlock listing={mergedListing} social={social} content={content} styles={styles} />;
-    if (slot === "catalog") return <DirectoryCatalogBlock products={visibleCatalogProducts} page={page} content={content} styles={styles} />;
+    if (slot === "catalog") return <DirectoryCatalogBlock products={visibleCatalogProducts} page={page} content={content} styles={styles} listingSlug={listing.slug} />;
     if (slot === "benefits") return <DirectoryBenefitsBlock benefits={benefits} content={content} styles={styles} />;
     if (slot === "loyalty") return <DirectoryLoyaltyBlock program={loyalty} content={content} styles={styles} />;
     if (slot === "presentation") {

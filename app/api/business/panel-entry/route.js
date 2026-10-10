@@ -6,6 +6,7 @@ export const dynamic = "force-dynamic";
 
 const ROUTES = {
     panel: ({ id }) => `/dashboard/businesses/${id}`,
+    staff: ({ id }) => `/dashboard/businesses/${id}/staff`,
     qr_page: ({ id }) => `/dashboard/businesses/${id}`,
     tags_id: ({ id }) => `/dashboard/businesses/${id}`,
     guest_experience: ({ id }) => `/dashboard/businesses/${id}/guest-experience`,
@@ -17,6 +18,8 @@ const ROUTES = {
     ai_chatbot: ({ id }) => `/dashboard/businesses/${id}/ai-chat`,
     google_business_profile: ({ id }) => `/dashboard/businesses/${id}/google-business-profile`,
     loyalty: ({ id }) => `/dashboard/businesses/${id}/loyalty`,
+    events: ({ id }) => `/dashboard/businesses/${id}/events`,
+    e_events: ({ id }) => `/dashboard/businesses/${id}/events-pro`,
     directory: ({ id }) => `/dashboard/businesses/${id}/directory`,
     portal_public: ({ id }) => `/dashboard/businesses/${id}/portal`,
 };
@@ -24,8 +27,9 @@ const ROUTES = {
 const LABELS = {
     qr_page: "QR-Page", tags_id: "Tags ID",
     panel: "Panel general", guest_experience: "Mi Estadía", store: "Tags Tienda",
-    resto: "Tags Resto", turnos: "Tags Turnos", client_reviews: "Tags Reviews",
+    resto: "Restaurant - Carta de menú", turnos: "Turnos y Reservas", client_reviews: "Reseñas de Clientes",
     qr_agency: "Tags QR Agency", ai_chatbot: "Chatbot con IA", loyalty: "Beneficios y fidelización",
+    events: "Eventos", e_events: "Eventos Pro",
     directory: "Mi Web", portal_public: "Portal público",
     google_business_profile: "Perfil de Empresa en Google Maps"
 };
@@ -36,12 +40,12 @@ async function authorized(businessId) {
 }
 
 async function optionsFor(businessId) {
-    const options = [{ key: "panel", label: LABELS.panel, path: ROUTES.panel({ id: businessId }) }];
+    const options = [{ key: "panel", label: LABELS.panel, path: ROUTES.panel({ id: businessId }) }, { key: "staff", label: "Colaboradores", path: ROUTES.staff({ id: businessId }) }];
     const [addons] = await db.query(`SELECT DISTINCT addon_code FROM tags_business_addons WHERE business_id=? AND status='active' AND (expires_at IS NULL OR expires_at>=NOW())`, [businessId]);
     const active = new Set(addons.map(item => String(item.addon_code || "").toLowerCase()));
     const [pages] = await db.query("SELECT DISTINCT page_type,qr_code_id FROM tags_qr_pages WHERE business_id=? AND status='published'", [businessId]);
     const pageTypes = new Set(pages.map(item => String(item.page_type || "").toLowerCase()));
-    Object.keys(ROUTES).filter(key => key !== "panel").forEach(key => {
+    Object.keys(ROUTES).filter(key => !["panel", "staff"].includes(key)).forEach(key => {
         const available = active.has(key)
             || pageTypes.has(key)
             || (key === "tags_id" && active.has("tagsid"))
@@ -93,7 +97,7 @@ export async function GET(request) {
             ? configurableOptions.map(item => item.key)
             : configuredKeys.filter(key => availableKeys.has(key));
         if (!visibleKeys.length) visibleKeys = ["panel"];
-        const clientOptions = configurableOptions.filter(item => visibleKeys.includes(item.key));
+        const clientOptions = configurableOptions.filter(item => item.key === "staff" || visibleKeys.includes(item.key));
         const selected = clientOptions.some(item => item.key === preference.panel_entry_key)
             ? preference.panel_entry_key
             : clientOptions[0]?.key || "panel";

@@ -128,6 +128,12 @@ export default function QRsPage() {
 
                             <b>{qr.label}</b>
 
+                            {qr.event_title && (
+                                <div style={{ fontSize: 12, opacity: 0.75, textAlign: "center" }}>
+                                    {qr.event_title} · {qr.event_attendee_name || "Asistente"}
+                                </div>
+                            )}
+
                             <div>{qr.code}</div>
 
                             {/* tipo QR */}

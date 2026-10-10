@@ -54,7 +54,7 @@ export async function getDestinationMapPoints(siteCode){
         WHERE cc.content_id=c.id AND cc.site_id=c.site_id) search_aliases,
       NULL item_names
       FROM tags_ai_tourism_contents c INNER JOIN tags_directory_sites s ON s.id=c.site_id AND s.code=? AND s.is_active=1
-      WHERE c.status='published' AND (c.valid_until IS NULL OR c.valid_until>=NOW()) AND c.latitude IS NOT NULL AND c.longitude IS NOT NULL AND c.latitude BETWEEN -90 AND 90 AND c.longitude BETWEEN -180 AND 180 AND NOT(c.latitude=0 AND c.longitude=0)
+      WHERE c.status='published' AND c.show_on_map=1 AND (c.valid_until IS NULL OR c.valid_until>=NOW()) AND c.latitude IS NOT NULL AND c.longitude IS NOT NULL AND c.latitude BETWEEN -90 AND 90 AND c.longitude BETWEEN -180 AND 180 AND NOT(c.latitude=0 AND c.longitude=0)
       ORDER BY display_name LIMIT 1000`,[siteCode,siteCode]);
     return rows.map(row=>({...row,latitude:Number(row.latitude),longitude:Number(row.longitude),category_icon_url:directoryImageUrl(row.category_icon_url,Number(row.category_icon_depth||0))}));
   }catch(error){if(["ER_NO_SUCH_TABLE","ER_BAD_FIELD_ERROR"].includes(error?.code))return[];throw error;}

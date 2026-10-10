@@ -6,6 +6,19 @@ import { useEffect, useState }
 import { useParams }
     from "next/navigation";
 import TagsSpinner from "@/app/components/TagsSpinner";
+import QRCode from "qrcode";
+import { FaCalendarDays, FaClock, FaLocationDot, FaRoute } from "react-icons/fa6";
+import "./event-access.css";
+
+function eventDateParts(value) {
+    if (!value) return null;
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return null;
+    return {
+        date: date.toLocaleDateString("es-AR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" }),
+        time: date.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })
+    };
+}
 
 export default function EventAccessPage() {
 
@@ -20,6 +33,7 @@ export default function EventAccessPage() {
 
     const [result, setResult] =
         useState(null);
+    const [qrImage, setQrImage] = useState("");
 
     // =========================
     // CHECKIN
@@ -32,6 +46,13 @@ export default function EventAccessPage() {
         validateAccess();
 
     }, [token]);
+
+    useEffect(() => {
+        if (!token || !result?.attendee) return;
+        QRCode.toDataURL(`${window.location.origin}/e/access/${token}`, { width: 520, margin: 2, errorCorrectionLevel: "H" })
+            .then(setQrImage)
+            .catch(() => setQrImage(""));
+    }, [token, result]);
 
     async function validateAccess() {
 
@@ -110,6 +131,13 @@ export default function EventAccessPage() {
     const attendee =
         result?.attendee;
 
+    const schedule = eventDateParts(attendee?.starts_at);
+    const hasCoordinates = attendee?.latitude != null && attendee?.longitude != null
+        && Number.isFinite(Number(attendee.latitude)) && Number.isFinite(Number(attendee.longitude));
+    const directionsUrl = hasCoordinates
+        ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${attendee.latitude},${attendee.longitude}`)}`
+        : "";
+
     if (attendee?.status === "checked_in") {
 
         return (
@@ -129,7 +157,7 @@ export default function EventAccessPage() {
     // PENDING
     // =========================
 
-    if (!attendee?.can_check_in) {
+    if (!attendee?.can_check_in && attendee?.status !== "confirmed") {
 
         const pendingText =
             attendee?.event_status !== "active"
@@ -155,13 +183,20 @@ export default function EventAccessPage() {
 
     return (
 
-        <Screen
-            bg="#14532d"
-            icon="✅"
-            title="Acreditación válida"
-            text={`${attendee.name}, presentá este QR al personal para registrar tu ingreso.`}
-            extra={`Evento: ${attendee.event_name}`}
-        />
+        <div className="tags_event_access_page">
+            <article className="tags_event_access_card">
+                <header>{attendee.logo_url && <img src={attendee.logo_url} alt={attendee.business_name || "Organizador"} />}<div><small>ACCESO AL EVENTO</small><strong>{attendee.business_name}</strong></div></header>
+                <section>
+                    <span>Evento</span><h1>{attendee.event_name}</h1>
+                    {(attendee.location || attendee.address) && <div className="tags_event_access_location"><FaLocationDot /><div>{attendee.location && <strong>{attendee.location}</strong>}{attendee.address && <small>{attendee.address}</small>}</div></div>}
+                    {directionsUrl && <a className="tags_event_access_directions" href={directionsUrl} target="_blank" rel="noreferrer"><FaRoute /> Cómo llegar</a>}
+                    {schedule && <div className="tags_event_access_schedule"><span><FaCalendarDays /> {schedule.date}</span><span><FaClock /> {schedule.time} hs</span></div>}
+                    {attendee.credential_note && <p className="tags_event_access_note">{attendee.credential_note}</p>}
+                    <h2>{attendee.name}</h2>{qrImage ? <img className="tags_event_access_qr" src={qrImage} alt={`QR de acceso de ${attendee.name}`} /> : <TagsSpinner />}{attendee.qr_code && <code className="tags_event_access_code">{attendee.qr_code}</code>}<p>Presentá este código al personal para registrar tu ingreso.</p>
+                </section>
+                <footer><strong>{attendee.can_check_in ? "Habilitada para el ingreso" : "Inscripción confirmada"}</strong><small>{attendee.can_check_in ? "Presentala en el acceso" : "Se habilitará para acreditar cuando comience el evento"} · Credencial personal</small></footer>
+            </article>
+        </div>
 
     );
 }

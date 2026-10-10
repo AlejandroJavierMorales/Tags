@@ -21,9 +21,7 @@ export default function DirectoryTourismPage({ data, kind }) {
   const returnHref = data.publicPath || config.route;
   const pageTitle = data.pageTitle || config.title;
   const seoParagraphs = data.seo?.length ? data.seo : config.seo;
-  const resultsTitle = data.selectedTourismCategory ? `Prestadores de ${data.selectedTourismCategory.name}` : "Prestadores turísticos";
-  const categoryHref = categoryId => `/directorio?categoria=${categoryId}#resultados`;
-
+  const resultsTitle = data.selectedTourismCategory ? `Opciones de ${data.selectedTourismCategory.name}` : "Lugares, actividades y prestadores";
   return <main className="tags_directory_tourism_page">
     <DirectoryPublicHeader site={data.site} compact showSearch={false} />
     <section className="tags_directory_tourism_hero"><div><span>{config.eyebrow}</span><h1>{pageTitle}</h1><p>{config.intro}</p></div></section>

@@ -58,6 +58,7 @@ export default function DirectoryWebBuilderClient({ businessId, qrCodeId, busine
   const [globalStyles, setGlobalStyles] = useState({});
   const [moduleWeb, setModuleWeb] = useState(null);
   const [publicSlug, setPublicSlug] = useState("");
+  const [moduleEditor, setModuleEditor] = useState(null);
 
   async function load() {
     setBusy(true);
@@ -104,7 +105,7 @@ export default function DirectoryWebBuilderClient({ businessId, qrCodeId, busine
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          businessId, displayName: profile.display_name, email: profile.email, phone: profile.phone,
+          businessId, displayName: profile.display_name, contactName: profile.contact_name, email: profile.email, phone: profile.phone,
           description: profile.description, logoUrl: profile.logo_url, coverUrl: profile.cover_url,
           whatsapp: profile.whatsapp, address: profile.address, postalCode: profile.postal_code,
           latitude: profile.latitude ?? "", longitude: profile.longitude ?? "", websiteUrl: profile.website_url,
@@ -216,6 +217,7 @@ export default function DirectoryWebBuilderClient({ businessId, qrCodeId, busine
       <div className="tags_directory_web_panel_title"><div><h2>Datos de la Web</h2><p>Esta información integra la ficha principal; no crea otra página.</p></div><button type="button" onClick={saveProfile}>Guardar cambios</button></div>
       <div className="tags_directory_web_form">
         <label><span>Nombre público</span><input value={profile?.display_name || ""} onChange={event => profileField("display_name", event.target.value)} /></label>
+        <label><span>Persona de contacto</span><input value={profile?.contact_name || ""} onChange={event => profileField("contact_name", event.target.value)} placeholder="Nombre y apellido" /></label>
         <label><span>Email</span><input type="email" value={profile?.email || ""} onChange={event => profileField("email", event.target.value)} /></label>
         <label><span>Teléfono</span><input value={profile?.phone || ""} onChange={event => profileField("phone", event.target.value)} /></label>
         <label><span>WhatsApp</span><input value={profile?.whatsapp || ""} onChange={event => profileField("whatsapp", event.target.value)} /></label>
@@ -238,11 +240,11 @@ export default function DirectoryWebBuilderClient({ businessId, qrCodeId, busine
       </div>
     </section>}
 
-    {tab === "content" && <section className="tags_directory_web_panel"><DirectoryStructureManager businessId={businessId} pageId={page.id} sections={qrPage.sections || []} web={moduleWeb} presentationFallback={{ title: profile?.display_name || profile?.name || business?.display_name || business?.name || "", highlightedText: directoryData?.listing?.short_description || "", description: directoryData?.listing?.description || page?.description || profile?.description || business?.description || "" }} onReload={load} onEditModule={() => setTab("modules")} /></section>}
+    {tab === "content" && <section className="tags_directory_web_panel"><DirectoryStructureManager businessId={businessId} pageId={page.id} sections={qrPage.sections || []} web={moduleWeb} presentationFallback={{ title: profile?.display_name || profile?.name || business?.display_name || business?.name || "", highlightedText: directoryData?.listing?.short_description || "", description: directoryData?.listing?.description || page?.description || profile?.description || business?.description || "" }} onReload={load} onEditModule={code => { setModuleEditor(code); setTab("modules"); }} /></section>}
 
     {tab === "catalog" && <section className="tags_directory_web_panel"><DirectoryCatalogManager businessId={businessId} pageId={page.id} products={qrPage.products || []} catalogSection={(qrPage.sections || []).find(isCatalogSection)} onReload={load} /></section>}
 
-    {tab === "modules" && <section className="tags_directory_web_panel"><DirectoryCommerceVisualBuilder businessId={businessId} pageId={page.id} web={moduleWeb} onReload={load} /></section>}
+    {tab === "modules" && <section className="tags_directory_web_panel"><DirectoryCommerceVisualBuilder businessId={businessId} pageId={page.id} web={moduleWeb} onReload={load} initialEditor={moduleEditor} onEditorOpened={() => setModuleEditor(null)} /></section>}
 
     {tab === "benefits" && <section className="tags_directory_web_panel"><DirectoryBenefitsManager businessId={businessId} pageId={page.id} onReload={load} /></section>}
 

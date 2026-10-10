@@ -11,13 +11,18 @@ export async function GET(req) {
     if (!turnosApp || turnosApp.business_profile_code !== "sports_club") return jsonResponseError("Página deportiva no encontrada", 404);
 
     const [apps] = await db.query(
-        `SELECT * FROM tags_sports_apps
-         WHERE turnos_id = ? AND business_id = ? AND status = 'active'
+        `SELECT sa.*,
+                COALESCE(NULLIF(b.display_name,''),b.name) business_name,
+                b.description business_description,b.logo_url business_logo_url,b.cover_url business_cover_url
+         FROM tags_sports_apps sa
+         INNER JOIN tags_businesses b ON b.id=sa.business_id
+         WHERE sa.turnos_id = ? AND sa.business_id = ? AND sa.status = 'active'
          LIMIT 1`,
         [turnosApp.id, turnosApp.business_id]
     );
     const sportsApp = apps[0];
-    if (!sportsApp) return jsonResponseError("Tags Deportes no está configurado", 404);
+    if (!sportsApp) return jsonResponseError("Tags Club no está configurado", 404);
+    if (sportsApp.public_visibility === "hidden") return jsonResponseError("Tags Club no está publicado", 404);
 
     const [disciplines] = await db.query(
         `SELECT d.*,
@@ -33,7 +38,7 @@ export async function GET(req) {
 
     return Response.json({
         ok: true,
-        sportsApp: { id: sportsApp.id, name: sportsApp.name, communityEnabled: Number(sportsApp.community_enabled) === 1, publicCommunityEnabled: Number(sportsApp.public_community_enabled) === 1, settings: parseJson(sportsApp.settings_json) },
+        sportsApp: { id: sportsApp.id, name: sportsApp.business_name || sportsApp.name, description: sportsApp.business_description || "", logoUrl: sportsApp.business_logo_url || "", coverUrl: sportsApp.business_cover_url || "", publicVisibility: sportsApp.public_visibility, defaultDisciplineId: sportsApp.default_discipline_id, communityEnabled: Number(sportsApp.community_enabled) === 1, publicCommunityEnabled: Number(sportsApp.public_community_enabled) === 1, settings: parseJson(sportsApp.settings_json) },
         disciplines: disciplines.map(item => ({ id: item.id, code: item.code, name: item.name, description: item.description, teamMode: item.team_mode, serviceIds: String(item.service_ids || "").split(",").filter(Boolean).map(Number) }))
     });
 }

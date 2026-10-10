@@ -45,17 +45,31 @@ export async function requireEventOwnership(
         return true;
     }
 
+    if (session.type === "business_staff") {
+        const [[row]] = await db.query(`SELECT e.id FROM tags_events e INNER JOIN tags_business_staff_app_access aa ON aa.business_id=e.business_id AND aa.staff_id=? AND aa.app_code=e.product_code AND aa.status='active' WHERE e.id=? AND e.business_id=? LIMIT 1`, [Number(session.staffId || 0), Number(eventId || 0), Number(session.businessId || 0)]);
+        if (!row) redirect("/dashboard/businesses/" + Number(session.businessId || 0));
+        return true;
+    }
+
     const [rows] =
         await db.query(
             `
-            SELECT id
+            SELECT e.id
 
-            FROM tags_events
+            FROM tags_events e
 
             WHERE
-                id = ?
+                e.id = ?
             AND
-                business_id = ?
+                e.business_id = ?
+            AND EXISTS (
+                SELECT 1
+                FROM tags_business_addons ba
+                WHERE ba.business_id=e.business_id
+                  AND TRIM(LOWER(ba.addon_code))=e.product_code
+                  AND ba.status='active'
+                  AND (ba.expires_at IS NULL OR ba.expires_at>=NOW())
+            )
 
             LIMIT 1
             `,

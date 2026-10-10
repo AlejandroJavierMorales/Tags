@@ -48,6 +48,12 @@ export async function PUT(req) {
             ? body.status
             : access.event.status;
 
+    const latitude = body.latitude === null || body.latitude === "" ? null : Number(body.latitude);
+    const longitude = body.longitude === null || body.longitude === "" ? null : Number(body.longitude);
+    if ((latitude !== null && (!Number.isFinite(latitude) || latitude < -90 || latitude > 90)) || (longitude !== null && (!Number.isFinite(longitude) || longitude < -180 || longitude > 180))) {
+        return Response.json({ error: "Revisá las coordenadas del evento" }, { status: 400 });
+    }
+
     try {
         await db.query(
             `
@@ -56,6 +62,10 @@ export async function PUT(req) {
                 name = ?,
                 description = ?,
                 location = ?,
+                address = ?,
+                latitude = ?,
+                longitude = ?,
+                credential_note = ?,
                 starts_at = ?,
                 ends_at = ?,
                 status = ?,
@@ -67,6 +77,10 @@ export async function PUT(req) {
                 name,
                 body.description || null,
                 body.location || null,
+                String(body.address || "").trim() || null,
+                latitude,
+                longitude,
+                String(body.credential_note || "").trim() || null,
                 body.starts_at || null,
                 body.ends_at || null,
                 status,

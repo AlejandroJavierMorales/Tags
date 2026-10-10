@@ -4,7 +4,7 @@ import { getSportsDurationPolicy } from "./sportsDurationPolicy";
 export async function getSportsBookingPolicy(connection, turnosApp, service) {
     if (turnosApp?.business_profile_code !== "sports_club") return null;
     const [apps] = await connection.query(
-        "SELECT id FROM tags_sports_apps WHERE turnos_id = ? AND business_id = ? AND status = 'active' LIMIT 1",
+        "SELECT id, settings_json FROM tags_sports_apps WHERE turnos_id = ? AND business_id = ? AND status = 'active' LIMIT 1",
         [turnosApp.id, turnosApp.business_id]
     );
     if (!apps[0]) return null;
@@ -18,6 +18,7 @@ export async function getSportsBookingPolicy(connection, turnosApp, service) {
     const settings = parseJson(service.settings_json);
     return {
         sportsAppId: apps[0].id,
+        appSettings: parseJson(apps[0].settings_json),
         audienceMode: settings?.sports?.audienceMode || "members_and_guests",
         guestPrice: Number(byAudience.guest?.price ?? service.price ?? 0),
         memberPrice: Number(byAudience.member?.price ?? service.price ?? 0),

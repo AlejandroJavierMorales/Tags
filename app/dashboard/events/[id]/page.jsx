@@ -10,6 +10,7 @@ import { requireEventOwnership }
 import { getVisibleEventModules }
     from "@/app/modules/e-events/lib/getVisibleEventModules";
 import { requireEventClient } from "@/app/modules/e-events/lib/requireEventClient";
+import { redirect } from "next/navigation";
 
 export default async function Page({
     params
@@ -30,6 +31,10 @@ export default async function Page({
             session,
             eventId: params.id
         });
+
+    if (modules?._productMode === "simple") {
+        redirect(`/dashboard/events/${params.id}/registration`);
+    }
 
     /* console.log('Modules::::::: ' + JSON.stringify(modules,2,null)) */
 

@@ -15,12 +15,13 @@ export async function createQr({
     event_id = null,
     label = null,
     value = null,
-    final_url = null
+    final_url = null,
+    connection = null
 
 }) {
 
     const conn =
-        await db.getConnection();
+        connection || await db.getConnection();
 
     try {
 
@@ -111,6 +112,6 @@ export async function createQr({
 
     } finally {
 
-        conn.release();
+        if (!connection) conn.release();
     }
 }

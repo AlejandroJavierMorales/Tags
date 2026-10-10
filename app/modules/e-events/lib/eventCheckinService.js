@@ -83,10 +83,22 @@ export async function validateEventTicket(token) {
                 e.status AS event_status,
                 e.starts_at,
                 e.ends_at,
-                e.location
+                e.location,
+                e.address,
+                e.latitude,
+                e.longitude,
+                e.credential_note,
+                q.code AS qr_code,
+                b.name AS business_name,
+                b.logo_url AS business_logo_url,
+                (SELECT s.brand_config FROM tags_directory_listings l INNER JOIN tags_directory_site_listings sl ON sl.listing_id=l.id INNER JOIN tags_directory_sites s ON s.id=sl.site_id AND s.is_active=1 WHERE l.business_id=e.business_id ORDER BY (s.code='calamuchitar') DESC,s.id LIMIT 1) AS directory_brand_config
             FROM tags_event_attendees a
             INNER JOIN tags_events e
                 ON e.id = a.event_id
+            INNER JOIN tags_businesses b
+                ON b.id = e.business_id
+            LEFT JOIN tags_qr_codes q
+                ON q.id = a.qr_code_id
             WHERE a.qr_token = ?
             LIMIT 1
             `,
@@ -101,8 +113,12 @@ export async function validateEventTicket(token) {
         );
     }
 
+    let directoryBrand = {};
+    try { directoryBrand = typeof attendee.directory_brand_config === "string" ? JSON.parse(attendee.directory_brand_config || "{}") : (attendee.directory_brand_config || {}); } catch {}
+    delete attendee.directory_brand_config;
     return {
         ...attendee,
+        logo_url: attendee.business_logo_url || directoryBrand.logoUrl || directoryBrand.logo_url || "/logo_tags_transparente.webp",
         can_check_in:
             attendee.event_status === "active"
             && attendee.status === "confirmed"

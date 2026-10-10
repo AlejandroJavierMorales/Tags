@@ -48,7 +48,7 @@ export const DESTINATION_ANSWER_V2_SCHEMA = {
 export function fallbackDestinationIntentV2({ message, taxonomyCatalog = [], previousTasks = [] }) {
   const query = String(message || "").trim().slice(0, 500);
   const segments=query.split(/\b(?:además|ademas|también|tambien)\b|\s+y\s+(?=(?:necesito|busco|quiero|tengo|dónde|donde)\b)/iu).map(value=>value.trim()).filter(Boolean).slice(0,5);
-  const tasks=(segments.length?segments:[query]).map(segment=>{const resolvedTaxonomyNodeIds=resolveTaxonomyTerms(taxonomyCatalog,segment);const normalized=segment.toLocaleLowerCase("es-AR");const productAction=/\b(?:comprar|conseguir|vende|venden|producto)\b/u.test(normalized);const serviceAction=/\b(?:construir|construccion|fabricar|fabricacion|instalar|instalacion|instalador|reparar|reparacion|mantener|mantenimiento|colocar|montar|armar)\b/u.test(normalized);const taxonomyNodeIds=serviceAction?[]:resolvedTaxonomyNodeIds;return{type:serviceAction?"find_service":taxonomyNodeIds.length?"find_business_category":productAction?"find_product":"other",query:segment,subject:segment,taxonomyNodeIds,locality:"",localityPreference:"any",resultReferenceKeys:[],constraints:[],needsClarification:!serviceAction&&!taxonomyNodeIds.length&&!productAction};});
+  const tasks=(segments.length?segments:[query]).map(segment=>{const resolvedTaxonomyNodeIds=resolveTaxonomyTerms(taxonomyCatalog,segment);const normalized=segment.toLocaleLowerCase("es-AR");const dayPlan=/\b(?:armar|armame|organizar|haceme|quiero)\b.*\b(?:plan|itinerario)\b|\b(?:plan|itinerario)\b.*\b(?:paseo|comida|dia|día|jornada|recorrido|turistico|turístico|romantico|romántico)\b|\b(?:pasar|organizar|armar)\b.*\b(?:dia|día)\b/u.test(normalized);const productAction=/\b(?:comprar|conseguir|vende|venden|producto)\b/u.test(normalized);const serviceAction=!dayPlan&&/\b(?:construir|construccion|fabricar|fabricacion|instalar|instalacion|instalador|reparar|reparacion|mantener|mantenimiento|colocar|montar|armar)\b/u.test(normalized);const taxonomyNodeIds=serviceAction||dayPlan?[]:resolvedTaxonomyNodeIds;return{type:dayPlan?"plan_day":serviceAction?"find_service":taxonomyNodeIds.length?"find_business_category":productAction?"find_product":"other",query:segment,subject:segment,taxonomyNodeIds,locality:"",localityPreference:"any",resultReferenceKeys:[],constraints:[],needsClarification:dayPlan||(!serviceAction&&!taxonomyNodeIds.length&&!productAction)};});
   return {
     conversationalAction: "search",
     continuesPrevious: false,
@@ -72,7 +72,7 @@ export function normalizeDestinationIntentV2(value, fallback, taxonomyCatalog, p
     const selectedIds=requestedType==="find_service"?(interpretedIds.length?interpretedIds:(prior?.taxonomyNodeIds||[])):resolved.length?resolved:(prior?.taxonomyNodeIds||[]);
     const taxonomyNodeIds=pruneAncestorTaxonomyIds(taxonomyCatalog,selectedIds).slice(0,6);
     const resultReferenceKeys=(Array.isArray(task?.resultReferenceKeys)?task.resultReferenceKeys:[]).map(item=>String(item||"").slice(0,255)).filter(Boolean).slice(0,6);
-    const shortFollowUp=Boolean(prior&&!resultReferenceKeys.length&&rawQuery.split(/\s+/).filter(Boolean).length<=8);
+    const shortFollowUp=Boolean(prior&&prior.type!=="plan_day"&&!resultReferenceKeys.length&&rawQuery.split(/\s+/).filter(Boolean).length<=8);
     const query=shortFollowUp?`${prior.subject||prior.query||""} ${rawQuery}`.trim():rawQuery;
     return {
       type:prior&&["other","follow_up"].includes(requestedType)?prior.type:requestedType,
@@ -101,6 +101,8 @@ export function destinationIntentV2Prompt({ message, history = [], mode = "unsel
 
 REGLAS INNEGOCIABLES:
 - Si la persona quiere construir, fabricar, instalar, reparar, mantener, colocar, montar o armar algo, usá find_service y elegí el rubro del prestador que realiza ese trabajo. El objeto sobre el que se trabaja no convierte la consulta en una búsqueda de lugares que simplemente lo tengan, vendan o alquilen.
+- Si pide que armes, organices o recomiendes un plan, itinerario o recorrido para el día, usá una sola tarea plan_day. No lo interpretes como find_service.
+- En plan_day no hace falta elegir rubros: el planificador los resuelve después. Conservá como restricciones compañía, edades, movilidad, presupuesto, intereses y momento del día.
 - Separá cada necesidad distinta en una tarea. "Necesito X y también Y" son dos tareas.
 - No clasifiques negocios ni deduzcas qué vende cada uno. Sólo clasificá lo que solicita la persona.
 - Para búsquedas por rubro elegí IDs exclusivamente del catálogo real incluido abajo. Preferí el nodo específico y no el padre genérico.
@@ -111,6 +113,7 @@ REGLAS INNEGOCIABLES:
 - Si expresa que quiere ir, sentarse, alojarse o visitar un tipo de lugar, conservá esa condición y elegí el rubro estructural específico; una simple mención del término no reemplaza al tipo de establecimiento.
 - Un mensaje nuevo como "ahora necesito..." crea una tarea nueva; no debe arrastrar el producto anterior.
 - Un seguimiento como "el segundo", "cómo llego" o "en otra localidad" conserva la tarea y referencia resultados previos.
+- Si la tarea anterior era plan_day y la persona responde con la localidad o movilidad, conservá plan_day, actualizá locality/localityPreference y no dupliques en query ni subject las palabras del mensaje anterior.
 - Turista/residente es contexto de preferencia, no cambia la verdad ni elimina resultados válidos.
 - Si no se indicó localidad, usá localityPreference=any. La ubicación compartida servirá para ordenar desde lo más cercano.
 - Pedí aclaración sólo si cambia materialmente el resultado; no la uses para demorar una búsqueda resoluble.

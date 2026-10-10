@@ -329,7 +329,7 @@ export default function GuestExperienceAdminPage({
 </div>
 </header>
 {adminNavigation}
-<GuestExperienceCheckinPanel businessId={businessId} data={data} busy={busy} onSaved={saveCheckin} />{busy && <TagsSpinner size={120} logoSize={66} borderSize={5} background="rgba(255,255,255,.72)" />}</main>;
+<GuestExperienceCheckinPanel businessId={businessId} data={data} busy={busy} onSaved={saveCheckin} onDataChanged={()=>load(true)} />{busy && <TagsSpinner size={120} logoSize={66} borderSize={5} background="rgba(255,255,255,.72)" />}</main>;
   if (!missing && tab === "active") return <main className="tags_guest_admin">
 <header className="tags_guest_admin_hero">
 <div className="tags_guest_admin_identity">
@@ -352,14 +352,16 @@ export default function GuestExperienceAdminPage({
 <div className="tags_guest_admin_list">{data.stays.filter(item => item.status === "active").map(item => <article key={item.id}>
 <div>
 <strong>{item.stay_code} · {item.guest_name}</strong>
+<span className="tags_guest_stay_in_progress">Estadía en curso</span>
 <span>{item.unit_name} · hasta el {new Date(item.ends_at).toLocaleDateString("es-AR")}</span>
 <small>{item.guest_phone} · {item.guest_email}</small>
+{Number(item.account_balance||0)>0.009&&<div className="tags_guest_reservation_balance"><span>Abonado <strong>${Number(item.paid_total||0).toLocaleString("es-AR")}</strong></span><span>Saldo pendiente <strong>${Number(item.account_balance||0).toLocaleString("es-AR")}</strong></span><button type="button" onClick={()=>{sessionStorage.setItem("tags_guest_open_stay",String(item.id));setTab("reservations")}}>Ver detalle / imputar pago</button></div>}
 </div>
 </article>)}{!data.stays.some(item => item.status === "active") && <p>No hay estadías en curso.</p>}</div>
 </section>
 </main>;
-  if (!missing && tab === "arrivals") return <main className="tags_guest_admin"><header className="tags_guest_admin_hero"><div className="tags_guest_admin_identity"><span className="tags_guest_admin_icon"><FaHotel /></span><div><small>RECEPCIÓN</small><h1>{data.app.name}</h1><p>Ingresos previstos</p></div></div></header>{adminNavigation}<GuestExperienceArrivalsPanel data={data} onBack={() => setTab("reservations")} onReminder={item=>invite(item,"reminder")} onCheckin={stayId => { sessionStorage.setItem("tags_guest_checkin_stay", String(stayId)); setTab("checkin"); }} /></main>;
-  if (!missing && tab === "finance") return <main className="tags_guest_admin"><header className="tags_guest_admin_hero"><div className="tags_guest_admin_identity"><span className="tags_guest_admin_icon"><FaHotel /></span><div><small>ADMINISTRACIÓN</small><h1>{data.app.name}</h1><p>Estadías, ventas y pagos</p></div></div></header>{adminNavigation}<GuestExperienceFinanceReport businessId={businessId} data={data} onBack={() => setTab("reservations")} onManage={financeManage} />{externalStayId&&<GuestExperienceReservationsPanel canManage={can("guest.stays.manage")} canCheckin={can("guest.checkin.manage")} overlayOnly stayId={externalStayId} onClose={()=>setExternalStayId(null)} data={data} busy={busy} onCreate={createReservation} onUpdate={updateReservation} onDelete={deleteReservation} onInvite={invite} onDeleteCommunication={deleteCommunication} onCheckout={checkoutReservation}/>}</main>;
+  if (!missing && tab === "arrivals") return <main className="tags_guest_admin"><header className="tags_guest_admin_hero"><div className="tags_guest_admin_identity"><span className="tags_guest_admin_icon"><FaHotel /></span><div><small>RECEPCIÓN</small><h1>{data.app.name}</h1><p>Ingresos previstos</p></div></div></header>{adminNavigation}<GuestExperienceArrivalsPanel data={data} onBack={() => setTab("reservations")} onReminder={item=>invite(item,"reminder")} onCheckin={stayId => { sessionStorage.setItem("tags_guest_checkin_stay", String(stayId)); setTab("checkin"); }} onViewDetail={stayId=>{sessionStorage.setItem("tags_guest_open_stay",String(stayId));setTab("reservations")}} /></main>;
+  if (!missing && tab === "finance") return <main className="tags_guest_admin"><header className="tags_guest_admin_hero"><div className="tags_guest_admin_identity"><span className="tags_guest_admin_icon"><FaHotel /></span><div><small>ADMINISTRACIÓN</small><h1>{data.app.name}</h1><p>Estadías, ventas y pagos</p></div></div></header>{adminNavigation}<GuestExperienceFinanceReport businessId={businessId} data={data} onBack={() => setTab("reservations")} onManage={financeManage} />{externalStayId&&<GuestExperienceReservationsPanel canManage={can("guest.stays.manage")} canCheckin={can("guest.checkin.manage")} overlayOnly stayId={externalStayId} onClose={()=>setExternalStayId(null)} data={data} busy={busy} onCreate={createReservation} onUpdate={updateReservation} onDelete={deleteReservation} onInvite={invite} onDeleteCommunication={deleteCommunication} onCheckout={checkoutReservation} onDataChanged={()=>load(true)}/>}</main>;
   if (missing) return <main className="tags_guest_admin">
 <header className="tags_guest_admin_hero">
 <div className="tags_guest_admin_identity">
@@ -411,7 +413,7 @@ export default function GuestExperienceAdminPage({
 <FaEye /> Ver página</a>
 </div>
 </header>
-{adminNavigation}{data.access?.isStaff&&tab==="reservations"&&<PushNotificationButton businessId={businessId}/>} {tab === "reservations" && <GuestExperienceReservationsPanel canManage={can("guest.stays.manage")} canCheckin={can("guest.checkin.manage")} data={data} busy={busy} onCreate={createReservation} onUpdate={updateReservation} onDelete={deleteReservation} onInvite={invite} onDeleteCommunication={deleteCommunication} onCheckout={checkoutReservation} />} {tab === "checkin" && <section className="tags_guest_admin_panel">
+{adminNavigation}{data.access?.isStaff&&tab==="reservations"&&<PushNotificationButton businessId={businessId}/>} {tab === "reservations" && <GuestExperienceReservationsPanel canManage={can("guest.stays.manage")} canCheckin={can("guest.checkin.manage")} data={data} busy={busy} onCreate={createReservation} onUpdate={updateReservation} onDelete={deleteReservation} onInvite={invite} onDeleteCommunication={deleteCommunication} onCheckout={checkoutReservation} onDataChanged={()=>load(true)} />} {tab === "checkin" && <section className="tags_guest_admin_panel">
 <h2>Pre-check-in y check-in</h2>
 <p>Las reservas pendientes aparecerán aquí para completar acompañantes, vehículo y confirmar el ingreso.</p>
 </section>}{tab === "active" && <section className="tags_guest_admin_panel">

@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { FaChevronLeft, FaChevronRight, FaMagnifyingGlass, FaShareNodes, FaWhatsapp, FaXmark } from "react-icons/fa6";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { FaArrowUpRightFromSquare, FaChevronLeft, FaChevronRight, FaMagnifyingGlass, FaShareNodes, FaWhatsapp, FaXmark } from "react-icons/fa6";
 import TagsSelect from "@/app/components/ui/TagsSelect";
 import { directoryWhatsappUrl } from "../../lib/directoryPublicFormatting";
 import "./DirectoryCatalogBlock.css";
@@ -28,13 +28,22 @@ function productImages(product) {
   return images;
 }
 
-async function shareProduct(product) {
-  const url = window.location.href.split("#")[0] + "#catalog-product-" + product.id;
+function productSlug(product) {
+  const slug = String(product.title || "producto").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  return `${product.id}-${slug || "producto"}`;
+}
+
+function productPageHref(product, listingSlug) {
+  return `/${listingSlug}/producto/${productSlug(product)}?origenCatalogo=${product.id}`;
+}
+
+async function shareProduct(product, listingSlug) {
+  const url = new URL(`/${listingSlug}/producto/${productSlug(product)}`, window.location.origin).toString();
   if (navigator.share) await navigator.share({ title: product.title, text: product.description || product.title, url }).catch(() => null);
   else await navigator.clipboard?.writeText(url).catch(() => null);
 }
 
-function ProductCard({ product, page, onDetail }) {
+function ProductCard({ product, page, listingSlug }) {
   const images = productImages(product);
   const [active, setActive] = useState(0);
   const message = product.whatsapp_text || "Hola, quiero consultar por " + product.title;
@@ -51,19 +60,18 @@ function ProductCard({ product, page, onDetail }) {
     </div>}
     <div className="tags_directory_catalog_body">
       <span>{product.category || "General"}</span>
-      <h3>{product.title}</h3>
+      <h3><a href={productPageHref(product, listingSlug)}>{product.title}</a></h3>
       {product.description && <p>{product.description}</p>}
       {hasPrice(product.price) && <strong>{formatCatalogPrice(product.price, product.currency)}</strong>}
       <div className="tags_directory_catalog_actions">
-        <button type="button" className="detail" onClick={() => onDetail(product)} aria-label={"Ver detalle de " + product.title} title="Ver detalle"><FaMagnifyingGlass /><span>Ver detalle</span></button>
         {whatsapp && <a href={whatsapp} target="_blank" rel="noreferrer" aria-label={"Consultar " + product.title + " por WhatsApp"} title="Consultar por WhatsApp"><FaWhatsapp /></a>}
-        <button type="button" onClick={() => shareProduct(product)} aria-label={"Compartir " + product.title} title="Compartir producto"><FaShareNodes /></button>
+        <button type="button" onClick={() => shareProduct(product, listingSlug)} aria-label={"Compartir " + product.title} title="Compartir producto"><FaShareNodes /></button>
       </div>
     </div>
   </article>;
 }
 
-function ProductDetailModal({ product, page, onClose }) {
+function ProductDetailModal({ product, page, listingSlug, onClose }) {
   const images = productImages(product);
   const [active, setActive] = useState(0);
   const message = product.whatsapp_text || "Hola, quiero consultar por " + product.title;
@@ -110,7 +118,8 @@ function ProductDetailModal({ product, page, onClose }) {
           {hasPrice(product.price) && <strong>{formatCatalogPrice(product.price, product.currency)}</strong>}
           <div className="actions">
             {whatsapp && <a href={whatsapp} target="_blank" rel="noreferrer"><FaWhatsapp /><span>Consultar por WhatsApp</span></a>}
-            <button type="button" onClick={() => shareProduct(product)}><FaShareNodes /><span>Compartir</span></button>
+            <a href={`/${listingSlug}/producto/${productSlug(product)}`}><FaArrowUpRightFromSquare /><span>Ver página</span></a>
+            <button type="button" onClick={() => shareProduct(product, listingSlug)}><FaShareNodes /><span>Compartir</span></button>
           </div>
         </div>
       </div>
@@ -118,16 +127,38 @@ function ProductDetailModal({ product, page, onClose }) {
   </div>;
 }
 
-export default function DirectoryCatalogBlock({ products = [], page, content = {}, styles = {} }) {
+export default function DirectoryCatalogBlock({ products = [], page, content = {}, styles = {}, listingSlug = "" }) {
+  const catalogRef = useRef(null);
   const [category, setCategory] = useState("all");
   const [query, setQuery] = useState("");
-  const [detailProduct, setDetailProduct] = useState(null);
+  const [catalogPage, setCatalogPage] = useState(1);
   const visible = products.filter(product => Number(product.is_visible));
   const categories = useMemo(() => [...new Set(visible.map(product => String(product.category || "General").trim()).filter(Boolean))], [products]);
   const filtered = visible.filter(product => (category === "all" || String(product.category || "General") === category) && (!query || normalized(product.title + " " + product.category + " " + product.description).includes(normalized(query))));
+  const perPage = Math.max(6, Math.min(24, Number(content.productsPerPage || 12)));
+  const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
+  const currentPage = Math.min(catalogPage, totalPages);
+  const paginated = filtered.slice((currentPage - 1) * perPage, currentPage * perPage);
+  useEffect(() => { setCatalogPage(1); }, [category, query, perPage]);
+  useEffect(() => {
+    const productId = Number(new URLSearchParams(window.location.search).get("productoCatalogo") || 0);
+    if (!productId) return;
+    const productIndex = visible.findIndex(product => Number(product.id) === productId);
+    if (productIndex < 0) return;
+    setCategory("all");
+    setQuery("");
+    setCatalogPage(Math.floor(productIndex / perPage) + 1);
+    window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
+      document.getElementById(`catalog-product-${productId}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }));
+  }, [perPage, products]);
+  const changeCatalogPage = nextPage => {
+    setCatalogPage(Math.max(1, Math.min(totalPages, nextPage)));
+    window.requestAnimationFrame(() => catalogRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  };
   if (!visible.length) return null;
 
-  return <div className="tags_directory_catalog" style={{ textAlign: styles.alignment || "left" }}>
+  return <div className="tags_directory_catalog" ref={catalogRef} style={{ textAlign: styles.alignment || "left" }}>
     <header>
       {content.eyebrow !== "" && <span>{content.eyebrow || "CATÁLOGO"}</span>}
       {content.title !== "" && <h2 style={styles.typography?.title || {}}>{content.title || "Productos y servicios"}</h2>}
@@ -140,8 +171,7 @@ export default function DirectoryCatalogBlock({ products = [], page, content = {
       {categories.length > 1 && <TagsSelect value={category} onChange={setCategory} className="tags_directory_catalog_category_select" placeholder="Seleccionar categoría" options={[{ value: "all", label: content.allCategoriesLabel || "Todos" }, ...categories.map(item => ({ value: item, label: item }))]} />}
     </div>
     {filtered.length
-      ? <div className="tags_directory_catalog_grid">{filtered.map(product => <ProductCard product={product} page={page} onDetail={setDetailProduct} key={product.id} />)}</div>
+      ? <><div className="tags_directory_catalog_grid">{paginated.map(product => <ProductCard product={product} page={page} listingSlug={listingSlug} key={product.id} />)}</div>{totalPages>1&&<nav className="tags_directory_catalog_pagination" aria-label="Páginas del catálogo"><button type="button" disabled={currentPage===1} onClick={()=>changeCatalogPage(currentPage-1)}>Anterior</button><span>Página {currentPage} de {totalPages}</span><button type="button" disabled={currentPage===totalPages} onClick={()=>changeCatalogPage(currentPage+1)}>Siguiente</button></nav>}</>
       : <p className="tags_directory_catalog_empty">No encontramos productos para esa búsqueda.</p>}
-    {detailProduct && <ProductDetailModal product={detailProduct} page={page} onClose={() => setDetailProduct(null)} />}
   </div>;
 }

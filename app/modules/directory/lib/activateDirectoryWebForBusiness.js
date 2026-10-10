@@ -16,13 +16,13 @@ async function synchronizeDirectoryActivation({
 }) {
     await conn.query(
         `UPDATE tags_qr_pages
-            SET qr_code_id=?,status='published',updated_at=NOW()
+            SET qr_code_id=?,status='published',robots_index=1,updated_at=NOW()
           WHERE id=? AND business_id=? AND page_type='directory'`,
         [qrId, pageId, businessId]
     );
     await conn.query(
         `UPDATE tags_directory_listings
-            SET qr_page_id=?,display_name=?,short_description=COALESCE(NULLIF(?,''),short_description),
+            SET qr_page_id=?,status='published',display_name=?,short_description=COALESCE(NULLIF(?,''),short_description),
                 email=?,phone=?,whatsapp=?,website_url=?,address=?,social_config=?,updated_at=NOW()
           WHERE id=? AND business_id=?`,
         [pageId, business.name, business.description || listing.description || listing.short_description || "", business.email || null, business.phone || null, business.whatsapp || null, business.website_url || null, business.address || null, JSON.stringify({ instagram: business.instagram_url || null, facebook: business.facebook_url || null }), listing.id, businessId]

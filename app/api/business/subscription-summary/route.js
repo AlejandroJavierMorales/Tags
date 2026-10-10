@@ -223,7 +223,9 @@ export async function GET(req) {
         const [turnosUsageRows] =
             await db.query(
                 `
-                SELECT COUNT(*) AS turnos_used
+                SELECT
+                    SUM(CASE WHEN business_profile_code <> 'sports_club' THEN 1 ELSE 0 END) AS turnos_used,
+                    SUM(CASE WHEN business_profile_code = 'sports_club' THEN 1 ELSE 0 END) AS club_used
                 FROM tags_turnos_apps
                 WHERE business_id = ?
                 AND status <> 'deleted'
@@ -305,6 +307,8 @@ export async function GET(req) {
             Number(
                 turnosUsageRows[0]?.turnos_used || 0
             );
+
+        const clubUsed = Number(turnosUsageRows[0]?.club_used || 0);
 
         return Response.json({
             ok: true,
@@ -430,7 +434,13 @@ export async function GET(req) {
                     turnosUsed,
 
                 turnos_total:
-                    getAddonTotal("turnos")
+                    getAddonTotal("turnos"),
+
+                club_used:
+                    clubUsed,
+
+                club_total:
+                    getAddonTotal("club")
             },
 
             addons:

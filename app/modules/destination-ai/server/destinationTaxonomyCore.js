@@ -6,6 +6,8 @@ export function normalizeDestinationTerm(value) {
     .trim();
 }
 
+const TAXONOMY_STOP_WORDS = new Set(["a","al","con","de","del","el","en","la","las","lo","los","o","para","por","un","una","y"]);
+
 function taxonomyStem(word) {
   let term = word;
   for (const suffix of ["aciones", "adoras", "adores", "acion", "adora", "ador", "amos", "emos", "imos"]) {
@@ -28,12 +30,12 @@ export function taxonomyCatalogForPrompt(catalog) {
 export function resolveTaxonomyTerms(catalog, value) {
   const query = normalizeDestinationTerm(value);
   if (!query) return [];
-  const queryWords = new Set(query.split(" ").map(taxonomyStem));
+  const queryWords = new Set(query.split(" ").filter(word=>!TAXONOMY_STOP_WORDS.has(word)).map(taxonomyStem).filter(Boolean));
   return catalog.map(node => {
     const labels = [node.name, node.slug, ...node.aliases].map(normalizeDestinationTerm).filter(Boolean);
     const exact = labels.some(label => label === query);
     const contained = labels.some(label => query.includes(label) || label.includes(query));
-    const overlap = Math.max(0, ...labels.map(label => label.split(" ").map(taxonomyStem).filter(word => queryWords.has(word)).length));
+    const overlap = Math.max(0, ...labels.map(label => label.split(" ").filter(word=>!TAXONOMY_STOP_WORDS.has(word)).map(taxonomyStem).filter(word => queryWords.has(word)).length));
     return { node, score: exact ? 100 : contained ? 50 : overlap };
   }).filter(item => item.score > 0).sort((a, b) => b.score - a.score || b.node.depth - a.node.depth).slice(0, 4).map(item => item.node.id);
 }

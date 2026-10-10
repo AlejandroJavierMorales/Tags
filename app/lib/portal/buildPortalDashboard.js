@@ -62,6 +62,7 @@ export function buildPortalDashboard({
     setPortalActivateOpen,
     setRestoActivateOpen,
     setTurnosActivateOpen,
+    setClubActivateOpen,
     setDirectoryActivateOpen
 }) {
     const qrPagesAvailable =
@@ -85,7 +86,9 @@ export function buildPortalDashboard({
         qrs.find((qr) => qr.qr_page_type === "resto");
 
     const turnosPages =
-        qrs.filter((qr) => qr.qr_page_type === "turnos");
+        qrs.filter((qr) => qr.qr_page_type === "turnos" && qr.turnos_profile_code !== "sports_club");
+    const clubPages =
+        qrs.filter((qr) => qr.qr_page_type === "turnos" && qr.turnos_profile_code === "sports_club");
     const directoryPage =
         qrs.find((qr) => qr.qr_page_type === "directory");
 
@@ -98,6 +101,9 @@ export function buildPortalDashboard({
     const hasTurnosAddon =
         businessHasAddon(businessAddons, "turnos");
 
+    const hasClubAddon =
+        businessHasAddon(businessAddons, "club");
+
     const hasGuestExperienceAddon =
         businessHasAddon(businessAddons, "guest_experience");
     const hasAiChatAddon =
@@ -108,6 +114,9 @@ export function buildPortalDashboard({
 
     const hasLoyaltyAddon =
         businessHasAddon(businessAddons, "loyalty");
+
+    const hasEventsAddon = businessHasAddon(businessAddons, "events");
+    const hasEventsProAddon = businessHasAddon(businessAddons, "e_events");
 
     const hasDirectoryAddon =
         businessHasAddon(businessAddons, "directory");
@@ -197,6 +206,26 @@ export function buildPortalDashboard({
             }
         },
         {
+            ...portalRegistry.events,
+            active: hasEventsAddon,
+            status: hasEventsAddon ? "Disponible" : null,
+            actionLabel: hasEventsAddon ? "Administrar eventos" : "No contratado",
+            onClick: () => {
+                if (!hasEventsAddon) return;
+                router.push(portalRegistry.events.adminPath({ businessId }));
+            }
+        },
+        {
+            ...portalRegistry.e_events,
+            active: hasEventsProAddon,
+            status: hasEventsProAddon ? "Disponible" : null,
+            actionLabel: hasEventsProAddon ? "Administrar Eventos Pro" : "No contratado",
+            onClick: () => {
+                if (!hasEventsProAddon) return;
+                router.push(portalRegistry.e_events.adminPath({ businessId }));
+            }
+        },
+        {
             ...portalRegistry.directory,
             active: hasDirectoryAddon,
             status: getFeatureStatusLabel({ hasAddon: hasDirectoryAddon, exists: !!directoryPage, status: directoryPage?.qr_page_status }),
@@ -269,6 +298,26 @@ export function buildPortalDashboard({
                 setTurnosActivateOpen(true);
             },
             onSecondaryClick: turnosPages.length > 0 ? () => setTurnosActivateOpen(true) : null
+        },
+        {
+            ...portalRegistry.club,
+            active: hasClubAddon,
+            status: getFeatureStatusLabel({
+                hasAddon: hasClubAddon,
+                exists: clubPages.length > 0,
+                status: clubPages[0]?.qr_page_status
+            }),
+            actionLabel: clubPages.length > 0 ? "Administrar" : "Activar Tags Club",
+            secondaryActionLabel: clubPages.length > 0 ? "Crear otra instancia" : null,
+            onClick: () => {
+                if (!hasClubAddon) return;
+                if (clubPages.length > 0) {
+                    router.push(`${portalRegistry.club.adminPath({ businessId })}?turnosId=${clubPages[0].turnos_id}`);
+                    return;
+                }
+                setClubActivateOpen(true);
+            },
+            onSecondaryClick: clubPages.length > 0 ? () => setClubActivateOpen(true) : null
         },
         {
             ...portalRegistry.tags_id,

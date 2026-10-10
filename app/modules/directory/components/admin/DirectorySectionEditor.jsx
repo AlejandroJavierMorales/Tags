@@ -40,7 +40,7 @@ function editorContent(blockContent, kind, fallback) {
 export default function DirectorySectionEditor({ businessId, pageId, section, presentationFallback, onClose, onSaved }) {
   const block = section.blocks?.[0];
   const kind = kindOf(section);
-  const maxImages = kind === "gallery" ? 8 : 10;
+  const maxImages = 10;
   const [title, setTitle] = useState(section.title || "");
   const [content, setContent] = useState(() => editorContent(block?.content_json, kind, presentationFallback));
   const [styles, setStyles] = useState(block?.styles_json || {});

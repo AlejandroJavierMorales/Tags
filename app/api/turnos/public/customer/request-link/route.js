@@ -12,17 +12,17 @@ export async function POST(req) {
     try { body = await req.json(); } catch { return jsonResponseError("Cuerpo JSON inválido"); }
     const slug = cleanText(body?.slug);
     const email = cleanText(body?.email, 190).toLowerCase();
-    const purpose = body?.purpose === "manage" ? "manage" : "booking";
+    const purpose = ["manage", "club"].includes(body?.purpose) ? body.purpose : "booking";
     const requestedReturnTo = cleanText(body?.returnTo, 500);
     const returnTo = requestedReturnTo.startsWith("/") && !requestedReturnTo.startsWith("//") ? requestedReturnTo : "";
     if (!slug || !email || !email.includes("@")) return jsonResponseError("slug y email válido son requeridos");
     const app = await getTurnosBySlug(slug);
     if (!app) return jsonResponseError("Página de Turnos no encontrada", 404, "TURNOS_NOT_FOUND");
     const token = crypto.randomBytes(32).toString("hex");
-    await db.query(`INSERT INTO tags_turnos_customer_auth_tokens (turnos_id, email, token_hash, purpose, expires_at) VALUES (?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL ${purpose === "manage" ? 60 : 15} MINUTE))`, [app.id, email, hashToken(token), purpose]);
+    await db.query(`INSERT INTO tags_turnos_customer_auth_tokens (turnos_id, email, token_hash, purpose, expires_at) VALUES (?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL ${["manage", "club"].includes(purpose) ? 60 : 15} MINUTE))`, [app.id, email, hashToken(token), purpose]);
     const baseUrl = process.env.NODE_ENV === "development" ? "http://localhost:3000" : process.env.NEXT_PUBLIC_BASE_URL_PROD;
     const linkParams = new URLSearchParams({ token, slug, purpose });
-    if (purpose === "booking" && returnTo) linkParams.set("returnTo", returnTo);
+    if (["booking", "club"].includes(purpose) && returnTo) linkParams.set("returnTo", returnTo);
     const link = `${baseUrl}/api/turnos/public/customer/verify-link?${linkParams}`;
     const delivery = await sendMail({ to: email, subject: `Identificación para reservar en ${app.name}`, html: `<p>Confirmá tu identidad para continuar:</p><p><a href="${link}">Continuar con mi reserva</a></p>`, text: `Continuá con tu reserva: ${link}` });
     if (!delivery.ok) return Response.json({ ok: false, error: "No pudimos enviar el enlace" }, { status: 502 });

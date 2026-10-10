@@ -268,7 +268,7 @@ export async function GET(req) {
             session.role === "admin"
                 ? `/dashboard`
                 : session.role === "event_client"
-                ? `/dashboard/events/${business.id}`
+                ? `/dashboard/events`
                 : (businessReturnTo || ({
                     guest_experience: `/dashboard/businesses/${business.id}/guest-experience`,
                     store: `/dashboard/businesses/${business.id}/store`,
@@ -279,6 +279,8 @@ export async function GET(req) {
                     ai_chatbot: `/dashboard/businesses/${business.id}/ai-chat`,
                     google_business_profile: `/dashboard/businesses/${business.id}/google-business-profile`,
                     loyalty: `/dashboard/businesses/${business.id}/loyalty`,
+                    events: `/dashboard/businesses/${business.id}/events`,
+                    e_events: `/dashboard/businesses/${business.id}/events-pro`,
                     directory: `/dashboard/businesses/${business.id}/directory`,
                     portal_public: `/dashboard/businesses/${business.id}/portal`,
                 }[business.panel_entry_key] || `/dashboard/businesses/${business.id}`));

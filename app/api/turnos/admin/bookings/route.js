@@ -5,6 +5,7 @@ import { db } from "@/app/lib/tags-db";
 import { getTurnosAccess, turnosAccessResponse } from "@/app/modules/turnos/lib/access/getTurnosAccess";
 import { calculateDeposit, cleanText, createBookingNumber, createPublicToken, hashToken, jsonResponseError, parseJson, resolveDepositPolicy } from "@/app/modules/turnos/lib/turnosService";
 import { normalizeIntakeAnswers, saveIntakeAnswers } from "@/app/modules/turnos/lib/turnosIntake";
+import { recordClubBookingEconomics } from "@/app/modules/sports/lib/recordClubBookingEconomics";
 
 export async function GET(req) {
     const params = new URL(req.url).searchParams;
@@ -87,7 +88,7 @@ export async function POST(req) {
         const appSettings = parseJson(app.settings_json, {});
         const intake = normalizeIntakeAnswers(appSettings.intakeFields, body?.intakeAnswers);
         if (!intake.ok) { await connection.rollback(); return jsonResponseError(intake.error); }
-        const [chosenResources] = await connection.query(`SELECT r.id,r.capacity,r.public_metadata_json FROM tags_turnos_resources r INNER JOIN tags_turnos_service_resources sr ON sr.resource_id=r.id AND sr.service_id=? AND sr.is_active=1 WHERE r.id=? AND r.turnos_id=? AND r.is_active=1 LIMIT 1 FOR UPDATE`, [serviceId, requestedResourceId, app.id]);
+        const [chosenResources] = await connection.query(`SELECT r.id,r.capacity,r.resource_type_id,r.public_metadata_json FROM tags_turnos_resources r INNER JOIN tags_turnos_service_resources sr ON sr.resource_id=r.id AND sr.service_id=? AND sr.is_active=1 WHERE r.id=? AND r.turnos_id=? AND r.is_active=1 LIMIT 1 FOR UPDATE`, [serviceId, requestedResourceId, app.id]);
         const chosenResource = chosenResources[0];
         if (!chosenResource) { await connection.rollback(); return jsonResponseError("Recurso inválido para este servicio", 400, "RESOURCE_INVALID"); }
         const metadata = typeof chosenResource.public_metadata_json === "string" ? JSON.parse(chosenResource.public_metadata_json || "{}") : chosenResource.public_metadata_json || {};
@@ -108,8 +109,14 @@ export async function POST(req) {
         const selectedResources = [];
         for (const requirement of requirements) {
             let remaining = quantity * Math.max(1, Number(requirement.quantity_required || 1));
-            const [resourceRows] = await connection.query(`SELECT r.id,r.capacity FROM tags_turnos_resources r INNER JOIN tags_turnos_service_resources sr ON sr.resource_id=r.id AND sr.service_id=? AND sr.is_active=1 WHERE r.turnos_id=? AND r.resource_type_id=? AND r.id=? AND r.is_active=1 FOR UPDATE`, [serviceId, app.id, requirement.resource_type_id, requestedResourceId]);
+            const [resourceRows] = await connection.query(`SELECT r.id,r.capacity FROM tags_turnos_resources r INNER JOIN tags_turnos_service_resources sr ON sr.resource_id=r.id AND sr.service_id=? AND sr.is_active=1 WHERE r.turnos_id=? AND r.resource_type_id=? AND r.is_active=1 AND (?=0 OR r.resource_type_id<>? OR r.id=?) FOR UPDATE`, [serviceId, app.id, requirement.resource_type_id, requestedResourceId, chosenResource.resource_type_id, requestedResourceId]);
             for (const resource of resourceRows) {
+                const [resourceRules] = await connection.query("SELECT start_time,end_time,valid_from,valid_until FROM tags_turnos_schedule_rules WHERE turnos_id=? AND scope_type='resource' AND scope_id=? AND weekday=? AND is_active=1", [app.id, resource.id, weekday]);
+                const [fallbackRules] = resourceRules.length ? [[]] : await connection.query("SELECT start_time,end_time,valid_from,valid_until FROM tags_turnos_schedule_rules WHERE turnos_id=? AND scope_type='app' AND weekday=? AND is_active=1", [app.id, weekday]);
+                const resourceScheduled = (resourceRules.length ? resourceRules : fallbackRules).some(rule => (!rule.valid_from || day>=String(rule.valid_from).slice(0,10)) && (!rule.valid_until || day<=String(rule.valid_until).slice(0,10)) && startMinute>=minute(rule.start_time) && endMinute<=minute(rule.end_time));
+                if (!resourceScheduled) continue;
+                const [resourceClosed] = await connection.query("SELECT id FROM tags_turnos_schedule_exceptions WHERE turnos_id=? AND exception_type='closed' AND (scope_type='app' OR (scope_type='resource' AND scope_id=?)) AND starts_at<? AND ends_at>? LIMIT 1", [app.id,resource.id,ends,starts]);
+                if (resourceClosed.length) continue;
                 const [usage] = await connection.query(`SELECT COALESCE(SUM(COALESCE(br.units,1)),0) used_units FROM tags_turnos_booking_resources br INNER JOIN tags_turnos_bookings b ON b.id=br.booking_id WHERE br.resource_id=? AND b.status IN ('pending','confirmed','checked_in','in_progress') AND br.starts_at<? AND br.ends_at>?`, [resource.id, ends, starts]);
                 const units = Math.min(remaining, Math.max(0, Math.max(1, Number(resource.capacity || 1)) - Number(usage[0]?.used_units || 0)));
                 if (units > 0) selectedResources.push({ id: resource.id, requirementId: requirement.id, units });
@@ -137,6 +144,7 @@ export async function POST(req) {
         const [result] = await connection.query(`INSERT INTO tags_turnos_bookings (turnos_id, location_id, service_id, customer_id, booking_number, public_token_hash, status, starts_at, ends_at, timezone, party_size, price_snapshot, currency, payment_status, deposit_required, deposit_amount, deposit_due_at, payment_policy_snapshot_json, customer_notes, internal_notes, source, created_by_type, created_by_id, confirmed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'admin', 'owner', ?, ?)`, [app.id, locationId, serviceId, customerId, bookingNumber, hashToken(token), status, starts, ends, app.timezone, Math.max(1, Number(body?.partySize || 1)), service.price, service.currency || app.currency, depositRequired ? "pending" : "not_required", depositRequired ? 1 : 0, depositRequired ? depositAmount : null, depositRequired ? new Date(Date.now() + policy.holdMinutes * 60000) : null, JSON.stringify(policy), cleanText(body?.customerNotes, 1000), cleanText(body?.internalNotes, 1000), access.session?.userId || access.session?.id || null, status === "confirmed" ? new Date() : null]);
         await saveIntakeAnswers(connection, result.insertId, intake.answers);
         for (const resource of selectedResources) await connection.query("INSERT INTO tags_turnos_booking_resources (booking_id,requirement_id,resource_id,units,starts_at,ends_at) VALUES (?,?,?,?,?,?)", [result.insertId, resource.requirementId, resource.id, resource.units, starts, ends]);
+        await recordClubBookingEconomics(connection, { turnosId: app.id, bookingId: result.insertId });
         await connection.query("INSERT INTO tags_turnos_booking_status_history (booking_id, to_status, actor_type, reason) VALUES (?, ?, 'owner', 'Reserva creada desde el panel')", [result.insertId, status]);
         await connection.commit();
         return Response.json({ ok: true, booking: { id: result.insertId, bookingNumber, status, depositRequired, depositAmount, token } }, { status: 201 });

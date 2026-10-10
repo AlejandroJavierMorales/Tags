@@ -31,6 +31,9 @@ export default function EventScannerPage({
     const [lastScan, setLastScan] =
         useState(null);
 
+    const [manualCode, setManualCode] =
+        useState("");
+
     const lockRef =
         useRef(false);
 
@@ -150,6 +153,8 @@ export default function EventScannerPage({
 
             if (data.already_used) {
 
+                setManualCode("");
+
                 showAlert({
 
                     title: "Ya ingresó",
@@ -172,6 +177,8 @@ export default function EventScannerPage({
 
                 icon: "success"
             });
+
+            setManualCode("");
 
         } catch (err) {
 
@@ -199,6 +206,16 @@ export default function EventScannerPage({
         }
     }
 
+    function submitManualCode(event) {
+        event.preventDefault();
+        const code = manualCode.trim().toUpperCase();
+        if (!code) {
+            showAlert({ title: "Ingresá el código", text: "Escribí el código que figura debajo del QR.", icon: "warning" });
+            return;
+        }
+        handleScan(code);
+    }
+
     return (
 
         <div
@@ -212,7 +229,7 @@ export default function EventScannerPage({
                 padding: "4px",
             }}
         >
-           {/*  <EventOwnerHeader session={session} /> */}
+            <EventOwnerHeader session={session} productMode={modules?._productMode} branding={modules?._branding} />
 
             {/* BG EFFECTS */}
             <div
@@ -273,6 +290,7 @@ export default function EventScannerPage({
                     zIndex: 2
                 }}
             >
+                {modules?._productMode === "simple" && <EventNavigation eventId={eventId} modules={modules} />}
 
                 {/* HEADER */}
                 <div
@@ -607,6 +625,12 @@ export default function EventScannerPage({
                         </div>
 
                     </div>
+
+                    <form onSubmit={submitManualCode} style={{ display: "flex", gap: 10, margin: "0 16px 18px", padding: 16, borderRadius: 16, background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.1)", flexWrap: "wrap" }}>
+                        <label htmlFor="event-manual-code" style={{ width: "100%", fontSize: 13, fontWeight: 700 }}>O ingresá el código que figura debajo del QR</label>
+                        <input id="event-manual-code" value={manualCode} onChange={event => setManualCode(event.target.value.toUpperCase())} autoComplete="off" placeholder="Ej.: A1B2C3D4" style={{ flex: "1 1 210px", minWidth: 0, border: "1px solid rgba(255,255,255,.18)", borderRadius: 11, padding: "11px 13px", background: "rgba(0,0,0,.28)", color: "#fff", fontWeight: 800, letterSpacing: ".12em", outline: 0 }} />
+                        <button type="submit" disabled={loading} style={{ border: 0, borderRadius: 11, padding: "11px 18px", background: "#00b872", color: "#052b1c", fontWeight: 900 }}>{loading ? "Validando…" : "Acreditar"}</button>
+                    </form>
 
                     {/* FOOT INFO */}
                     <div

@@ -23,6 +23,8 @@
   font-size: .9rem;
 }
 
+.tags_subscription_location_grid,.tags_subscription_taxonomy_levels{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:14px 0}.tags_subscription_location_grid label,.tags_subscription_taxonomy_levels label,.tags_subscription_taxonomy_picker>label,.tags_subscription_directory_setup>label{display:grid;gap:5px;color:#51635a;font-size:12px;font-weight:850}.tags_subscription_location_grid select,.tags_subscription_taxonomy_levels select,.tags_subscription_taxonomy_picker input,.tags_subscription_directory_setup>label input{width:100%;min-height:41px;padding:9px 11px;border:1px solid #cedbd4;border-radius:9px;background:#fff;color:#193b2c}.tags_subscription_location_grid select:disabled{background:#eef2f0;color:#91a099}.tags_subscription_taxonomy_picker{margin-top:17px;padding-top:15px;border-top:1px solid #f0c78e}.tags_subscription_taxonomy_picker h4{margin:0;color:#184d35}.tags_subscription_taxonomy_picker>p{margin:4px 0 10px;color:#6b766f}.tags_subscription_taxonomy_levels{grid-template-columns:repeat(3,minmax(0,1fr));margin:10px 0}.tags_subscription_taxonomy_results{display:grid;gap:6px;max-height:210px;margin-top:7px;overflow:auto}.tags_subscription_taxonomy_results button,.tags_subscription_taxonomy_selected button{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 11px;border:1px solid #dce7e1;border-radius:9px;background:#fff;color:#28513f;text-align:left;cursor:pointer}.tags_subscription_taxonomy_results button:hover{border-color:#e98318;background:#fff8ed}.tags_subscription_taxonomy_selected{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}.tags_subscription_taxonomy_selected button{border-color:#e98318;background:#fff3e3;color:#71420e;font-weight:800}.tags_subscription_taxonomy_selected b{font-size:16px}
+
 .tags_subscription_taxonomy_grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -83,4 +85,5 @@
 
 @media (max-width: 640px) {
   .tags_subscription_taxonomy_grid { grid-template-columns: 1fr; }
+  .tags_subscription_location_grid,.tags_subscription_taxonomy_levels { grid-template-columns: 1fr; }
 }

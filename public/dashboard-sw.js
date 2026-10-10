@@ -1,5 +1,6 @@
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", event => event.waitUntil(self.clients.claim()));
+self.addEventListener("pushsubscriptionchange", event => event.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(clients => Promise.all(clients.map(client => client.postMessage({ type: "TAGS_PUSH_SUBSCRIPTION_CHANGED" }))))));
 self.addEventListener("push", event => {
   const data = event.data ? event.data.json() : {};
   event.waitUntil(self.registration.showNotification(data.title || "Tags", {

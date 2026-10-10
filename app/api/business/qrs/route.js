@@ -36,6 +36,7 @@ export async function GET(req) {
     q.stop_message,
     q.has_qr_page,
     q.browser_geolocation_enabled,
+    q.event_id,
 
     qrp.id AS qr_page_id,
     qrp.status AS qr_page_status,
@@ -43,6 +44,7 @@ export async function GET(req) {
     qrp.slug_locked,
     qrp.page_type AS qr_page_type,
     ta.id AS turnos_id,
+    ta.business_profile_code AS turnos_profile_code,
 
     p.id AS product_id,
     p.name AS product_name,
@@ -53,6 +55,11 @@ export async function GET(req) {
     t.url_prefix,
     t.placeholder,
     t.input_type,
+
+    e.name AS event_title,
+    ea.id AS event_attendee_id,
+    ea.name AS event_attendee_name,
+    ea.email AS event_attendee_email,
 
     GROUP_CONCAT(
       DISTINCT qau.addon_code
@@ -80,6 +87,12 @@ export async function GET(req) {
     ON qau.qr_code_id = q.id
     AND qau.status = 'active'
 
+  LEFT JOIN tags_events e
+    ON e.id = q.event_id
+
+  LEFT JOIN tags_event_attendees ea
+    ON ea.qr_code_id = q.id
+
   WHERE q.business_id = ?
 
   GROUP BY
@@ -91,12 +104,14 @@ export async function GET(req) {
     q.stop_message,
     q.has_qr_page,
     q.browser_geolocation_enabled,
+    q.event_id,
     qrp.id,
     qrp.status,
     qrp.slug,
     qrp.slug_locked,
     qrp.page_type,
     ta.id,
+    ta.business_profile_code,
     p.id,
     p.name,
     t.id,
@@ -104,7 +119,11 @@ export async function GET(req) {
     t.name,
     t.url_prefix,
     t.placeholder,
-    t.input_type
+    t.input_type,
+    e.name,
+    ea.id,
+    ea.name,
+    ea.email
 
   ORDER BY q.id DESC
   `,

@@ -24,7 +24,7 @@ import { FiDownload } from "react-icons/fi";
 import { FaGoogle } from "react-icons/fa";
 
 const EMPTY_DETAILS = {
-    display_name: "", description: "", logo_url: "", cover_url: "", whatsapp: "", address: "",
+    display_name: "", contact_name: "", description: "", logo_url: "", cover_url: "", whatsapp: "", address: "",
     postal_code: "", latitude: "", longitude: "", primary_place_id: "", country_place_id: "", province_place_id: "", region_place_id: "",
     website_url: "", instagram_url: "", facebook_url: "", tiktok_url: "", youtube_url: "",
     linkedin_url: "", google_reviews_url: "", maps_url: ""
@@ -887,7 +887,7 @@ export default function BusinessesPageClient({ session }) {
 function BusinessDetailsFields({ values, onChange, businessId = null, places = [] }) {
     const update = (field, value) => onChange(current => ({ ...current, [field]: value }));
     const fields = [
-        ["display_name", "Nombre visible"], ["whatsapp", "WhatsApp"],
+        ["contact_name", "Persona de contacto"], ["display_name", "Nombre visible"], ["whatsapp", "WhatsApp"],
         ["website_url", "Sitio web"], ["instagram_url", "Instagram"], ["facebook_url", "Facebook"],
         ["tiktok_url", "TikTok"], ["youtube_url", "YouTube"], ["linkedin_url", "LinkedIn"],
         ["google_reviews_url", "Google Reviews"], ["maps_url", "Google Maps"]

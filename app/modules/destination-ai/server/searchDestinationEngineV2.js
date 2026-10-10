@@ -32,6 +32,13 @@ function distanceKm(from, latitude, longitude) {
   return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+function objectValue(value) {
+  if (value && typeof value === "object" && !Array.isArray(value)) return value;
+  if (typeof value !== "string" || !value.trim()) return {};
+  try { const parsed=JSON.parse(value); return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {}; }
+  catch { return {}; }
+}
+
 function locationCandidate(row, task, userLocation, evidence = {}) {
   const distance = distanceKm(userLocation, row.latitude, row.longitude);
   return {
@@ -57,6 +64,7 @@ function locationCandidate(row, task, userLocation, evidence = {}) {
     requestLabel: task.subject || task.query,
     requestQuery: task.query,
     taskType: task.type,
+    planSlot: task.planSlot || null,
     commercial: evidence.commercial || {},
     rankingScore: Number(row.match_score || 0) + Number(row.quality_score || 0) / 10 + (row.is_featured ? 2 : 0) - (distance == null ? 0 : Math.min(distance, 100) / 20),
   };
@@ -194,7 +202,7 @@ async function searchBusinessName({ siteCode, task, userLocation, limit }) {
 }
 
 async function searchTourism({ siteCode, task, userLocation, limit }) {
-  const search=searchParts(task.query);const query=search.boolean;
+  const search=searchParts(task.retrievalMode === "category" ? "" : task.query);const query=search.boolean;
   const ids = [...new Set((task.taxonomyNodeIds || []).map(Number).filter(Number.isInteger))].slice(0, 6);
   const locality = task.localityPreference === "specified" ? normalizeDestinationTerm(task.locality) : "";
   const type = task.type === "find_event" ? "event" : null;
@@ -204,24 +212,35 @@ async function searchTourism({ siteCode, task, userLocation, limit }) {
        FROM tags_ai_tourism_contents c
        INNER JOIN tags_directory_sites s ON s.id=c.site_id AND s.code=? AND s.is_active=1
        ${ids.length ? `INNER JOIN tags_ai_tourism_content_categories cc ON cc.content_id=c.id AND cc.site_id=c.site_id INNER JOIN tags_directory_taxonomy_closure tc ON tc.descendant_id=cc.taxonomy_node_id AND tc.ancestor_id IN (${placeholders(ids)})` : ""}
-      WHERE c.status='published' AND (c.valid_until IS NULL OR c.valid_until>=NOW())
+      WHERE c.status='published' AND c.show_in_muchi=1
+        ${type ? "AND c.valid_until IS NOT NULL AND DATE(c.valid_until)>=CURRENT_DATE()" : "AND (c.valid_until IS NULL OR DATE(c.valid_until)>=CURRENT_DATE())"}
         ${type ? "AND c.content_type=?" : ""}
         ${query ? "AND MATCH(c.title,c.summary,c.searchable_text) AGAINST (? IN BOOLEAN MODE)" : ""}
         ${search.shortPatterns.map(()=>"AND LOWER(CONCAT_WS(' ',c.title,c.summary,c.searchable_text)) REGEXP ?").join(" ")}
         ${locality ? "AND LOWER(COALESCE(c.locality_name,'')) LIKE ?" : ""}
-      ORDER BY match_score DESC,c.reviewed_at DESC,c.updated_at DESC LIMIT ?`,
+      ORDER BY ${type ? "c.valid_from ASC," : ""}match_score DESC,c.reviewed_at DESC,c.updated_at DESC LIMIT ?`,
     params
   );
-  return rows.map(row => ({
+  return rows.map(row => tourismCandidate(row, task, userLocation));
+}
+
+function tourismCandidate(row, task, userLocation) {
+  const contact=objectValue(row.contact_json);const practical=objectValue(row.practical_json);const availability=objectValue(row.availability_json);const event=objectValue(row.event_json);
+  const evidence=[row.summary||row.description,event.start&&`Comienza: ${event.start}`,event.end&&`Finaliza: ${event.end}`,availability.schedule&&`Horarios: ${availability.schedule}`,availability.duration&&`Duración: ${availability.duration}`,practical.difficulty&&`Dificultad: ${practical.difficulty}`].filter(Boolean).join(". ").slice(0,900);
+  return {
     id: Number(row.content_id), businessId: null, entityKey: `tourism_content:${row.content_id}`, entityType: row.content_type,
     name: row.title, matchedTitle: row.title, description: row.summary || row.description || "", locality: row.locality_name || "",
-    imageUrl: row.primary_image_url || null, href: row.public_url || null, phone: null, whatsapp: null, websiteUrl: null,
+    imageUrl: row.primary_image_url || null, href: row.public_url || contact.bookingUrl || null, phone: contact.phone || null, whatsapp: contact.whatsapp || null, websiteUrl: contact.website || null,
     latitude: validCoordinate(row.latitude, row.longitude) ? Number(row.latitude) : null,
     longitude: validCoordinate(row.latitude, row.longitude) ? Number(row.longitude) : null,
     distanceKm: distanceKm(userLocation, row.latitude, row.longitude), matchType: "exact", evidenceLevel: "tourism_editorial",
-    evidenceExcerpt: row.summary || "", requestLabel: task.subject || task.query, requestQuery: task.query, taskType: task.type,
-    commercial: {}, rankingScore: Number(row.match_score || 0),
-  }));
+    evidenceExcerpt: evidence, requestLabel: task.subject || task.query, requestQuery: task.query, taskType: task.type, planSlot: task.planSlot || null,
+    address: row.address || null, schedule: availability.schedule || null, duration: availability.duration || null,
+    eventStart: event.start || row.valid_from || null, eventEnd: event.end || row.valid_until || null,
+    difficulty: practical.difficulty || null, reservationRequired: availability.reservationRequired ?? null,
+    commercial: { priceMode:practical.priceMode||null,price:practical.priceFrom??null,priceTo:practical.priceTo??null,currency:practical.currency||null },
+    rankingScore: Number(row.match_score || 0),
+  };
 }
 
 export async function searchDestinationTaskV2({ siteCode, task, userLocation = null, limit = 4 }) {
@@ -231,7 +250,7 @@ export async function searchDestinationTaskV2({ siteCode, task, userLocation = n
     if (["find_experience", "find_event", "public_local_info", "plan_day"].includes(task.type)) {
       const [tourism, providers] = await Promise.all([
         searchTourism({ siteCode, task, userLocation, limit }),
-        task.taxonomyNodeIds?.length ? searchByCategory({ siteCode, task, userLocation, limit }) : Promise.resolve([]),
+        task.type === "find_experience" && task.taxonomyNodeIds?.length ? searchByCategory({ siteCode, task, userLocation, limit }) : Promise.resolve([]),
       ]);
       candidates = [...tourism, ...providers];
     } else if (["find_product", "find_dish", "find_service"].includes(task.type)) {
@@ -281,8 +300,8 @@ export async function getDestinationCandidatesByKeysV2({ siteCode, entityKeys = 
     results.push(...rows.map(row => locationCandidate(row, { type: "follow_up", query: "", subject: "" }, userLocation)));
   }
   if (tourismIds.length) {
-    const [rows] = await db.execute(`SELECT c.*,c.id content_id FROM tags_ai_tourism_contents c INNER JOIN tags_directory_sites s ON s.id=c.site_id AND s.code=? WHERE c.status='published' AND c.id IN (${placeholders(tourismIds)})`, [siteCode, ...tourismIds]);
-    results.push(...rows.map(row => ({ id:Number(row.id),businessId:null,entityKey:`tourism_content:${row.id}`,entityType:row.content_type,name:row.title,description:row.summary||row.description||"",locality:row.locality_name||"",imageUrl:row.primary_image_url||null,href:row.public_url||null,latitude:validCoordinate(row.latitude,row.longitude)?Number(row.latitude):null,longitude:validCoordinate(row.latitude,row.longitude)?Number(row.longitude):null,distanceKm:distanceKm(userLocation,row.latitude,row.longitude),evidenceLevel:"tourism_editorial",evidenceExcerpt:row.summary||"",commercial:{} })));
+    const [rows] = await db.execute(`SELECT c.*,c.id content_id FROM tags_ai_tourism_contents c INNER JOIN tags_directory_sites s ON s.id=c.site_id AND s.code=? WHERE c.status='published' AND c.show_in_muchi=1 AND c.id IN (${placeholders(tourismIds)})`, [siteCode, ...tourismIds]);
+    results.push(...rows.map(row => tourismCandidate(row,{type:"follow_up",query:"",subject:""},userLocation)));
   }
   const byKey = new Map(results.map(item => [item.entityKey, item]));
   return keys.map(key => byKey.get(key)).filter(Boolean);
@@ -292,13 +311,19 @@ export function buildDestinationV2Context(tasks, candidates) {
   if (!candidates.length) return "No hay candidatos estructuralmente elegibles para esta consulta.";
   return tasks.map((task, taskIndex) => {
     const rows = candidates.filter(item => item.taskIndex === taskIndex || item.taskIndexes?.includes(taskIndex));
-    return [`TAREA ${taskIndex + 1}: ${task.type} — ${task.subject || task.query}`, ...rows.map((item, index) => [
+    return [`TAREA ${taskIndex + 1}: ${task.type}${task.planSlot?` (${task.planSlot})`:""} — ${task.subject || task.query}`, ...rows.map((item, index) => [
       `${index + 1}. ${item.name}`,
       `ID autorizado: ${item.entityKey}`,
       item.matchedTitle && `Coincidencia: ${item.matchedTitle}`,
       item.evidenceExcerpt && `Evidencia: ${String(item.evidenceExcerpt).slice(0, 500)}`,
       item.locality && `Localidad: ${item.locality}`,
+      item.address && `Dirección o acceso: ${item.address}`,
       Number.isFinite(item.distanceKm) && `Distancia aproximada: ${item.distanceKm.toFixed(1)} km`,
+      item.schedule && `Horarios publicados: ${item.schedule}`,
+      item.duration && `Duración publicada: ${item.duration}`,
+      item.eventStart && `Inicio: ${item.eventStart}`,
+      item.eventEnd && `Finalización: ${item.eventEnd}`,
+      item.difficulty && `Dificultad: ${item.difficulty}`,
       item.commercial?.price != null && `Precio publicado: ${item.commercial.currency || "ARS"} ${item.commercial.price}`,
     ].filter(Boolean).join("\n"))].join("\n");
   }).join("\n\n").slice(0, 14000);

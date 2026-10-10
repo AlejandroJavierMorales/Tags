@@ -34,11 +34,20 @@ export async function GET(req, { params }) {
         q.final_url,
         q.status,
         q.browser_geolocation_enabled,
+        q.event_id,
         p.id as product_id,
-        p.name as product_name
+        p.name as product_name,
+        e.name as event_title,
+        ea.id as event_attendee_id,
+        ea.name as event_attendee_name,
+        ea.email as event_attendee_email
       FROM tags_qr_codes q
       LEFT JOIN tags_products p 
         ON p.id = q.product_id
+      LEFT JOIN tags_events e
+        ON e.id = q.event_id
+      LEFT JOIN tags_event_attendees ea
+        ON ea.qr_code_id = q.id
       WHERE q.business_id = ?
       ORDER BY q.id DESC
       `,

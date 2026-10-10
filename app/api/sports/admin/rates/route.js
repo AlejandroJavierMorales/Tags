@@ -7,7 +7,7 @@ import { turnosAccessResponse } from "@/app/modules/turnos/lib/access/getTurnosA
 import { jsonResponseError, parseJson } from "@/app/modules/turnos/lib/turnosService";
 
 const AUDIENCES = new Set(["guest", "member"]);
-const MODES = new Set(["admin_only", "public_request", "public_auto_confirm", "members_only", "members_and_guests"]);
+const MODES = new Set(["admin_only", "public_request", "public_auto_confirm", "registered_only", "members_only", "members_and_guests"]);
 
 export async function PUT(req) {
     const body = await req.json().catch(() => null);
@@ -23,7 +23,7 @@ export async function PUT(req) {
     const mode = MODES.has(body.audienceMode) ? body.audienceMode : "members_and_guests";
     const bookingChannelMode = mode === "admin_only" ? "admin_only" : mode === "public_request" ? "public_request" : mode === "public_auto_confirm" ? "public_auto_confirm" : "hybrid";
     const confirmationMode = mode === "public_request" ? "manual" : "automatic";
-    const identificationMode = mode === "members_only" ? "magic_link" : "contact";
+    const identificationMode = ["registered_only", "members_only"].includes(mode) ? "magic_link" : "contact";
     const settings = parseJson(services[0].settings_json);
     const minimumDurationMinutes = Math.max(30, Math.min(720, Math.floor(Number(body.minimumDurationMinutes || 60))));
     const durationIncrementMinutes = Math.max(15, Math.min(180, Math.floor(Number(body.durationIncrementMinutes || 30))));

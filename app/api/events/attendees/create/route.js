@@ -1,13 +1,10 @@
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-import { v4 as uuidv4 }
-    from "uuid";
-
 import { db }
     from "@/app/lib/tags-db";
 
-import { createQr }
-    from "@/app/lib/create-qr";
+import { ensureEventAttendeeCredential }
+    from "@/app/modules/e-events/lib/ensureEventAttendeeCredential";
 
 import { getEventSession }
     from "@/app/modules/e-events/lib/geEventSession";
@@ -201,53 +198,6 @@ export async function POST(req) {
             result.insertId;
 
         // =========================
-        // TOKEN
-        // =========================
-
-        const qrToken =
-            uuidv4();
-
-        // =========================
-        // QR PRODUCT
-        // =========================
-
-        const [products] =
-            await db.query(
-                `
-                SELECT
-                    p.id
-
-                FROM tags_products p
-
-                INNER JOIN tags_qr_types t
-                    ON t.id = p.qr_type_id
-
-                WHERE
-                    t.code = 'event_guest'
-                AND
-                    p.is_digital = 1
-
-                LIMIT 1
-                `
-            );
-
-        if (!products.length) {
-
-            return Response.json(
-                {
-                    error:
-                        "Producto QR Evento no encontrado"
-                },
-                {
-                    status: 500
-                }
-            );
-        }
-
-        const productId =
-            products[0].id;
-
-        // =========================
         // BASE URL
         // =========================
 
@@ -256,55 +206,11 @@ export async function POST(req) {
                 ? "http://localhost:3000"
                 : process.env.NEXT_PUBLIC_BASE_URL_PROD;
 
-        const finalUrl =
-            `${base}/e/access/${qrToken}`;
-
-        // =========================
-        // CREATE QR
-        // =========================
-
-        const qr =
-            await createQr({
-
-                business_id:
-                    session.businessId,
-
-                product_id:
-                    productId,
-
-                event_id,
-
-                label:
-                    `Invitado ${name}`,
-
-                value:
-                    `EVENT-ATTENDEE-${attendeeId}`,
-
-                final_url:
-                    finalUrl
-            });
-
-        // =========================
-        // SAVE QR
-        // =========================
-
-        await db.query(
-            `
-            UPDATE tags_event_attendees
-
-            SET
-
-                qr_code_id = ?,
-                qr_token = ?
-
-            WHERE id = ?
-            `,
-            [
-                qr.id,
-                qrToken,
-                attendeeId
-            ]
-        );
+        const credential = await ensureEventAttendeeCredential({
+            connection: db,
+            attendeeId,
+            baseUrl: base
+        });
 
         // =========================
         // RESPONSE
@@ -318,16 +224,16 @@ export async function POST(req) {
                 attendeeId,
 
             qr_id:
-                qr.id,
+                credential.qrId,
 
             qr_code:
-                qr.code,
+                credential.qrCode,
 
             qr_token:
-                qrToken,
+                credential.qrToken,
 
             qr_url:
-                finalUrl
+                credential.qrUrl
         });
 
     } catch (err) {

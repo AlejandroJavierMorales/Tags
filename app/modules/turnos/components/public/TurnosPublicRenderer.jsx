@@ -91,7 +91,8 @@ export default function TurnosPublicRenderer({ page, app, embedded = false, embe
         fetch(`/api/sports/public/app?slug=${encodeURIComponent(app.slug)}`, { cache: "no-store" }).then(response => response.json()).then(payload => {
             if (!payload.ok) return;
             setSports(payload);
-            if (payload.disciplines?.length === 1) setDisciplineId(String(payload.disciplines[0].id));
+            if (payload.sportsApp?.defaultDisciplineId) setDisciplineId(String(payload.sportsApp.defaultDisciplineId));
+            else if (payload.disciplines?.length === 1) setDisciplineId(String(payload.disciplines[0].id));
         }).catch(() => {});
     }, [app.slug, app.business_profile_code]);
 
@@ -177,7 +178,8 @@ export default function TurnosPublicRenderer({ page, app, embedded = false, embe
 
     const Root = embedded ? "div" : "main";
     return <Root className="tags_turnos_public_booking" style={embedded ? {} : app.theme_css_vars || {}}>{loading && <TagsSpinner size={120} logoSize={66} borderSize={5} background="rgba(255,255,255,.72)" />}
-        {!embedded && !app.hasPortal && <header className="tags_turnos_public_booking_brand"><div>{app.business_logo_url && <img src={app.business_logo_url} alt={app.business_display_name || app.business_name || app.name} />}<strong>{app.business_display_name || app.business_name || app.name}</strong></div><a href={`/p/${app.slug}/mis-turnos`}>Mis turnos</a></header>}
+        {!embedded && !app.hasPortal && <header className="tags_turnos_public_booking_brand"><div>{app.business_logo_url && <img src={app.business_logo_url} alt={app.business_display_name || app.business_name || app.name} />}<strong>{app.business_display_name || app.business_name || app.name}</strong></div><div className="tags_turnos_public_booking_brand_actions">{app.business_profile_code === "sports_club" && <a href={`/p/${app.slug}/mi-club`}>Mi Club</a>}<a href={`/p/${app.slug}/mis-turnos`}>Mis turnos</a></div></header>}
+        {!embedded && sports?.sportsApp && <section className="tags_club_public_identity">{sports.sportsApp.coverUrl&&<img className="tags_club_public_cover" src={sports.sportsApp.coverUrl} alt=""/>}<div>{sports.sportsApp.logoUrl&&<img className="tags_club_public_logo" src={sports.sportsApp.logoUrl} alt={sports.sportsApp.name}/>}<div><span>TAGs CLUB</span><h1>{sports.sportsApp.name}</h1>{sports.sportsApp.description&&<p>{sports.sportsApp.description}</p>}</div></div></section>}
         <section className="tags_turnos_public_booking_intro"><span>RESERVAS</span><h1>{page?.title || app.name}</h1><p>{page?.description || "Elegí un servicio y un horario disponible."}</p></section>
         <section className="tags_turnos_public_booking_panel">
             {sports?.disciplines?.length > 1 && <section className="tags_turnos_public_booking_choice tags_sports_public_disciplines"><h2>Elegí el deporte</h2><div>{sports.disciplines.map(item => <button type="button" key={item.id} className={String(item.id) === String(disciplineId) ? "is_selected" : ""} onClick={() => { setDisciplineId(String(item.id)); setServiceId(""); setResourceId(""); }}><strong>{item.name}</strong>{item.description && <small>{item.description}</small>}</button>)}</div></section>}

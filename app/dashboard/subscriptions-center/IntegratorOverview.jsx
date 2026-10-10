@@ -10,14 +10,15 @@ const USAGE_KEYS = {
   qr_page: ["qr_pages_used", "qr_pages_total"], tagsid: ["tags_id_used", "tags_id_total"],
   client_reviews: ["reviews_used", "reviews_total"], store: ["store_used", "store_total"],
   resto: ["resto_used", "resto_total"], portal_public: ["portal_public_used", "portal_public_total"],
-  turnos: ["turnos_used", "turnos_total"], booking: ["booking_used", "booking_total"]
+  turnos: ["turnos_used", "turnos_total"], club: ["club_used", "club_total"], booking: ["booking_used", "booking_total"]
 };
 const statusLabel = value => ({ active: "Vigente", trial: "Prueba", past_due: "Con deuda", paused: "Pausada" }[value] || value || "Sin suscripción");
 const expiryLabel = value => value ? `Vence el ${new Date(value).toLocaleDateString("es-AR")}` : "Sin vencimiento";
 const SETUP = {
   store: { title: "Preparar tienda", description: "Definí el nombre y la dirección pública de la tienda. Al crearla aparecerá automáticamente en el builder de la Web.", endpoint: "/api/workspace/apps/store/activate", button: "Crear tienda", success: "Tienda preparada", slugSuffix: "tienda" },
   resto: { title: "Preparar gastronomía", description: "Definí el nombre y la dirección pública del espacio gastronómico. Al crearlo aparecerá automáticamente en el builder de la Web.", endpoint: "/api/workspace/apps/resto/activate", button: "Crear gastronomía", success: "Gastronomía preparada", slugSuffix: "gastronomia" },
-  turnos: { title: "Preparar reservas", description: "Definí el nombre, la dirección pública y el tipo de actividad. Al crearla aparecerá automáticamente en el builder de la Web.", endpoint: "/api/workspace/apps/turnos/activate", button: "Crear reservas", success: "Reservas preparadas", slugSuffix: "reservas", profiles: [{ value: "generic", label: "Servicios generales" }, { value: "spa", label: "Spa" }, { value: "bike_kayak", label: "Bicicletas / Kayaks" }, { value: "sports_club", label: "Club deportivo" }, { value: "hairdresser", label: "Peluquería" }] }
+  turnos: { title: "Preparar reservas", description: "Definí el nombre, la dirección pública y el tipo de actividad. Al crearla aparecerá automáticamente en el builder de la Web.", endpoint: "/api/workspace/apps/turnos/activate", button: "Crear reservas", success: "Reservas preparadas", slugSuffix: "reservas", profiles: [{ value: "generic", label: "Servicios generales" }, { value: "spa", label: "Spa" }, { value: "bike_kayak", label: "Bicicletas / Kayaks" }, { value: "hairdresser", label: "Peluquería" }] },
+  club: { title: "Preparar Tags Club", description: "Definí el nombre y la dirección pública del club. Se crearán las canchas, clases y reservas sobre el motor de Turnos.", endpoint: "/api/workspace/apps/turnos/activate", button: "Crear Tags Club", success: "Tags Club preparado", slugSuffix: "club", profiles: [{ value: "sports_club", label: "Tags Club" }] }
 };
 
 export default function IntegratorOverview({ businessId, businesses, subscriptions, planAddons, subscriptionGrants = [], addons, directorySites, onChanged }) {

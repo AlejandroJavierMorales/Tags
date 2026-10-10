@@ -1,0 +1,61 @@
+.tags_event_registration_tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid #dce7e0;
+}
+
+.tags_event_registration_tabs button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  padding: 12px 16px;
+  color: #557066;
+  font-weight: 800;
+}
+
+.tags_event_registration_tabs button.active {
+  border-bottom-color: #26734f;
+  color: #185b3c;
+}
+
+@media (max-width: 560px) {
+  .tags_event_registration_tabs button {
+    flex: 1;
+    justify-content: center;
+    padding-inline: 8px;
+  }
+}
+
+.tags_event_registration_communications {
+  display: grid;
+  gap: 6px;
+  grid-column: 1 / -1;
+  border-top: 1px solid #e0e9e4;
+  padding-top: 10px;
+}
+
+.tags_event_registration_communications p {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+  color: #5b7066;
+  font-size: 12px;
+}
+
+.tags_event_registration_request_actions button:disabled {
+  cursor: not-allowed;
+  opacity: .48;
+}
+
+.tags_event_registration_payment_required {
+  flex-basis: 100%;
+  color: #9a5d13;
+  font-weight: 750;
+}
+
+.tags_event_confirmation_backdrop{position:fixed;inset:0;z-index:1800;display:grid;place-items:center;padding:16px;background:rgba(13,38,28,.62)}.tags_event_confirmation_modal{width:min(650px,100%);max-height:calc(100vh - 32px);overflow:auto;border-radius:18px;background:#fff;box-shadow:0 25px 80px rgba(0,0,0,.3)}.tags_event_confirmation_modal>header{display:flex;align-items:center;justify-content:space-between;gap:14px;border-bottom:1px solid #dfebe4;padding:18px 20px}.tags_event_confirmation_modal>header small{color:#26734f;font-size:10px;font-weight:900;letter-spacing:.13em}.tags_event_confirmation_modal>header h2{margin:4px 0 0;font-size:22px}.tags_event_confirmation_modal>header button{display:grid;width:34px;height:34px;place-items:center;border:1px solid #d8e5de;border-radius:50%;background:#f6faf8}.tags_event_confirmation_summary{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:20px}.tags_event_confirmation_summary article{display:grid;gap:4px;border-radius:11px;background:#f2f7f4;padding:12px}.tags_event_confirmation_summary span,.tags_event_confirmation_delivery dt{color:#6a7a72;font-size:11px;text-transform:uppercase}.tags_event_confirmation_delivery{margin:0 20px 18px;border:1px solid #dce8e1;border-radius:13px;padding:16px}.tags_event_confirmation_delivery h3{margin:0 0 5px}.tags_event_confirmation_delivery p{margin:0 0 13px;color:#607168}.tags_event_confirmation_delivery dl{display:grid;gap:7px;margin:0}.tags_event_confirmation_delivery dl>div{display:grid;grid-template-columns:100px 1fr;gap:10px}.tags_event_confirmation_delivery dd{margin:0;font-weight:700}.tags_event_confirmation_notify{display:flex;align-items:flex-start;gap:11px;margin:0 20px 20px;border-radius:12px;background:#fff5df;padding:14px;color:#6e4b13}.tags_event_confirmation_notify input{width:18px;height:18px;accent-color:#26734f}.tags_event_confirmation_notify span,.tags_event_confirmation_notify strong,.tags_event_confirmation_notify small{display:block}.tags_event_confirmation_notify small{margin-top:3px;font-weight:500}.tags_event_confirmation_modal>footer{display:flex;justify-content:flex-end;gap:9px;border-top:1px solid #dfebe4;padding:15px 20px}.tags_event_confirmation_modal>footer button{border:1px solid #cfe0d7;border-radius:9px;background:#fff;padding:10px 15px;color:#315a49;font-weight:800}.tags_event_confirmation_modal>footer button:last-child{border-color:#26734f;background:#26734f;color:#fff}@media(max-width:560px){.tags_event_confirmation_summary{grid-template-columns:1fr}.tags_event_confirmation_delivery dl>div{grid-template-columns:1fr;gap:2px}.tags_event_confirmation_modal>footer button{flex:1}}

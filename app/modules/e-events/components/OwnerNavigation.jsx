@@ -2,7 +2,13 @@
 
 import Link from "next/link";
 
-export default function OwnerNavigation({ session, staffPermissions={} }) {
+export default function OwnerNavigation({ session, staffPermissions={}, productMode="pro" }) {
+
+    const eventsHome = session?.type === "event_staff"
+        ? "/dashboard/events"
+        : session?.businessId
+            ? productMode === "simple" ? `/dashboard/businesses/${session.businessId}/events` : `/dashboard/businesses/${session.businessId}/events-pro`
+            : "/dashboard/events";
 
     // =========================
     // PERMISSIONS
@@ -73,7 +79,7 @@ export default function OwnerNavigation({ session, staffPermissions={} }) {
         >
 
             <Link
-                href="/dashboard/events"
+                href={eventsHome}
                 className="tags_btn_secondary card p-2"
             >
                 🎫 Eventos
@@ -99,7 +105,7 @@ export default function OwnerNavigation({ session, staffPermissions={} }) {
                         href="/dashboard/events/tags"
                         className="tags_btn_secondary card p-2"
                     >
-                        🏷️ Terjetas/Pases
+                        🏷️ Tarjetas/Pases
                     </Link>
                 )
             }

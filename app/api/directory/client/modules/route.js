@@ -13,7 +13,7 @@ function parse(value) {
     try { return JSON.parse(value); } catch { return {}; }
 }
 
-const LAYOUT_MODULES = new Set(["store", "resto", "turnos", "reviewsInvitation", "reviewsSlider"]);
+const LAYOUT_MODULES = new Set(["store", "resto", "turnos", "events", "reviewsInvitation", "reviewsSlider"]);
 
 function normalizeLayoutOrder(value, groupIds = new Set(), sectionIds = new Set()) {
     if (!Array.isArray(value)) return null;

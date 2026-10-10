@@ -68,6 +68,15 @@ export const portalRegistry = {
             `/dashboard/businesses/${businessId}/turnos`
     },
 
+    club: {
+        key: "club",
+        title: "Tags Club",
+        description: "Canchas, clases, profesores y gestión deportiva del club.",
+        canHaveMultiple: true,
+        adminPath: ({ businessId }) =>
+            `/dashboard/businesses/${businessId}/turnos`
+    },
+
     guest_experience: {
         key: "guest_experience",
         title: "Mi Estadía",
@@ -111,6 +120,24 @@ export const portalRegistry = {
         canHaveMultiple: false,
         adminPath: ({ businessId }) =>
             `/dashboard/businesses/${businessId}/loyalty`
+    },
+
+    e_events: {
+        key: "e_events",
+        title: "Eventos Pro",
+        description: "Producción integral de eventos, invitados, invitaciones, mesas, staff y acreditación.",
+        canHaveMultiple: true,
+        adminPath: ({ businessId }) =>
+            `/dashboard/businesses/${businessId}/events-pro`
+    },
+
+    events: {
+        key: "events",
+        title: "Eventos",
+        description: "Conversatorios, capacitaciones e inscripciones con pagos y acreditación QR.",
+        canHaveMultiple: true,
+        adminPath: ({ businessId }) =>
+            `/dashboard/businesses/${businessId}/events`
     },
 
     booking: {

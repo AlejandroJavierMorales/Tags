@@ -1,5 +1,6 @@
 import { db } from "@/app/lib/tags-db";
 import { getDirectoryPublicData } from "./getDirectoryPublicData";
+import { getDiningCategoryNodes } from "./directoryGastronomy";
 
 function normalized(value) {
   return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
@@ -24,8 +25,7 @@ export async function getDirectoryTourismPageData(kind, siteCode = "calamuchitar
   if (kind === "restaurants" && !selected) selected = nodes.find(node => Number(node.depth) === 0 && normalized(node.name) === "gastronomia") || findByName(nodes, tourism.id, ["Restoranes", "Restaurantes", "Gastronomia"]);
 
   if (kind === "restaurants" && selected && Number(selected.depth) === 0) {
-    const excluded = new Set(["fabrica de cervezas", "fabrica de cerveza", "fabricas de cerveza", "fabrica de alfajores", "fabricas de alfajores"]);
-    const gastronomyCategories = nodes.filter(node => Number(node.parent_id) === Number(selected.id) && !excluded.has(normalized(node.name)));
+    const gastronomyCategories = getDiningCategoryNodes(nodes, selected.id);
     const pages = await Promise.all(gastronomyCategories.map(category => getDirectoryPublicData({ categoria: category.id, pagina: 1 }, siteCode)));
     const validPages = pages.filter(Boolean);
     if (validPages.length) {

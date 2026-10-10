@@ -781,6 +781,11 @@ export default function DashboardAdminClient({ session }) {
                       <span className={`badge label`}>
                         {qr.label || "-"}
                       </span>
+                      {qr.event_title && (
+                        <small style={{ display: "block", marginTop: 4, opacity: 0.72 }}>
+                          {qr.event_title} · {qr.event_attendee_name || "Asistente"}
+                        </small>
+                      )}
                     </td>
 
                     <td>

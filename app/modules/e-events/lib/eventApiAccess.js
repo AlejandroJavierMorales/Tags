@@ -3,8 +3,12 @@ import { getEventSession } from "./geEventSession";
 import { getStaffPermissions } from "./getStaffPermissions";
 
 const PERMISSION_ALIASES = {
-    "checkin.scan": ["checkin.scan", "checkin_scan"],
-    checkin_scan: ["checkin.scan", "checkin_scan"]
+    "checkin.scan": ["checkin.scan", "checkin_scan", "checkin.manage"],
+    checkin_scan: ["checkin.scan", "checkin_scan", "checkin.manage"],
+    "attendees.update": ["attendees.update", "attendees.manage"],
+    "attendees.view": ["attendees.view", "attendees.manage"],
+    "settings.manage": ["settings.manage", "events.manage"],
+    "events.view": ["events.view", "events.manage", "dashboard.view"]
 };
 
 function normalizedBusinessId(session) {
@@ -47,7 +51,7 @@ export async function requireEventSession() {
         session.role === "admin";
 
     const isStaff =
-        session.type === "event_staff";
+        session.type === "event_staff" || session.type === "business_staff";
 
     const businessId =
         normalizedBusinessId(session);
@@ -99,8 +103,16 @@ export async function requireEventAccess({
             SELECT
                 id,
                 business_id,
+                product_code,
                 status,
-                name
+                name,
+                location,
+                address,
+                latitude,
+                longitude,
+                credential_note,
+                starts_at,
+                ends_at
             FROM tags_events
             WHERE id = ?
             LIMIT 1
@@ -123,7 +135,31 @@ export async function requireEventAccess({
         };
     }
 
+    const [[activeProduct]] = await db.query(
+        `SELECT 1 AS enabled
+           FROM tags_business_addons
+          WHERE business_id=?
+            AND TRIM(LOWER(addon_code))=?
+            AND status='active'
+            AND (expires_at IS NULL OR expires_at>=NOW())
+          LIMIT 1`,
+        [Number(event.business_id), String(event.product_code || "e_events")]
+    );
+    if (!activeProduct) {
+        return { ok: false, status: 403, error: "El producto de Eventos correspondiente no está activo" };
+    }
+
     if (access.isStaff) {
+        if (access.session.type === "business_staff") {
+            if (Number(event.business_id) !== access.businessId) return { ok: false, status: 403, error: "El evento pertenece a otro negocio" };
+            const [[central]] = await db.query(`SELECT permissions_json FROM tags_business_staff_app_access WHERE staff_id=? AND business_id=? AND app_code=? AND status='active' LIMIT 1`, [Number(access.session.staffId || 0), Number(event.business_id), String(event.product_code || "e_events")]);
+            if (!central) return { ok: false, status: 403, error: "No tenés acceso a Eventos" };
+            let permissions = [];
+            try { permissions = Array.isArray(central.permissions_json) ? central.permissions_json : JSON.parse(central.permissions_json || "[]"); } catch {}
+            const accepted = PERMISSION_ALIASES[permission] || [permission];
+            if (permission && !accepted.some(item => permissions.includes(item))) return { ok: false, status: 403, error: "No tenés permisos para esta operación" };
+            return { ...access, event, permissions };
+        }
         const [[assignment]] =
             await db.query(
                 `

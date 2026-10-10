@@ -5,6 +5,7 @@ import { getTurnosBySlug, getPublicServices } from "@/app/modules/turnos/lib/get
 import { jsonResponseError } from "@/app/modules/turnos/lib/turnosService";
 import { db } from "@/app/lib/tags-db";
 import { getSportsBookingPolicy } from "@/app/modules/sports/lib/getSportsBookingPolicy";
+import { getClubPublicSession } from "@/app/modules/sports/lib/getClubPublicSession";
 
 export async function GET(req) {
     const slug = new URL(req.url).searchParams.get("slug");
@@ -12,13 +13,14 @@ export async function GET(req) {
     if (!app) return jsonResponseError("Página de Turnos no encontrada", 404, "TURNOS_NOT_FOUND");
     const services = await getPublicServices(app.id);
     if (app.business_profile_code !== "sports_club") return Response.json({ ok: true, services });
+    const clubSession = await getClubPublicSession(db, app);
     const visible = [];
     for (const service of services) {
         const policy = await getSportsBookingPolicy(db, app, service);
-        if (["admin_only", "members_only"].includes(policy?.audienceMode)) continue;
+        if (policy?.audienceMode === "admin_only") continue;
         visible.push({
             ...service,
-            price: policy?.guestPrice ?? service.price,
+            price: clubSession?.isActiveMember ? policy?.memberPrice ?? service.price : policy?.guestPrice ?? service.price,
             currency: policy?.currency || service.currency,
             sports_audience_mode: policy?.audienceMode || "members_and_guests",
             sports_duration_policy: policy ? {

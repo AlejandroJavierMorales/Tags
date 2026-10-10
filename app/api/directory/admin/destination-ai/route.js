@@ -19,7 +19,7 @@ function defaults(site, raw = {}) {
   return {
     enabled: current.enabled ?? site.code === "calamuchitar",
     title: current.title || (site.code === "calamuchitar" ? "Muchi · Tu asistente del Valle" : `Asistente de ${site.name}`),
-    subtitle: current.subtitle || "Información real del directorio",
+    subtitle: current.subtitle || (site.code === "calamuchitar" ? "Tu guía para descubrir Calamuchita" : `Información útil de ${site.name}`),
     greeting: current.greeting || "¡Hola! ¿En qué puedo ayudarte?",
     characterTitle: current.characterTitle || (site.code === "calamuchitar" ? "¡Hola! Soy Muchi!" : "¡Hola!"),
     characterButtonLabel: current.characterButtonLabel || (site.code === "calamuchitar" ? "Charlá con Muchi" : "Iniciar conversación"),

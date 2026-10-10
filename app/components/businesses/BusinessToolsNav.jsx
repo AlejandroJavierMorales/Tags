@@ -2,11 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { FaCalendarCheck, FaChartLine, FaGift, FaGlobe, FaGoogle, FaHotel, FaQrcode, FaRobot, FaStar, FaStore, FaUtensils } from "react-icons/fa6";
+import { FaCalendarCheck, FaChartLine, FaGift, FaGlobe, FaGoogle, FaHotel, FaQrcode, FaRobot, FaStar, FaStore, FaUtensils, FaUsers } from "react-icons/fa6";
 import "./BusinessToolsNav.css";
 
-const ICONS = { panel: FaChartLine, qr_page: FaQrcode, tags_id: FaQrcode, guest_experience: FaHotel, store: FaStore, resto: FaUtensils, turnos: FaCalendarCheck, client_reviews: FaStar, qr_agency: FaQrcode, ai_chatbot: FaRobot, google_business_profile: FaGoogle, loyalty: FaGift, directory: FaGlobe, portal_public: FaGlobe };
-const LABELS = { panel: "Panel", guest_experience: "Mi Estadía", store: "Tienda", resto: "Resto", turnos: "Turnos", client_reviews: "Reseñas", qr_agency: "QR Agency", ai_chatbot: "ChatBot", loyalty: "Beneficios", directory: "Web", portal_public: "Portal" };
+const ICONS = { panel: FaChartLine, staff: FaUsers, qr_page: FaQrcode, tags_id: FaQrcode, guest_experience: FaHotel, store: FaStore, resto: FaUtensils, turnos: FaCalendarCheck, events: FaCalendarCheck, e_events: FaCalendarCheck, client_reviews: FaStar, qr_agency: FaQrcode, ai_chatbot: FaRobot, google_business_profile: FaGoogle, loyalty: FaGift, directory: FaGlobe, portal_public: FaGlobe };
+const LABELS = { panel: "Panel", staff: "Colaboradores", guest_experience: "Mi Estadía", store: "Tienda online", resto: "Restaurant - Carta de menú", turnos: "Turnos y Reservas", events: "Eventos", e_events: "Eventos Pro", client_reviews: "Reseñas de Clientes", qr_agency: "QR Agency", ai_chatbot: "ChatBot", loyalty: "Beneficios", directory: "Web", portal_public: "Portal" };
 
 export default function BusinessToolsNav({ businessId }) {
     const pathname = usePathname();

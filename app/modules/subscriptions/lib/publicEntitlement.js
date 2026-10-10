@@ -1,4 +1,5 @@
 import { db } from "@/app/lib/tags-db";
+import { isEffectiveSubscriptionActive } from "./subscriptionState";
 
 const PAGE_ADDONS = {
   directory: "directory",
@@ -18,7 +19,8 @@ export function addonForPageType(pageType) {
 export async function getPublicEntitlement(businessId, addonCode) {
   if (!businessId || !addonCode) return { allowed: true, managed: false };
   const [[subscriptionGrant]] = await db.query(
-    `SELECT s.status subscription_status,g.status grant_status,g.expires_at
+    `SELECT s.status,s.expires_at,s.grace_days,s.auto_disable_on_expire,s.admin_override_until,
+            g.status grant_status
      FROM tags_subscription_addon_grants g
      INNER JOIN tags_subscriptions s ON s.id=g.subscription_id
      WHERE g.business_id=? AND g.addon_code=?
@@ -26,24 +28,31 @@ export async function getPublicEntitlement(businessId, addonCode) {
     [Number(businessId), String(addonCode)]
   );
   if (subscriptionGrant) {
-    const allowed = ["active", "trial"].includes(subscriptionGrant.subscription_status)
-      && subscriptionGrant.grant_status === "active"
-      && (!subscriptionGrant.expires_at || new Date(subscriptionGrant.expires_at) >= new Date());
+    const allowed = isEffectiveSubscriptionActive(subscriptionGrant)
+      && subscriptionGrant.grant_status === "active";
     return { allowed, managed: true, status: allowed ? "active" : "paused" };
   }
+  const [[currentSubscription]] = await db.query(
+    `SELECT status,expires_at,grace_days,auto_disable_on_expire,admin_override_until
+       FROM tags_subscriptions WHERE business_id=? ORDER BY id DESC LIMIT 1`,
+    [Number(businessId)]
+  );
+  if (currentSubscription && !isEffectiveSubscriptionActive(currentSubscription)) {
+    return { allowed: false, managed: true, status: "paused" };
+  }
   const [[business]] = await db.query("SELECT subscription_status FROM tags_businesses WHERE id=? LIMIT 1", [Number(businessId)]);
-  if (["inactive", "paused", "cancelled", "past_due", "expired"].includes(String(business?.subscription_status || "").toLowerCase())) {
+  if (!currentSubscription && ["inactive", "paused", "cancelled", "past_due", "expired"].includes(String(business?.subscription_status || "").toLowerCase())) {
     return { allowed: false, managed: true, status: "paused" };
   }
   const [rows] = await db.query(
-    `SELECT status,expires_at
+    `SELECT status,expires_at,grace_days,auto_disable_on_expire,admin_override_until
      FROM tags_business_addons
      WHERE business_id=? AND addon_code=?
      ORDER BY (status='active') DESC,id DESC`,
     [Number(businessId), String(addonCode)]
   );
   if (!rows.length) return { allowed: true, managed: false };
-  const active = rows.some(row => row.status === "active" && (!row.expires_at || new Date(row.expires_at) >= new Date()));
+  const active = rows.some(row => isEffectiveSubscriptionActive(row));
   return { allowed: active, managed: true, status: active ? "active" : "paused" };
 }
 

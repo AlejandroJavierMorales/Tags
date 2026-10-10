@@ -15,7 +15,7 @@ async function accessFor(businessId) {
 
 async function profilePayload(businessId) {
   const [businessRows, places, selected] = await Promise.all([
-    db.query("SELECT id,name,COALESCE(NULLIF(display_name,''),name) AS display_name,email,phone,description,logo_url,cover_url,whatsapp,address,postal_code,latitude,longitude,website_url,instagram_url,facebook_url,tiktok_url,youtube_url,linkedin_url,google_reviews_url,maps_url FROM tags_businesses WHERE id=? LIMIT 1", [businessId]),
+    db.query("SELECT id,name,COALESCE(NULLIF(display_name,''),name) AS display_name,contact_name,email,phone,description,logo_url,cover_url,whatsapp,address,postal_code,latitude,longitude,website_url,instagram_url,facebook_url,tiktok_url,youtube_url,linkedin_url,google_reviews_url,maps_url FROM tags_businesses WHERE id=? LIMIT 1", [businessId]),
     db.query("SELECT id,parent_id,place_type,name,slug,country_code,latitude,longitude FROM tags_geo_places WHERE is_active=1 ORDER BY name"),
     db.query("SELECT bp.place_id,bp.relation_type,bp.is_primary FROM tags_business_places bp WHERE bp.business_id=? ORDER BY bp.is_primary DESC,bp.place_id", [businessId])
   ]);
@@ -65,8 +65,8 @@ export async function POST(request) {
       }
     }
     await connection.query(
-      `UPDATE tags_businesses SET display_name=?,email=?,phone=?,description=?,logo_url=?,cover_url=?,whatsapp=?,address=?,postal_code=?,latitude=?,longitude=?,website_url=?,instagram_url=?,facebook_url=?,updated_at=NOW() WHERE id=?`,
-      [displayName,email,values.phone,values.description,values.logo,values.cover,values.whatsapp,values.address,values.postalCode,latitude,longitude,values.website,values.instagram,values.facebook,businessId]
+      `UPDATE tags_businesses SET display_name=?,contact_name=?,email=?,phone=?,description=?,logo_url=?,cover_url=?,whatsapp=?,address=?,postal_code=?,latitude=?,longitude=?,website_url=?,instagram_url=?,facebook_url=?,updated_at=NOW() WHERE id=?`,
+      [displayName,clean(body.contactName,190),email,values.phone,values.description,values.logo,values.cover,values.whatsapp,values.address,values.postalCode,latitude,longitude,values.website,values.instagram,values.facebook,businessId]
     );
     await connection.query(
       `UPDATE tags_stores

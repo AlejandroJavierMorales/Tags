@@ -20,7 +20,9 @@ import { sendBusinessPush } from "@/app/modules/notifications/server/sendBusines
 import { getGuestPublicSession } from "@/app/modules/guest-experience/lib/getGuestPublicSession";
 import { getSportsBookingPolicy } from "@/app/modules/sports/lib/getSportsBookingPolicy";
 import { calculateSportsDurationPrice, validateSportsDuration } from "@/app/modules/sports/lib/sportsDurationPolicy";
+import { getClubPublicSession } from "@/app/modules/sports/lib/getClubPublicSession";
 import { normalizeIntakeAnswers, saveIntakeAnswers } from "@/app/modules/turnos/lib/turnosIntake";
+import { recordClubBookingEconomics } from "@/app/modules/sports/lib/recordClubBookingEconomics";
 
 function validDate(value) {
     const date = new Date(value);
@@ -57,7 +59,6 @@ export async function POST(req) {
         email = cleanText(guestSession.guest_email, 190).toLowerCase() || null;
         phone = cleanText(guestSession.guest_phone, 60) || null;
     }
-    if (!name || (!email && !phone)) return jsonResponseError("El huésped necesita nombre y un medio de contacto");
     let connection;
     try {
         connection = await db.getConnection();
@@ -71,17 +72,32 @@ export async function POST(req) {
             return jsonResponseError("Este servicio no está disponible públicamente", 403, "PUBLIC_BOOKING_DISABLED");
         }
         const sportsPolicy = await getSportsBookingPolicy(connection, app, service);
-        if (["admin_only", "members_only"].includes(sportsPolicy?.audienceMode)) {
+        const clubSession = sportsPolicy ? await getClubPublicSession(connection, app) : null;
+        if (sportsPolicy?.audienceMode === "admin_only") {
             await connection.rollback();
-            return jsonResponseError(sportsPolicy.audienceMode === "members_only" ? "Esta actividad está reservada para miembros activos" : "Esta actividad se reserva desde la administración", 403, "SPORTS_BOOKING_AUDIENCE_NOT_ALLOWED");
+            return jsonResponseError("Esta actividad se reserva desde la administración", 403, "SPORTS_BOOKING_AUDIENCE_NOT_ALLOWED");
         }
+        if (["registered_only", "members_only"].includes(sportsPolicy?.audienceMode)) {
+            const activePlayer = clubSession?.player?.status === "active";
+            const allowed = sportsPolicy.audienceMode === "members_only" ? activePlayer && clubSession.isActiveMember : activePlayer;
+            if (!allowed) {
+                await connection.rollback();
+                return jsonResponseError(sportsPolicy.audienceMode === "members_only" ? "Esta actividad está reservada para socios activos" : "Registrate en Mi Club para reservar esta actividad", 403, "SPORTS_CLUB_ACCESS_REQUIRED");
+            }
+        }
+        if (clubSession?.player?.status === "active") {
+            name = cleanText(clubSession.player.display_name || `${clubSession.player.first_name} ${clubSession.player.last_name}`);
+            email = clubSession.email;
+            phone = cleanText(clubSession.player.phone, 60) || phone;
+        }
+        if (!name || (!email && !phone)) { await connection.rollback(); return jsonResponseError("La persona necesita nombre y un medio de contacto"); }
         const sportsDuration = sportsPolicy ? validateSportsDuration(service, body?.durationMinutes) : null;
         if (sportsDuration && !sportsDuration.valid) {
             await connection.rollback();
             return jsonResponseError(`La duración debe ser de ${sportsDuration.minimumMinutes} a ${sportsDuration.maxDurationMinutes} minutos, en incrementos de ${sportsDuration.incrementMinutes}`, 400, "SPORTS_DURATION_INVALID");
         }
         const bookingPrice = sportsPolicy
-            ? calculateSportsDurationPrice(sportsPolicy.guestPrice, sportsDuration)
+            ? calculateSportsDurationPrice(clubSession?.isActiveMember ? sportsPolicy.memberPrice : sportsPolicy.guestPrice, sportsDuration)
             : Number(service.price || 0);
         const bookingCurrency = sportsPolicy?.currency || service.currency || app.currency;
         if (!guestSession && service.customer_identification_mode !== "contact") {
@@ -209,6 +225,7 @@ export async function POST(req) {
         for (const resource of selectedResources) {
             await connection.query("INSERT INTO tags_turnos_booking_resources (booking_id, requirement_id, resource_id, starts_at, ends_at, units) VALUES (?, ?, ?, ?, ?, ?)", [bookingId, resource.requirementId, resource.id, starts, ends, resource.units]);
         }
+        await recordClubBookingEconomics(connection, { turnosId: app.id, bookingId });
         await connection.query("INSERT INTO tags_turnos_booking_status_history (booking_id, from_status, to_status, actor_type, reason) VALUES (?, NULL, ?, 'customer', ?)", [bookingId, status, depositRequired ? "Reserva creada con seña pendiente" : "Reserva creada"]);
         if (guestSession) await connection.query("INSERT INTO tags_guest_turnos_bookings (guest_app_id,stay_id,guest_id,turnos_id,booking_id) VALUES (?,?,?,?,?)", [guestSession.id, guestSession.stay_id, guestSession.guest_id, app.id, bookingId]);
         await connection.commit();

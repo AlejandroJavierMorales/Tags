@@ -2,7 +2,7 @@ import { activateDirectoryWebForBusiness } from "./activateDirectoryWebForBusine
 import { activateClientReviewsForBusiness } from "@/app/modules/client-reviews/lib/activateClientReviewsForBusiness";
 import { getSubscriptionFoundationStatus } from "@/app/modules/subscriptions/lib/subscriptionSchema";
 
-const ELIGIBLE_STATUSES = new Set(["active", "trial", "past_due"]);
+const ELIGIBLE_STATUSES = new Set(["active", "trial"]);
 
 function reviewSlug(name, businessId) {
   return `${String(name || `negocio-${businessId}`)

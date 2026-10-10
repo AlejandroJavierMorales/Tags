@@ -318,6 +318,27 @@ export default function EventDashboardPage({
                         </div>
                     )}
 
+                    {modules?.registration && (
+                        <div className="col-md-6 col-lg-4 col-12">
+                            <Link
+                                href={`/dashboard/events/${eventId}/registration`}
+                                className="text-decoration-none"
+                            >
+                                <div className="tags_module_card">
+                                    <div className="tags_module_left">
+                                        <div className="tags_module_icon">📝</div>
+                                        <h4 className="tags_module_title">Inscripciones</h4>
+                                    </div>
+                                    <div className="tags_module_right">
+                                        <p className="tags_module_description">
+                                            Formulario público, cupos y confirmación de solicitudes.
+                                        </p>
+                                    </div>
+                                </div>
+                            </Link>
+                        </div>
+                    )}
+
                     {/* ATTENDEES */}
                     {modules?.invitations && (
                         <div className="col-md-6 col-lg-4 col-12">

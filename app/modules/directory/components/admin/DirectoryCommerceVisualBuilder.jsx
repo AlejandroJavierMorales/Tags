@@ -9,6 +9,7 @@ import { getStoreModuleDefinition } from "@/app/modules/store/lib/storeModuleDef
 import { RESTO_BUILDER_DEFINITIONS } from "@/app/modules/resto/lib/restoBuilderDefinitions";
 import { getDirectoryModuleSettings } from "../../lib/directoryModuleSettings";
 import DirectoryReviewsModuleEditor from "./DirectoryReviewsModuleEditor";
+import DirectoryEventsModuleEditor from "./DirectoryEventsModuleEditor";
 import DirectoryTurnosModuleEditor from "./DirectoryTurnosModuleEditor";
 import "./DirectoryCommerceVisualBuilder.css";
 
@@ -21,6 +22,7 @@ const MODULE_META = {
   store: [FaStore, "Tienda", "Store embebido"],
   resto: [FaUtensils, "Gastronomía", "Resto embebido"],
   turnos: [FaCalendarDays, "Reservas", "Turnos dentro de la Web"],
+  events: [FaCalendarDays, "Eventos", "Inscripciones y próximos eventos"],
   chatbot: [FaRobot, "Chatbot IA", "Asistente dentro de la Web"],
   reviewsInvitation: [FaCommentDots, "Invitar a reseñar", "Formulario de experiencia"],
   reviewsSlider: [FaStar, "Reseñas públicas", "Slider de opiniones visibles"]
@@ -28,20 +30,22 @@ const MODULE_META = {
 
 async function payload(response){const text=await response.text();try{return text?JSON.parse(text):{};}catch{return {};}}
 
-export default function DirectoryCommerceVisualBuilder({businessId,pageId,web,onReload}){
+export default function DirectoryCommerceVisualBuilder({businessId,pageId,web,onReload,initialEditor=null,onEditorOpened}){
   const availableStore=web?.embeddedStore?.store||null;
   const availableResto=web?.embeddedResto?.store||null;
   const availableReviews=web?.embeddedReviews?.form||null;
   const availableTurnos=Boolean(web?.embeddedTurnos?.length);
+  const availableEvents=Boolean(web?.availableModules?.events || web?.embeddedEvents?.length);
   const availableChatbot=Boolean(web?.aiChatConfig);
   const [active,setActive]=useState(availableStore?"store":"resto");
   const [data,setData]=useState({store:null,resto:null});
   const [selected,setSelected]=useState(null);
   const [reviewEditor,setReviewEditor]=useState(null);
   const [turnosEditor,setTurnosEditor]=useState(false);
+  const [eventsEditor,setEventsEditor]=useState(false);
   const [busy,setBusy]=useState(false);
   const settings=getDirectoryModuleSettings(web?.page?.global_styles||{});
-  const available={store:Boolean(availableStore),resto:Boolean(availableResto),turnos:availableTurnos,chatbot:availableChatbot,reviewsInvitation:Boolean(availableReviews),reviewsSlider:Boolean(availableReviews)};
+  const available={store:Boolean(availableStore),resto:Boolean(availableResto),turnos:availableTurnos,events:availableEvents,chatbot:availableChatbot,reviewsInvitation:Boolean(availableReviews),reviewsSlider:Boolean(availableReviews)};
   const orderedCodes=Object.keys(MODULE_META).filter(code=>available[code]).sort((a,b)=>Number(settings[a]?.sortOrder||0)-Number(settings[b]?.sortOrder||0));
 
   async function loadBuilders(){
@@ -59,6 +63,11 @@ export default function DirectoryCommerceVisualBuilder({businessId,pageId,web,on
     if(active==="store"&&!availableStore&&availableResto)setActive("resto");
     if(active==="resto"&&!availableResto&&availableStore)setActive("store");
   },[active,availableStore,availableResto]);
+
+  useEffect(()=>{
+    if(initialEditor==="events"&&availableEvents){setEventsEditor(true);onEditorOpened?.();}
+    if(initialEditor==="turnos"&&availableTurnos){setTurnosEditor(true);onEditorOpened?.();}
+  },[initialEditor,availableEvents,availableTurnos,onEditorOpened]);
 
   const blocks=useMemo(()=>{
     const source=data[active];
@@ -87,7 +96,7 @@ export default function DirectoryCommerceVisualBuilder({businessId,pageId,web,on
     }catch(error){await showAlert({title:"No se pudo actualizar",text:error.message,icon:"error"});}finally{setBusy(false);}
   }
 
-  if(!available.store&&!available.resto&&!available.turnos&&!available.chatbot&&!available.reviewsInvitation)return <div className="tags_directory_commerce_empty"><h2>Módulos visuales</h2><p>Cuando el negocio active una funcionalidad pública, aparecerá aquí para incorporarla a su Web.</p></div>;
+  if(!available.store&&!available.resto&&!available.turnos&&!available.events&&!available.chatbot&&!available.reviewsInvitation)return <div className="tags_directory_commerce_empty"><h2>Módulos visuales</h2><p>Cuando el negocio active una funcionalidad pública, aparecerá aquí para incorporarla a su Web.</p></div>;
   const source=data[active];
   return <div className="tags_directory_commerce_builder">
     {busy&&<div className="tags_directory_commerce_busy"><TagsSpinner /></div>}
@@ -95,7 +104,7 @@ export default function DirectoryCommerceVisualBuilder({businessId,pageId,web,on
     <div className="tags_directory_commerce_cards">
       {orderedCodes.map(code=>{const [Icon,title,subtitle]=MODULE_META[code];return <article className={settings[code].enabled?"is_enabled":""} key={code}>
         <Icon /><div><strong>{title}</strong><small>{subtitle}</small></div>
-        <div className="tags_directory_module_order">{code==="turnos"&&<button type="button" onClick={()=>setTurnosEditor(true)} title="Editar Reservas"><FaPen /></button>}{code.startsWith("reviews")&&<button type="button" onClick={()=>setReviewEditor(code)} title="Editar textos"><FaPen /></button>}</div>
+        <div className="tags_directory_module_order">{code==="turnos"&&<button type="button" onClick={()=>setTurnosEditor(true)} title="Editar Reservas"><FaPen /></button>}{code==="events"&&<button type="button" onClick={()=>setEventsEditor(true)} title="Editar Eventos"><FaPen /></button>}{code.startsWith("reviews")&&<button type="button" onClick={()=>setReviewEditor(code)} title="Editar textos"><FaPen /></button>}</div>
         <label><input type="checkbox" checked={settings[code].enabled} onChange={()=>toggleModule(code)} />Mostrar en la Web</label>
       </article>})}
     </div>
@@ -109,5 +118,6 @@ export default function DirectoryCommerceVisualBuilder({businessId,pageId,web,on
     {selected&&<StoreBlockEditor businessId={businessId} entity={{name:(selected.module==="store"?availableStore:availableResto)?.name||"Negocio",description:(selected.module==="store"?availableStore:availableResto)?.description||"",categories:data[selected.module]?.categories||[],products:data[selected.module]?.products||[]}} section={(data[selected.module]?.sections||[]).find(section=>Number(section.id)===Number(selected.block.section_id))} block={selected.block} moduleDefinition={selected.module==="store"?getStoreModuleDefinition(selected.block.block_type):(()=>{const module=(data.resto?.modules||[]).find(item=>item.type===selected.block.block_type)||{};return {...module,name:module.name||module.label,editor:RESTO_BUILDER_DEFINITIONS[selected.block.block_type]};})()} updateEndpoint={selected.module==="store"?"/api/store/admin/builder/blocks/update":"/api/resto/admin/builder/blocks/update"} onClose={()=>setSelected(null)} onBlockUpdated={async updated=>{setSelected(current=>current?{...current,block:{...current.block,...updated}}:current);await loadBuilders();await onReload();}} />}
     {reviewEditor&&<DirectoryReviewsModuleEditor code={reviewEditor} value={settings[reviewEditor]} onClose={()=>setReviewEditor(null)} onSave={content=>saveReviewContent(reviewEditor,content)} />}
     {turnosEditor&&<DirectoryTurnosModuleEditor value={settings.turnos} apps={web?.embeddedTurnos||[]} onClose={()=>setTurnosEditor(false)} onSave={content=>{setTurnosEditor(false);saveReviewContent("turnos",content);}} />}
+    {eventsEditor&&<DirectoryEventsModuleEditor value={settings.events} onClose={()=>setEventsEditor(false)} onSave={content=>{setEventsEditor(false);saveReviewContent("events",content);}} />}
   </div>;
 }

@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic";
 import crypto from "crypto";
 import { db } from "@/app/lib/tags-db";
 import { requireSubscriptionAdmin, subscriptionAdminError } from "@/app/modules/subscriptions/lib/requireSubscriptionAdmin";
+import { sendPushTest } from "@/app/modules/notifications/server/sendBusinessPush";
 
 export async function GET() {
   const access = await requireSubscriptionAdmin();
@@ -26,6 +27,10 @@ export async function POST(request) {
     VALUES (0,'platform_admin',?,?,?,?,?,?, 'active',NOW())
     ON DUPLICATE KEY UPDATE business_id=0,recipient_type='platform_admin',recipient_id=VALUES(recipient_id),p256dh=VALUES(p256dh),auth_secret=VALUES(auth_secret),user_agent=VALUES(user_agent),status='active',last_seen_at=NOW()`,
     [recipientId, subscription.endpoint, endpointHash, subscription.keys.p256dh, subscription.keys.auth, String(request.headers.get("user-agent") || "").slice(0, 500)]);
+  if (body.test === true) {
+    const test = await sendPushTest(endpointHash);
+    if (!test.ok) return Response.json({ error: test.error || "No se pudo enviar la prueba" }, { status: 502 });
+  }
   return Response.json({ ok: true });
 }
 

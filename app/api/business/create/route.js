@@ -17,6 +17,7 @@ export async function POST(req) {
       email,
       phone,
       display_name,
+      contact_name,
       description,
       logo_url,
       cover_url,
@@ -71,6 +72,7 @@ export async function POST(req) {
       (
         name,
         display_name,
+        contact_name,
         email,
         phone,
         description,
@@ -92,11 +94,12 @@ export async function POST(req) {
         created_at,
         updated_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
       `,
       [
         name.trim(),
         display_name?.trim() || name.trim(),
+        contact_name?.trim() || null,
         email.trim().toLowerCase(),
         phone?.trim() || null,
         description?.trim() || null,

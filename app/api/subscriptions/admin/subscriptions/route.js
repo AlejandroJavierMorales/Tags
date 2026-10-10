@@ -9,6 +9,8 @@ import { db } from "@/app/lib/tags-db";
 import { sendMail } from "@/app/lib/sendMail";
 import { directoryEmailBranding, directoryEmailHeader } from "@/app/modules/directory/lib/directoryEmailBranding";
 import { sendBusinessPush } from "@/app/modules/notifications/server/sendBusinessPush";
+import { reconcileDirectoryPlanForBusiness } from "@/app/modules/directory/lib/reconcileDirectoryPlanForBusiness";
+import { isEffectiveSubscriptionActive } from "@/app/modules/subscriptions/lib/subscriptionState";
 
 const escapeHtml = value => String(value || "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
 const jsonText = value => {
@@ -24,7 +26,7 @@ async function notifySubscriptionState({ businessId, planId, status, previousSta
   const [[context]] = await db.query(`SELECT b.name,b.email,p.name plan_name,ds.name site_name,ds.primary_host,ds.brand_config FROM tags_businesses b INNER JOIN tags_plans p ON p.id=? LEFT JOIN tags_directory_listings l ON l.business_id=b.id LEFT JOIN tags_directory_site_listings sl ON sl.listing_id=l.id LEFT JOIN tags_directory_sites ds ON ds.id=sl.site_id WHERE b.id=? ORDER BY ds.id LIMIT 1`, [planId, businessId]);
   if (!context) return;
   const brand = directoryEmailBranding(context.site_name ? { name: context.site_name, primary_host: context.primary_host, brand_config: context.brand_config } : { name: "Tags", primary_host: "tags.com.ar", brand_config: null });
-  const stateText = status === "inactive" ? "Tu suscripción fue pausada. Los productos incluidos se encuentran momentáneamente fuera de servicio hasta su reactivación." : status === "active" ? "Tu suscripción fue reactivada y los productos incluidos vuelven a estar disponibles." : status === "past_due" ? "Tu suscripción registra un pago pendiente. Regularizá la situación para evitar la interrupción del servicio." : "Tu suscripción fue cancelada y los productos incluidos dejaron de estar disponibles.";
+  const stateText = status === "inactive" ? "Tu suscripción fue pausada. Los productos incluidos se encuentran momentáneamente fuera de servicio hasta su reactivación." : status === "active" ? "Tu suscripción fue reactivada y los productos incluidos vuelven a estar disponibles." : status === "past_due" ? "Tu suscripción registra un pago pendiente. La Web y los productos pagos se encuentran momentáneamente pausados hasta que se regularice la situación." : "Tu suscripción fue cancelada y los productos incluidos dejaron de estar disponibles.";
   const subject = `${status === "active" ? "Suscripción reactivada" : status === "past_due" ? "Pago pendiente" : "Suscripción pausada"} · ${brand.name}`;
   const html = `<div style="max-width:620px;margin:auto;font-family:Arial;color:#183226;border:1px solid #dce9e1;border-radius:16px;overflow:hidden">${directoryEmailHeader(brand, subject)}<main style="padding:24px"><p>Hola <strong>${escapeHtml(context.name)}</strong>,</p><p>${escapeHtml(stateText)}</p><p><strong>Plan:</strong> ${escapeHtml(context.plan_name)}</p></main></div>`;
   if (notifyClient && context.email) await sendMail({ to: context.email, fromName: brand.name, fromEmail: brand.fromEmail, replyTo: brand.replyTo, subject, text: `${stateText} Plan: ${context.plan_name}.`, html });
@@ -105,10 +107,10 @@ export async function PUT(req) {
   let changedSubscription = null;
   try {
     await conn.beginTransaction();
-    const [[subscription]] = await conn.query("SELECT id,business_id,plan_id,status,amount,currency,expires_at,payment_provider,duration_months FROM tags_subscriptions WHERE id=? LIMIT 1 FOR UPDATE", [id]);
+    const [[subscription]] = await conn.query("SELECT id,business_id,plan_id,status,amount,currency,expires_at,payment_provider,duration_months,grace_days,auto_disable_on_expire,admin_override_until FROM tags_subscriptions WHERE id=? LIMIT 1 FOR UPDATE", [id]);
     if (!subscription) throw Object.assign(new Error("Suscripción inexistente"), { status: 404 });
     const effectivePlanId = requestedPlanId || Number(subscription.plan_id);
-    const [[plan]] = await conn.query("SELECT id,is_active FROM tags_plans WHERE id=? LIMIT 1", [effectivePlanId]);
+    const [[plan]] = await conn.query("SELECT id,code,is_active,is_free FROM tags_plans WHERE id=? LIMIT 1", [effectivePlanId]);
     if (!plan || Number(plan.is_active) !== 1) throw Object.assign(new Error("El plan seleccionado no existe o está inactivo"), { status: 400 });
     const effectiveProvider = requestedProvider || subscription.payment_provider || "manual";
     const effectiveDuration = requestedDuration || Number(subscription.duration_months || 1);
@@ -171,10 +173,37 @@ export async function PUT(req) {
       }
     }
     await conn.query("UPDATE tags_businesses SET plan_id=?,subscription_status=?,plan_expires_at=?,updated_at=NOW() WHERE id=?", [effectivePlanId, status, expiresAt, subscription.business_id]);
+    const paidWebAvailable = Number(plan.is_free) !== 1 && isEffectiveSubscriptionActive({
+      ...subscription,
+      status,
+      expires_at: expiresAt
+    });
+    const listingStatus = Number(plan.is_free) === 1 || paidWebAvailable ? "published" : status === "cancelled" ? "archived" : "suspended";
+    const publicationStatus = Number(plan.is_free) === 1 || paidWebAvailable ? "published" : status === "cancelled" ? "archived" : "hidden";
+    await conn.query("UPDATE tags_directory_listings SET status=?,updated_at=NOW() WHERE business_id=?", [listingStatus, subscription.business_id]);
+    await conn.query("UPDATE tags_directory_site_listings sl INNER JOIN tags_directory_listings l ON l.id=sl.listing_id SET sl.is_free=?,sl.publication_status=?,sl.updated_at=NOW() WHERE l.business_id=?", [Number(plan.is_free) === 1 ? 1 : 0, publicationStatus, subscription.business_id]);
+    if (Number(plan.is_free) === 1) await conn.query("UPDATE tags_qr_pages SET status='draft',robots_index=0,updated_at=NOW() WHERE business_id=? AND page_type='directory'", [subscription.business_id]);
     await conn.query("UPDATE tags_subscription_payments SET plan_id=?,amount=? WHERE subscription_id=? AND status='pending'", [effectivePlanId, amount, id]);
     await conn.query("INSERT INTO tags_subscription_audit_events (subscription_id,business_id,event_code,actor_type,actor_id,previous_state_json,next_state_json) VALUES (?,?,?,'admin',?,?,?)", [id, subscription.business_id, status === "inactive" ? "subscription.suspended" : status === "active" && subscription.status === "inactive" ? "subscription.reactivated" : "subscription.updated", Number(access.session?.businessId || 0) || null, JSON.stringify({status:subscription.status,amount:subscription.amount,expiresAt:subscription.expires_at}), JSON.stringify({status,amount,expiresAt})]);
     changedSubscription = { businessId: subscription.business_id, planId: effectivePlanId, status, previousStatus: subscription.status };
     await conn.commit();
+    if (paidWebAvailable) {
+      const repairConn = await db.getConnection();
+      try {
+        await repairConn.beginTransaction();
+        const [[directorySite]] = await repairConn.query("SELECT sl.site_id,ds.primary_host FROM tags_directory_listings l INNER JOIN tags_directory_site_listings sl ON sl.listing_id=l.id INNER JOIN tags_directory_sites ds ON ds.id=sl.site_id WHERE l.business_id=? ORDER BY sl.id LIMIT 1", [subscription.business_id]);
+        if (directorySite?.site_id) {
+          const host=String(directorySite.primary_host||"").replace(/^https?:\/\//i,"").replace(/\/+$/,"");
+          const origin = host?`https://${host}`:String(getRequestBaseUrl(req) || process.env.NEXT_PUBLIC_APP_URL || new URL(req.url).origin).replace(/\/+$/, "");
+          await reconcileDirectoryPlanForBusiness({ conn: repairConn, businessId: subscription.business_id, siteId: Number(directorySite.site_id), origin });
+        }
+        await repairConn.commit();
+      } catch (repairError) {
+        await repairConn.rollback();
+        console.error("SUBSCRIPTION DIRECTORY REPAIR ERROR", repairError);
+        throw Object.assign(new Error("La suscripción se guardó, pero no se pudo reparar la Web del Directorio"), { status: 500 });
+      } finally { repairConn.release(); }
+    }
     let checkoutUrl = null;
     if (effectiveProvider === "mercadopago") {
       const origin = String(getRequestBaseUrl(req) || process.env.NEXT_PUBLIC_APP_URL || new URL(req.url).origin).replace(/\/+$/, "");

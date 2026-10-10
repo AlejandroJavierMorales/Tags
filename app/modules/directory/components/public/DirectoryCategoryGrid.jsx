@@ -6,6 +6,15 @@ import "./DirectoryCategoryGrid.css";
 
 function categoryHref(id) { return `/directorio?categoria=${id}`; }
 
+function categorySummary(category) {
+  const providers=Number(category.listing_count||0);
+  const contents=Number(category.content_count||0);
+  const labels=[];
+  if(providers)labels.push(`${providers} ${providers===1?"prestador":"prestadores"}`);
+  if(contents)labels.push(`${contents} ${contents===1?"lugar o evento":"lugares o eventos"}`);
+  return labels.join(" · ")||"Explorar";
+}
+
 export default function DirectoryCategoryGrid({ categories, title }) {
   if (!categories.length) return null;
   return <section className="tags_directory_categories" id="rubros" aria-labelledby="directory-categories-title">
@@ -15,7 +24,7 @@ export default function DirectoryCategoryGrid({ categories, title }) {
         <div className="tags_directory_category_image">
           {category.image_url ? <Image src={directoryImageUrl(category.image_url, category.depth)} alt="" width={128} height={128} sizes="(max-width: 700px) 25vw, 128px" /> : <span>{category.name.charAt(0)}</span>}
         </div>
-        <div><h3>{category.name}</h3><p>{Number(category.listing_count)} prestadores</p></div>
+        <div><h3>{category.name}</h3><p>{categorySummary(category)}</p></div>
         <FaArrowRight aria-hidden="true" />
       </Link>)}
     </div>

@@ -79,7 +79,8 @@ export async function POST(req) {
             await db.query(
                 `
                 SELECT
-                    id
+                    id,
+                    catalog_product_limit
                 FROM
                     tags_qr_pages
                 WHERE
@@ -115,11 +116,12 @@ export async function POST(req) {
                 ]
             );
 
-        if (Number(countRows[0].total) >= 20) {
+        const productLimit = Math.max(1, Number(pages[0].catalog_product_limit || 50));
+
+        if (Number(countRows[0].total) >= productLimit) {
             return Response.json(
                 {
-                    error:
-                        "Alcanzaste el límite gratuito de hasta 20 productos. Si necesitás más, consultanos en info@tags.com.ar o al WhatsApp 3546562855."
+                    error: `Alcanzaste la capacidad asignada de ${productLimit} productos. Solicitá una ampliación a la administración de la plataforma.`
                 },
                 {
                     status: 400

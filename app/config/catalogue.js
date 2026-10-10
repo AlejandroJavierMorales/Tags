@@ -182,9 +182,22 @@ export const catalogue = [
                 href: "/tags-reviews"
             },
             {
+                id: "events-simple-addon",
+                productType: "software",
+                name: "Eventos",
+                description: "Conversatorios, capacitaciones y encuentros con inscripción online, pagos y acreditación QR.",
+                basePrice: 0,
+                priceLabel: "Consultar",
+                billingType: "project",
+                images: ["/assets/images/e-events/tags-e-events-checkin.webp"],
+                types: [{ code: "events", label: "Eventos" }],
+                features: ["Inscripción online", "Confirmación manual o automática", "Pagos y comprobantes", "Acreditación QR"],
+                href: "/e-events"
+            },
+            {
                 id: "events-addon",
                 productType: "software",
-                name: "Tags eEvents",
+                name: "Eventos Pro",
                 description: "Sistema de gestión de eventos inteligentes con invitaciones, invitados, confirmaciones y checkin QR, mesas, menú, música, todo!.",
                 basePrice: 0,
                 priceLabel: "Consultar",
@@ -196,7 +209,7 @@ export const catalogue = [
                     "/assets/images/e-events/tags-e-events-post.webp"
                 ],
                 types: [
-                    { code: "e_events", label: "eEvents" }
+                    { code: "e_events", label: "Eventos Pro" }
                 ],
                 features: [
                     "Invitaciones digitales",

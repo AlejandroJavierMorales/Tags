@@ -10,10 +10,14 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const EFFECTIVE_STATUS = `CASE
-  WHEN s.status='trial' THEN 'pending'
   WHEN s.status='cancelled' THEN 'cancelled'
-  WHEN s.expires_at IS NOT NULL AND s.expires_at<NOW() THEN 'expired'
   WHEN s.status='inactive' THEN 'paused'
+  WHEN s.status IN ('active','trial','past_due')
+   AND COALESCE(s.auto_disable_on_expire,1)=1
+   AND s.expires_at IS NOT NULL
+   AND DATE_ADD(s.expires_at,INTERVAL COALESCE(s.grace_days,0) DAY)<NOW()
+   AND (s.admin_override_until IS NULL OR s.admin_override_until<NOW()) THEN 'expired'
+  WHEN s.status='trial' THEN 'pending'
   WHEN s.status='past_due' THEN 'past_due'
   ELSE 'active' END`;
 
@@ -210,7 +214,7 @@ export async function POST(req) {
       await conn.query("UPDATE tags_business_addons SET status='inactive',updated_at=NOW() WHERE business_id=? AND addon_code='directory'", [subscription.business_id]);
       await conn.query("UPDATE tags_directory_listings SET status='published',updated_at=NOW() WHERE business_id=?", [subscription.business_id]);
       await conn.query(`UPDATE tags_directory_site_listings sl INNER JOIN tags_directory_listings l ON l.id=sl.listing_id SET sl.is_free=1,sl.publication_status='published',sl.updated_at=NOW() WHERE l.business_id=?`, [subscription.business_id]);
-      await conn.query("UPDATE tags_qr_pages SET status='draft',updated_at=NOW() WHERE business_id=? AND page_type='directory'", [subscription.business_id]);
+      await conn.query("UPDATE tags_qr_pages SET status='draft',robots_index=0,updated_at=NOW() WHERE business_id=? AND page_type='directory'", [subscription.business_id]);
       const [[basicPlan]] = await conn.query("SELECT id FROM tags_plans WHERE code='basic' AND is_free=1 LIMIT 1");
       if (basicPlan) await conn.query("UPDATE tags_businesses SET plan_id=?,subscription_status='active',plan_expires_at=NULL,updated_at=NOW() WHERE id=? AND plan_id=?", [basicPlan.id, subscription.business_id, subscription.plan_id]);
       await conn.commit();

@@ -55,6 +55,7 @@ export async function POST(req) {
   if (!body) return Response.json({ error: "Solicitud inválida" }, { status: 400 });
   const email = clean(body.email, 190).toLowerCase();
   const name = clean(body.name, 190);
+  const contactName = clean(body.contactName, 190) || null;
   const placeId = Number(body.placeId || 0);
   const taxonomyId = Number(body.taxonomyId || 0);
   const planId = Number(body.planId || 0);
@@ -123,7 +124,7 @@ export async function POST(req) {
   try {
     await conn.beginTransaction();
     signupStage = "cliente";
-    const [businessResult] = await conn.query("INSERT INTO tags_businesses (name,display_name,email,phone,whatsapp,logo_url,description,address,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,NOW(),NOW())", [name, name, email, normalizedPhone, normalizedWhatsapp, effectiveLogoUrl, clean(body.description, 1000) || null, clean(body.address, 500) || null]);
+    const [businessResult] = await conn.query("INSERT INTO tags_businesses (name,display_name,contact_name,email,phone,whatsapp,logo_url,description,address,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,NOW(),NOW())", [name, name, contactName, email, normalizedPhone, normalizedWhatsapp, effectiveLogoUrl, clean(body.description, 1000) || null, clean(body.address, 500) || null]);
     businessId = businessResult.insertId;
     signupStage = "ubicacion";
     await conn.query("INSERT INTO tags_business_places (business_id,place_id,relation_type,is_primary) VALUES (?,?,'location',1)", [businessId, placeId]);

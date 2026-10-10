@@ -46,23 +46,29 @@ export async function POST(req) {
 
         await connection.beginTransaction();
 
+        const entitlementCode = profile === "sports_club" ? "club" : "turnos";
         const [addonRows] = await connection.query(
             `SELECT id, quantity FROM tags_business_addons
-             WHERE business_id = ? AND addon_code = 'turnos' AND status = 'active'
+             WHERE business_id = ? AND addon_code = ? AND status = 'active'
              AND (expires_at IS NULL OR expires_at >= NOW()) LIMIT 1 FOR UPDATE`,
-            [businessId]
+            [businessId, entitlementCode]
         );
         if (!addonRows.length) {
             await connection.rollback();
-            return Response.json({ error: "El cliente no tiene Tags Turnos activo" }, { status: 403 });
+            return Response.json({ error: `El cliente no tiene ${profile === "sports_club" ? "Tags Club" : "Tags Turnos"} activo` }, { status: 403 });
         }
 
-        const [usageRows] = await connection.query("SELECT COUNT(*) AS total FROM tags_turnos_apps WHERE business_id = ?", [businessId]);
+        const [usageRows] = await connection.query(
+            `SELECT COUNT(*) AS total FROM tags_turnos_apps
+             WHERE business_id = ? AND status <> 'deleted'
+               AND ${profile === "sports_club" ? "business_profile_code = 'sports_club'" : "business_profile_code <> 'sports_club'"}`,
+            [businessId]
+        );
         const contracted = Math.max(1, Number(addonRows[0].quantity || 1));
         const used = Number(usageRows[0]?.total || 0);
         if (used >= contracted) {
             await connection.rollback();
-            return Response.json({ error: `El cliente tiene ${contracted} instancia(s) de Turnos contratada(s) y ya utilizó todas.` }, { status: 409 });
+            return Response.json({ error: `El cliente tiene ${contracted} instancia(s) de ${profile === "sports_club" ? "Tags Club" : "Turnos"} contratada(s) y ya utilizó todas.` }, { status: 409 });
         }
 
         const [slugRows] = await connection.query("SELECT id FROM tags_qr_pages WHERE slug = ? LIMIT 1", [slug]);

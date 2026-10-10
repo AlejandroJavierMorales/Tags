@@ -62,9 +62,9 @@ const IMAGE_PRESETS = {
         defaultFileName: "product"
     },
     gallery: {
-        maxDimension: 1200,
+        maxDimension: 900,
         quality: 80,
-        maxFinalSize: 2 * 1024 * 1024,
+        maxFinalSize: 900 * 1024,
         generateOG: false,
         defaultFileName: "image"
     },
@@ -194,6 +194,7 @@ export async function POST(req) {
             "store",
             "resto",
             "turnos",
+            "club",
             "reservas",
             "directory",
             "google-business-profile"

@@ -67,6 +67,7 @@ export async function getRestoAccess({
 
     const isBusinessOwner =
         session.type !== "resto_staff" &&
+        session.type !== "business_staff" &&
         String(
             session.business_id ||
             session.businessId ||
@@ -84,6 +85,21 @@ export async function getRestoAccess({
             session,
             permissions: ["*"]
         };
+    }
+
+    if (session.type === "business_staff") {
+        const [rows] = await db.query(`SELECT st.id,st.name,st.email,aa.permissions_json,aa.app_instance_id
+            FROM tags_business_staff st
+            INNER JOIN tags_business_staff_app_access aa ON aa.staff_id=st.id AND aa.business_id=st.business_id
+            WHERE st.id=? AND st.business_id=? AND st.status='active' AND aa.app_code='resto' AND aa.status='active'
+            LIMIT 1`, [session.staffId || 0, businessId]);
+        const staff = rows[0];
+        if (!staff) return { allowed: false, status: 403, session, permissions: [] };
+        let permissions = [];
+        try { permissions = Array.isArray(staff.permissions_json) ? staff.permissions_json : JSON.parse(staff.permissions_json || "[]"); } catch {}
+        const requestedPermissions = Array.isArray(permission) ? permission : permission ? [permission] : [];
+        const allowed = requestedPermissions.length === 0 || requestedPermissions.some(code => permissions.includes(code));
+        return { allowed, status: allowed ? 200 : 403, isOwner: false, isStaff: true, session: { ...session, name: staff.name, email: staff.email }, staff, permissions };
     }
 
     if (

@@ -9,6 +9,7 @@ export default function PublicServicePaused({ businessName = "Este servicio" }) 
       <h1>{businessName}</h1>
       <p>Esta publicación no se encuentra disponible temporalmente.</p>
       <p className="tags_public_service_paused_hint">Si sos responsable del negocio, ingresá a tu panel o contactá a la plataforma para regularizar el servicio.</p>
+      <a href="/directorio">Conectate con la plataforma</a>
     </section>
   </main>;
 }

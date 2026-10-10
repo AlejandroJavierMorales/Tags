@@ -58,6 +58,7 @@ export default function BusinessDetailClient({ session, isAdmin, channel = null,
   const [qrPageActivateOpen, setQrPageActivateOpen] = useState(false);
   const [restoActivateOpen, setRestoActivateOpen] = useState(false);
   const [turnosActivateOpen, setTurnosActivateOpen] = useState(false);
+  const [clubActivateOpen, setClubActivateOpen] = useState(false);
   const [directoryActivateOpen, setDirectoryActivateOpen] = useState(false);
 
   const [qrs, setQrs] = useState([]);
@@ -106,6 +107,11 @@ export default function BusinessDetailClient({ session, isAdmin, channel = null,
     getSubscriptionStatusLabel(session?.subscriptionStatus);
 
   const showLegacyOverview = false;
+
+  const hasActiveAddon = (code) =>
+    (subscriptionSummary?.addons || []).some(
+      (addon) => addon.addon_code === code && Number(addon.quantity || 0) > 0
+    );
 
   // =====================================
   // 🔐 FLAGS
@@ -454,6 +460,7 @@ export default function BusinessDetailClient({ session, isAdmin, channel = null,
     setPortalActivateOpen,
     setRestoActivateOpen,
     setTurnosActivateOpen,
+    setClubActivateOpen,
     setDirectoryActivateOpen
   });
 
@@ -525,9 +532,6 @@ export default function BusinessDetailClient({ session, isAdmin, channel = null,
             }
           >
             📊 Ver estadísticas
-          </button>
-          <button type="button" className="tags_dashboard_stats_btn" onClick={() => router.push(`/dashboard/businesses/${id}/seo`)}>
-            SEO e indexacion
           </button>
           </div>
 
@@ -700,29 +704,29 @@ export default function BusinessDetailClient({ session, isAdmin, channel = null,
               </div>
             </div>
 
-            <div className="col-6 col-md-2 mb-3">
+            {hasActiveAddon("qr_page") && <div className="col-6 col-md-2 mb-3">
               <strong>QR-Page</strong>
               <div>
                 {subscriptionSummary.usage.qr_pages_used} / {subscriptionSummary.usage.qr_pages_total}
               </div>
-            </div>
+            </div>}
 
-            <div className="col-6 col-md-2 mb-3">
+            {hasActiveAddon("tagsid") && <div className="col-6 col-md-2 mb-3">
               <strong>Tags ID</strong>
               <div>
                 {subscriptionSummary.usage.tags_id_used} / {subscriptionSummary.usage.tags_id_total}
               </div>
-            </div>
+            </div>}
 
-            <div className="col-6 col-md-2 mb-3">
+            {hasActiveAddon("store") && <div className="col-6 col-md-2 mb-3">
               <strong>Tienda</strong>
               <div>
                 {subscriptionSummary.usage.store_used}
                 {" / "}
                 {subscriptionSummary.usage.store_total}
               </div>
-            </div>
-            <div className="col-6 col-md-2 mb-3">
+            </div>}
+            {hasActiveAddon("resto") && <div className="col-6 col-md-2 mb-3">
               <strong>Resto</strong>
 
               <div>
@@ -730,9 +734,9 @@ export default function BusinessDetailClient({ session, isAdmin, channel = null,
                 {" / "}
                 {subscriptionSummary.usage.resto_total}
               </div>
-            </div>
+            </div>}
 
-            <div className="col-6 col-md-2 mb-3">
+            {hasActiveAddon("turnos") && <div className="col-6 col-md-2 mb-3">
               <strong>Tags Turnos</strong>
 
               <div>
@@ -740,16 +744,21 @@ export default function BusinessDetailClient({ session, isAdmin, channel = null,
                 {" / "}
                 {subscriptionSummary.usage.turnos_total || 0}
               </div>
-            </div>
+            </div>}
 
-            <div className="col-6 col-md-2 mb-3">
+            {hasActiveAddon("club") && <div className="col-6 col-md-2 mb-3">
+              <strong>Tags Club</strong>
+              <div>{subscriptionSummary.usage.club_used || 0}{" / "}{subscriptionSummary.usage.club_total || 0}</div>
+            </div>}
+
+            {hasActiveAddon("client_reviews") && <div className="col-6 col-md-2 mb-3">
               <strong>Reviews</strong>
               <div>
                 {subscriptionSummary.usage.reviews_used}
                 {" / "}
                 {subscriptionSummary.usage.reviews_total}
               </div>
-            </div>
+            </div>}
 
             <div className="col-6 col-md-2 mb-3">
               <strong>Analytics</strong>
@@ -852,7 +861,7 @@ export default function BusinessDetailClient({ session, isAdmin, channel = null,
             </div>
           )}
 
-          <div className="mt-3">
+          {false && <div className="mt-3">
             <button
               type="button"
               className="tags_btn rounded tags_text_normal"
@@ -861,7 +870,7 @@ export default function BusinessDetailClient({ session, isAdmin, channel = null,
             >
               🔎 SEO e indexación
             </button>
-          </div>
+          </div>}
 
         </div>
       )}
@@ -1019,6 +1028,11 @@ export default function BusinessDetailClient({ session, isAdmin, channel = null,
 
                       <div className="tags_dashboard_label">
                         {qr.label || "-"}
+                        {qr.event_title && (
+                          <small style={{ display: "block", marginTop: 4, opacity: 0.72 }}>
+                            {qr.event_title} · {qr.event_attendee_name || "Asistente"}
+                          </small>
+                        )}
                       </div>
 
                     </td>
@@ -1309,7 +1323,6 @@ export default function BusinessDetailClient({ session, isAdmin, channel = null,
           { value: "generic", label: "Genérico" },
           { value: "spa", label: "Spa" },
           { value: "bike_kayak", label: "Bicicletas / Kayaks" },
-          { value: "sports_club", label: "Tags Deportes" },
           { value: "hairdresser", label: "Peluquería" }
         ]}
         createButtonLabel="Crear Turnero"
@@ -1317,6 +1330,21 @@ export default function BusinessDetailClient({ session, isAdmin, channel = null,
         successMessage="La instancia de Turnos fue creada correctamente."
         onClose={() => setTurnosActivateOpen(false)}
         onCreated={() => { load(); loadPortal(); setTurnosActivateOpen(false); }}
+      />
+
+      <WorkspaceAppCreateModal
+        open={clubActivateOpen}
+        businessId={id}
+        title="Tags Club"
+        description="Creá el espacio deportivo del club con canchas, clases, profesores y reservas."
+        endpoint="/api/workspace/apps/turnos/activate"
+        allowCustomSlug
+        businessProfileOptions={[{ value: "sports_club", label: "Tags Club" }]}
+        createButtonLabel="Crear Tags Club"
+        successTitle="Tags Club creado"
+        successMessage="El club quedó preparado para configurar sus deportes y reservas."
+        onClose={() => setClubActivateOpen(false)}
+        onCreated={() => { load(); loadPortal(); setClubActivateOpen(false); }}
       />
 
       <WorkspaceAppCreateModal

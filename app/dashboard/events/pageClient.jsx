@@ -1,907 +1,367 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
-import "../../styles/tagsModals.css";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import {
+    FaArrowRight,
+    FaCalendarDays,
+    FaLocationDot,
+    FaMagnifyingGlass,
+    FaPen,
+    FaPlus,
+    FaTrash,
+    FaUsers
+} from "react-icons/fa6";
 
 import showAlert from "@/app/components/showAlert";
-import TagsHeader from "@/app/components/Header";
-
-import Link from "next/link";
+import TagsSpinner from "@/app/components/TagsSpinner";
 import OwnerNavigation from "@/app/modules/e-events/components/OwnerNavigation";
-import EventOwnerHeader from "@/app/modules/e-events/components/EventOwnerHeader";
-import { badgeStatusEvent, statusLabelEvent } from "@/app/modules/e-events/lib/helpers/labelsAndBadgesStatus";
+import { statusLabelEvent } from "@/app/modules/e-events/lib/helpers/labelsAndBadgesStatus";
 
-export default function EventsPageClient({ session, isStaff }) {
+import "../../styles/tagsModals.css";
+import "./events-admin.css";
 
-    const [events, setEvents] = useState([]);
+const EMPTY_FORM = {
+    name: "",
+    description: "",
+    location: "",
+    address: "",
+    latitude: "",
+    longitude: "",
+    credentialNote: "",
+    startsAt: "",
+    endsAt: "",
+    status: "draft"
+};
 
-    const [filters, setFilters] = useState({
-        search: "",
-        status: ""
+const STATUS_OPTIONS = [
+    ["draft", "Borrador"],
+    ["published", "Publicado"],
+    ["active", "Activo"],
+    ["finished", "Finalizado"],
+    ["cancelled", "Cancelado"]
+];
+
+function formatDateInput(value) {
+    if (!value) return "";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+    return local.toISOString().slice(0, 16);
+}
+
+function formatDate(value) {
+    if (!value) return "Sin definir";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "Sin definir";
+    return date.toLocaleString("es-AR", {
+        dateStyle: "medium",
+        timeStyle: "short"
     });
+}
 
-    const [modal, setModal] = useState(null);
+export default function EventsPageClient({ session, isStaff = false, productMode = "pro" }) {
+    const [events, setEvents] = useState([]);
+    const [filters, setFilters] = useState({ search: "", status: "" });
+    const [editing, setEditing] = useState(null);
+    const [form, setForm] = useState(EMPTY_FORM);
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
 
-    const [name, setName] = useState("");
-    const [description, setDescription] = useState("");
-    const [location, setLocation] = useState("");
-
-    const [startsAt, setStartsAt] = useState("");
-    const [endsAt, setEndsAt] = useState("");
-
-    const [status, setStatus] = useState("draft");
-
-   /*  console.log('SESSION en Eventos Globales ' + JSON.stringify(session,2,null)) */
-    // =========================
-    // LOAD
-    // =========================
+    const managedBusinessId = Number(
+        session?.managedBusinessId || session?.businessId || 0
+    );
 
     useEffect(() => {
-        load();
-    }, [filters]);
-
+        const timeout = setTimeout(() => load(), 250);
+        return () => clearTimeout(timeout);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [filters.search, filters.status, managedBusinessId, isStaff]);
 
     async function load() {
-
+        setLoading(true);
         try {
-
-            const params =
-                new URLSearchParams();
-
-            if (filters.search) {
-
-                params.append(
-                    "search",
-                    filters.search
-                );
+            const params = new URLSearchParams();
+            if (filters.search.trim()) params.set("search", filters.search.trim());
+            if (filters.status) params.set("status", filters.status);
+            if (!isStaff && managedBusinessId) {
+                params.set("business_id", String(managedBusinessId));
+                params.set("product_mode", productMode);
             }
 
-            if (filters.status) {
+            const endpoint = isStaff
+                ? `/api/events/staff/my-events?${params}`
+                : `/api/events/list?${params}`;
+            const response = await fetch(endpoint, { cache: "no-store" });
+            const payload = await response.json().catch(() => ({}));
 
-                params.append(
-                    "status",
-                    filters.status
-                );
+            if (!response.ok) {
+                throw new Error(payload.error || "No se pudieron cargar los eventos");
             }
 
-            // =========================
-            // STAFF / OWNER API
-            // =========================
-
-            const endpoint =
-                isStaff
-                    ? `/api/events/staff/my-events?${params.toString()}`
-                    : `/api/events/list?${params.toString()}`;
-
-            const res =
-                await fetch(
-                    endpoint,
-                    {
-                        cache: "no-store"
-                    }
-                );
-
-            const data =
-                await res.json();
-
-            if (!res.ok) {
-
-                showAlert({
-                    title: "Error",
-                    text:
-                        data.error ||
-                        "No se pudieron cargar los eventos",
-                    icon: "error"
-                });
-
-                return;
-            }
-
-            setEvents(
-                data.data || []
-            );
-
-        } catch (err) {
-
-            console.log(err);
-
-            showAlert({
-                title: "Error",
-                text:
-                    "No se pudieron cargar los eventos",
-                icon: "error"
-            });
-        }
-    }
-
-    // =========================
-    // CREATE / UPDATE
-    // =========================
-
-    async function saveEvent() {
-
-        try {
-
-            const body = {
-
-                id: modal?.id,
-                business_id: session?.businessId,
-                name,
-                description,
-                location,
-
-                starts_at: startsAt,
-                ends_at: endsAt,
-
-                status
-            };
-
-            const res = await fetch(
-                modal?.id
-                    ? "/api/events/update"
-                    : "/api/events/create",
-                {
-                    method:
-                        modal?.id
-                            ? "PUT"
-                            : "POST",
-
-                    headers: {
-                        "Content-Type":
-                            "application/json"
-                    },
-
-                    body: JSON.stringify(body)
-                }
-            );
-
-            const data =
-                await res.json();
-
-            if (!res.ok) {
-
-                showAlert({
-                    title: "Error",
-                    text:
-                        data.error ||
-                        "No se pudo guardar",
-                    icon: "error"
-                });
-
-                return;
-            }
-
-            showAlert({
-                title: "OK",
-                text: modal?.id
-                    ? "Evento actualizado"
-                    : "Evento creado",
-                icon: "success"
-            });
-
-            closeModal();
-
-            load();
-
-        } catch (err) {
-
-            console.log(err);
-
-            showAlert({
-                title: "Error",
-                text: "Error interno",
-                icon: "error"
-            });
-        }
-    }
-
-    // =========================
-    // DELETE
-    // =========================
-
-    async function deleteEvent(id) {
-
-        const confirm =
+            setEvents(Array.isArray(payload.data) ? payload.data : []);
+        } catch (error) {
             await showAlert({
-                title: "¿Eliminar evento?",
-                text: "Esta acción no se puede deshacer",
-                icon: "warning",
-                showCancelButton: true
-            });
-
-        if (!confirm) return;
-
-        try {
-
-            const res = await fetch(
-                "/api/events/delete",
-                {
-                    method: "DELETE",
-
-                    headers: {
-                        "Content-Type":
-                            "application/json"
-                    },
-
-                    body: JSON.stringify({ id })
-                }
-            );
-
-            const data =
-                await res.json();
-
-            if (!res.ok) {
-
-                showAlert({
-                    title: "Error",
-                    text:
-                        data.error ||
-                        "No se pudo eliminar",
-                    icon: "error"
-                });
-
-                return;
-            }
-
-            showAlert({
-                title: "OK",
-                text: "Evento eliminado",
-                icon: "success"
-            });
-
-            load();
-
-        } catch (err) {
-
-            console.log(err);
-
-            showAlert({
-                title: "Error",
-                text: "Error interno",
+                title: "No pudimos cargar los eventos",
+                text: error.message || "Intentá nuevamente.",
                 icon: "error"
             });
+        } finally {
+            setLoading(false);
         }
     }
-
-    // =========================
-    // MODALS
-    // =========================
 
     function openCreate() {
-
-        setModal({ id: null });
-
-        setName("");
-        setDescription("");
-        setLocation("");
-
-        setStartsAt("");
-        setEndsAt("");
-
-        setStatus("draft");
+        setEditing({ id: null });
+        setForm(EMPTY_FORM);
     }
 
     function openEdit(event) {
-
-        setModal(event);
-
-        setName(event.name || "");
-
-        setDescription(
-            event.description || ""
-        );
-
-        setLocation(
-            event.location || ""
-        );
-
-        setStartsAt(
-            formatDateInput(
-                event.starts_at
-            )
-        );
-
-        setEndsAt(
-            formatDateInput(
-                event.ends_at
-            )
-        );
-
-        setStatus(
-            event.status || "draft"
-        );
+        setEditing(event);
+        setForm({
+            name: event.name || "",
+            description: event.description || "",
+            location: event.location || "",
+            address: event.address || "",
+            latitude: event.latitude ?? "",
+            longitude: event.longitude ?? "",
+            credentialNote: event.credential_note || "",
+            startsAt: formatDateInput(event.starts_at),
+            endsAt: formatDateInput(event.ends_at),
+            status: event.status || "draft"
+        });
     }
 
-    function closeModal() {
+    async function saveEvent(event) {
+        event.preventDefault();
+        if (form.endsAt && form.startsAt && new Date(form.endsAt) < new Date(form.startsAt)) {
+            await showAlert({
+                title: "Revisá las fechas",
+                text: "La finalización no puede ser anterior al inicio.",
+                icon: "warning"
+            });
+            return;
+        }
 
-        setModal(null);
+        setSaving(true);
+        try {
+            const response = await fetch(
+                editing?.id ? "/api/events/update" : "/api/events/create",
+                {
+                    method: editing?.id ? "PUT" : "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        id: editing?.id,
+                        business_id: managedBusinessId,
+                        product_mode: productMode,
+                        name: form.name.trim(),
+                        description: form.description.trim(),
+                        location: form.location.trim(),
+                        address: form.address.trim(),
+                        latitude: form.latitude === "" ? null : Number(form.latitude),
+                        longitude: form.longitude === "" ? null : Number(form.longitude),
+                        credential_note: form.credentialNote.trim(),
+                        starts_at: form.startsAt || null,
+                        ends_at: form.endsAt || null,
+                        status: form.status
+                    })
+                }
+            );
+            const payload = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(payload.error || "No se pudo guardar el evento");
 
-        setName("");
-        setDescription("");
-        setLocation("");
-
-        setStartsAt("");
-        setEndsAt("");
-
-        setStatus("draft");
+            setEditing(null);
+            await load();
+            await showAlert({
+                title: editing?.id ? "Evento actualizado" : "Evento creado",
+                text: "Los cambios quedaron guardados correctamente.",
+                icon: "success",
+                timer: 1600
+            });
+        } catch (error) {
+            await showAlert({
+                title: "No se pudo guardar",
+                text: error.message || "Revisá los datos ingresados.",
+                icon: "error"
+            });
+        } finally {
+            setSaving(false);
+        }
     }
 
+    async function deleteEvent(event) {
+        const confirmed = await showAlert({
+            title: "Eliminar evento",
+            text: `Vas a eliminar \"${event.name}\". Esta acción no se puede deshacer.`,
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Eliminar",
+            cancelButtonText: "Cancelar"
+        });
+        if (!confirmed) return;
 
-    // =========================
-    // HELPERS
-    // =========================
-
-    function formatDateInput(date) {
-
-        if (!date) return "";
-
-        const d = new Date(date);
-
-        const year =
-            d.getFullYear();
-
-        const month =
-            String(d.getMonth() + 1)
-                .padStart(2, "0");
-
-        const day =
-            String(d.getDate())
-                .padStart(2, "0");
-
-        const hours =
-            String(d.getHours())
-                .padStart(2, "0");
-
-        const minutes =
-            String(d.getMinutes())
-                .padStart(2, "0");
-
-        return `${year}-${month}-${day}T${hours}:${minutes}`;
+        setSaving(true);
+        try {
+            const response = await fetch("/api/events/delete", {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: event.id })
+            });
+            const payload = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(payload.error || "No se pudo eliminar el evento");
+            await load();
+        } catch (error) {
+            await showAlert({
+                title: "No se pudo eliminar",
+                text: error.message,
+                icon: "error"
+            });
+        } finally {
+            setSaving(false);
+        }
     }
 
-    function formatDate(date) {
-
-        if (!date) return "-";
-
-        const d =
-            new Date(date);
-
-        return d.toLocaleString();
-    }
-
-    // =========================
-    // STATS
-    // =========================
-
-    const totalEvents =
-        events.length;
-
-    const activeEvents =
-        events.filter(
-            e => e.status === "active"
-        ).length;
-
-    const publishedEvents =
-        events.filter(
-            e => e.status === "published"
-        ).length;
-
-    const draftEvents =
-        events.filter(
-            e => e.status === "draft"
-        ).length;
+    const metrics = useMemo(() => ({
+        total: events.length,
+        active: events.filter(item => item.status === "active").length,
+        published: events.filter(item => item.status === "published").length,
+        draft: events.filter(item => item.status === "draft").length
+    }), [events]);
 
     return (
-
-        <div className="container-fluid tags_container m-0 p-0 mb-5 pb-5">
-
-            <EventOwnerHeader session={session} />
-
-            <div className="m-0 p-0 pt-4 px-2">
-                <OwnerNavigation session={session} />
-
-                {/* HEADER */}
-                <div className="d-flex justify-content-between align-items-center mb-4">
-
+        <main className="tags_events_admin">
+            <header className="tags_events_admin_hero">
+                <div className="tags_events_admin_identity">
+                    <span className="tags_events_admin_icon"><FaCalendarDays /></span>
                     <div>
-
-                        <h2 className="tags_title mb-1">
-                            🎫 Eventos
-                        </h2>
-
-                        <p className="text-muted m-0">
-                            Gestión completa de eventos,
-                            invitados y staff.
-                        </p>
-
+                        <span className="tags_events_admin_eyebrow">MÓDULO DEL NEGOCIO</span>
+                        <h1>{productMode === "simple" ? "Eventos" : "Eventos Pro"}</h1>
+                        <p>{productMode === "simple" ? "Creá conversatorios, capacitaciones y encuentros con inscripción online." : "Gestioná producciones, invitados, invitaciones, mesas, staff y acreditaciones."}</p>
                     </div>
-
-                    <button
-                        className="tags_btn"
-                        onClick={openCreate}
-                    >
-                        ✚ Nuevo Evento
-                    </button>
-
                 </div>
-
-                {/* STATS */}
-                <div className="row g-3 mb-4">
-
-                    <div className="col-6 col-md-3">
-
-                        <div className="tags_card p-3">
-
-                            <div className="small text-muted">
-                                Total Eventos
-                            </div>
-
-                            <div className="fs-2 fw-bold">
-                                {totalEvents}
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                    <div className="col-6 col-md-3">
-
-                        <div className="tags_card p-3">
-
-                            <div className="small text-muted">
-                                Activos
-                            </div>
-
-                            <div className="fs-2 fw-bold">
-                                {activeEvents}
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                    <div className="col-6 col-md-3">
-
-                        <div className="tags_card p-3">
-
-                            <div className="small text-muted">
-                                Publicados
-                            </div>
-
-                            <div className="fs-2 fw-bold">
-                                {publishedEvents}
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                    <div className="col-6 col-md-3">
-
-                        <div className="tags_card p-3">
-
-                            <div className="small text-muted">
-                                Borradores
-                            </div>
-
-                            <div className="fs-2 fw-bold">
-                                {draftEvents}
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-                {/* FILTERS */}
-                <div className="row g-2 mb-4">
-
-                    <div className="col-md-4">
-
-                        <input
-                            className="tags_modal_input"
-                            placeholder="Buscar evento"
-                            value={filters.search}
-                            onChange={(e) =>
-                                setFilters(prev => ({
-                                    ...prev,
-                                    search: e.target.value
-                                }))
-                            }
-                        />
-
-                    </div>
-
-                    <div className="col-md-3">
-
-                        <select
-                            className="tags_modal_input"
-                            value={filters.status}
-                            onChange={(e) =>
-                                setFilters(prev => ({
-                                    ...prev,
-                                    status: e.target.value
-                                }))
-                            }
-                        >
-
-                            <option value="">
-                                Todos los estados
-                            </option>
-
-                            <option value="draft">
-                                Borrador
-                            </option>
-
-                            <option value="published">
-                                Publicado
-                            </option>
-
-                            <option value="active">
-                                Activo
-                            </option>
-
-                            <option value="finished">
-                                Finalizado
-                            </option>
-
-                            <option value="cancelled">
-                                Cancelado
-                            </option>
-
-                        </select>
-
-                    </div>
-
-                </div>
-
-                {/* EVENTS GRID */}
-                <div className="row g-3">
-
-                    {events.map((event, index) => (
-
-                        <div
-                            className="col-md-6 col-xl-4"
-                            key={event.id}
-                        >
-
-                            <div
-                                className="card p-3 h-100 d-flex flex-column"
-                                style={{
-                                    background:
-                                        index % 2 === 0
-                                            ? "#ffffff"
-                                            : "#f7fbf7",
-                                    transition: "all .2s ease"
-                                }}
-                            >
-
-                                <div className="d-flex justify-content-between align-items-start mb-3">
-
-                                    <div>
-
-                                        <h5 className="mb-1">
-                                            {event.name}
-                                        </h5>
-
-                                        <div className="small text-muted">
-                                            {event.location || "-"}
-                                        </div>
-
-                                    </div>
-
-                                    <span
-                                        className={
-                                            badgeStatusEvent(event.status)
-                                        }
-                                    >
-                                        {
-                                            statusLabelEvent(
-                                                event.status
-                                            )
-                                        }
-                                    </span>
-
-                                </div>
-
-                                <div className="small text-muted mb-2">
-                                    Inicio:
-                                    {" "}
-                                    {formatDate(event.starts_at)}
-                                </div>
-
-                                <div className="small text-muted mb-3">
-                                    Fin:
-                                    {" "}
-                                    {formatDate(event.ends_at)}
-                                </div>
-
-                                <div className="flex-grow-1">
-
-                                    <p className="small">
-                                        {
-                                            event.description ||
-                                            "Sin descripción"
-                                        }
-                                    </p>
-
-                                </div>
-
-                                <div className="d-flex gap-2 mt-3 flex-wrap">
-
-                                    <Link
-                                        href={`/dashboard/events/${event.id}`}
-                                        className="m-0 p-0 tags_btn d-flex justify-content-center align-items-center"
-                                    >
-                                        🎫 Abrir
-                                    </Link>
-
-                                    {/* <Link
-                                        href={`/dashboard/events/${event.id}/staff`}
-                                        className="tags_btn_secondary d-flex justify-content-center align-items-center"
-                                    >
-                                        👥 Staff
-                                    </Link> */}
-                                    <div className="d-flex p-3">
-                                        <button
-                                            className="icon_btn success me-3"
-                                            title="Editar Evento"
-                                            onClick={() =>
-                                                openEdit(event)
-                                            }
-                                        >
-                                            ✏️
-                                        </button>
-
-                                        <button
-                                            className="icon_btn danger"
-                                            title="Borrar Evento"
-                                            onClick={() =>
-                                                deleteEvent(event.id)
-                                            }
-                                        >
-                                            🗑
-                                        </button>
-                                    </div>
-
-
-                                </div>
-
-                            </div>
-
-                        </div>
-
-                    ))}
-
-                </div>
-
-            </div>
-
-            {/* MODAL */}
-            {/* MODAL */}
-            {modal && (
-
-                <div className="tags_modal_overlay">
-
-                    <div className="tags_modal_card tags_staff_modal">
-
-                        <button
-                            className="tags_modal_close"
-                            onClick={closeModal}
-                        >
-                            ✕
+                {!isStaff && (
+                    <div className="tags_events_admin_hero_actions">
+                        {managedBusinessId > 0 && (
+                            <Link href={`/dashboard/businesses/${managedBusinessId}`}>
+                                Volver al negocio
+                            </Link>
+                        )}
+                        <button type="button" onClick={openCreate}>
+                            <FaPlus /> Nuevo evento
                         </button>
-
-                        {/* HEADER */}
-                        <div className="tags_modal_header">
-
-                            <h2 className="tags_modal_title">
-
-                                {modal.id
-                                    ? "Editar Evento"
-                                    : "Nuevo Evento"}
-
-                            </h2>
-
-                            <p className="tags_modal_description">
-                                Configurá los datos del evento
-                            </p>
-
-                        </div>
-
-                        {/* BODY */}
-                        <div className="tags_modal_body tags_staff_modal_body">
-
-                            <div className="row g-3">
-
-                                <div className="col-12">
-
-                                    <div className="tags_modal_group">
-
-                                        <label className="tags_modal_label">
-                                            Nombre
-                                        </label>
-
-                                        <input
-                                            className="tags_modal_input"
-                                            value={name}
-                                            onChange={(e) =>
-                                                setName(
-                                                    e.target.value
-                                                )
-                                            }
-                                        />
-
-                                    </div>
-
-                                </div>
-
-                                <div className="col-12">
-
-                                    <div className="tags_modal_group">
-
-                                        <label className="tags_modal_label">
-                                            Descripción
-                                        </label>
-
-                                        <textarea
-                                            rows={4}
-                                            className="tags_modal_input"
-                                            value={description}
-                                            onChange={(e) =>
-                                                setDescription(
-                                                    e.target.value
-                                                )
-                                            }
-                                        />
-
-                                    </div>
-
-                                </div>
-
-                                <div className="col-12">
-
-                                    <div className="tags_modal_group">
-
-                                        <label className="tags_modal_label">
-                                            Ubicación
-                                        </label>
-
-                                        <input
-                                            className="tags_modal_input"
-                                            value={location}
-                                            onChange={(e) =>
-                                                setLocation(
-                                                    e.target.value
-                                                )
-                                            }
-                                        />
-
-                                    </div>
-
-                                </div>
-
-                                <div className="col-md-6">
-
-                                    <div className="tags_modal_group">
-
-                                        <label className="tags_modal_label">
-                                            Inicio
-                                        </label>
-
-                                        <input
-                                            type="datetime-local"
-                                            className="tags_modal_input"
-                                            value={startsAt}
-                                            onChange={(e) =>
-                                                setStartsAt(
-                                                    e.target.value
-                                                )
-                                            }
-                                        />
-
-                                    </div>
-
-                                </div>
-
-                                <div className="col-md-6">
-
-                                    <div className="tags_modal_group">
-
-                                        <label className="tags_modal_label">
-                                            Fin
-                                        </label>
-
-                                        <input
-                                            type="datetime-local"
-                                            className="tags_modal_input"
-                                            value={endsAt}
-                                            onChange={(e) =>
-                                                setEndsAt(
-                                                    e.target.value
-                                                )
-                                            }
-                                        />
-
-                                    </div>
-
-                                </div>
-
-                                <div className="col-md-6">
-
-                                    <div className="tags_modal_group">
-
-                                        <label className="tags_modal_label">
-                                            Estado
-                                        </label>
-
-                                        <select
-                                            className="tags_modal_input"
-                                            value={status}
-                                            onChange={(e) =>
-                                                setStatus(
-                                                    e.target.value
-                                                )
-                                            }
-                                        >
-
-                                            <option value="draft">
-                                                Borrador
-                                            </option>
-
-                                            <option value="published">
-                                                Publicado
-                                            </option>
-
-                                            <option value="active">
-                                                Activo
-                                            </option>
-
-                                            <option value="finished">
-                                                Finalizado
-                                            </option>
-
-                                            <option value="cancelled">
-                                                Cancelado
-                                            </option>
-
-                                        </select>
-
-                                    </div>
-
-                                </div>
-
-                            </div>
-
-                        </div>
-
-                        {/* ACTIONS */}
-                        <div className="tags_modal_actions">
-
-                            <button
-                                className="tags_modal_btn tags_modal_btn_success"
-                                onClick={saveEvent}
-                            >
-                                🖫 Guardar
-                            </button>
-
-                            <button
-                                className="tags_modal_btn tags_modal_btn_cancel"
-                                onClick={closeModal}
-                            >
-                                ✖ Cancelar
-                            </button>
-
-                        </div>
-
                     </div>
+                )}
+            </header>
 
+            <section className="tags_events_admin_body">
+                {productMode === "pro" && <OwnerNavigation session={session} productMode={productMode} />}
+
+                <div className="tags_events_admin_metrics">
+                    <article><span>Total</span><strong>{metrics.total}</strong><small>eventos</small></article>
+                    <article><span>Activos</span><strong>{metrics.active}</strong><small>en curso</small></article>
+                    <article><span>Publicados</span><strong>{metrics.published}</strong><small>próximos</small></article>
+                    <article><span>Borradores</span><strong>{metrics.draft}</strong><small>en preparación</small></article>
                 </div>
 
+                <section className="tags_events_admin_panel">
+                    <div className="tags_events_admin_panel_heading">
+                        <div>
+                            <h2>{isStaff ? "Eventos asignados" : "Tus eventos"}</h2>
+                            <p>Ingresá a cada evento para administrar su operación.</p>
+                        </div>
+                        <div className="tags_events_admin_filters">
+                            <label>
+                                <FaMagnifyingGlass />
+                                <input
+                                    value={filters.search}
+                                    onChange={event => setFilters(current => ({ ...current, search: event.target.value }))}
+                                    placeholder="Buscar por nombre"
+                                />
+                            </label>
+                            <select
+                                value={filters.status}
+                                onChange={event => setFilters(current => ({ ...current, status: event.target.value }))}
+                                aria-label="Filtrar por estado"
+                            >
+                                <option value="">Todos los estados</option>
+                                {STATUS_OPTIONS.map(([value, label]) => (
+                                    <option key={value} value={value}>{label}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+
+                    {!loading && events.length === 0 && (
+                        <div className="tags_events_admin_empty">
+                            <FaCalendarDays />
+                            <h3>No hay eventos para mostrar</h3>
+                            <p>{filters.search || filters.status
+                                ? "Probá cambiar los filtros."
+                                : "Creá el primer evento para comenzar a configurarlo."}</p>
+                            {!isStaff && !filters.search && !filters.status && (
+                                <button type="button" onClick={openCreate}><FaPlus /> Crear evento</button>
+                            )}
+                        </div>
+                    )}
+
+                    <div className="tags_events_admin_grid">
+                        {events.map(event => (
+                            <article className="tags_events_admin_card" key={event.id}>
+                                <div className="tags_events_admin_card_top">
+                                    <span className={`tags_events_admin_status is_${event.status}`}>
+                                        {statusLabelEvent(event.status)}
+                                    </span>
+                                    {!isStaff && (
+                                        <div className="tags_events_admin_card_tools">
+                                            <button type="button" title="Editar evento" onClick={() => openEdit(event)}><FaPen /></button>
+                                            <button type="button" className="danger" title="Eliminar evento" onClick={() => deleteEvent(event)}><FaTrash /></button>
+                                        </div>
+                                    )}
+                                </div>
+                                <h3>{event.name}</h3>
+                                <p>{event.description || "Evento sin descripción."}</p>
+                                <dl>
+                                    <div><dt><FaCalendarDays /> Inicio</dt><dd>{formatDate(event.starts_at)}</dd></div>
+                                    <div><dt><FaCalendarDays /> Fin</dt><dd>{formatDate(event.ends_at)}</dd></div>
+                                    <div><dt><FaLocationDot /> Lugar</dt><dd>{event.location || "A definir"}</dd></div>
+                                </dl>
+                                <Link className="tags_events_admin_open" href={productMode === "simple" ? `/dashboard/events/${event.id}/registration` : `/dashboard/events/${event.id}`}>
+                                    <FaUsers /> {productMode === "simple" ? "Inscripciones y pagos" : "Administrar evento"} <FaArrowRight />
+                                </Link>
+                            </article>
+                        ))}
+                    </div>
+                </section>
+            </section>
+
+            {editing && (
+                <div className="tags_events_admin_modal_backdrop" onMouseDown={() => !saving && setEditing(null)}>
+                    <form className="tags_events_admin_modal" onSubmit={saveEvent} onMouseDown={event => event.stopPropagation()}>
+                        <header>
+                            <div><span>{editing.id ? "EDICIÓN" : "NUEVO EVENTO"}</span><h2>{editing.id ? "Editar evento" : "Crear evento"}</h2></div>
+                            <button type="button" aria-label="Cerrar" onClick={() => setEditing(null)}>×</button>
+                        </header>
+                        <div className="tags_events_admin_form">
+                            <label className="wide">Nombre del evento<input required maxLength={190} value={form.name} onChange={event => setForm(current => ({ ...current, name: event.target.value }))} /></label>
+                            <label className="wide">Descripción<textarea rows="4" value={form.description} onChange={event => setForm(current => ({ ...current, description: event.target.value }))} /></label>
+                            <label className="wide">Lugar<input maxLength={255} value={form.location} onChange={event => setForm(current => ({ ...current, location: event.target.value }))} /></label>
+                            <label className="wide">Domicilio del evento<input maxLength={500} value={form.address} onChange={event => setForm(current => ({ ...current, address: event.target.value }))} placeholder="Ej.: Av. San Martín 123, Villa General Belgrano" /></label>
+                            <label>Latitud<input type="number" step="any" min="-90" max="90" value={form.latitude} onChange={event => setForm(current => ({ ...current, latitude: event.target.value }))} placeholder="-31.9770000" /></label>
+                            <label>Longitud<input type="number" step="any" min="-180" max="180" value={form.longitude} onChange={event => setForm(current => ({ ...current, longitude: event.target.value }))} placeholder="-64.5660000" /></label>
+                            <label>Inicio<input type="datetime-local" value={form.startsAt} onChange={event => setForm(current => ({ ...current, startsAt: event.target.value }))} /></label>
+                            <label>Finalización<input type="datetime-local" value={form.endsAt} onChange={event => setForm(current => ({ ...current, endsAt: event.target.value }))} /></label>
+                            <label className="wide">Observación para la credencial<textarea rows="3" maxLength={500} value={form.credentialNote} onChange={event => setForm(current => ({ ...current, credentialNote: event.target.value }))} placeholder="Ej.: Presentate 30 minutos antes del comienzo para acreditarte." /><small>Se mostrará debajo de la fecha y hora solamente si completás este campo.</small></label>
+                            <label className="wide">Estado<select value={form.status} onChange={event => setForm(current => ({ ...current, status: event.target.value }))}>{STATUS_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+                        </div>
+                        <footer>
+                            <button type="button" className="secondary" disabled={saving} onClick={() => setEditing(null)}>Cancelar</button>
+                            <button type="submit" disabled={saving}>{editing.id ? "Guardar cambios" : "Crear evento"}</button>
+                        </footer>
+                    </form>
+                </div>
             )}
 
-        </div>
+            {(loading || saving) && <TagsSpinner size={120} logoSize={66} borderSize={5} background="rgba(248,250,252,.76)" />}
+        </main>
     );
 }

@@ -2,6 +2,7 @@ export const DIRECTORY_MODULE_CODES = [
     "store",
     "resto",
     "turnos",
+    "events",
     "chatbot",
     "reviewsInvitation",
     "reviewsSlider"
@@ -16,6 +17,20 @@ const DEFAULT_CONTENT = {
         displayMode: "modal",
         buttonLabel: "Solicitar un turno",
         showIntro: true,
+        useDirectoryTheme: true,
+        backgroundColor: "#f3f7f5",
+        surfaceColor: "#ffffff",
+        textColor: "#17231d",
+        accentColor: "#26734f",
+        borderRadius: "18px",
+        padding: "24px"
+    },
+    events: {
+        menuLabel: "Eventos",
+        eyebrow: "EVENTOS",
+        title: "Próximos eventos",
+        description: "Inscribite y reservá tu lugar.",
+        limit: 3,
         useDirectoryTheme: true,
         backgroundColor: "#f3f7f5",
         surfaceColor: "#ffffff",

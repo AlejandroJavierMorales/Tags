@@ -16,6 +16,11 @@ export async function getTurnosBySlug(slug, connection = db) {
          INNER JOIN tags_qr_pages p ON p.id = a.page_id AND p.page_type = 'turnos'
          INNER JOIN tags_businesses b ON b.id = a.business_id
          WHERE a.slug = ? AND a.status = 'published' AND p.status = 'published'
+           AND (a.business_profile_code <> 'sports_club' OR EXISTS (
+                SELECT 1 FROM tags_sports_apps sa
+                WHERE sa.turnos_id=a.id AND sa.business_id=a.business_id
+                  AND sa.status='active' AND sa.public_visibility <> 'hidden'
+           ))
          LIMIT 1`,
         [String(slug || "").trim()]
     );

@@ -23,12 +23,12 @@ export async function GET(req) {
     const businessId = new URL(req.url).searchParams.get("businessId");
     const turnosId = Number(new URL(req.url).searchParams.get("turnosId") || 0);
     if (!businessId) return jsonResponseError("businessId es requerido");
-    const access = await getTurnosAccess({ businessId, turnosId, permission: "settings.view" });
+    const access = await getTurnosAccess({ businessId, turnosId, permission: "dashboard.view" });
     if (!access.allowed) return turnosAccessResponse(access);
     const [rows] = await db.query("SELECT * FROM tags_turnos_apps WHERE business_id = ? AND (? = 0 OR id = ?) ORDER BY id ASC", [businessId, turnosId, turnosId]);
     if (!rows[0]) return jsonResponseError("Tags Turnos no encontrado", 404, "TURNOS_NOT_FOUND");
     const [apps] = await db.query("SELECT id, page_id, slug, name, business_profile_code, status FROM tags_turnos_apps WHERE business_id = ? ORDER BY id ASC", [businessId]);
-    return Response.json({ ok: true, apps, isPlatformAdmin: access.session?.role === "admin", settings: { ...rows[0], settings: parseJson(rows[0].settings_json), publicBookingPolicy: parseJson(rows[0].public_booking_policy_json), depositPolicy: parseJson(rows[0].deposit_policy_json) } });
+    return Response.json({ ok: true, apps, isPlatformAdmin: access.session?.role === "admin", isStaff: access.isStaff === true, permissions: access.permissions || ["*"], settings: { ...rows[0], settings: parseJson(rows[0].settings_json), publicBookingPolicy: parseJson(rows[0].public_booking_policy_json), depositPolicy: parseJson(rows[0].deposit_policy_json) } });
 }
 
 export async function POST(req) {

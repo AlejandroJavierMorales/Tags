@@ -1,0 +1,37 @@
+.sports_club_new_activity {
+  flex-wrap: wrap;
+}
+
+.sports_club_new_activity::before {
+  content: "Tipo de actividad: Alquiler bloquea una cancha; Clase bloquea la agenda de un profesor.";
+  width: 100%;
+  padding: 9px 11px;
+  border-left: 3px solid #e87518;
+  background: #fff8ef;
+  color: #385344;
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+
+.sports_club_new_activity select {
+  min-width: 190px;
+}
+
+.sports_club_settings > header p::after {
+  content: " El nombre, la descripción, el logo y la portada se toman de los datos generales del negocio.";
+}
+
+.sports_club_identity_form > label:first-child,
+.sports_club_identity_form > label.wide,
+.sports_club_identity_form > div {
+  display: none;
+}
+
+.sports_club_identity_form > button {
+  font-size: 0;
+}
+
+.sports_club_identity_form > button::after {
+  content: "Guardar configuración";
+  font-size: 0.85rem;
+}

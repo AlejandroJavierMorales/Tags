@@ -1,7 +1,8 @@
 const DEFAULT_DISCIPLINES = [
     { code: "tennis", name: "Tenis", teamMode: "individual", scoringMode: "sets", order: 10 },
     { code: "padel", name: "Pádel", teamMode: "doubles", scoringMode: "sets", order: 20 },
-    { code: "football", name: "Fútbol", teamMode: "team", scoringMode: "goals", order: 30 }
+    { code: "football", name: "Fútbol", teamMode: "team", scoringMode: "goals", order: 30 },
+    { code: "pickleball", name: "Pickleball", teamMode: "doubles", scoringMode: "sets", order: 40 }
 ];
 
 export async function ensureSportsApp({ connection, businessId, turnosId, name }) {
@@ -22,7 +23,7 @@ export async function ensureSportsApp({ connection, businessId, turnosId, name }
         [turnosId, businessId]
     );
     const sportsAppId = Number(rows[0]?.id || 0);
-    if (!sportsAppId) throw new Error("No se pudo inicializar Tags Deportes");
+    if (!sportsAppId) throw new Error("No se pudo inicializar Tags Club");
 
     for (const discipline of DEFAULT_DISCIPLINES) {
         await connection.query(
@@ -48,4 +49,3 @@ export async function ensureSportsApp({ connection, businessId, turnosId, name }
 
     return sportsAppId;
 }
-

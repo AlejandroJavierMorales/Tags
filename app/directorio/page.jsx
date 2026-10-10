@@ -69,7 +69,7 @@ export default async function DirectoryPublicPage({ searchParams }) {
   if (!data) return <main className="tags_directory_unavailable"><h1>Directorio no disponible</h1><p>El canal solicitado todavía no está activo.</p></main>;
 
   const categoryTitle = data.selectedCategory ? `Dentro de ${data.selectedCategory.name}` : "Rubros y categorías";
-  const resultsTitle = data.selectedCategory ? `Prestadores de ${data.selectedCategory.name}` : data.filters.query ? `Resultados para “${data.filters.query}”` : "Prestadores destacados";
+  const resultsTitle = data.selectedCategory ? `Opciones de ${data.selectedCategory.name}` : data.filters.query ? `Resultados para “${data.filters.query}”` : "Prestadores destacados";
   const isHome = !data.filters.categoryId && !data.filters.localityId && !data.filters.query;
   const returnHref = `${href(data.filters)}#resultados`;
   const navigationTrail = [{ label: "Inicio", href: "/directorio" }, ...data.breadcrumbs.map(item => ({ label: item.name, href: href(data.filters, { categoria: item.id, pagina: 1 }) }))];
@@ -105,7 +105,7 @@ export default async function DirectoryPublicPage({ searchParams }) {
 
       {isHome && <section className="tags_directory_commercial_intro">
         <div><span>LA PLATAFORMA COMERCIAL</span><h2>{data.site.name} conecta personas, comercios y servicios</h2><p>Conectamos a quienes buscan productos y servicios con comercios, profesionales y prestadores de toda la región. Desarrollamos herramientas digitales para cada tipo de negocio e implementamos soluciones a medida, simples y seguras. Ponemos a disposición de los usuarios buscadores con filtros, mapas, indicaciones para llegar y medios de contacto. Además, impulsamos un sistema de beneficios para que los prestadores adheridos puedan ofrecer descuentos, puntos y recompensas, y para que usuarios y clientes puedan disfrutarlos. Así fomentamos la actividad comercial de la región mediante tecnología de alta prestación, accesible y de muy bajo costo.</p></div>
-        <aside><strong>¿Tenés un comercio o prestás un servicio?</strong><p>Publicá tu actividad y accedé a una web propia, catálogo, carta online, turnos, reseñas y más herramientas de Tags.</p><a href="/publicar-mi-negocio">Publicar mi negocio</a></aside>
+        <aside><strong>¿Tenés un comercio o prestás un servicio?</strong><p>Publicá tu actividad y accedé a una web propia, catálogo, carta online, turnos, reseñas, QR de promociones, Chatbot de IA, Perfil de Empresa en Google Maps, fidelización con puntos, sellos y recompensas, y muchas más herramientas digitales.</p><a href="/publicar-mi-negocio">Publicar mi negocio</a></aside>
       </section>}
     </div>
     <DirectoryPublicFooter site={data.site} />

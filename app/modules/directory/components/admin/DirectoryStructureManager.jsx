@@ -27,6 +27,7 @@ const MODULE_META = {
   store: [FaStore, "Tienda", "Tienda incorporada a la Web."],
   resto: [FaUtensils, "Gastronomía", "Carta y pedidos incorporados a la Web."],
   turnos: [FaCalendarDays, "Reservas", "Solicitud de turnos y horarios disponibles."],
+  events: [FaCalendarDays, "Eventos", "Próximos eventos e inscripciones públicas."],
   reviewsInvitation: [FaCommentDots, "Invitar a reseñar", "Acceso al formulario de experiencia."],
   reviewsSlider: [FaStar, "Reseñas públicas", "Opiniones visibles de clientes."]
 };
@@ -36,6 +37,7 @@ function availableModuleCodes(web) {
     store: Boolean(web?.embeddedStore?.store),
     resto: Boolean(web?.embeddedResto?.store),
     turnos: Boolean(web?.embeddedTurnos?.length),
+    events: Boolean(web?.availableModules?.events || web?.embeddedEvents?.length),
     reviewsInvitation: Boolean(web?.embeddedReviews?.form),
     reviewsSlider: Boolean(web?.embeddedReviews?.form)
   })[code]);

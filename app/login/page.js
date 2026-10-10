@@ -126,6 +126,8 @@ export default async function LoginPage({ searchParams }) {
       qr_agency: `/dashboard/businesses/${parsed.businessId}/qr-agency`,
       ai_chatbot: `/dashboard/businesses/${parsed.businessId}/ai-chat`,
       loyalty: `/dashboard/businesses/${parsed.businessId}/loyalty`,
+      events: `/dashboard/businesses/${parsed.businessId}/events`,
+      e_events: `/dashboard/businesses/${parsed.businessId}/events-pro`,
       directory: `/dashboard/businesses/${parsed.businessId}/directory`,
       portal_public: `/dashboard/businesses/${parsed.businessId}/portal`,
     };

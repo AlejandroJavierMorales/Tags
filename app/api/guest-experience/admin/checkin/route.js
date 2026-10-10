@@ -15,7 +15,9 @@ export async function GET(req) {
     if (!access.allowed) return guestAdminAccessResponse(access);
 
     const [stays] = await db.query(`SELECT s.*,u.name unit_name,g.name guest_name,g.email guest_email,g.phone guest_phone,g.document_number,
-        pc.status precheckin_status,pc.vehicle_plate,pc.vehicle_make_model,pc.vehicle_color,pc.guest_notes,pc.internal_notes
+        pc.status precheckin_status,pc.vehicle_plate,pc.vehicle_make_model,pc.vehicle_color,pc.guest_notes,pc.internal_notes,
+        (SELECT COALESCE(SUM(CASE WHEN e.status='confirmed' THEN e.total_amount ELSE 0 END),0) FROM tags_guest_accounts ac INNER JOIN tags_guest_account_entries e ON e.account_id=ac.id WHERE ac.stay_id=s.id) account_balance,
+        (SELECT COALESCE(SUM(p.amount),0) FROM tags_guest_accounts ac INNER JOIN tags_guest_payments p ON p.account_id=ac.id WHERE ac.stay_id=s.id) paid_total
         FROM tags_guest_stays s INNER JOIN tags_guest_units u ON u.id=s.unit_id INNER JOIN tags_guest_people g ON g.id=s.primary_guest_id
         LEFT JOIN tags_guest_precheckins pc ON pc.stay_id=s.id WHERE s.id=? AND s.guest_app_id=? LIMIT 1`, [stayId, guestAppId]);
     if (!stays[0]) return guestError("Reserva no encontrada", 404);

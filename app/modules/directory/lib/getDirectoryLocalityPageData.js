@@ -1,5 +1,6 @@
 import { db } from "@/app/lib/tags-db";
 import { getDirectoryPublicData } from "./getDirectoryPublicData";
+import { getDiningCategoryNodes } from "./directoryGastronomy";
 
 function normalized(value) {
   return String(value || "")
@@ -80,10 +81,10 @@ export async function getDirectoryLocalityPageData(kind, localitySlug, siteCode 
   if (kind === "restaurants") {
     const gastronomy = findNode(nodes, node => Number(node.depth) === 0 && normalized(node.name) === "gastronomia")
       || category(["gastronomia", "restaurantes", "restoranes"], tourism.id);
-    const restaurants = gastronomy && Number(gastronomy.depth) === 0
-      ? category(["restoranes", "restaurantes"], gastronomy.id)
-      : gastronomy;
-    return mergePages(await queryPages([restaurants?.id]), restaurants ? [restaurants] : [], site, locality, kind);
+    const diningCategories = gastronomy && Number(gastronomy.depth) === 0
+      ? getDiningCategoryNodes(nodes, gastronomy.id)
+      : [gastronomy].filter(Boolean);
+    return mergePages(await queryPages(diningCategories.map(node => node.id)), diningCategories, site, locality, kind);
   }
 
   if (kind === "gifts") {
@@ -104,11 +105,11 @@ export async function getDirectoryLocalitySitemapPaths(siteCode = "calamuchitar"
   if (!tourism) return [];
   const accommodation = findNode(nodes, node => Number(node.parent_id) === Number(tourism.id) && ["alojamientos", "alojamiento"].includes(normalized(node.name)));
   const gastronomy = findNode(nodes, node => Number(node.depth) === 0 && normalized(node.name) === "gastronomia") || tourism;
-  const restaurants = findNode(nodes, node => Number(node.parent_id) === Number(gastronomy.id) && ["restoranes", "restaurantes"].includes(normalized(node.name)));
+  const restaurants = getDiningCategoryNodes(nodes, gastronomy.id);
   const gifts = nodes.filter(node => Number(node.parent_id) === Number(tourism.id) && new Set(["regaleria", "regionales", "chocolaterias", "venta de alfajores"]).has(normalized(node.name)));
   const definitions = [
     ["accommodation", accommodation?.id],
-    ["restaurants", restaurants?.id],
+    ["restaurants", restaurants.map(node => node.id)],
     ["gifts", gifts.map(node => node.id)],
   ];
   const result = [];

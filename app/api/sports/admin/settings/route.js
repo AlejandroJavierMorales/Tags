@@ -12,8 +12,14 @@ export async function GET(req) {
     const turnosId = Number(params.get("turnosId") || 0);
     if (!businessId || !turnosId) return jsonResponseError("businessId y turnosId son requeridos");
 
-    const access = await getSportsAccess({ businessId, turnosId, permission: "sports.dashboard.view" });
+    const access = await getSportsAccess({ businessId, turnosId, permission: ["dashboard.view", "sports.dashboard.view"] });
     if (!access.allowed) return turnosAccessResponse(access);
+
+    const [[business]] = await db.query(
+        `SELECT COALESCE(NULLIF(display_name,''),name) name,description,logo_url,cover_url
+           FROM tags_businesses WHERE id=? LIMIT 1`,
+        [businessId]
+    );
 
     const [disciplines, resources, services, rates] = await Promise.all([
         db.query(`SELECT * FROM tags_sports_disciplines WHERE sports_app_id = ? ORDER BY sort_order ASC, name ASC`, [access.sportsApp.id]),
@@ -39,7 +45,14 @@ export async function GET(req) {
 
     return Response.json({
         ok: true,
-        sportsApp: { ...access.sportsApp, settings: parseJson(access.sportsApp.settings_json) },
+        sportsApp: {
+            ...access.sportsApp,
+            name: business?.name || access.sportsApp.name,
+            description: business?.description || "",
+            logo_url: business?.logo_url || "",
+            cover_url: business?.cover_url || "",
+            settings: parseJson(access.sportsApp.settings_json)
+        },
         disciplines: disciplines[0],
         resources: resources[0].map(item => ({
             ...item,
@@ -56,15 +69,23 @@ export async function POST(req) {
     if (!body) return jsonResponseError("Cuerpo JSON inválido");
     const businessId = Number(body.businessId || 0);
     const turnosId = Number(body.turnosId || 0);
-    const access = await getSportsAccess({ businessId, turnosId, permission: "settings.manage" });
+    const access = await getSportsAccess({ businessId, turnosId, permission: ["sports.settings.manage", "settings.manage"] });
     if (!access.allowed) return turnosAccessResponse(access);
 
     const settings = body.settings && typeof body.settings === "object" ? body.settings : {};
+    const publicVisibility = ["public", "registered", "hidden"].includes(body.publicVisibility) ? body.publicVisibility : "public";
+    const defaultDisciplineId = Number(body.defaultDisciplineId || 0) || null;
+    if (defaultDisciplineId) {
+        const [valid] = await db.query("SELECT id FROM tags_sports_disciplines WHERE id=? AND sports_app_id=? LIMIT 1", [defaultDisciplineId, access.sportsApp.id]);
+        if (!valid[0]) return jsonResponseError("La disciplina predeterminada no pertenece al club", 400);
+    }
     await db.query(
         `UPDATE tags_sports_apps
-         SET community_enabled = ?, public_community_enabled = ?, settings_json = ?, updated_at = NOW()
+         SET public_visibility = ?, default_discipline_id = ?, community_enabled = ?,
+             public_community_enabled = ?, settings_json = ?, updated_at = NOW()
          WHERE id = ?`,
-        [body.communityEnabled === true ? 1 : 0, body.publicCommunityEnabled === true ? 1 : 0, JSON.stringify(settings), access.sportsApp.id]
+        [publicVisibility, defaultDisciplineId, body.communityEnabled === true ? 1 : 0,
+            body.publicCommunityEnabled === true ? 1 : 0, JSON.stringify(settings), access.sportsApp.id]
     );
     return Response.json({ ok: true });
 }

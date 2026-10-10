@@ -58,7 +58,22 @@ async function resolvePushIcon(businessId, moduleCode, suppliedIcon) {
   }
 }
 
-export async function sendBusinessPush({ businessId, moduleCode, eventCode, entityType, entityId, title, body, url, icon = "", payload = {}, idempotencyKey, audience = "admin", recipientId = null }) {
+export async function sendPushTest(endpointHash) {
+  if (!configure()) return { ok: false, error: "Faltan las claves Web Push" };
+  const [[subscription]] = await db.query("SELECT * FROM tags_push_subscriptions WHERE endpoint_hash=? AND status='active' LIMIT 1", [endpointHash]);
+  if (!subscription) return { ok: false, error: "Este dispositivo no está registrado" };
+  try {
+    const result = await webpush.sendNotification({ endpoint: subscription.endpoint, keys: { p256dh: subscription.p256dh, auth: subscription.auth_secret } }, JSON.stringify({ title: "Notificaciones funcionando", body: "Este dispositivo ya puede recibir avisos de la plataforma.", url: "/dashboard", icon: "/logo_tags_transparente.webp", badge: "/logo_tags_transparente.webp", tag: `tags-push-test-${Date.now()}` }));
+    await db.query("UPDATE tags_push_subscriptions SET last_success_at=NOW(),last_failure_at=NULL,failure_count=0 WHERE id=?", [subscription.id]);
+    return { ok: true, statusCode: result.statusCode || 201 };
+  } catch (error) {
+    const statusCode = Number(error?.statusCode || 0) || null;
+    await db.query("UPDATE tags_push_subscriptions SET status=IF(? IN (404,410),'expired',status),last_failure_at=NOW(),failure_count=failure_count+1 WHERE id=?", [statusCode, subscription.id]);
+    return { ok: false, error: String(error?.message || "No se pudo enviar la prueba"), statusCode };
+  }
+}
+
+export async function sendBusinessPush({ businessId, moduleCode, eventCode, entityType, entityId, title, body, url, icon = "", payload = {}, idempotencyKey, audience = "admin", recipientId = null, includePlatformAdmins = false }) {
   if (!configure()) return { ok: false, skipped: "vapid_not_configured" };
   try {
     const actionUrl = resolveActionUrl(url, audience);
@@ -71,29 +86,36 @@ export async function sendBusinessPush({ businessId, moduleCode, eventCode, enti
       eventId = existing?.id;
     }
     const resolvedIcon = await resolvePushIcon(businessId, moduleCode, icon);
-    const recipientFilter = audience === "platform_admin"
-      ? "recipient_type='platform_admin'"
-      : audience === "guest"
-        ? "business_id=? AND recipient_type='guest' AND recipient_id=?"
-        : `business_id=? AND recipient_type<>'guest' AND recipient_type<>'platform_admin'
+    const businessAdminFilter = `business_id=? AND recipient_type<>'guest' AND recipient_type<>'platform_admin'
           AND (recipient_type<>'business_staff' OR EXISTS(
             SELECT 1 FROM tags_business_staff st
             INNER JOIN tags_business_staff_app_access aa
               ON aa.staff_id=st.id AND aa.business_id=st.business_id
             WHERE st.id=tags_push_subscriptions.recipient_id
               AND st.business_id=tags_push_subscriptions.business_id
-              AND st.status='active' AND aa.status='active'
+              AND st.status='active' AND aa.status='active' AND aa.app_code=?
           ))`;
+    const includePlatformRecipients = includePlatformAdmins || (moduleCode === "guest_experience" && audience === "admin");
+    const recipientFilter = audience === "platform_admin"
+      ? "recipient_type='platform_admin'"
+      : audience === "guest"
+        ? "business_id=? AND recipient_type='guest' AND recipient_id=?"
+        : includePlatformRecipients ? `(recipient_type='platform_admin' OR (${businessAdminFilter}))` : businessAdminFilter;
     const recipientParams = audience === "platform_admin"
       ? []
       : audience === "guest"
         ? [businessId, recipientId]
-        : [businessId];
+        : [businessId, moduleCode];
     const [subscriptions] = await db.query(`SELECT * FROM tags_push_subscriptions WHERE ${recipientFilter} AND status='active'`, recipientParams);
+    if (!subscriptions.length) console.warn("BUSINESS WEB PUSH WITHOUT RECIPIENTS", { businessId, moduleCode, eventCode, audience, includePlatformAdmins: includePlatformRecipients });
     let sent = 0;
     for (const subscription of subscriptions) {
       const [delivery] = await db.query("INSERT IGNORE INTO tags_notification_deliveries (event_id,push_subscription_id) VALUES (?,?)", [eventId, subscription.id]);
-      if (!delivery.affectedRows) continue;
+      if (!delivery.affectedRows) {
+        const [[existingDelivery]] = await db.query("SELECT status FROM tags_notification_deliveries WHERE event_id=? AND push_subscription_id=? LIMIT 1", [eventId, subscription.id]);
+        if (existingDelivery?.status === "sent") continue;
+        await db.query("UPDATE tags_notification_deliveries SET status='pending',last_error=NULL,updated_at=NOW() WHERE event_id=? AND push_subscription_id=?", [eventId, subscription.id]);
+      }
       try {
         const result = await webpush.sendNotification({ endpoint: subscription.endpoint, keys: { p256dh: subscription.p256dh, auth: subscription.auth_secret } }, JSON.stringify({ title, body, url: actionUrl, icon: resolvedIcon, badge: resolvedIcon, tag: `${moduleCode}:${entityType || "event"}:${entityId || crypto.randomUUID()}` }));
         await db.query("UPDATE tags_notification_deliveries SET status='sent',attempts=attempts+1,provider_status=?,sent_at=NOW() WHERE event_id=? AND push_subscription_id=?", [result.statusCode || 201, eventId, subscription.id]);

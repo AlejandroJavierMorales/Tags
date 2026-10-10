@@ -4,7 +4,7 @@ import "./DirectoryTourismShortcuts.css";
 
 const SHORTCUTS = [
   { title: "Dónde alojarse", text: "Cabañas, hoteles, posadas y campings", image: "donde_dormir.webp", href: "/alojamientos" },
-  { title: "Dónde comer", text: "Restaurantes, bares y sabores regionales", image: "donde_comer.webp", href: "/donde-comer" },
+  { title: "Dónde comer", text: "Restaurantes, comidas para llevar, parrillas, cervecerías y pizzerías", image: "donde_comer.webp", href: "/donde-comer" },
   { title: "Qué hacer", text: "Excursiones, actividades y experiencias", image: "que_hacer_1.webp", href: "/actividades-turisticas" },
   { title: "Qué regalar", text: "Artesanías y productos de Calamuchita", image: "que_regalar.webp", href: "/regalos-artesanias-regionales" },
 ];

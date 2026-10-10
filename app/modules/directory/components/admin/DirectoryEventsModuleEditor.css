@@ -1,0 +1,46 @@
+.tags_directory_reviews_editor_body fieldset {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+  border: 1px solid #d8e6df;
+  border-radius: 11px;
+  padding: 14px;
+}
+
+.tags_directory_reviews_editor_body fieldset.is_wide {
+  grid-column: 1 / -1;
+}
+
+.tags_directory_reviews_editor_body fieldset legend {
+  padding: 0 7px;
+  color: #1f7a4d;
+  font-size: .74rem;
+  font-weight: 900;
+}
+
+.tags_directory_reviews_editor_body fieldset > .is_check,
+.tags_directory_reviews_editor_body fieldset > div {
+  grid-column: 1 / -1;
+}
+
+.tags_directory_reviews_editor_body fieldset > div {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.tags_directory_reviews_editor_body fieldset > div.is_theme_inherited {
+  opacity: .52;
+}
+
+@media (max-width: 620px) {
+  .tags_directory_reviews_editor_body fieldset.is_wide {
+    grid-column: auto;
+  }
+
+  .tags_directory_reviews_editor_body fieldset,
+  .tags_directory_reviews_editor_body fieldset > div {
+    grid-template-columns: 1fr;
+  }
+}

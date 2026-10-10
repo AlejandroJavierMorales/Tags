@@ -3,6 +3,19 @@ import { normalizeDirectoryDbValue } from "./normalizeDirectoryDbValue";
 export { directoryImageUrl, directoryWhatsappUrl } from "./directoryPublicFormatting";
 
 const PAGE_SIZE = 12;
+const PUBLIC_LISTING_ACCESS_SQL = `(sl.is_free=1 OR EXISTS (
+  SELECT 1
+    FROM tags_subscriptions access_subscription
+   WHERE access_subscription.business_id=l.business_id
+     AND access_subscription.id=(SELECT MAX(latest_access.id) FROM tags_subscriptions latest_access WHERE latest_access.business_id=l.business_id)
+     AND access_subscription.status IN ('active','trial','past_due')
+     AND (
+       access_subscription.auto_disable_on_expire=0
+       OR access_subscription.expires_at IS NULL
+       OR DATE_ADD(access_subscription.expires_at,INTERVAL COALESCE(access_subscription.grace_days,0) DAY)>=NOW()
+       OR access_subscription.admin_override_until>=NOW()
+     )
+))`;
 
 function integer(value, fallback = 0) {
   const parsed = Number.parseInt(String(value ?? ""), 10);
@@ -29,14 +42,25 @@ export async function getDirectoryPublicData(searchParams = {}, siteCode = "cala
       `SELECT n.id,n.parent_id,n.name,n.slug,n.depth,n.image_url,n.description
        FROM tags_directory_taxonomy_nodes n
        WHERE n.id=? AND n.is_active=1
-         AND EXISTS (
-           SELECT 1 FROM tags_directory_taxonomy_closure tc
-           INNER JOIN tags_directory_listing_taxonomy lt ON lt.taxonomy_node_id=tc.descendant_id
-           INNER JOIN tags_directory_site_listings sl ON sl.listing_id=lt.listing_id
-           WHERE tc.ancestor_id=n.id AND sl.site_id=? AND sl.publication_status='published'
+         AND (
+           EXISTS (
+             SELECT 1 FROM tags_directory_taxonomy_closure tc
+             INNER JOIN tags_directory_listing_taxonomy lt ON lt.taxonomy_node_id=tc.descendant_id
+             INNER JOIN tags_directory_site_listings sl ON sl.listing_id=lt.listing_id
+             INNER JOIN tags_directory_listings l ON l.id=sl.listing_id AND l.status='published'
+             WHERE tc.ancestor_id=n.id AND sl.site_id=? AND sl.publication_status='published'
+               AND ${PUBLIC_LISTING_ACCESS_SQL}
+           )
+           OR EXISTS (
+             SELECT 1 FROM tags_directory_taxonomy_closure tc
+             INNER JOIN tags_ai_tourism_content_categories tcc ON tcc.taxonomy_node_id=tc.descendant_id AND tcc.site_id=?
+             INNER JOIN tags_ai_tourism_contents content ON content.id=tcc.content_id AND content.site_id=tcc.site_id
+             WHERE tc.ancestor_id=n.id AND content.status='published'
+               AND (content.valid_until IS NULL OR DATE(content.valid_until)>=CURRENT_DATE())
+           )
          )
        LIMIT 1`,
-      [categoryId, site.id]
+      [categoryId, site.id, site.id]
     );
     selectedCategory = normalizeDirectoryDbValue(selected[0] || null);
     if (selectedCategory) {
@@ -55,28 +79,40 @@ export async function getDirectoryPublicData(searchParams = {}, siteCode = "cala
   const parentId = selectedCategory?.id || null;
   const [categoriesRows] = await db.execute(
     `SELECT n.id,n.name,n.slug,n.depth,n.image_url,n.description,
-            COUNT(DISTINCT l.id) listing_count
+            COALESCE(provider_counts.listing_count,0) listing_count,
+            COALESCE(content_counts.content_count,0) content_count,
+            COALESCE(provider_counts.listing_count,0)+COALESCE(content_counts.content_count,0) total_count
      FROM tags_directory_taxonomy_nodes n
-     LEFT JOIN tags_directory_taxonomy_closure c ON c.ancestor_id=n.id
-     LEFT JOIN tags_directory_listing_taxonomy lt ON lt.taxonomy_node_id=c.descendant_id
-     LEFT JOIN tags_directory_site_listings sl ON sl.listing_id=lt.listing_id AND sl.site_id=? AND sl.publication_status='published'
-     LEFT JOIN tags_directory_listings l ON l.id=sl.listing_id AND l.status='published'
+     LEFT JOIN (
+       SELECT tc.ancestor_id taxonomy_node_id,COUNT(DISTINCT l.id) listing_count
+       FROM tags_directory_taxonomy_closure tc
+       INNER JOIN tags_directory_listing_taxonomy lt ON lt.taxonomy_node_id=tc.descendant_id
+       INNER JOIN tags_directory_site_listings sl ON sl.listing_id=lt.listing_id AND sl.site_id=? AND sl.publication_status='published'
+       INNER JOIN tags_directory_listings l ON l.id=sl.listing_id AND l.status='published'
+       WHERE ${PUBLIC_LISTING_ACCESS_SQL}
+       GROUP BY tc.ancestor_id
+     ) provider_counts ON provider_counts.taxonomy_node_id=n.id
+     LEFT JOIN (
+       SELECT tc.ancestor_id taxonomy_node_id,COUNT(DISTINCT content.id) content_count
+       FROM tags_directory_taxonomy_closure tc
+       INNER JOIN tags_ai_tourism_content_categories tcc ON tcc.taxonomy_node_id=tc.descendant_id AND tcc.site_id=?
+       INNER JOIN tags_ai_tourism_contents content ON content.id=tcc.content_id AND content.site_id=tcc.site_id
+       WHERE content.status='published'
+         AND (content.valid_until IS NULL OR DATE(content.valid_until)>=CURRENT_DATE())
+       GROUP BY tc.ancestor_id
+     ) content_counts ON content_counts.taxonomy_node_id=n.id
      WHERE n.parent_id <=> ? AND n.is_active=1
-       AND EXISTS (
-       SELECT 1 FROM tags_directory_taxonomy_closure visible_c
-        INNER JOIN tags_directory_listing_taxonomy visible_lt ON visible_lt.taxonomy_node_id=visible_c.descendant_id
-        INNER JOIN tags_directory_site_listings visible_sl ON visible_sl.listing_id=visible_lt.listing_id AND visible_sl.site_id=? AND visible_sl.publication_status='published'
-        INNER JOIN tags_directory_listings visible_l ON visible_l.id=visible_sl.listing_id AND visible_l.status='published'
-        WHERE visible_c.ancestor_id=n.id
-       )
-     GROUP BY n.id,n.name,n.slug,n.depth,n.image_url,n.description,n.sort_order
+       AND (COALESCE(provider_counts.listing_count,0)+COALESCE(content_counts.content_count,0))>0
      ORDER BY n.sort_order,n.name`,
-    [site.id, parentId, site.id]
+    [site.id, site.id, parentId]
   );
   const categories = normalizeDirectoryDbValue(categoriesRows);
+  if (!selectedCategory) categories.sort((left, right) => String(left.name || "").localeCompare(String(right.name || ""), "es", { sensitivity: "base" }));
 
-  const where = ["sl.site_id=?", "sl.publication_status='published'", "l.status='published'"];
+  const where = ["sl.site_id=?", "sl.publication_status='published'", "l.status='published'", PUBLIC_LISTING_ACCESS_SQL];
   const values = [site.id];
+  const tourismWhere = ["content.site_id=?", "content.status='published'", "(content.valid_until IS NULL OR DATE(content.valid_until)>=CURRENT_DATE())"];
+  const tourismValues = [site.id];
   if (selectedCategory) {
     where.push(`EXISTS (
       SELECT 1 FROM tags_directory_listing_taxonomy flt
@@ -84,6 +120,12 @@ export async function getDirectoryPublicData(searchParams = {}, siteCode = "cala
       WHERE flt.listing_id=l.id AND fc.ancestor_id=?
     )`);
     values.push(selectedCategory.id);
+    tourismWhere.push(`EXISTS (
+      SELECT 1 FROM tags_ai_tourism_content_categories ftcc
+      INNER JOIN tags_directory_taxonomy_closure ftc ON ftc.descendant_id=ftcc.taxonomy_node_id
+      WHERE ftcc.site_id=content.site_id AND ftcc.content_id=content.id AND ftc.ancestor_id=?
+    )`);
+    tourismValues.push(selectedCategory.id);
   }
   if (query) {
     const terms = query.split(/\s+/).map(term => term.trim()).filter(Boolean).slice(0, 6);
@@ -103,12 +145,21 @@ export async function getDirectoryPublicData(searchParams = {}, siteCode = "cala
         )
       )`);
       values.push(like, like, like, like, like, like, like);
+      tourismWhere.push(`(
+        content.title LIKE ? OR content.summary LIKE ? OR content.description LIKE ? OR content.searchable_text LIKE ?
+        OR EXISTS (
+          SELECT 1 FROM tags_ai_tourism_content_categories qtcc
+          INNER JOIN tags_directory_taxonomy_nodes qtn ON qtn.id=qtcc.taxonomy_node_id AND qtn.is_active=1
+          WHERE qtcc.site_id=content.site_id AND qtcc.content_id=content.id AND (qtn.name LIKE ? OR qtn.description LIKE ?)
+        )
+      )`);
+      tourismValues.push(like, like, like, like, like, like);
     }
   }
 
   const localityWhere = [...where];
   const localityValues = [...values];
-  const [localitiesRows] = await db.execute(
+  const [[localitiesRows],[tourismLocalitiesRows]] = await Promise.all([db.execute(
     `SELECT p.id,p.name,COUNT(DISTINCT l.id) listing_count
      FROM tags_directory_listings l
      INNER JOIN tags_directory_site_listings sl ON sl.listing_id=l.id
@@ -119,12 +170,29 @@ export async function getDirectoryPublicData(searchParams = {}, siteCode = "cala
      HAVING COUNT(DISTINCT l.id)>0
      ORDER BY p.name`,
     localityValues
-  );
-  const localities = normalizeDirectoryDbValue(localitiesRows);
+  ),db.execute(
+    `SELECT p.id,p.name,COUNT(DISTINCT content.id) listing_count
+       FROM tags_ai_tourism_contents content
+       INNER JOIN tags_geo_places p ON p.place_type='locality' AND p.is_active=1
+        AND (p.id=content.locality_id OR LOWER(p.name)=LOWER(content.locality_name))
+      WHERE ${tourismWhere.join(" AND ")}
+      GROUP BY p.id,p.name
+      ORDER BY p.name`,
+    tourismValues
+  )]);
+  const localityMap=new Map();
+  for(const item of [...normalizeDirectoryDbValue(localitiesRows),...normalizeDirectoryDbValue(tourismLocalitiesRows)]){
+    const existing=localityMap.get(Number(item.id));
+    if(existing)existing.listing_count=Number(existing.listing_count||0)+Number(item.listing_count||0);
+    else localityMap.set(Number(item.id),{...item,listing_count:Number(item.listing_count||0)});
+  }
+  const localities=[...localityMap.values()].sort((a,b)=>String(a.name).localeCompare(String(b.name),"es"));
 
   if (localityId) {
     where.push("EXISTS (SELECT 1 FROM tags_directory_listing_places fp WHERE fp.listing_id=l.id AND fp.place_id=? AND fp.relation_type='location')");
     values.push(localityId);
+    tourismWhere.push("(content.locality_id=? OR LOWER(content.locality_name)=(SELECT LOWER(p.name) FROM tags_geo_places p WHERE p.id=? LIMIT 1))");
+    tourismValues.push(localityId,localityId);
   }
 
   const isHome = !selectedCategory && !localityId && !query;
@@ -138,69 +206,87 @@ export async function getDirectoryPublicData(searchParams = {}, siteCode = "cala
        INNER JOIN tags_directory_listings l ON l.id=sl.listing_id AND l.status='published'
        INNER JOIN tags_businesses b ON b.id=l.business_id
        WHERE sl.site_id=? AND sl.publication_status='published' AND sl.is_free=0 AND sl.is_featured=1
+         AND ${PUBLIC_LISTING_ACCESS_SQL}
        ORDER BY sl.sort_order,l.display_name LIMIT 8`,
       [site.id]
     );
     featuredListings = normalizeDirectoryDbValue(featured);
   }
 
-  const [countRows] = isHome ? [[{ total: 0 }]] : await db.execute(
-    `SELECT COUNT(DISTINCT l.id) total
-     FROM tags_directory_listings l
-     INNER JOIN tags_directory_site_listings sl ON sl.listing_id=l.id
-     WHERE ${where.join(" AND ")}`,
-    values
-  );
-  const total = Number(countRows[0]?.total || 0);
+  const [[providerCountRows],[tourismCountRows]] = isHome ? [[[{ total:0 }]],[[{ total:0 }]]] : await Promise.all([
+    db.execute(
+      `SELECT COUNT(DISTINCT l.id) total
+       FROM tags_directory_listings l
+       INNER JOIN tags_directory_site_listings sl ON sl.listing_id=l.id
+       WHERE ${where.join(" AND ")}`,
+      values
+    ),
+    db.execute(
+      `SELECT COUNT(DISTINCT content.id) total
+       FROM tags_ai_tourism_contents content
+       WHERE ${tourismWhere.join(" AND ")}`,
+      tourismValues
+    )
+  ]);
+  const providerTotal=Number(providerCountRows[0]?.total||0);
+  const tourismTotal=Number(tourismCountRows[0]?.total||0);
+  const total = providerTotal+tourismTotal;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
   const offset = (safePage - 1) * PAGE_SIZE;
-  const [listingRows] = isHome ? [[]] : await db.execute(
-    `SELECT l.id,COALESCE(NULLIF(b.display_name,''),b.name) AS display_name,l.short_description,b.phone,b.whatsapp,b.address,
-            COALESCE(l.latitude,b.latitude) AS latitude,COALESCE(l.longitude,b.longitude) AS longitude,
-            sl.slug,sl.is_free,
-            (SELECT p.name FROM tags_directory_listing_places lp INNER JOIN tags_geo_places p ON p.id=lp.place_id WHERE lp.listing_id=l.id AND lp.relation_type='location' ORDER BY lp.is_primary DESC LIMIT 1) locality_name,
-            COALESCE(NULLIF(b.logo_url,''),(SELECT m.url FROM tags_directory_media m WHERE m.listing_id=l.id AND m.is_active=1 ORDER BY FIELD(m.media_type,'logo','cover','gallery'),m.sort_order,m.id LIMIT 1)) image_url
-     FROM tags_directory_listings l
-     INNER JOIN tags_directory_site_listings sl ON sl.listing_id=l.id
-     INNER JOIN tags_businesses b ON b.id=l.business_id
-     WHERE ${where.join(" AND ")}
-     ORDER BY sl.is_featured DESC,sl.sort_order,l.display_name
-     LIMIT ${PAGE_SIZE} OFFSET ${offset}`,
-    values
-  );
-  const listings = normalizeDirectoryDbValue(listingRows);
 
-  const [mapRows] = isHome ? [[]] : await db.execute(
-    `SELECT l.id,COALESCE(NULLIF(b.display_name,''),b.name) AS display_name,l.short_description,b.phone,b.whatsapp,b.address,
-            COALESCE(l.latitude,b.latitude) AS latitude,COALESCE(l.longitude,b.longitude) AS longitude,sl.slug,sl.is_free,
-            (SELECT p.name FROM tags_directory_listing_places lp INNER JOIN tags_geo_places p ON p.id=lp.place_id WHERE lp.listing_id=l.id AND lp.relation_type='location' ORDER BY lp.is_primary DESC LIMIT 1) locality_name
-     FROM tags_directory_listings l
-     INNER JOIN tags_directory_site_listings sl ON sl.listing_id=l.id
-     INNER JOIN tags_businesses b ON b.id=l.business_id
-     WHERE ${where.join(" AND ")}
-       AND COALESCE(l.latitude,b.latitude) IS NOT NULL
-       AND COALESCE(l.longitude,b.longitude) IS NOT NULL
-       AND COALESCE(l.latitude,b.latitude) BETWEEN -90 AND 90
-       AND COALESCE(l.longitude,b.longitude) BETWEEN -180 AND 180
-       AND NOT (COALESCE(l.latitude,b.latitude)=0 AND COALESCE(l.longitude,b.longitude)=0)
-     ORDER BY display_name LIMIT 500`,
-    values
-  );
-  const mapListings = normalizeDirectoryDbValue(mapRows);
+  const [[providerRows],[tourismRows]]=isHome?[[[]],[[]]]:await Promise.all([
+    db.execute(
+      `SELECT 'provider' result_type,l.id,COALESCE(NULLIF(b.display_name,''),b.name) display_name,
+              l.short_description,b.phone,b.whatsapp,b.address,
+              COALESCE(l.latitude,b.latitude) latitude,COALESCE(l.longitude,b.longitude) longitude,
+              sl.slug,sl.is_free,
+              (SELECT p.name FROM tags_directory_listing_places lp INNER JOIN tags_geo_places p ON p.id=lp.place_id WHERE lp.listing_id=l.id AND lp.relation_type='location' ORDER BY lp.is_primary DESC LIMIT 1) locality_name,
+              COALESCE(NULLIF(b.logo_url,''),(SELECT m.url FROM tags_directory_media m WHERE m.listing_id=l.id AND m.is_active=1 ORDER BY FIELD(m.media_type,'logo','cover','gallery'),m.sort_order,m.id LIMIT 1)) image_url,
+              (SELECT GROUP_CONCAT(DISTINCT n.name ORDER BY n.depth DESC,n.name SEPARATOR ' | ') FROM tags_directory_listing_taxonomy lt INNER JOIN tags_directory_taxonomy_nodes n ON n.id=lt.taxonomy_node_id AND n.is_active=1 WHERE lt.listing_id=l.id) category_names,
+              sl.is_featured sort_featured,sl.sort_order result_sort,1 show_on_map
+         FROM tags_directory_listings l
+         INNER JOIN tags_directory_site_listings sl ON sl.listing_id=l.id
+         INNER JOIN tags_businesses b ON b.id=l.business_id
+        WHERE ${where.join(" AND ")}`,
+      values
+    ),
+    db.execute(
+      `SELECT 'tourism' result_type,content.id,content.title display_name,
+              COALESCE(content.summary,LEFT(content.description,1000)) short_description,
+              JSON_UNQUOTE(JSON_EXTRACT(content.contact_json,'$.phone')) phone,
+              JSON_UNQUOTE(JSON_EXTRACT(content.contact_json,'$.whatsapp')) whatsapp,
+              content.address,content.latitude,content.longitude,content.locality_name,
+              content.primary_image_url image_url,
+              COALESCE(content.public_url,JSON_UNQUOTE(JSON_EXTRACT(content.contact_json,'$.bookingUrl'))) public_url,
+              content.content_type,
+              COALESCE(JSON_UNQUOTE(JSON_EXTRACT(content.event_json,'$.start')),content.valid_from) event_start,
+              COALESCE(JSON_UNQUOTE(JSON_EXTRACT(content.event_json,'$.end')),content.valid_until) event_end,
+              JSON_UNQUOTE(JSON_EXTRACT(content.availability_json,'$.schedule')) schedule,
+              (SELECT GROUP_CONCAT(DISTINCT n.name ORDER BY n.depth DESC,n.name SEPARATOR ' | ') FROM tags_ai_tourism_content_categories tcc INNER JOIN tags_directory_taxonomy_nodes n ON n.id=tcc.taxonomy_node_id AND n.is_active=1 WHERE tcc.site_id=content.site_id AND tcc.content_id=content.id) category_names,
+              content.is_featured sort_featured,0 result_sort,content.show_on_map
+         FROM tags_ai_tourism_contents content
+        WHERE ${tourismWhere.join(" AND ")}`,
+      tourismValues
+    )
+  ]);
+  const allResults=[...normalizeDirectoryDbValue(providerRows),...normalizeDirectoryDbValue(tourismRows)].sort((a,b)=>Number(b.sort_featured||0)-Number(a.sort_featured||0)||Number(a.result_sort||0)-Number(b.result_sort||0)||String(a.display_name).localeCompare(String(b.display_name),"es"));
+  const listings=allResults.slice(offset,offset+PAGE_SIZE);
+  const mapListings=allResults.filter(item=>Number(item.show_on_map)!==0&&Number.isFinite(Number(item.latitude))&&Number.isFinite(Number(item.longitude))&&Number(item.latitude)>=-90&&Number(item.latitude)<=90&&Number(item.longitude)>=-180&&Number(item.longitude)<=180&&!(Number(item.latitude)===0&&Number(item.longitude)===0)).slice(0,500);
 
-  return { site, selectedCategory, breadcrumbs, categories, localities, listings, featuredListings, mapListings, filters: { categoryId, localityId, query, page: safePage }, pagination: { total, totalPages, page: safePage, pageSize: PAGE_SIZE } };
+  return { site, selectedCategory, breadcrumbs, categories, localities, listings, featuredListings, mapListings, filters: { categoryId, localityId, query, page: safePage }, pagination: { total,providerTotal,tourismTotal,totalPages,page:safePage,pageSize:PAGE_SIZE } };
 }
 
 export async function getDirectoryListingBySlug(slug, siteCode = "calamuchitar") {
   const [rows] = await db.execute(
-    `SELECT l.*,b.name business_name,b.display_name business_display_name,b.email business_email,b.phone business_phone,b.whatsapp business_whatsapp,b.address business_address,b.latitude business_latitude,b.longitude business_longitude,b.website_url business_website_url,b.instagram_url business_instagram_url,b.facebook_url business_facebook_url,b.description business_description,b.logo_url business_logo_url,b.cover_url business_cover_url,sl.slug,sl.seo_title,sl.seo_description,s.id site_id,s.name site_name,s.code site_code,s.primary_host,s.directory_config,
+    `SELECT l.*,b.name business_name,b.display_name business_display_name,b.email business_email,b.phone business_phone,b.whatsapp business_whatsapp,b.address business_address,b.latitude business_latitude,b.longitude business_longitude,b.website_url business_website_url,b.instagram_url business_instagram_url,b.facebook_url business_facebook_url,b.description business_description,b.logo_url business_logo_url,b.cover_url business_cover_url,sl.slug,sl.seo_title,sl.seo_description,sl.publication_status,sl.is_free,s.id site_id,s.name site_name,s.code site_code,s.primary_host,s.directory_config,
             (SELECT p.name FROM tags_directory_listing_places lp INNER JOIN tags_geo_places p ON p.id=lp.place_id WHERE lp.listing_id=l.id AND lp.relation_type='location' ORDER BY lp.is_primary DESC LIMIT 1) locality_name
      FROM tags_directory_site_listings sl
      INNER JOIN tags_directory_sites s ON s.id=sl.site_id AND s.code=? AND s.is_active=1
-     INNER JOIN tags_directory_listings l ON l.id=sl.listing_id AND l.status='published'
+     INNER JOIN tags_directory_listings l ON l.id=sl.listing_id
      INNER JOIN tags_businesses b ON b.id=l.business_id
-     WHERE sl.slug=? AND sl.publication_status='published' LIMIT 1`,
+     WHERE sl.slug=? AND sl.publication_status IN ('published','hidden','archived')
+     ORDER BY (sl.publication_status='published') DESC,sl.id DESC LIMIT 1`,
     [siteCode, slug]
   );
   const rawListing = normalizeDirectoryDbValue(rows[0] || null);

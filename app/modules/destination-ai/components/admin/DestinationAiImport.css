@@ -1,5 +1,6 @@
 .tags_muchi_import{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:12px}
 .tags_muchi_import a{border-radius:9px;background:#eaf4ed;padding:9px 13px;color:#276247;font-weight:850;text-decoration:none}
 .tags_muchi_import input{max-width:320px}
+.tags_muchi_import label{display:grid;gap:4px;color:#315447;font-size:.72rem;font-weight:800}.tags_muchi_import small{width:100%;color:#6f8077;font-size:.72rem}
 .tags_muchi_import_report{display:grid;gap:4px;margin-top:10px;border-radius:10px;background:#f6f8f6;padding:11px}
 .tags_muchi_import_report span{color:#99423e;font-size:.75rem}

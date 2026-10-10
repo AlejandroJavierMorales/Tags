@@ -6,6 +6,7 @@ import TagsSpinner from "@/app/components/TagsSpinner";
 import MediaUploader from "@/app/components/MediaUploader";
 import showAlert from "@/app/components/showAlert";
 import DestinationAiAdminPanel from "@/app/modules/destination-ai/components/admin/DestinationAiAdminPanel";
+import DestinationAiKnowledgePanel from "@/app/modules/destination-ai/components/admin/DestinationAiKnowledgePanel";
 import DirectoryPointsAdminPanel from "@/app/modules/directory-points/components/DirectoryPointsAdminPanel";
 import ProductImportAdminPanel from "@/app/modules/product-import/components/admin/ProductImportAdminPanel";
 import "./directoryAdmin.css";
@@ -42,6 +43,12 @@ function parseConfig(value) {
     if (!value) return {};
     if (typeof value === "object") return value;
     try { return JSON.parse(value); } catch { return {}; }
+}
+
+function DirectoryTourismInformation({sites=[]}) {
+    const [siteId,setSiteId]=useState("");
+    useEffect(()=>{if(!siteId&&sites.length)setSiteId(String(sites[0].id));},[siteId,sites]);
+    return <section className="tags_directory_tourism_workspace"><header><div><span>CONTENIDO DEL DESTINO</span><h2>Información turística</h2><p>Un único lugar para revisar, importar, editar y publicar la información turística.</p></div><label>Directorio<select value={siteId} onChange={event=>setSiteId(event.target.value)}><option value="">Seleccionar Directorio</option>{sites.map(site=><option value={site.id} key={site.id}>{site.name}</option>)}</select></label></header>{siteId&&<DestinationAiKnowledgePanel siteId={siteId} mode="tourism"/>}</section>;
 }
 
 export default function DirectoryAdminClient() {
@@ -441,6 +448,7 @@ export default function DirectoryAdminClient() {
         ["sites", FaGlobe, "Directorios"],
         ["taxonomy", FaFolderTree, "Rubros"],
         ["places", FaLocationDot, "Ubicaciones"],
+        ["tourism-information", FaLocationDot, "Información turística"],
         ["destination-ai", FaRobot, "Muchi / IA"],
         ["directory-points", FaLocationDot, "Puntos QR"],
         ["product-import", FaFileImport, "Importar productos"],
@@ -467,6 +475,7 @@ export default function DirectoryAdminClient() {
         {tab === "sites" && <EntitySection title="Directorios o canales" text="Cada canal define su territorio y dominio público." items={data.sites} onAdd={() => openEntity("site")} render={item => <><div><strong>{item.name}</strong><small>{item.code} · {item.primary_host}</small></div><Actions onEdit={() => openEntity("site", item)} onDelete={() => remove("site", item)} /></>} />}
         {tab === "taxonomy" && <section><SectionHead title="Rubros" text="Árbol global de rubros. Solo el último nivel de cada rama se puede asignar a una ficha." onAdd={() => openEntity("taxonomy")} /><div className="tags_directory_taxonomy_tree"><TaxonomyBranch parentKey="root" tree={taxonomyTree} onEdit={item => openEntity("taxonomy", item)} onDelete={item => remove("taxonomy", item)} /></div></section>}
         {tab === "places" && <section><SectionHead title="Ubicaciones" text="Cargá y administrá Países, Provincias, Regiones y Localidades en una jerarquía clara." onAdd={() => openEntity("place")} /><div className="tags_directory_taxonomy_tree"><PlaceBranch parentKey="root" tree={placesTree} onEdit={item => openEntity("place", item)} onDelete={item => remove("place", item)} /></div></section>}
+        {tab === "tourism-information" && <DirectoryTourismInformation sites={data.sites} />}
         {tab === "destination-ai" && <DestinationAiAdminPanel />}
         {tab === "directory-points" && <DirectoryPointsAdminPanel />}
         {tab === "product-import" && <ProductImportAdminPanel />}

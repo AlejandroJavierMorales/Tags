@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { FaArrowRight, FaLocationDot, FaMapLocationDot, FaWhatsapp } from "react-icons/fa6";
+import { FaArrowRight, FaCalendarDays, FaClock, FaEye, FaLocationDot, FaMapLocationDot, FaPhone, FaWhatsapp } from "react-icons/fa6";
 import Link from "next/link";
 import Image from "next/image";
 import { directoryImageUrl, directoryWhatsappUrl } from "../../lib/directoryPublicFormatting";
@@ -13,6 +13,14 @@ function providerHref(slug, returnHref, navigationTrail) {
   if (navigationTrail?.length) params.set("ruta", JSON.stringify(navigationTrail));
   const query = params.toString();
   return `/${slug}${query ? `?${query}` : ""}`;
+}
+
+const CONTENT_TYPE_LABELS={attraction:"Atractivo",walk:"Paseo",experience:"Experiencia",excursion:"Excursión",event:"Evento",beach:"Balneario",river_access:"Acceso al río",viewpoint:"Mirador",museum:"Museo",route:"Circuito",public_service:"Servicio público",recommendation:"Recomendación",other:"Lugar de interés"};
+
+function displayDate(value){
+  if(!value)return"";
+  const raw=String(value).trim(),date=raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return date?`${date[3]}/${date[2]}/${date[1]}`:raw;
 }
 
 export default function DirectoryListingGrid({ listings, returnHref = "", navigationTrail = [] }) {
@@ -64,20 +72,25 @@ export default function DirectoryListingGrid({ listings, returnHref = "", naviga
   return <div className="tags_directory_listing_grid" ref={gridRef}>
     {listings.map(listing => {
       const whatsapp = directoryWhatsappUrl(listing.whatsapp);
+      const phone=String(listing.phone||"").replace(/[^\d+]/g,"");
       const directions = listing.latitude != null && listing.longitude != null ? `https://www.google.com/maps/dir/?api=1&destination=${listing.latitude},${listing.longitude}` : null;
-      return <article className="tags_directory_listing_card" key={listing.id} data-listing-id={listing.id} data-listing-name={listing.display_name}>
+      const tourism=listing.result_type==="tourism";
+      return <article className={`tags_directory_listing_card${tourism?" is_tourism":""}`} key={`${listing.result_type||"provider"}:${listing.id}`} {...(!tourism?{"data-listing-id":listing.id,"data-listing-name":listing.display_name}:{})}>
         <div className="tags_directory_listing_image">
           {listing.image_url ? <Image src={directoryImageUrl(listing.image_url)} alt={`Imagen de ${listing.display_name}`} width={260} height={220} sizes="(max-width: 380px) 80px, (max-width: 700px) 94px, 130px" /> : <span>{listing.display_name.charAt(0)}</span>}
         </div>
         <div className="tags_directory_listing_body">
-          <div><h3>{listing.display_name}</h3>{listing.locality_name && <p><FaLocationDot /> {listing.locality_name}</p>}</div>
+          <div>{tourism&&<span className="tags_directory_tourism_badge">{CONTENT_TYPE_LABELS[listing.content_type]||"Información turística"}</span>}<h3>{listing.display_name}</h3>{listing.locality_name && <p><FaLocationDot /> {listing.locality_name}</p>}</div>
           {listing.short_description && <p className="tags_directory_listing_description">{listing.short_description}</p>}
+          {tourism&&<div className="tags_directory_tourism_facts">{listing.event_start&&<small><FaCalendarDays/> {displayDate(listing.event_start)}{listing.event_end&&listing.event_end!==listing.event_start?` al ${displayDate(listing.event_end)}`:""}</small>}{listing.schedule&&<small><FaClock/> {listing.schedule}</small>}</div>}
           <div className="tags_directory_listing_actions">
             {whatsapp && <a href={whatsapp} target="_blank" rel="noreferrer" className="is_whatsapp" data-result-action="whatsapp" aria-label={`WhatsApp de ${listing.display_name}`}><FaWhatsapp /> WhatsApp</a>}
+            {tourism&&phone&&<a href={`tel:${phone}`}><FaPhone/> Llamar</a>}
             {directions && <a href={directions} target="_blank" rel="noreferrer" data-result-action="directions"><FaMapLocationDot /> Cómo llegar</a>}
-            {Number(listing.is_free) === 0
+            {tourism&&listing.public_url&&<a href={listing.public_url} target="_blank" rel="noreferrer" className="is_detail"><FaEye/> Ver información</a>}
+            {!tourism&&Number(listing.is_free) === 0
               ? <Link href={providerHref(listing.slug, returnHref, navigationTrail)} className="is_detail" data-result-action="view">Ver sitio web <FaArrowRight /></Link>
-              : <span className="is_free_badge">Publicación gratuita</span>}
+              : !tourism&&<span className="is_free_badge">Publicación gratuita</span>}
           </div>
         </div>
       </article>;

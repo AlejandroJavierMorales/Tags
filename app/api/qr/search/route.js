@@ -39,10 +39,16 @@ export async function GET(req) {
                     OR q.label LIKE ?
                     OR b.name LIKE ?
                     OR b.email LIKE ?
+                    OR e.name LIKE ?
+                    OR ea.name LIKE ?
+                    OR ea.email LIKE ?
                 )
             `);
 
             params.push(
+                `%${q}%`,
+                `%${q}%`,
+                `%${q}%`,
                 `%${q}%`,
                 `%${q}%`,
                 `%${q}%`,
@@ -95,6 +101,12 @@ export async function GET(req) {
                 LEFT JOIN tags_qr_types qt
                     ON p.qr_type_id = qt.id
 
+                LEFT JOIN tags_events e
+                    ON e.id = q.event_id
+
+                LEFT JOIN tags_event_attendees ea
+                    ON ea.qr_code_id = q.id
+
                 ${whereSQL}
                 `,
                 params
@@ -112,6 +124,7 @@ export async function GET(req) {
                     q.final_url,
                     q.email,
                     q.business_id,
+                    q.event_id,
                     q.has_qr_page,
                     q.browser_geolocation_enabled,
 
@@ -124,6 +137,11 @@ export async function GET(req) {
                     qt.id AS qr_type_id,
                     qt.code AS qr_type_code,
                     qt.name AS qr_type_name,
+
+                    e.name AS event_title,
+                    ea.id AS event_attendee_id,
+                    ea.name AS event_attendee_name,
+                    ea.email AS event_attendee_email,
 
                     GROUP_CONCAT(
                         DISTINCT qau.addon_code
@@ -142,6 +160,12 @@ export async function GET(req) {
                 LEFT JOIN tags_qr_types qt
                     ON p.qr_type_id = qt.id
 
+                LEFT JOIN tags_events e
+                    ON e.id = q.event_id
+
+                LEFT JOIN tags_event_attendees ea
+                    ON ea.qr_code_id = q.id
+
                 LEFT JOIN tags_qr_addon_usage qau
                     ON qau.qr_code_id = q.id
                     AND qau.status = 'active'
@@ -157,6 +181,7 @@ export async function GET(req) {
                     q.final_url,
                     q.email,
                     q.business_id,
+                    q.event_id,
                     q.has_qr_page,
                     q.browser_geolocation_enabled,
                     b.name,
@@ -165,7 +190,11 @@ export async function GET(req) {
                     p.name,
                     qt.id,
                     qt.code,
-                    qt.name
+                    qt.name,
+                    e.name,
+                    ea.id,
+                    ea.name,
+                    ea.email
 
                 ORDER BY q.id DESC
 

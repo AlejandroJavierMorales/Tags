@@ -84,6 +84,10 @@ function markerVisual(item){
   if(/aloj|caban|hotel|hosteria|posada|camping/.test(category))return{emoji:"🏡"};
   if(/farmacia|salud|medic|clinica|consultorio/.test(category))return{emoji:"⚕️"};
   if(/automotor|taller|gomeria|vehiculo/.test(category))return{emoji:"🚗"};
+  if(/evento|fiesta|feria|espectaculo|encuentro|congreso|running|ciclismo|mountain bike/.test(category))return{emoji:"📅"};
+  if(/museo|patrimonio|cultural|historico/.test(category))return{emoji:"🏛️"};
+  if(/rio|balneario|playa|nautica/.test(category))return{emoji:"🏖️"};
+  if(/cerro|mirador|sendero|caminata|trekking|reserva|parque natural/.test(category))return{emoji:"⛰️"};
   if(/turismo|paseo|excursion|recreacion|experiencia/.test(category))return{emoji:"🧭"};
   if(/educacion|escuela|instituto|profesor/.test(category))return{emoji:"🎓"};
   if(/construccion|corralon|arquitect|material/.test(category))return{emoji:"🧱"};
@@ -234,7 +238,7 @@ export default function DirectoryResultsMap({ listings = [], apiKey = "", mapId 
       {error && <p className="tags_directory_map_error">{error}</p>}
       <section ref={listElement} className="tags_directory_map_list">{pagedListings.map(item => {
         const whatsapp = whatsappUrl(item.whatsapp);
-        return <article key={`${item.layer || "business"}:${item.id}`}>
+        return <article key={`${item.result_type || item.layer || "business"}:${item.id}`}>
           <div className="tags_directory_map_business"><strong>{item.display_name}</strong>{item.category_names && <small>{item.category_names.split("|").slice(0,3).join(" · ")}</small>}<span>{item.address || "Domicilio no informado"}{item.locality_name ? ` · ${item.locality_name}` : ""}</span><div>{item.phone && <a href={`tel:${String(item.phone).replace(/[^\d+]/g, "")}`}><FaPhone /> {item.phone}</a>}{whatsapp && <a href={whatsapp} target="_blank" rel="noreferrer" className="is_whatsapp"><FaWhatsapp /> WhatsApp</a>}</div></div>
           {item.distance != null && <b>{item.distance < 1 ? `${Math.round(item.distance * 1000)} m` : `${item.distance.toFixed(1)} km`}</b>}
           <a href={directionsUrl(item, userPosition)} target="_blank" rel="noreferrer" className="tags_directory_directions"><FaRoute /> Cómo llegar</a>

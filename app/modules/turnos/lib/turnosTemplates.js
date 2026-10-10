@@ -37,7 +37,7 @@ export const TURNOS_TEMPLATES = {
     },
     sports_club: {
         code: "sports_club",
-        label: "Tags Deportes",
+        label: "Tags Club",
         description: "Canchas, clases, socios y reservas para clubes y complejos deportivos.",
         resourceLabel: "Cancha, espacio o profesor",
         serviceLabel: "Actividad o reserva",

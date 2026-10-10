@@ -4,6 +4,7 @@ import { buildDestinationContext, searchDirectoryCandidates } from "@/app/module
 import { buildKnowledgeIndexContext, compareCandidateSets, getBusinessKnowledgeContext, getKnowledgeCandidatesByKeys, searchKnowledgeIndex } from "@/app/modules/destination-ai/server/searchKnowledgeIndex";
 import { DESTINATION_ANSWER_SCHEMA, DESTINATION_INTENT_SCHEMA, destinationIntentPrompt, fallbackDestinationIntent, normalizeDestinationIntent } from "@/app/modules/destination-ai/server/destinationIntent";
 import { DESTINATION_ANSWER_V2_SCHEMA, DESTINATION_INTENT_V2_SCHEMA, destinationIntentV2Prompt, fallbackDestinationIntentV2, normalizeDestinationIntentV2 } from "@/app/modules/destination-ai/server/destinationIntentV2";
+import { prepareDestinationDayPlan } from "@/app/modules/destination-ai/server/destinationDayPlanner";
 import { getDestinationTaxonomyCatalog } from "@/app/modules/destination-ai/server/destinationTaxonomy";
 import { buildDestinationV2Context, getDestinationCandidatesByKeysV2, isDestinationEngineV2Available, searchDestinationTaskV2 } from "@/app/modules/destination-ai/server/searchDestinationEngineV2";
 import { selectRecommendedCandidates } from "@/app/modules/destination-ai/server/selectRecommendedCandidates";
@@ -291,8 +292,13 @@ export async function POST(request) {
             }
         }
         if (analyticsFailureContext) analyticsFailureContext.destinationIntent = destinationIntent;
+        const preparedDayPlan = useEngineV2
+            ? prepareDestinationDayPlan(destinationIntent, taxonomyCatalog, { hasUserLocation: Boolean(userLocation) })
+            : { intent: destinationIntent, clarification: null, isDayPlan: false };
+        destinationIntent = preparedDayPlan.intent;
+        const planClarification = preparedDayPlan.clarification;
         const searchRequests = useEngineV2
-            ? destinationIntent.tasks
+            ? planClarification ? [] : destinationIntent.tasks
             : indexMode === "active" && destinationIntent.shouldSearch
             ? (destinationIntent.searchQueries?.length
                 ? destinationIntent.searchQueries
@@ -438,7 +444,9 @@ export async function POST(request) {
             context: [siteCode ? `MODO DE LA PERSONA: ${destinationMode}` : "", userLocation ? "La persona autorizó usar su ubicación actual. Las distancias disponibles ya fueron calculadas y son aproximadas." : "La persona no compartió su ubicación geográfica.", siteCode ? getDestinationTemporalContext() : "", context, contactContext].filter(Boolean).join("\n\n")
         });
         const answerHistory = useEngineV2 ? (destinationIntent.continuesPrevious ? history : []) : destinationIntent.isNewTopic ? [] : history;
-        const generated = useKnowledgeIndex
+        const generated = planClarification
+            ? { answer:planClarification,recommendationKeys:[],needsClarification:true,suggestedPrompts:["Estamos en Villa General Belgrano y tenemos auto","Salimos desde Los Reartes sin auto"],model:intentModel,usage:{} }
+            : useKnowledgeIndex
             ? await generateStructuredJson({
                 systemPrompt: `${DESTINATION_SYSTEM_PROMPT}\nDevolvé JSON según el schema. recommendationKeys debe contener únicamente IDs autorizados incluidos en el contexto y todos los lugares que realmente mencionás en reply. Si pedís una aclaración sin recomendar a nadie, usá una lista vacía. Nunca inventes un ID. Si hay varias tareas, resolvé cada necesidad por separado sin mezclar sus opciones. No hables de evidencia, registros, índices, directorios ni limitaciones técnicas: explicá de forma natural qué encontraste y por qué puede servir.`,
                 userPrompt,
@@ -456,7 +464,12 @@ export async function POST(request) {
             });
 
         const combinedUsage = mergeOpenAiUsage(intentUsage, generated.usage);
-        if(useEngineV2&&searchRequests.length&&candidates.length===0&&!destinationIntent.tasks.some(task=>task.needsClarification)){
+        if(planClarification){
+            generated.answer=planClarification;
+            generated.recommendationKeys=[];
+            generated.needsClarification=true;
+            generated.suggestedPrompts=["Estamos en Villa General Belgrano y tenemos auto","Salimos desde Los Reartes sin auto"];
+        } else if(useEngineV2&&searchRequests.length&&candidates.length===0&&!destinationIntent.tasks.some(task=>task.needsClarification)){
             const subjects=destinationIntent.tasks.map(task=>task.subject||task.query).filter(Boolean).slice(0,2).join(" y ");
             const locality=destinationIntent.tasks.find(task=>task.localityPreference==="specified"&&task.locality)?.locality;
             generated.answer=`No encontré por ahora una opción que publique exactamente ${subjects||"eso"}${locality?` en ${locality}`:" en el Valle de Calamuchita"}.`;

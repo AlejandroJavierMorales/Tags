@@ -126,18 +126,72 @@ export async function getPublicSitemapEntries(context) {
     INNER JOIN tags_qr_pages p ON p.id=l.qr_page_id AND p.business_id=l.business_id
     WHERE sl.site_id=?
       AND sl.publication_status='published'
+      AND sl.is_free=0
       AND l.status='published'
       AND p.status='published'
+      AND EXISTS (
+        SELECT 1 FROM tags_subscriptions access_subscription
+        WHERE access_subscription.business_id=l.business_id
+          AND access_subscription.id=(SELECT MAX(latest_access.id) FROM tags_subscriptions latest_access WHERE latest_access.business_id=l.business_id)
+          AND access_subscription.status IN ('active','trial','past_due')
+          AND (
+            access_subscription.auto_disable_on_expire=0
+            OR access_subscription.expires_at IS NULL
+            OR DATE_ADD(access_subscription.expires_at,INTERVAL COALESCE(access_subscription.grace_days,0) DAY)>=NOW()
+            OR access_subscription.admin_override_until>=NOW()
+          )
+      )
       AND sl.slug IS NOT NULL
       AND sl.slug <> ''
     ORDER BY sl.updated_at DESC
   `, [context.site.id]);
+
+  const eventRows = await db.query(`
+    SELECT sl.slug AS listing_slug,ers.public_slug,
+           GREATEST(COALESCE(e.updated_at,e.created_at),COALESCE(ers.updated_at,ers.created_at)) AS updated_at
+    FROM tags_directory_site_listings sl
+    INNER JOIN tags_directory_listings l ON l.id=sl.listing_id
+    INNER JOIN tags_events e ON e.business_id=l.business_id AND e.status IN ('published','active')
+    INNER JOIN tags_event_registration_settings ers ON ers.event_id=e.id AND ers.registration_enabled=1
+    WHERE sl.site_id=?
+      AND sl.publication_status='published'
+      AND l.status='published'
+      AND EXISTS (
+        SELECT 1 FROM tags_business_addons ba
+        WHERE ba.business_id=l.business_id
+          AND TRIM(LOWER(ba.addon_code)) IN ('e_events','events')
+          AND ba.status='active'
+          AND (ba.expires_at IS NULL OR ba.expires_at>=NOW())
+      )
+    ORDER BY updated_at DESC
+  `, [context.site.id]).then(([rows]) => rows).catch(error => {
+    if (["ER_NO_SUCH_TABLE", "ER_BAD_FIELD_ERROR"].includes(error?.code)) return [];
+    throw error;
+  });
+  const eventListingRoutes = [...new Map(eventRows.map(event => [event.listing_slug, event])).values()];
+  const eligibleListingSlugs = new Set(listings.map(listing => listing.slug));
+  const productRows = await db.query(`
+    SELECT sl.slug AS listing_slug,pr.id,pr.title,pr.updated_at
+    FROM tags_directory_site_listings sl
+    INNER JOIN tags_directory_listings l ON l.id=sl.listing_id
+    INNER JOIN tags_qr_pages p ON p.id=l.qr_page_id AND p.business_id=l.business_id AND p.status='published'
+    INNER JOIN tags_qr_page_products pr ON pr.page_id=p.id AND pr.is_visible=1
+    WHERE sl.site_id=? AND sl.publication_status='published' AND l.status='published'
+    ORDER BY pr.updated_at DESC
+  `, [context.site.id]).then(([rows]) => rows.filter(item => eligibleListingSlugs.has(item.listing_slug)));
+  const productPath = product => {
+    const slug = String(product.title || "producto").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    return `/${product.listing_slug}/producto/${product.id}-${slug || "producto"}`;
+  };
 
   return [
     ...staticRoutes,
     ...assistantRoutes,
     ...localityPaths.map((path) => route(context.baseUrl, path, now, 0.75, "daily")),
     ...listings.map((listing) => route(context.baseUrl, `/${listing.slug}`, listing.updated_at || listing.listing_updated_at, 0.8, "weekly")),
+    ...eventListingRoutes.map((event) => route(context.baseUrl, `/${event.listing_slug}/eventos`, event.updated_at, 0.78, "daily")),
+    ...eventRows.map((event) => route(context.baseUrl, `/${event.listing_slug}/eventos/${event.public_slug}`, event.updated_at, 0.82, "weekly")),
+    ...productRows.map((product) => route(context.baseUrl, productPath(product), product.updated_at, 0.72, "weekly")),
   ];
 }
 

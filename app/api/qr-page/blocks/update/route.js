@@ -138,8 +138,8 @@ export async function POST(req) {
             ]
         );
 
-        if (blocks[0].page_type === "directory" && type === "gallery" && Number(content_json?.maxImages) === 8) {
-            const images = (Array.isArray(content_json?.images) ? content_json.images : []).filter(item => item?.url).slice(0, 8);
+        if (blocks[0].page_type === "directory" && type === "gallery") {
+            const images = (Array.isArray(content_json?.images) ? content_json.images : []).filter(item => item?.url).slice(0, 10);
             const [listings] = await db.query("SELECT id FROM tags_directory_listings WHERE qr_page_id=? AND business_id=? LIMIT 1", [pageId, businessId]);
             if (listings.length) {
                 await db.query("DELETE FROM tags_directory_media WHERE listing_id=? AND media_type='gallery'", [listings[0].id]);

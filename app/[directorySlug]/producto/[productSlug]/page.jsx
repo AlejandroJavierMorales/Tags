@@ -76,7 +76,7 @@ export default async function DirectoryProductPage({ params }) {
   const values = await Promise.resolve(params);
   const data = await loadData(values.directorySlug, values.productSlug);
   if (!data) notFound();
-  const { product, listingData } = data;
+  const { product, listingData, web } = data;
   const canonicalProductSlug = productPublicSlug(product);
   if (values.productSlug !== canonicalProductSlug) permanentRedirect(`/${listingData.listing.slug}/producto/${canonicalProductSlug}`);
   const entitlement = await getPublicEntitlement(listingData.listing.business_id, "directory");

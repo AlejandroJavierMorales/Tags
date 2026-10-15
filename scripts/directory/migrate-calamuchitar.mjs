@@ -413,7 +413,7 @@ async function applyPublisherListings(source, target) {
           `INSERT INTO tags_directory_site_listings
              (site_id,listing_id,slug,publication_status,is_free,is_featured,sort_order,seo_title,seo_description,seo_keywords,published_at)
            VALUES (?,?,?,?,?,0,?,?,?,?,?)`,
-          [siteId, listingId, listingSlug, publishable ? "published" : "archived", Number(publisher.site) === 1 || nullable(publisher.name_site) ? 0 : 1, Number(publisher.id), nullable(publisher.company_name), nullable(publisher.description1)?.slice(0, 500) || null, nullable(publisher.keywords), publishable ? (publisher.creationdate || new Date()) : null]
+           [siteId, listingId, listingSlug, publishable ? "published" : "archived", Number(publisher.site) === 1 || nullable(publisher.name_site) ? 0 : 1, Number(publisher.id), nullable(publisher.company_name), nullable(publisher.description1)?.slice(0, 500) || null, nullable(publisher.keywords), publishable ? (publisher.creationdate || new Date()) : null]
         );
         siteListingId = Number(result.insertId);
         await saveMapping(target, publisher.__source, publisher, "tags_directory_site_listings", siteListingId);

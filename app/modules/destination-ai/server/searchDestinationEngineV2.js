@@ -4,8 +4,10 @@ import { rankDestinationCandidates } from "./destinationRankingCore.js";
 import { extractRequestedCapacity } from "./destinationCapacity.js";
 import { stemDestinationSearchTerm } from "./destinationLexicalCore.js";
 import { shouldIncludeCategoryProviders } from "./destinationRetrievalPolicy.js";
+import { tourismContextEvidence, tourismContextScore } from "./destinationTourismContext.js";
+import { explicitOfferStrength } from "./destinationOfferEvidence.js";
 
-const STOP_WORDS = new Set(["a", "al", "algo", "con", "de", "del", "donde", "el", "en", "es", "la", "las", "lo", "los", "me", "mi", "para", "por", "que", "quiero", "un", "una", "y", "ahora", "tambien", "ademas", "buscar", "busco", "comprar", "compro", "conseguir", "decime", "dime", "necesito", "podria", "puedo", "recomenda", "recomendame", "tener", "tengo"]);
+const STOP_WORDS = new Set(["a", "al", "algo", "con", "de", "del", "donde", "el", "en", "es", "la", "las", "lo", "los", "me", "mi", "para", "por", "que", "quiero", "un", "una", "y", "ahora", "tambien", "ademas", "buscar", "busco", "comprar", "compro", "conseguir", "decime", "dime", "necesito", "podria", "puedo", "recomenda", "recomendame", "tener", "tengo", "asesora", "asesorame", "asesorar", "asesoramiento", "consulta", "consultar", "contame", "informacion", "saber", "sobre", "tema"]);
 
 function terms(value) {
   return [...new Set(normalizeDestinationTerm(value).split(" ").filter(term => (term.length > 1 || /^\d+$/u.test(term)) && !STOP_WORDS.has(term)).map(stemDestinationSearchTerm).filter(Boolean))].slice(0, 10);
@@ -13,6 +15,19 @@ function terms(value) {
 
 function searchParts(value) {
   const all=terms(value);const long=all.filter(term=>term.length>=4);const short=all.filter(term=>term.length<4);return{all,long,short,shortPatterns:short.map(term=>`(^|[^[:alnum:]])${term}([^[:alnum:]]|$)`),boolean:long.map(term=>`+${term}*`).join(" ")};
+}
+
+function matchingTextExcerpt(value, queryTerms, maxLength = 900) {
+  const source = String(value || "").replace(/\s+/g, " ").trim();
+  if (!source) return "";
+  const normalizedSource = normalizeDestinationTerm(source);
+  const positions = queryTerms
+    .map(term => normalizedSource.indexOf(term))
+    .filter(position => position >= 0);
+  if (!positions.length) return source.slice(0, maxLength);
+  const start = Math.max(0, Math.min(...positions) - Math.floor(maxLength / 3));
+  const end = Math.min(source.length, start + maxLength);
+  return `${start > 0 ? "…" : ""}${source.slice(start, end).trim()}${end < source.length ? "…" : ""}`;
 }
 
 function validCoordinate(latitude, longitude) {
@@ -37,6 +52,29 @@ function objectValue(value) {
   if (typeof value !== "string" || !value.trim()) return {};
   try { const parsed=JSON.parse(value); return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {}; }
   catch { return {}; }
+}
+
+function readablePublicText(value, output = []) {
+  if (typeof value === "string") {
+    const text = value.replace(/\s+/g, " ").trim();
+    if (text && !/^https?:\/\//i.test(text) && !/^#[0-9a-f]{3,8}$/i.test(text)) output.push(text);
+  } else if (Array.isArray(value)) value.forEach(item => readablePublicText(item, output));
+  else if (value && typeof value === "object") {
+    for (const [key, item] of Object.entries(value)) {
+      if (!/^(?:url|image|images|storagePath|styles?|color|font|animation)/i.test(key)) readablePublicText(item, output);
+    }
+  }
+  return output;
+}
+
+function readableBlockContent(value) {
+  const source = String(value || "");
+  const output = [];
+  for (const fragment of source.split(/\r?\n/).filter(Boolean)) {
+    try { readablePublicText(JSON.parse(fragment), output); }
+    catch { output.push(fragment.replace(/\s+/g, " ").trim()); }
+  }
+  return output.filter(Boolean).join(" | ");
 }
 
 function locationCandidate(row, task, userLocation, evidence = {}) {
@@ -66,6 +104,9 @@ function locationCandidate(row, task, userLocation, evidence = {}) {
     taskType: task.type,
     planSlot: task.planSlot || null,
     commercial: evidence.commercial || {},
+    relationship: row.relationship || "free",
+    commercialPriority: row.relationship === "subscriber" ? 1 : 0,
+    explicitOfferStrength: Number(evidence.explicitOfferStrength || 0),
     rankingScore: Number(row.match_score || 0) + Number(row.quality_score || 0) / 10 + (row.is_featured ? 2 : 0) - (distance == null ? 0 : Math.min(distance, 100) / 20),
   };
 }
@@ -89,10 +130,10 @@ async function searchByCategory({ siteCode, task, userLocation, limit }) {
        INNER JOIN tags_directory_taxonomy_closure tc
          ON tc.descendant_id=lc.taxonomy_node_id AND tc.ancestor_id IN (${placeholders(ids)})
       WHERE l.visibility='public'
-        ${locality ? "AND EXISTS(SELECT 1 FROM tags_ai_search_location_places lp WHERE lp.search_location_id=l.id AND lp.normalized_name LIKE ?)" : ""}
+        ${locality ? "AND (LOWER(COALESCE(l.locality_name,'')) LIKE ? OR EXISTS(SELECT 1 FROM tags_ai_search_location_places lp WHERE lp.search_location_id=l.id AND lp.normalized_name LIKE ?))" : ""}
       ORDER BY match_score DESC,l.is_featured DESC,l.quality_score DESC
       LIMIT ?`,
-    [query && query, siteCode, ...ids, locality && `%${locality}%`, Math.max(limit * 5, 20)].filter(value => value !== false && value !== "")
+    [query && query, siteCode, ...ids, ...(locality ? [`%${locality}%`, `%${locality}%`] : []), Math.max(limit * 5, 20)].filter(value => value !== false && value !== "")
   );
   return rows.map(row => locationCandidate(row, task, userLocation));
 }
@@ -122,7 +163,7 @@ async function searchItems({ siteCode, task, userLocation, limit }) {
         ${query?"AND MATCH(i.name,i.category_text,i.searchable_text) AGAINST (? IN BOOLEAN MODE)":""}
         ${search.shortPatterns.map(()=>"AND LOWER(CONCAT_WS(' ',i.name,i.category_text,i.searchable_text)) REGEXP ?").join(" ")}
         ${capacity?"AND CAST(JSON_UNQUOTE(JSON_EXTRACT(i.attributes_json,'$.capacity')) AS UNSIGNED)>=?":""}
-        ${locality ? "AND EXISTS(SELECT 1 FROM tags_ai_search_location_places lp WHERE lp.search_location_id=l.id AND lp.normalized_name LIKE ?)" : ""}
+        ${locality ? "AND (EXISTS(SELECT 1 FROM tags_ai_search_location_places lp WHERE lp.search_location_id=l.id AND lp.normalized_name LIKE ?) OR LOWER(COALESCE(l.offer_text,'')) LIKE ?)" : ""}
       ORDER BY match_score DESC,l.is_featured DESC,l.quality_score DESC
       LIMIT ?`,
     [...(query?[query]:[]),siteCode,...itemTypes,...(query?[query]:[]),...search.shortPatterns,...(capacity?[capacity]:[]),...(locality ? [`%${locality}%`] : []), Math.max(limit * 6, 24)]
@@ -181,9 +222,122 @@ async function searchDeclaredOffers({ siteCode, task, userLocation, limit }) {
         ${locality ? "AND EXISTS(SELECT 1 FROM tags_ai_search_location_places lp WHERE lp.search_location_id=l.id AND lp.normalized_name LIKE ?)" : ""}
       ORDER BY match_score DESC,l.is_featured DESC,l.quality_score DESC
       LIMIT ?`,
-    [...(query?[query]:[]),siteCode, ...(task.type === "find_dish" && ids.length ? ids : []),...(query?[query]:[]),...search.shortPatterns, ...(locality ? [`%${locality}%`] : []), Math.max(limit * 4, 16)]
+    [...(query?[query]:[]),siteCode, ...(task.type === "find_dish" && ids.length ? ids : []),...(query?[query]:[]),...search.shortPatterns, ...(locality ? [`%${locality}%`, `%${locality}%`] : []), Math.max(limit * 4, 16)]
   );
-  return rows.map(row => locationCandidate(row, task, userLocation, { level: "explicit_business_text", excerpt: row.summary || row.offer_text || "" }));
+  return rows.map(row => {
+    const publishedText = row.offer_text || row.summary || "";
+    const strength = explicitOfferStrength(publishedText, task);
+    return locationCandidate(row, task, userLocation, {
+      level: "explicit_business_text",
+      excerpt: matchingTextExcerpt(publishedText, search.all),
+      explicitOfferStrength: strength,
+    });
+  });
+}
+
+async function searchLivePublishedOffers({ siteCode, task, userLocation, limit }) {
+  const search = searchParts(task.query);
+  if (!search.all.length) return [];
+  const locality = task.localityPreference === "specified" ? normalizeDestinationTerm(task.locality) : "";
+  const termChecks = search.all.map(() => `AND EXISTS(
+    SELECT 1 FROM tags_qr_pages page
+    INNER JOIN tags_qr_page_sections sec ON sec.page_id=page.id AND sec.is_visible=1
+    LEFT JOIN tags_qr_page_blocks bl ON bl.section_id=sec.id AND bl.is_visible=1
+    WHERE page.business_id=dl.business_id AND page.status='published'
+      AND (LOWER(COALESCE(sec.title,'')) LIKE ? OR LOWER(CAST(bl.content_json AS CHAR)) LIKE ?)
+  )`).join(" ");
+  const [rows] = await db.execute(
+    `SELECT l.*,
+            (SELECT GROUP_CONCAT(CAST(bl.content_json AS CHAR) ORDER BY sec.sort_order,bl.sort_order SEPARATOR '\n')
+               FROM tags_qr_pages page
+               INNER JOIN tags_qr_page_sections sec ON sec.page_id=page.id AND sec.is_visible=1
+               INNER JOIN tags_qr_page_blocks bl ON bl.section_id=sec.id AND bl.is_visible=1
+              WHERE page.business_id=dl.business_id AND page.status='published') live_content
+       FROM tags_ai_search_locations l
+       INNER JOIN tags_directory_sites s ON s.id=l.site_id AND s.code=? AND s.is_active=1
+       INNER JOIN tags_directory_listings dl ON dl.id=l.listing_id AND dl.status='published'
+      WHERE l.visibility='public' ${termChecks}
+        ${locality ? "AND (EXISTS(SELECT 1 FROM tags_ai_search_location_places lp WHERE lp.search_location_id=l.id AND lp.normalized_name LIKE ?) OR LOWER(COALESCE(l.offer_text,'')) LIKE ?)" : ""}
+      ORDER BY l.is_featured DESC,l.quality_score DESC
+      LIMIT ?`,
+    [siteCode, ...search.all.flatMap(term => [`%${term}%`, `%${term}%`]), ...(locality ? [`%${locality}%`, `%${locality}%`] : []), Math.max(limit * 4, 16)]
+  );
+  return rows.map(row => {
+    const liveText = readableBlockContent(row.live_content);
+    return locationCandidate(row, task, userLocation, {
+      level: "explicit_business_text",
+      excerpt: matchingTextExcerpt(liveText, search.all),
+      explicitOfferStrength: explicitOfferStrength(liveText, task),
+    });
+  });
+}
+
+export async function getDestinationBusinessContextV2({ siteCode, businessIds = [] }) {
+  const ids = [...new Set(businessIds.map(Number).filter(Number.isInteger))].slice(0, 4);
+  if (!ids.length || !/^[a-z0-9_-]{2,60}$/i.test(String(siteCode || ""))) return "";
+  const [locations, blockRows, items] = await Promise.all([
+    db.execute(
+      `SELECT l.business_id,l.name,l.summary,l.offer_text
+         FROM tags_ai_search_locations l
+         INNER JOIN tags_directory_sites s ON s.id=l.site_id AND s.code=? AND s.is_active=1
+        WHERE l.visibility='public' AND l.business_id IN (${placeholders(ids)})
+        ORDER BY l.quality_score DESC,l.id`,
+      [siteCode, ...ids]
+    ).then(([rows]) => rows),
+    db.execute(
+      `SELECT l.business_id,bl.content_json
+         FROM tags_ai_search_locations l
+         INNER JOIN tags_directory_sites s ON s.id=l.site_id AND s.code=? AND s.is_active=1
+         INNER JOIN tags_directory_listings dl ON dl.id=l.listing_id AND dl.status='published'
+         INNER JOIN tags_qr_page_sections sec ON sec.page_id=dl.qr_page_id AND sec.is_visible=1
+         INNER JOIN tags_qr_page_blocks bl ON bl.section_id=sec.id AND bl.is_visible=1
+        WHERE l.visibility='public' AND l.business_id IN (${placeholders(ids)})
+        ORDER BY l.business_id,sec.sort_order,bl.sort_order`,
+      [siteCode, ...ids]
+    ).then(([rows]) => rows),
+    db.execute(
+      `SELECT i.business_id,i.item_type,i.name,i.description,i.category_text,i.price,i.sale_price,i.currency,i.stock_status
+         FROM tags_ai_search_items i
+         INNER JOIN tags_directory_sites s ON s.id=i.site_id AND s.code=? AND s.is_active=1
+        WHERE i.visibility='public' AND i.verification_status<>'rejected' AND i.business_id IN (${placeholders(ids)})
+        ORDER BY i.business_id,i.item_type,i.name
+        LIMIT 160`,
+      [siteCode, ...ids]
+    ).then(([rows]) => rows),
+  ]);
+  const byBusiness = new Map();
+  for (const row of locations) {
+    if (!byBusiness.has(Number(row.business_id))) byBusiness.set(Number(row.business_id), {
+      name: row.name,
+      texts: [],
+      items: [],
+    });
+    const entry = byBusiness.get(Number(row.business_id));
+    const text = [row.offer_text, row.summary].filter(Boolean).join(" | ").trim();
+    if (text && !entry.texts.includes(text)) entry.texts.push(text);
+  }
+  for (const row of blockRows) {
+    const entry = byBusiness.get(Number(row.business_id));
+    if (!entry) continue;
+    const text = readableBlockContent(row.content_json);
+    if (text && !entry.texts.includes(text)) entry.texts.push(text);
+  }
+  for (const row of items) {
+    const entry = byBusiness.get(Number(row.business_id));
+    if (!entry) continue;
+    entry.items.push([
+      `[${row.item_type}] ${row.name}`,
+      row.category_text,
+      row.description,
+      row.price != null && `${row.currency || "ARS"} ${row.sale_price ?? row.price}`,
+      row.stock_status && row.stock_status !== "unknown" && `Stock: ${row.stock_status}`,
+    ].filter(Boolean).join(" — "));
+  }
+  return [...byBusiness.values()].map(entry => [
+    `PRESTADOR: ${entry.name}`,
+    ...entry.texts,
+    ...entry.items,
+  ].filter(Boolean).join("\n").slice(0, 4500)).join("\n\n").slice(0, 18000);
 }
 
 async function searchBusinessName({ siteCode, task, userLocation, limit }) {
@@ -226,7 +380,8 @@ async function searchTourism({ siteCode, task, userLocation, limit }) {
 
 function tourismCandidate(row, task, userLocation) {
   const contact=objectValue(row.contact_json);const practical=objectValue(row.practical_json);const availability=objectValue(row.availability_json);const event=objectValue(row.event_json);
-  const evidence=[row.summary||row.description,event.start&&`Comienza: ${event.start}`,event.end&&`Finaliza: ${event.end}`,availability.schedule&&`Horarios: ${availability.schedule}`,availability.duration&&`Duración: ${availability.duration}`,practical.difficulty&&`Dificultad: ${practical.difficulty}`].filter(Boolean).join(". ").slice(0,900);
+  const contextual=tourismContextEvidence(row);const contextScore=tourismContextScore(row,task);
+  const evidence=[row.summary||row.description,contextual.text,event.start&&`Comienza: ${event.start}`,event.end&&`Finaliza: ${event.end}`].filter(Boolean).join(". ").slice(0,1400);
   return {
     id: Number(row.content_id), businessId: null, entityKey: `tourism_content:${row.content_id}`, entityType: row.content_type,
     name: row.title, matchedTitle: row.title, description: row.summary || row.description || "", locality: row.locality_name || "",
@@ -238,8 +393,12 @@ function tourismCandidate(row, task, userLocation) {
     address: row.address || null, schedule: availability.schedule || null, duration: availability.duration || null,
     eventStart: event.start || row.valid_from || null, eventEnd: event.end || row.valid_until || null,
     difficulty: practical.difficulty || null, reservationRequired: availability.reservationRequired ?? null,
+    audience: contextual.audience.text || null, weatherConditions: contextual.conditions.weather || null,
+    restrictions: contextual.conditions.restrictions || null, recommendations: contextual.conditions.recommendations || null,
+    rainSuitable: practical.rainSuitable ?? null, indoor: practical.indoor ?? null,
+    accessibility: practical.accessibility || null, petsAllowed: practical.petsAllowed ?? null, contextScore,
     commercial: { priceMode:practical.priceMode||null,price:practical.priceFrom??null,priceTo:practical.priceTo??null,currency:practical.currency||null },
-    rankingScore: Number(row.match_score || 0),
+    rankingScore: Number(row.match_score || 0) + contextScore,
   };
 }
 
@@ -254,23 +413,33 @@ export async function searchDestinationTaskV2({ siteCode, task, userLocation = n
       ]);
       candidates = [...tourism, ...providers];
     } else if (["find_product", "find_dish", "find_service"].includes(task.type)) {
-      const [items, declared, categoryProviders] = await Promise.all([
+      const [items, declared, livePublished, categoryProviders] = await Promise.all([
         searchItems({ siteCode, task, userLocation, limit }),
         searchDeclaredOffers({ siteCode, task, userLocation, limit }),
+        searchLivePublishedOffers({ siteCode, task, userLocation, limit }),
         shouldIncludeCategoryProviders(task)
           ? searchByCategory({ siteCode, task, userLocation, limit })
           : Promise.resolve([]),
       ]);
-      candidates = [...items, ...declared, ...categoryProviders];
+      candidates = [...items, ...declared, ...livePublished, ...categoryProviders];
     } else if (task.type === "inspect_business") {
       candidates = await searchBusinessName({ siteCode, task, userLocation, limit });
-    } else if (task.taxonomyNodeIds?.length) {
-      const [categories,capacities]=await Promise.all([
-        searchByCategory({ siteCode, task, userLocation, limit }),
+    } else if (task.type === "find_business_category" || task.taxonomyNodeIds?.length) {
+      const [categories,capacities,declared,livePublished]=await Promise.all([
+        task.taxonomyNodeIds?.length ? searchByCategory({ siteCode, task, userLocation, limit }) : Promise.resolve([]),
         searchCapacityItems({siteCode,task,userLocation,limit}),
+        searchDeclaredOffers({ siteCode, task, userLocation, limit }),
+        searchLivePublishedOffers({ siteCode, task, userLocation, limit }),
       ]);
-      candidates=[...capacities,...categories];
+      candidates=[...capacities,...declared,...livePublished,...categories];
     }
+    if (["find_service", "find_business_category"].includes(task.type)) {
+      candidates = candidates.filter(item => item.evidenceLevel !== "explicit_business_text" || item.explicitOfferStrength >= 30);
+    }
+    const strongPublishedOffers = candidates.filter(item => item.evidenceLevel === "explicit_business_text" && item.explicitOfferStrength >= 30);
+    if (strongPublishedOffers.length) candidates = task.type === "find_business_category"
+      ? strongPublishedOffers
+      : candidates.filter(item => item.evidenceLevel !== "explicit_business_text" || item.explicitOfferStrength >= 30);
     return { available: true, candidates: rankDestinationCandidates(candidates, limit) };
   } catch (error) {
     if (["ER_NO_SUCH_TABLE", "ER_BAD_FIELD_ERROR"].includes(error?.code)) return { available: false, candidates: [], error: error.code };
@@ -324,6 +493,15 @@ export function buildDestinationV2Context(tasks, candidates) {
       item.eventStart && `Inicio: ${item.eventStart}`,
       item.eventEnd && `Finalización: ${item.eventEnd}`,
       item.difficulty && `Dificultad: ${item.difficulty}`,
+      item.audience && `Público recomendado: ${item.audience}`,
+      item.weatherConditions && `Condiciones climáticas publicadas: ${item.weatherConditions}`,
+      item.restrictions && `Restricciones publicadas: ${item.restrictions}`,
+      item.recommendations && `Recomendaciones publicadas: ${item.recommendations}`,
+      item.rainSuitable === true && "Apto con lluvia: sí",
+      item.rainSuitable === false && "Apto con lluvia: no",
+      item.accessibility && `Accesibilidad publicada: ${item.accessibility}`,
+      item.petsAllowed === true && "Admite mascotas: sí",
+      item.petsAllowed === false && "Admite mascotas: no",
       item.commercial?.price != null && `Precio publicado: ${item.commercial.currency || "ARS"} ${item.commercial.price}`,
     ].filter(Boolean).join("\n"))].join("\n");
   }).join("\n\n").slice(0, 14000);

@@ -240,7 +240,7 @@ export default function DirectoryWebBuilderClient({ businessId, qrCodeId, busine
       </div>
     </section>}
 
-    {tab === "content" && <section className="tags_directory_web_panel"><DirectoryStructureManager businessId={businessId} pageId={page.id} sections={qrPage.sections || []} web={moduleWeb} presentationFallback={{ title: profile?.display_name || profile?.name || business?.display_name || business?.name || "", highlightedText: directoryData?.listing?.short_description || "", description: directoryData?.listing?.description || page?.description || profile?.description || business?.description || "" }} onReload={load} onEditModule={code => { setModuleEditor(code); setTab("modules"); }} /></section>}
+    {tab === "content" && <section className="tags_directory_web_panel"><DirectoryStructureManager businessId={businessId} pageId={page.id} sections={qrPage.sections || []} web={moduleWeb} contentFallback={{ providerName: profile?.display_name || profile?.name || business?.display_name || business?.name || "", highlightedText: directoryData?.listing?.short_description || "", description: directoryData?.listing?.description || page?.description || profile?.description || business?.description || "", images: (directoryData?.media || []).filter(item => ["cover", "gallery"].includes(item.media_type) && item.url).map(item => ({ url: item.url, alt: item.alt_text || "" })) }} onReload={load} onEditModule={code => { setModuleEditor(code); setTab("modules"); }} /></section>}
 
     {tab === "catalog" && <section className="tags_directory_web_panel"><DirectoryCatalogManager businessId={businessId} pageId={page.id} products={qrPage.products || []} catalogSection={(qrPage.sections || []).find(isCatalogSection)} onReload={load} /></section>}
 

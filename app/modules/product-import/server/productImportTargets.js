@@ -44,7 +44,7 @@ export async function resolveProductImportTarget({ businessId, targetType, conne
   if (!business) throw new Error("Prestador no encontrado");
 
   if (normalizedType === "catalog") {
-    const [rows] = await connection.query("SELECT id,title,status FROM tags_qr_pages WHERE business_id=? AND page_type='directory' ORDER BY status='published' DESC,id DESC LIMIT 1", [businessId]);
+    const [rows] = await connection.query("SELECT id,title,status,catalog_product_limit FROM tags_qr_pages WHERE business_id=? AND page_type='directory' ORDER BY status='published' DESC,id DESC LIMIT 1", [businessId]);
     const instance = rows[0];
     if (!instance) throw new Error("El prestador no tiene un Catálogo de Directorio disponible");
     const categories = await catalogCategories(instance.id, connection);
@@ -52,7 +52,7 @@ export async function resolveProductImportTarget({ businessId, targetType, conne
       connection.query("SELECT COUNT(*) total FROM tags_qr_page_products WHERE page_id=?", [instance.id]),
       catalogImportSchemaReady(connection),
     ]);
-    return { business, targetType: normalizedType, label: productImportTargetLabel(normalizedType), instanceId: Number(instance.id), instanceName: instance.title || "Catálogo", categories, categoryRows: [], productCount: Number(countRows[0]?.total || 0), migrationReady };
+    return { business, targetType: normalizedType, label: productImportTargetLabel(normalizedType), instanceId: Number(instance.id), instanceName: instance.title || "Catálogo", categories, categoryRows: [], productCount: Number(countRows[0]?.total || 0), productLimit: Math.max(1, Number(instance.catalog_product_limit || 50)), migrationReady };
   }
 
   const [rows] = await connection.query("SELECT id,name,status FROM tags_stores WHERE business_id=? AND app_type=? ORDER BY status='published' DESC,id DESC LIMIT 1", [businessId, normalizedType]);

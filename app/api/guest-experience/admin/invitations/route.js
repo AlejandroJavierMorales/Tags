@@ -15,26 +15,29 @@ export async function POST(req) {
     const body = await req.json().catch(() => null);
     if (!body) return guestError("Cuerpo JSON inválido");
     const businessId = Number(body.businessId || 0), guestAppId = Number(body.guestAppId || 0), stayId = Number(body.stayId || 0);
-    const eventCode = body.eventCode === "arrival_reminder" ? "arrival_reminder" : "access_link";
+    const eventCode = body.eventCode === "arrival_reminder" ? "arrival_reminder" : body.eventCode === "no_show_rebooking" ? "no_show_rebooking" : "access_link";
     const access = await getGuestAdminAccess({ businessId, guestAppId, permission: "guest.stays.manage" });
     if (!access.allowed) return guestAdminAccessResponse(access);
-    const [rows] = await db.query(`SELECT s.id,s.primary_guest_id,s.stay_code,s.starts_at,s.ends_at,s.adults,s.children,s.expected_arrival_text,s.lodging_total,s.deposit_required_amount,a.slug,a.name app_name,a.logo_url,a.currency,a.settings_json,u.name unit_name,g.name guest_name,g.email,g.phone FROM tags_guest_stays s INNER JOIN tags_guest_apps a ON a.id=s.guest_app_id AND a.business_id=? INNER JOIN tags_guest_people g ON g.id=s.primary_guest_id LEFT JOIN tags_guest_units u ON u.id=s.unit_id WHERE s.id=? AND s.guest_app_id=? LIMIT 1`, [businessId, stayId, guestAppId]);
+    const [rows] = await db.query(`SELECT s.id,s.status,s.primary_guest_id,s.stay_code,s.starts_at,s.ends_at,s.adults,s.children,s.expected_arrival_text,s.lodging_total,s.deposit_required_amount,s.no_show_financial_action,s.no_show_credit_expires_at,s.no_show_paid_amount,s.no_show_pending_amount,s.no_show_notification_message,a.slug,a.name app_name,a.logo_url,a.currency,a.settings_json,u.name unit_name,g.name guest_name,g.email,g.phone FROM tags_guest_stays s INNER JOIN tags_guest_apps a ON a.id=s.guest_app_id AND a.business_id=? INNER JOIN tags_guest_people g ON g.id=s.primary_guest_id LEFT JOIN tags_guest_units u ON u.id=s.unit_id WHERE s.id=? AND s.guest_app_id=? LIMIT 1`, [businessId, stayId, guestAppId]);
     const stay = rows[0];
     if (!stay) return guestError("Reserva no encontrada", 404);
+    if (eventCode === "no_show_rebooking" && stay.status !== "no_show_rebooking") return guestError("La reserva ya no está pendiente de reprogramación", 409);
     const settings = parseGuestJson(stay.settings_json), grace = Math.max(1, Number(settings.sessionGraceDays || 7));
-    const token = createGuestToken();
+    const token = eventCode === "no_show_rebooking" ? null : createGuestToken();
     const channel = body.channel === "whatsapp" ? "whatsapp" : body.channel === "email" ? "email" : "manual";
-    const connection = await db.getConnection();
-    let tokenId;
-    try {
-        await connection.beginTransaction();
-        await connection.query("UPDATE tags_guest_access_tokens SET revoked_at=NOW() WHERE stay_id=? AND revoked_at IS NULL", [stayId]);
-        const [result] = await connection.query("INSERT INTO tags_guest_access_tokens (guest_app_id,stay_id,guest_id,token_hash,channel,expires_at) VALUES (?,?,?,?,?,DATE_ADD(?,INTERVAL ? DAY))", [guestAppId, stayId, stay.primary_guest_id, hashGuestToken(token), channel, stay.ends_at, grace]);
-        tokenId = result.insertId;
-        await connection.commit();
-    } catch (error) { await connection.rollback(); throw error; } finally { connection.release(); }
+    let tokenId = null;
+    if (token) {
+        const connection = await db.getConnection();
+        try {
+            await connection.beginTransaction();
+            await connection.query("UPDATE tags_guest_access_tokens SET revoked_at=NOW() WHERE stay_id=? AND revoked_at IS NULL", [stayId]);
+            const [result] = await connection.query("INSERT INTO tags_guest_access_tokens (guest_app_id,stay_id,guest_id,token_hash,channel,expires_at) VALUES (?,?,?,?,?,DATE_ADD(?,INTERVAL ? DAY))", [guestAppId, stayId, stay.primary_guest_id, hashGuestToken(token), channel, stay.ends_at, grace]);
+            tokenId = result.insertId;
+            await connection.commit();
+        } catch (error) { await connection.rollback(); throw error; } finally { connection.release(); }
+    }
 
-    const link = await getGuestVerificationUrl(db, stay.slug, token);
+    const link = token ? await getGuestVerificationUrl(db, stay.slug, token) : "";
     const title = eventCode === "arrival_reminder" ? "Tu ingreso a Mi Estadía" : `Acceso a Mi Estadía en ${stay.app_name}`;
     const checkinLabel = `${displayDate(stay.starts_at)} ${displayTime(settings.checkinTime || "15:00")}`;
     const checkoutLabel = `${displayDate(stay.ends_at)} ${displayTime(settings.checkoutTime || "10:00")}`;

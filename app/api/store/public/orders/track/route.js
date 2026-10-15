@@ -171,16 +171,19 @@ export async function POST(req) {
         const [items] = await db.query(
             `
             SELECT
-                id,
-                title,
-                variant_title,
-                sku,
-                quantity,
-                unit_price,
-                total_price
-            FROM tags_store_order_items
-            WHERE order_id = ?
-            ORDER BY id ASC
+                oi.id,
+                oi.title,
+                oi.variant_title,
+                oi.sku,
+                oi.quantity,
+                oi.unit_price,
+                oi.total_price,
+                (SELECT pi.image_url FROM tags_store_product_images pi
+                  WHERE pi.product_id=oi.product_id
+                  ORDER BY pi.is_primary DESC,pi.sort_order,pi.id LIMIT 1) AS image_url
+            FROM tags_store_order_items oi
+            WHERE oi.order_id = ?
+            ORDER BY oi.id ASC
             `,
             [
                 order.id

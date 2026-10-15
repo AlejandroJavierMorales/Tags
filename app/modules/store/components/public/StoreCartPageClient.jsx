@@ -27,15 +27,16 @@ import Link
 
 import {
     FiArrowLeft,
+    FiFileText,
     FiMessageCircle,
     FiMinus,
     FiPlus,
+    FiShoppingCart,
     FiTrash2
 }
     from "react-icons/fi";
 
-import StoreHeaderBlock
-    from "../blocks/StoreHeaderBlock";
+import StorePurchaseHeader from "./StorePurchaseHeader";
 
 import {
     useRouter
@@ -360,11 +361,7 @@ export default function StoreCartPageClient({
             style={pageStyle}
         >
 
-            {!storeReturnUrl && (
-                <StoreHeaderBlock
-                    entity={store}
-                />
-            )}
+            <StorePurchaseHeader store={store} currentStep="cart" />
 
             <section className="store_cart_page_shell">
                 <div className="store_cart_page_inner">
@@ -408,8 +405,10 @@ export default function StoreCartPageClient({
                                         settings.content?.showTitle !== false && (
 
                                             <h1
+                                                className="store_context_title"
                                                 style={typography.title || {}}
                                             >
+                                                <FiShoppingCart />
                                                 Carrito
                                             </h1>
 
@@ -615,8 +614,10 @@ export default function StoreCartPageClient({
                                     <aside className="store_cart_summary_panel">
 
                                         <h2
+                                            className="store_context_title"
                                             style={typography.title || {}}
                                         >
+                                            <FiFileText />
                                             Resumen de compra
                                         </h2>
 

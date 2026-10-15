@@ -1138,8 +1138,8 @@ export default function StoreAdminClient({
                                         )
                                     }
                                 >
-                                    <option value="ARS">ARS</option>
-                                    <option value="USD">USD</option>
+                                    <option value="ARS">$ · Pesos argentinos</option>
+                                    <option value="USD">U$S · Dólares</option>
                                 </select>
                             </div>
 

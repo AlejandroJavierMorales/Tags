@@ -1,8 +1,10 @@
 const GASTRONOMY_GROUPS = [
   ["restoranes", "restaurantes"],
-  ["comida-para-llevar", "comidas-para-llevar"],
+  ["comidas-para-llevar"],
   ["parrillas"],
   ["cervecerias", "bares-y-cervecerias"],
+  ["bar-cafeteria", "bares-y-cafeterias", "cafeterias-y-casas-de-te"],
+  ["casas-de-te", "casa-de-te"],
   ["pizzerias", "pizzeria"],
 ];
 
@@ -17,7 +19,6 @@ function normalizedSlug(value) {
 
 export function getDiningCategoryNodes(nodes, gastronomyId) {
   const children = nodes.filter(node => Number(node.parent_id) === Number(gastronomyId));
-  return GASTRONOMY_GROUPS.map(aliases => children.find(node => aliases.includes(normalizedSlug(node.slug || node.name))))
-    .filter(Boolean);
+  const acceptedSlugs = new Set(GASTRONOMY_GROUPS.flat());
+  return children.filter(node => acceptedSlugs.has(normalizedSlug(node.slug || node.name)));
 }
-

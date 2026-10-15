@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic";
 import { db } from "@/app/lib/tags-db";
 import { getTurnosAccess, turnosAccessResponse } from "@/app/modules/turnos/lib/access/getTurnosAccess";
 import { cleanText, jsonResponseError, parseJson } from "@/app/modules/turnos/lib/turnosService";
+import { refreshDestinationBusinessProjection } from "@/app/modules/destination-ai/server/refreshDestinationBusinessProjection";
 
 export async function GET(req) {
     const businessId = new URL(req.url).searchParams.get("businessId");
@@ -95,6 +96,7 @@ export async function POST(req) {
             }
         }
     }
+    await refreshDestinationBusinessProjection(businessId).catch(error => console.error("DESTINATION PROJECTION TURNOS SERVICE CREATE SYNC ERROR", { businessId, error }));
     return Response.json({ ok: true, serviceId: result.insertId }, { status: 201 });
 }
 
@@ -131,6 +133,7 @@ export async function PUT(req) {
         await db.query("INSERT INTO tags_turnos_service_resource_requirements (service_id, resource_type_id, quantity_required) VALUES (?, ?, 1)", [serviceId, resourceTypeId]);
         await db.query(`UPDATE tags_turnos_service_resources sr INNER JOIN tags_turnos_resources r ON r.id=sr.resource_id SET sr.is_active=0 WHERE sr.service_id=? AND r.resource_type_id<>?`, [serviceId, resourceTypeId]);
     }
+    await refreshDestinationBusinessProjection(businessId).catch(error => console.error("DESTINATION PROJECTION TURNOS SERVICE UPDATE SYNC ERROR", { businessId, error }));
     return Response.json({ ok: true });
 }
 
@@ -153,5 +156,6 @@ export async function DELETE(req) {
         await db.query("DELETE FROM tags_turnos_service_locations WHERE service_id=?", [serviceId]);
         await db.query("DELETE FROM tags_turnos_services WHERE id=?", [serviceId]);
     }
+    await refreshDestinationBusinessProjection(businessId).catch(error => console.error("DESTINATION PROJECTION TURNOS SERVICE DELETE SYNC ERROR", { businessId, error }));
     return Response.json({ ok: true, deletion: history.length ? "archived" : "deleted" });
 }

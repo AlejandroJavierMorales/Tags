@@ -1,10 +1,11 @@
 import { createSimpleWorkbookXlsx } from "../../destination-ai/server/simpleXlsx.js";
+import { PLATFORM_CURRENCIES } from "../../../lib/platformCurrencies.js";
 
 export const PRODUCT_IMPORT_TEMPLATE_VERSION = "1.0";
 export const PRODUCT_IMPORT_TARGETS = new Set(["catalog", "store", "resto"]);
 export const PRODUCT_IMPORT_CHECKED = "☑ Sí";
 export const PRODUCT_IMPORT_UNCHECKED = "☐ No";
-export const PRODUCT_IMPORT_CURRENCIES = ["ARS", "USD"];
+export const PRODUCT_IMPORT_CURRENCIES = PLATFORM_CURRENCIES.map(item => item.symbol);
 export const PRODUCT_IMPORT_STATUSES = ["Publicado", "Borrador", "Desactivado"];
 
 const CHECKS = [PRODUCT_IMPORT_CHECKED, PRODUCT_IMPORT_UNCHECKED];
@@ -25,6 +26,7 @@ const COMMON_INSTRUCTIONS = [
   ["10", "Las categorías disponibles aparecen en la hoja CATEGORÍAS y se eligen desde PRODUCTOS."],
   ["11", "La plataforma revisará los datos y las imágenes antes de permitir la importación."],
   ["12", "Las imágenes se optimizarán automáticamente al confirmar la importación."],
+  ["13", "En Moneda elegí $ para pesos argentinos o U$S para dólares. También se acepta USD al importar."],
 ];
 
 const CONFIG = {
@@ -32,7 +34,7 @@ const CONFIG = {
     label: "Catálogo",
     headers: ["Código *", "Nombre *", "Categoría *", "Descripción", "Precio habitual", "Precio de oferta", "Moneda", "Etiqueta de oferta", "Controlar stock", "Stock disponible", "Foto principal", "Fotos adicionales", "Mensaje para WhatsApp", "Visible", "Título para buscadores", "Descripción para buscadores"],
     widths: [18, 34, 26, 60, 18, 18, 12, 22, 18, 18, 30, 48, 55, 14, 40, 60],
-    defaults: { 7: "ARS", 9: PRODUCT_IMPORT_UNCHECKED, 14: PRODUCT_IMPORT_CHECKED },
+    defaults: { 7: "$", 9: PRODUCT_IMPORT_UNCHECKED, 14: PRODUCT_IMPORT_CHECKED },
     validations: [
       { column: 3, formula: CATEGORY_FORMULA, allowBlank: false },
       { column: 7, values: PRODUCT_IMPORT_CURRENCIES, allowBlank: false },
@@ -43,13 +45,13 @@ const CONFIG = {
       ["CATÁLOGO", "Precio habitual es el valor normal. Si existe una promoción, completá también Precio de oferta."],
       ["CATÁLOGO", "El mensaje para WhatsApp puede personalizar la consulta de cada producto."],
     ],
-    example: ["REM-TV-01", "Control remoto universal para TV", "Electrónica", "Compatible con distintas marcas de televisores.", "18500", "15900", "ARS", "Oferta especial", PRODUCT_IMPORT_CHECKED, "8", "control-remoto-frente.jpg", "control-remoto-dorso.jpg, control-remoto-caja.jpg", "Hola, quiero consultar por el control remoto universal.", PRODUCT_IMPORT_CHECKED, "Control remoto universal para TV", "Consultá disponibilidad y precio del control remoto universal."],
+    example: ["REM-TV-01", "Control remoto universal para TV", "Electrónica", "Compatible con distintas marcas de televisores.", "18500", "15900", "$", "Oferta especial", PRODUCT_IMPORT_CHECKED, "8", "control-remoto-frente.jpg", "control-remoto-dorso.jpg, control-remoto-caja.jpg", "Hola, quiero consultar por el control remoto universal.", PRODUCT_IMPORT_CHECKED, "Control remoto universal para TV", "Consultá disponibilidad y precio del control remoto universal."],
   },
   store: {
     label: "Tienda",
     headers: ["Código *", "Nombre *", "Categoría *", "Descripción", "Precio", "Precio de oferta", "Moneda", "Controlar stock", "Stock disponible", "Foto principal", "Fotos adicionales", "Visible", "Destacado", "Oferta", "Recomendado", "Novedad", "Estado", "Título para buscadores", "Descripción para buscadores"],
     widths: [18, 34, 26, 60, 16, 18, 12, 18, 18, 30, 48, 14, 14, 14, 16, 14, 18, 40, 60],
-    defaults: { 7: "ARS", 8: PRODUCT_IMPORT_UNCHECKED, 12: PRODUCT_IMPORT_CHECKED, 13: PRODUCT_IMPORT_UNCHECKED, 14: PRODUCT_IMPORT_UNCHECKED, 15: PRODUCT_IMPORT_UNCHECKED, 16: PRODUCT_IMPORT_UNCHECKED, 17: "Publicado" },
+    defaults: { 7: "$", 8: PRODUCT_IMPORT_UNCHECKED, 12: PRODUCT_IMPORT_CHECKED, 13: PRODUCT_IMPORT_UNCHECKED, 14: PRODUCT_IMPORT_UNCHECKED, 15: PRODUCT_IMPORT_UNCHECKED, 16: PRODUCT_IMPORT_UNCHECKED, 17: "Publicado" },
     validations: [
       { column: 3, formula: CATEGORY_FORMULA, allowBlank: false },
       { column: 7, values: PRODUCT_IMPORT_CURRENCIES, allowBlank: false },
@@ -61,13 +63,13 @@ const CONFIG = {
       ["TIENDA", "Si un producto no tiene variantes, no completes la hoja VARIANTES."],
       ["TIENDA", "Para variantes repetí el Código del producto en cada combinación, por ejemplo Talle M / Color Negro."],
     ],
-    example: ["REM-AIRE-01", "Control remoto universal para aire acondicionado", "Controles remotos", "Compatible con múltiples marcas. Incluye instrucciones.", "22500", "19900", "ARS", PRODUCT_IMPORT_CHECKED, "12", "control-aire.jpg", "control-aire-caja.jpg", PRODUCT_IMPORT_CHECKED, PRODUCT_IMPORT_CHECKED, PRODUCT_IMPORT_CHECKED, PRODUCT_IMPORT_CHECKED, PRODUCT_IMPORT_UNCHECKED, "Publicado", "Control remoto universal para aire acondicionado", "Comprá un control remoto universal para aire acondicionado."],
+    example: ["REM-AIRE-01", "Control remoto universal para aire acondicionado", "Controles remotos", "Compatible con múltiples marcas. Incluye instrucciones.", "22500", "19900", "$", PRODUCT_IMPORT_CHECKED, "12", "control-aire.jpg", "control-aire-caja.jpg", PRODUCT_IMPORT_CHECKED, PRODUCT_IMPORT_CHECKED, PRODUCT_IMPORT_CHECKED, PRODUCT_IMPORT_CHECKED, PRODUCT_IMPORT_UNCHECKED, "Publicado", "Control remoto universal para aire acondicionado", "Comprá un control remoto universal para aire acondicionado."],
   },
   resto: {
     label: "Carta",
     headers: ["Código *", "Nombre *", "Categoría *", "Descripción", "Precio", "Precio de oferta", "Moneda", "Controlar stock", "Stock disponible", "Foto principal", "Fotos adicionales", "Visible", "Disponible para pedidos", "Requiere preparación", "Destacado", "Oferta", "Recomendado", "Novedad", "Estado", "Título para buscadores", "Descripción para buscadores"],
     widths: [18, 34, 26, 60, 16, 18, 12, 18, 18, 30, 48, 14, 24, 22, 14, 14, 16, 14, 18, 40, 60],
-    defaults: { 7: "ARS", 8: PRODUCT_IMPORT_UNCHECKED, 12: PRODUCT_IMPORT_CHECKED, 13: PRODUCT_IMPORT_CHECKED, 14: PRODUCT_IMPORT_CHECKED, 15: PRODUCT_IMPORT_UNCHECKED, 16: PRODUCT_IMPORT_UNCHECKED, 17: PRODUCT_IMPORT_UNCHECKED, 18: PRODUCT_IMPORT_UNCHECKED, 19: "Publicado" },
+    defaults: { 7: "$", 8: PRODUCT_IMPORT_UNCHECKED, 12: PRODUCT_IMPORT_CHECKED, 13: PRODUCT_IMPORT_CHECKED, 14: PRODUCT_IMPORT_CHECKED, 15: PRODUCT_IMPORT_UNCHECKED, 16: PRODUCT_IMPORT_UNCHECKED, 17: PRODUCT_IMPORT_UNCHECKED, 18: PRODUCT_IMPORT_UNCHECKED, 19: "Publicado" },
     validations: [
       { column: 3, formula: CATEGORY_FORMULA, allowBlank: false },
       { column: 7, values: PRODUCT_IMPORT_CURRENCIES, allowBlank: false },
@@ -79,7 +81,7 @@ const CONFIG = {
       ["CARTA", "Disponible para pedidos permite mostrar un plato como agotado temporalmente sin ocultarlo."],
       ["CARTA", "Requiere preparación debe marcarse cuando el producto tenga que enviarse a cocina."],
     ],
-    example: ["PIZZA-MUZZA", "Pizza de muzzarella", "Pizzas", "Salsa de tomate, muzzarella, aceitunas y orégano.", "14500", "12900", "ARS", PRODUCT_IMPORT_UNCHECKED, "", "pizza-muzzarella.jpg", "pizza-muzzarella-2.jpg", PRODUCT_IMPORT_CHECKED, PRODUCT_IMPORT_CHECKED, PRODUCT_IMPORT_CHECKED, PRODUCT_IMPORT_CHECKED, PRODUCT_IMPORT_CHECKED, PRODUCT_IMPORT_CHECKED, PRODUCT_IMPORT_UNCHECKED, "Publicado", "Pizza de muzzarella", "Pizza preparada en el momento."],
+    example: ["PIZZA-MUZZA", "Pizza de muzzarella", "Pizzas", "Salsa de tomate, muzzarella, aceitunas y orégano.", "14500", "12900", "$", PRODUCT_IMPORT_UNCHECKED, "", "pizza-muzzarella.jpg", "pizza-muzzarella-2.jpg", PRODUCT_IMPORT_CHECKED, PRODUCT_IMPORT_CHECKED, PRODUCT_IMPORT_CHECKED, PRODUCT_IMPORT_CHECKED, PRODUCT_IMPORT_CHECKED, PRODUCT_IMPORT_CHECKED, PRODUCT_IMPORT_UNCHECKED, "Publicado", "Pizza de muzzarella", "Pizza preparada en el momento."],
   },
 };
 

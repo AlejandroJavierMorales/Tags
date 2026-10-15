@@ -3,19 +3,6 @@ import { normalizeDirectoryDbValue } from "./normalizeDirectoryDbValue";
 export { directoryImageUrl, directoryWhatsappUrl } from "./directoryPublicFormatting";
 
 const PAGE_SIZE = 12;
-const PUBLIC_LISTING_ACCESS_SQL = `(sl.is_free=1 OR EXISTS (
-  SELECT 1
-    FROM tags_subscriptions access_subscription
-   WHERE access_subscription.business_id=l.business_id
-     AND access_subscription.id=(SELECT MAX(latest_access.id) FROM tags_subscriptions latest_access WHERE latest_access.business_id=l.business_id)
-     AND access_subscription.status IN ('active','trial','past_due')
-     AND (
-       access_subscription.auto_disable_on_expire=0
-       OR access_subscription.expires_at IS NULL
-       OR DATE_ADD(access_subscription.expires_at,INTERVAL COALESCE(access_subscription.grace_days,0) DAY)>=NOW()
-       OR access_subscription.admin_override_until>=NOW()
-     )
-))`;
 
 function integer(value, fallback = 0) {
   const parsed = Number.parseInt(String(value ?? ""), 10);
@@ -49,7 +36,6 @@ export async function getDirectoryPublicData(searchParams = {}, siteCode = "cala
              INNER JOIN tags_directory_site_listings sl ON sl.listing_id=lt.listing_id
              INNER JOIN tags_directory_listings l ON l.id=sl.listing_id AND l.status='published'
              WHERE tc.ancestor_id=n.id AND sl.site_id=? AND sl.publication_status='published'
-               AND ${PUBLIC_LISTING_ACCESS_SQL}
            )
            OR EXISTS (
              SELECT 1 FROM tags_directory_taxonomy_closure tc
@@ -89,7 +75,6 @@ export async function getDirectoryPublicData(searchParams = {}, siteCode = "cala
        INNER JOIN tags_directory_listing_taxonomy lt ON lt.taxonomy_node_id=tc.descendant_id
        INNER JOIN tags_directory_site_listings sl ON sl.listing_id=lt.listing_id AND sl.site_id=? AND sl.publication_status='published'
        INNER JOIN tags_directory_listings l ON l.id=sl.listing_id AND l.status='published'
-       WHERE ${PUBLIC_LISTING_ACCESS_SQL}
        GROUP BY tc.ancestor_id
      ) provider_counts ON provider_counts.taxonomy_node_id=n.id
      LEFT JOIN (
@@ -109,7 +94,7 @@ export async function getDirectoryPublicData(searchParams = {}, siteCode = "cala
   const categories = normalizeDirectoryDbValue(categoriesRows);
   if (!selectedCategory) categories.sort((left, right) => String(left.name || "").localeCompare(String(right.name || ""), "es", { sensitivity: "base" }));
 
-  const where = ["sl.site_id=?", "sl.publication_status='published'", "l.status='published'", PUBLIC_LISTING_ACCESS_SQL];
+  const where = ["sl.site_id=?", "sl.publication_status='published'", "l.status='published'"];
   const values = [site.id];
   const tourismWhere = ["content.site_id=?", "content.status='published'", "(content.valid_until IS NULL OR DATE(content.valid_until)>=CURRENT_DATE())"];
   const tourismValues = [site.id];
@@ -206,7 +191,6 @@ export async function getDirectoryPublicData(searchParams = {}, siteCode = "cala
        INNER JOIN tags_directory_listings l ON l.id=sl.listing_id AND l.status='published'
        INNER JOIN tags_businesses b ON b.id=l.business_id
        WHERE sl.site_id=? AND sl.publication_status='published' AND sl.is_free=0 AND sl.is_featured=1
-         AND ${PUBLIC_LISTING_ACCESS_SQL}
        ORDER BY sl.sort_order,l.display_name LIMIT 8`,
       [site.id]
     );
@@ -306,7 +290,7 @@ export async function getDirectoryListingBySlug(slug, siteCode = "calamuchitar")
   if (!listing) return null;
   const [logoMedia, galleryMedia, taxonomy] = await Promise.all([
     db.execute("SELECT id,media_type,url,alt_text FROM tags_directory_media WHERE listing_id=? AND media_type='logo' AND is_active=1 ORDER BY sort_order,id LIMIT 1", [listing.id]),
-    db.execute("SELECT id,media_type,url,alt_text FROM tags_directory_media WHERE listing_id=? AND media_type IN ('cover','gallery') AND is_active=1 ORDER BY FIELD(media_type,'cover','gallery'),sort_order,id LIMIT 8", [listing.id]),
+    db.execute("SELECT id,media_type,url,alt_text FROM tags_directory_media WHERE listing_id=? AND media_type IN ('cover','gallery') AND is_active=1 ORDER BY FIELD(media_type,'cover','gallery'),sort_order,id LIMIT 12", [listing.id]),
     db.execute("SELECT n.id,n.name,n.depth FROM tags_directory_listing_taxonomy lt INNER JOIN tags_directory_taxonomy_nodes n ON n.id=lt.taxonomy_node_id WHERE lt.listing_id=? ORDER BY n.depth,n.name", [listing.id]),
   ]);
   return {

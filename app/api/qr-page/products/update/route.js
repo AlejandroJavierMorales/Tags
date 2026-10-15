@@ -13,6 +13,7 @@ import { db }
 import { requireQRPageAccess }
     from "@/app/modules/qr-page/lib/requireQRPageAccess";
 import { refreshDestinationBusinessProjection } from "@/app/modules/destination-ai/server/refreshDestinationBusinessProjection";
+import { normalizePlatformCurrency } from "@/app/lib/platformCurrencies";
 
 const MAX_PRODUCT_IMAGES = 12;
 
@@ -173,7 +174,7 @@ export async function POST(req) {
                 price || null,
                 old_price || null,
                 discount_label || null,
-                currency || "ARS",
+                normalizePlatformCurrency(currency, "ARS"),
                 mainImage,
                 JSON.stringify(
                     finalImages

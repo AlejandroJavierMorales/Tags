@@ -26,8 +26,8 @@ function socialConfig(value) {
 function baseSlot(section) {
   if (section?.settings_json?.directoryBaseSlot) return section.settings_json.directoryBaseSlot;
   const blockType = section?.blocks?.[0]?.type;
-  if (blockType === "web_section" && section.title === "Presentación") return "presentation";
-  if (blockType === "gallery") return "gallery";
+  if ((blockType === "web_section" && section.title === "Presentación") || section?.type === "hero") return "presentation";
+  if (blockType === "gallery" || section?.type === "gallery") return "gallery";
   if (blockType === "contact_info") return "contact";
   if (blockType === "catalog" || section?.type === "catalog") return "catalog";
   if (blockType === "benefits") return "benefits";
@@ -35,7 +35,7 @@ function baseSlot(section) {
   return "web";
 }
 
-export default function DirectoryProviderRenderer({ data, web = null, standalone = false, embeddedStoreContent = null, embeddedStoreName = "Tienda", embeddedRestoContent = null, embeddedRestoName = "Gastronomía", embeddedTurnosContent = null, embeddedTurnosName = "Reservas", embeddedEventsContent = null, embeddedEventsName = "Eventos" }) {
+export default function DirectoryProviderRenderer({ data, web = null, standalone = false, catalogOnly = false, embeddedStoreContent = null, embeddedStoreName = "Tienda", embeddedRestoContent = null, embeddedRestoName = "Gastronomía", embeddedTurnosContent = null, embeddedTurnosName = "Reservas", embeddedEventsContent = null, embeddedEventsName = "Eventos" }) {
   const { listing, media = [] } = data;
   const page = web?.page || null;
   const sections = [...(web?.sections || [])].sort((a,b)=>Number(a.sort_order)-Number(b.sort_order));
@@ -60,7 +60,7 @@ export default function DirectoryProviderRenderer({ data, web = null, standalone
     embeddedEventsContent && moduleSettings.events?.enabled !== false ? { code: "events", title: embeddedEventsName, sortOrder: Number(moduleSettings.events?.sortOrder || 1030), content: embeddedEventsContent } : null,
     reviews && moduleSettings.reviewsInvitation?.enabled !== false ? { code: "reviewsInvitation", anchorCode: "reviews-invitation", title: moduleSettings.reviewsInvitation?.content?.menuLabel || "Dejar una reseña", sortOrder: Number(moduleSettings.reviewsInvitation?.sortOrder || 1040), content: <DirectoryReviewsModule variant="invitation" data={reviews} content={moduleSettings.reviewsInvitation?.content} useOwnTheme={reviewUsesOwnTheme} directoryThemeTokens={tokens} /> } : null,
     reviews && moduleSettings.reviewsSlider?.enabled !== false ? { code: "reviewsSlider", anchorCode: "reviews-slider", title: moduleSettings.reviewsSlider?.content?.menuLabel || "Opiniones", sortOrder: Number(moduleSettings.reviewsSlider?.sortOrder || 1050), content: <DirectoryReviewsModule variant="slider" data={reviews} content={moduleSettings.reviewsSlider?.content} useOwnTheme={reviewUsesOwnTheme} directoryThemeTokens={tokens} /> } : null
-  ].filter(Boolean).sort((a, b) => a.sortOrder - b.sortOrder);
+  ].filter(Boolean).filter(() => !catalogOnly).sort((a, b) => a.sortOrder - b.sortOrder);
   const visibleCatalogProducts = (web?.products || []).filter(product => Number(product.is_visible));
   const benefits = web?.benefits || [];
   const loyalty = web?.loyalty || null;
@@ -70,7 +70,7 @@ export default function DirectoryProviderRenderer({ data, web = null, standalone
     const configured = Array.isArray(block?.content_json?.images)
       ? block.content_json.images.filter(image => image?.url).map((image, index) => ({ id: `gallery-${section.id}-${index}`, url: image.url, alt_text: image.alt || "" }))
       : [];
-    return (configured.length ? configured : media.filter(item => item.media_type === "gallery" && item.url)).slice(0, 8);
+    return (configured.length ? configured : media.filter(item => item.media_type === "gallery" && item.url)).slice(0, 12);
   }
 
   function sectionHasPublicContent(section) {
@@ -85,7 +85,7 @@ export default function DirectoryProviderRenderer({ data, web = null, standalone
     return true;
   }
 
-  const publicSections = sections.filter(sectionHasPublicContent);
+  const publicSections = sections.filter(sectionHasPublicContent).filter(section => !catalogOnly || baseSlot(section) === "catalog");
   const publicSectionById = new Map(publicSections.map(section => [Number(section.id), section]));
   const configuredGroups = getDirectorySectionGroups(page?.global_styles || {}).map(group => ({
     ...group,
@@ -137,7 +137,10 @@ export default function DirectoryProviderRenderer({ data, web = null, standalone
       return <DirectoryProviderGallery images={galleryImages(section)} providerName={mergedListing.display_name} content={content} styles={styles} />;
     }
     if (slot === "contact") return <DirectoryContactBlock listing={mergedListing} social={social} content={content} styles={styles} />;
-    if (slot === "catalog") return <DirectoryCatalogBlock products={visibleCatalogProducts} page={page} content={content} styles={styles} listingSlug={listing.slug} />;
+    if (slot === "catalog") {
+      const standaloneCatalog = section.settings_json?.catalogStandalone || {};
+      return <DirectoryCatalogBlock products={visibleCatalogProducts} page={page} content={catalogOnly ? { ...content, title: standaloneCatalog.title || content.title, subtitle: standaloneCatalog.subtitle || content.subtitle } : content} styles={styles} listingSlug={listing.slug} defaultCategory={catalogOnly ? standaloneCatalog.defaultCategory : "all"} />;
+    }
     if (slot === "benefits") return <DirectoryBenefitsBlock benefits={benefits} content={content} styles={styles} />;
     if (slot === "loyalty") return <DirectoryLoyaltyBlock program={loyalty} content={content} styles={styles} />;
     if (slot === "presentation") {
@@ -198,6 +201,6 @@ export default function DirectoryProviderRenderer({ data, web = null, standalone
     })}</main>
     {standalone && <DirectoryProviderFooter listing={mergedListing} logo={logo} social={social} config={page?.footer_config || {}} />}
     <DirectoryFloatingActions whatsapp={mergedListing.whatsapp} showWhatsapp={page?.global_styles?.showFloatingWhatsapp!==false} showBackToTop={page?.global_styles?.showBackToTop!==false} />
-    {web?.aiChatConfig && moduleSettings.chatbot?.enabled !== false && <ChatWidget config={web.aiChatConfig} />}
+    {!catalogOnly && web?.aiChatConfig && moduleSettings.chatbot?.enabled !== false && <ChatWidget config={web.aiChatConfig} />}
   </div>;
 }

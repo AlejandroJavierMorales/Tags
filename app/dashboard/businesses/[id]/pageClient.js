@@ -20,6 +20,7 @@ import QRDownloadModal from "@/app/components/QRDownloadModal";
 import QRPageSelectorModal from "@/app/components/businesses/QRPageSelectorModal";
 import QRPageActivateModal from "@/app/components/businesses/QRPageActivateModal";
 import BusinessWorkspaceOverview from "@/app/components/businesses/BusinessWorkspaceOverview";
+import BusinessTutorialShortcut from "@/app/modules/directory/components/client/BusinessTutorialShortcut";
 import PortalDashboard from "@/app/components/businesses/PortalDashboard";
 import {
   buildPortalDashboard,
@@ -889,6 +890,7 @@ export default function BusinessDetailClient({ session, isAdmin, channel = null,
       />}
       </>}
 
+      <BusinessTutorialShortcut businessId={id} />
       <BusinessWorkspaceOverview
         business={business}
         subscriptionSummary={subscriptionSummary}

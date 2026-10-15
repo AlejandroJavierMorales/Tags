@@ -15,7 +15,7 @@ export function formatStorePrice(value, currency = "ARS") {
     const label = String(currency || "ARS").toUpperCase() === "ARS"
         ? "$"
         : String(currency || "").toUpperCase() === "USD"
-            ? "US$"
+            ? "U$S"
             : String(currency || "").toUpperCase();
     return `${label} ${number.toLocaleString("es-AR", { maximumFractionDigits: 2 })}`;
 }

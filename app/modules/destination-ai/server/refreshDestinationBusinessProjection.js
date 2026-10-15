@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
-import { db } from "@/app/lib/tags-db";
+import { db } from "../../../lib/tags-db.js";
 import { extractPublishedCapacity } from "./destinationCapacity.js";
+import { collectBusinessPublicKnowledge } from "./collectBusinessPublicKnowledge.js";
 
 const OPTIONAL_SCHEMA_ERRORS = new Set(["ER_NO_SUCH_TABLE", "ER_BAD_FIELD_ERROR"]);
 
@@ -29,25 +30,6 @@ function parseJson(value) {
   try { return JSON.parse(value); } catch { return {}; }
 }
 
-function publicText(value, output = []) {
-  if (typeof value === "string") {
-    const text = clean(value, 10000);
-    if (text && !/^https?:\/\//i.test(text) && !/^#[0-9a-f]{3,8}$/i.test(text)) output.push(text);
-    return output;
-  }
-  if (Array.isArray(value)) {
-    value.forEach(item => publicText(item, output));
-    return output;
-  }
-  if (value && typeof value === "object") {
-    for (const [key, item] of Object.entries(value)) {
-      if (/^(?:url|image|images|storagePath|styles?|color|font|animation)/i.test(key)) continue;
-      publicText(item, output);
-    }
-  }
-  return output;
-}
-
 function coordinates(latitude, longitude, directoryConfig) {
   const lat = numberOrNull(latitude), lon = numberOrNull(longitude);
   if (lat == null || lon == null || lat < -90 || lat > 90 || lon < -180 || lon > 180 || (!lat && !lon)) return [null, null];
@@ -65,7 +47,7 @@ async function loadItems(connection, businessId) {
            p.image_url,NULL seo_title,p.seo_description,p.updated_at source_updated_at
       FROM tags_qr_page_products p
       INNER JOIN tags_qr_pages page ON page.id=p.page_id AND page.status='published'
-      INNER JOIN tags_directory_listings l ON l.qr_page_id=page.id AND l.business_id=?
+      INNER JOIN tags_directory_listings l ON l.business_id=page.business_id AND l.business_id=?
      WHERE l.status='published' AND p.is_visible=1`, [businessId]);
   const [storeProducts] = await connection.query(`
     SELECT l.id listing_id,p.id source_id,'store_product' source_type,IF(st.app_type='resto','dish','product') item_type,
@@ -103,6 +85,16 @@ export async function refreshDestinationBusinessProjection(businessId) {
     const [locations] = await connection.query(`
       SELECT ds.id site_id,ds.primary_host,ds.directory_config,l.id listing_id,l.business_id,l.qr_page_id,
              sl.slug,sl.is_free,sl.is_featured,COALESCE(NULLIF(b.display_name,''),NULLIF(b.name,''),l.display_name) name,
+             (qp.id IS NOT NULL) has_published_web,
+             EXISTS(
+               SELECT 1 FROM tags_subscriptions subscription
+               WHERE subscription.business_id=l.business_id
+                 AND subscription.id=(SELECT MAX(latest.id) FROM tags_subscriptions latest WHERE latest.business_id=l.business_id)
+                 AND subscription.status IN ('active','trial','past_due')
+                 AND (subscription.auto_disable_on_expire=0 OR subscription.expires_at IS NULL
+                   OR DATE_ADD(subscription.expires_at,INTERVAL COALESCE(subscription.grace_days,0) DAY)>=NOW()
+                   OR subscription.admin_override_until>=NOW())
+             ) has_active_subscription,
              COALESCE(NULLIF(l.short_description,''),NULLIF(l.description,''),b.description) summary,
              l.short_description,l.description,b.description business_description,sl.seo_title,sl.seo_description,sl.seo_keywords,
              qp.title page_title,qp.description page_description,qp.seo_title page_seo_title,qp.seo_description page_seo_description,
@@ -123,27 +115,21 @@ export async function refreshDestinationBusinessProjection(businessId) {
     let itemCount = 0;
 
     for (const row of locations) {
-      const [blockRows, knowledgeRows, profileRows] = await Promise.all([
-        row.qr_page_id ? connection.query(`SELECT bl.content_json FROM tags_qr_page_blocks bl INNER JOIN tags_qr_page_sections sec ON sec.id=bl.section_id AND sec.is_visible=1 WHERE sec.page_id=? AND bl.is_visible=1 ORDER BY sec.sort_order,bl.sort_order`, [row.qr_page_id]).then(result => result[0]) : [],
-        connection.query("SELECT title,topics,content FROM tags_ai_chatbot_knowledge WHERE business_id=? AND is_active=1 ORDER BY id", [id]).then(result => result[0]),
-        connection.query("SELECT display_value,description FROM tags_ai_business_profile_entries WHERE site_id=? AND business_id=? AND status='active' ORDER BY id", [row.site_id, id]).then(result => result[0]),
-      ]);
+      const publicKnowledge = await collectBusinessPublicKnowledge(connection, { businessId: id, siteId: row.site_id });
       const offerText = clean([
         row.short_description,row.description,row.business_description,row.seo_title,row.seo_description,row.seo_keywords,
         row.page_title,row.page_description,row.page_seo_title,row.page_seo_description,
-        ...blockRows.flatMap(block => publicText(parseJson(block.content_json))),
-        ...knowledgeRows.flatMap(item => [item.title,item.topics,item.content]),
-        ...profileRows.flatMap(item => [item.display_value,item.description]),
+        publicKnowledge.text,
       ].filter(Boolean).join(" | ")) || null;
       const [latitude, longitude] = coordinates(row.latitude, row.longitude, row.directory_config);
-      const projection = { name:clean(row.name,255),summary:clean(row.summary,10000)||null,offerText,latitude,longitude,imageUrl:clean(row.image_url,2000)||null };
+      const projection = { name:clean(row.name,255),summary:clean(row.summary,10000)||null,offerText,knowledgeSources:publicKnowledge.sourceTypes,latitude,longitude,imageUrl:clean(row.image_url,2000)||null };
       const publicUrl = row.primary_host && row.slug ? `https://${clean(row.primary_host,255).replace(/^https?:\/\//i,"").replace(/\/$/,"")}/${row.slug}` : null;
       const qualityScore = [projection.summary,row.locality_name,projection.imageUrl,row.phone||row.whatsapp,latitude!=null&&longitude!=null].filter(Boolean).length*20;
       const [upsert] = await connection.query(`INSERT INTO tags_ai_search_locations
         (site_id,listing_id,business_id,canonical_key,name,summary,offer_text,locality_id,locality_name,address,latitude,longitude,public_url,phone,whatsapp,website_url,primary_image_url,relationship,is_featured,visibility,quality_score,source_updated_at,source_hash,indexed_at)
         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'public',?,?,?,NOW())
         ON DUPLICATE KEY UPDATE business_id=VALUES(business_id),canonical_key=VALUES(canonical_key),name=VALUES(name),summary=VALUES(summary),offer_text=VALUES(offer_text),locality_id=VALUES(locality_id),locality_name=VALUES(locality_name),address=VALUES(address),latitude=VALUES(latitude),longitude=VALUES(longitude),public_url=VALUES(public_url),phone=VALUES(phone),whatsapp=VALUES(whatsapp),website_url=VALUES(website_url),primary_image_url=VALUES(primary_image_url),relationship=VALUES(relationship),is_featured=VALUES(is_featured),visibility='public',quality_score=VALUES(quality_score),source_updated_at=VALUES(source_updated_at),source_hash=VALUES(source_hash),indexed_at=NOW(),id=LAST_INSERT_ID(id)`,
-        [row.site_id,row.listing_id,id,`business_location:${row.listing_id}`,projection.name,projection.summary,offerText,row.locality_id,clean(row.locality_name,190)||null,clean(row.address,500)||null,latitude,longitude,publicUrl,clean(row.phone,80)||null,clean(row.whatsapp,80)||null,clean(row.website_url,2000)||null,projection.imageUrl,Number(row.is_free)?"free":"subscriber",Number(row.is_featured)?1:0,qualityScore,row.source_updated_at,hash(projection)]);
+        [row.site_id,row.listing_id,id,`business_location:${row.listing_id}`,projection.name,projection.summary,offerText,row.locality_id,clean(row.locality_name,190)||null,clean(row.address,500)||null,latitude,longitude,publicUrl,clean(row.phone,80)||null,clean(row.whatsapp,80)||null,clean(row.website_url,2000)||null,projection.imageUrl,(Number(row.has_active_subscription)||Number(row.has_published_web)||!Number(row.is_free))?"subscriber":"free",Number(row.is_featured)?1:0,qualityScore,row.source_updated_at,hash(projection)]);
       const locationId = Number(upsert.insertId);
 
       await connection.query("DELETE FROM tags_ai_search_location_categories WHERE site_id=? AND search_location_id=? AND source_type='directory'", [row.site_id, locationId]);

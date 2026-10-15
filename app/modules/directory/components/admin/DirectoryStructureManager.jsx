@@ -11,7 +11,7 @@ import DirectorySectionGroupEditor from "./DirectorySectionGroupEditor";
 import "./DirectoryStructureManager.css";
 
 async function responsePayload(response) { const text = await response.text(); try { return text ? JSON.parse(text) : {}; } catch { return {}; } }
-function kindOf(section) { const type = section?.blocks?.[0]?.type; return section?.settings_json?.directoryBaseSlot || (type === "gallery" ? "gallery" : type === "contact_info" ? "contact" : type === "catalog" || section.type === "catalog" ? "catalog" : type === "benefits" ? "benefits" : type === "loyalty_program" ? "loyalty" : "web"); }
+function kindOf(section) { const type = section?.blocks?.[0]?.type; const sectionType=String(section?.type||"").toLowerCase(); const slot=section?.settings_json?.directoryBaseSlot; if(slot)return slot==="legacy-web-section"?"web":slot; return type === "gallery" || sectionType === "gallery" ? "gallery" : type === "contact_info" ? "contact" : type === "catalog" || sectionType === "catalog" ? "catalog" : type === "benefits" ? "benefits" : type === "loyalty_program" ? "loyalty" : sectionType === "hero" || String(section?.title||"").trim().toLocaleLowerCase()==="presentación" ? "presentation" : "web"; }
 
 const META = {
   presentation: [FaUser, "Presentación", "Título, textos y párrafos."],
@@ -48,7 +48,7 @@ function createGroupId() {
   return `grupo-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-export default function DirectoryStructureManager({ businessId, pageId, sections = [], web = null, presentationFallback = null, onReload, onEditModule }) {
+export default function DirectoryStructureManager({ businessId, pageId, sections = [], web = null, contentFallback = null, onReload, onEditModule }) {
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState(null);
   const [editingGroup, setEditingGroup] = useState(null);
@@ -175,6 +175,7 @@ export default function DirectoryStructureManager({ businessId, pageId, sections
   }
 
   function add() { run(async () => { const created = await post("/api/qr-page/sections/create", { type: "content", title: "Nueva sección", settings_json: { directoryBaseSlot: "web" }, styles_json: {} }); await post("/api/qr-page/blocks/create", { sectionId: created.sectionId, type: "web_section", content_json: { eyebrow: "", title: "Nueva sección", subtitle: "", highlightedText: "", paragraphs: ["Escribí aquí el contenido de esta sección."], images: [], imageLayout: "grid" }, styles_json: { alignment: "left" } }); }, "Sección creada"); }
+  function addGallery() { if (orderedSections.some(section => kindOf(section) === "gallery")) return showAlert({ title: "La galería ya existe", text: "Editá la galería existente en la lista.", icon: "info" }); run(async () => { const created = await post("/api/qr-page/sections/create", { type: "content", title: "Galería", settings_json: { directoryBaseSlot: "gallery" }, styles_json: {} }); await post("/api/qr-page/blocks/create", { sectionId: created.sectionId, type: "gallery", content_json: { eyebrow: "GALERÍA", title: "Galería de imágenes", subtitle: "", images: [], maxImages: 12, imageLayout: "grid" }, styles_json: { alignment: "left" } }); }, "Galería creada"); }
   function addBenefits() { if (orderedSections.some(section => kindOf(section) === "benefits")) return showAlert({ title: "Beneficios ya existe", text: "Editá la sección existente en la lista.", icon: "info" }); run(async () => { const created = await post("/api/qr-page/sections/create", { type: "content", title: "Beneficios", settings_json: { directoryBaseSlot: "benefits" }, styles_json: {} }); await post("/api/qr-page/blocks/create", { sectionId: created.sectionId, type: "benefits", content_json: { eyebrow: "BENEFICIOS", title: "Beneficios para vos", subtitle: "Promociones vigentes de este negocio" }, styles_json: { alignment: "left" } }); }, "Sección de beneficios creada"); }
   function addLoyalty() { if (orderedSections.some(section => kindOf(section) === "loyalty")) return showAlert({ title: "Fidelización ya existe", text: "Editá la sección existente en la lista.", icon: "info" }); run(async () => { const response = await fetch(`/api/loyalty/admin/program?business_id=${businessId}`); const status = await responsePayload(response); if (!response.ok || !status.program || status.program.status !== "active") throw new Error("Primero configurá y activá el programa de fidelización del negocio."); const created = await post("/api/qr-page/sections/create", { type: "content", title: "Fidelización", settings_json: { directoryBaseSlot: "loyalty" }, styles_json: {} }); await post("/api/qr-page/blocks/create", { sectionId: created.sectionId, type: "loyalty_program", content_json: { eyebrow: "PROGRAMA DE FIDELIZACIÓN", title: status.program.name, subtitle: status.program.description || "Sumate y accedé a recompensas por elegirnos.", joinLabel: "Quiero participar", memberLabel: "Ver mi progreso", rewardLimit: 3 }, styles_json: { alignment: "left" } }); }, "Sección de fidelización creada"); }
   function toggleSection(section) { run(() => post("/api/qr-page/sections/update", { sectionId: section.id, type: section.type, title: section.title, is_visible: Number(section.is_visible) ? 0 : 1, settings_json: section.settings_json || {}, styles_json: section.styles_json || {} })); }
@@ -183,7 +184,7 @@ export default function DirectoryStructureManager({ businessId, pageId, sections
 
   return <div className="tags_directory_structure">
     {busy && <div className="tags_directory_structure_busy"><TagsSpinner /></div>}
-    <header><div><h2>Estructura de la Web</h2><p>Ordená en una sola lista el contenido, los grupos y los módulos contratados.</p></div><div><button type="button" onClick={add}><FaPlus /> Agregar sección</button><button type="button" onClick={startGroup}><FaLayerGroup /> Agregar grupo</button><button type="button" onClick={addBenefits}><FaTag /> Agregar beneficios</button><button type="button" onClick={addLoyalty}><FaAward /> Agregar fidelización</button></div></header>
+    <header><div><h2>Estructura de la Web</h2><p>Ordená en una sola lista el contenido, los grupos y los módulos contratados.</p></div><div><button type="button" onClick={add}><FaPlus /> Agregar sección</button><button type="button" onClick={addGallery}><FaImages /> Agregar galería</button><button type="button" onClick={startGroup}><FaLayerGroup /> Agregar grupo</button><button type="button" onClick={addBenefits}><FaTag /> Agregar beneficios</button><button type="button" onClick={addLoyalty}><FaAward /> Agregar fidelización</button></div></header>
     <div className="tags_directory_structure_list">{items.map((item, index) => {
       if (item.type === "module") {
         const [Icon, label, description] = MODULE_META[item.code];
@@ -200,7 +201,7 @@ export default function DirectoryStructureManager({ businessId, pageId, sections
       const section = item.section, kind = kindOf(section), [Icon, label, description] = META[kind] || META.web;
       return <article className={Number(section.is_visible) ? "" : "is_hidden"} key={item.key}><div className="tags_directory_structure_identity"><span><Icon /></span><div><small>{label}</small><h3>{section.title || label}</h3><p>{description}</p></div></div><div className="tags_directory_structure_actions"><button type="button" onClick={() => move(index, -1)} disabled={index === 0}><FaArrowUp /><span>Subir</span></button><button type="button" onClick={() => move(index, 1)} disabled={index === items.length - 1}><FaArrowDown /><span>Bajar</span></button><button type="button" onClick={() => setEditing(section)}><FaPen /><span>Editar</span></button><button type="button" onClick={() => toggleSection(section)}>{Number(section.is_visible) ? <FaEye /> : <FaEyeSlash />}<span>{Number(section.is_visible) ? "Visible" : "Oculto"}</span></button>{["web", "benefits", "loyalty"].includes(kind) && <button type="button" className="danger" onClick={() => remove(section)}><FaTrash /><span>Eliminar</span></button>}</div></article>;
     })}</div>
-    {editing && <DirectorySectionEditor businessId={businessId} pageId={pageId} section={editing} presentationFallback={presentationFallback} onClose={() => setEditing(null)} onSaved={onReload} />}
+    {editing && <DirectorySectionEditor businessId={businessId} pageId={pageId} section={editing} contentFallback={contentFallback} onClose={() => setEditing(null)} onSaved={onReload} />}
     {editingGroup && <DirectorySectionGroupEditor businessId={businessId} pageId={pageId} group={editingGroup} groups={groups} sections={orderedSections} onClose={() => setEditingGroup(null)} onSave={saveGroup} />}
   </div>;
 }

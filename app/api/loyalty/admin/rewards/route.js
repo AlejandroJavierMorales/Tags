@@ -9,6 +9,7 @@ export const dynamic = "force-dynamic";
 import { db } from "@/app/lib/tags-db";
 import { getLoyaltyAdminScope, loyaltyApiError } from "@/app/modules/loyalty/lib/loyaltyAdminScope";
 import { requireActiveLoyaltyAddon } from "@/app/modules/loyalty/lib/loyaltyAccess";
+import { refreshDestinationBusinessProjection } from "@/app/modules/destination-ai/server/refreshDestinationBusinessProjection";
 
 const REWARD_TYPES = new Set(["percentage", "fixed_amount", "free_product", "free_service", "custom"]);
 
@@ -65,6 +66,7 @@ export async function POST(request) {
             ]
         );
         const [[reward]] = await db.query(`SELECT * FROM tags_loyalty_rewards WHERE id=?`, [result.insertId]);
+        await refreshDestinationBusinessProjection(businessId).catch(error => console.error("DESTINATION PROJECTION LOYALTY REWARD CREATE SYNC ERROR", { businessId, error }));
         return Response.json({ success: true, reward });
     } catch (error) {
         console.error("LOYALTY REWARDS POST ERROR", error);
@@ -99,6 +101,7 @@ export async function PATCH(request) {
             values
         );
         if (!result.affectedRows) throw new Error("Recompensa no encontrada");
+        await refreshDestinationBusinessProjection(businessId).catch(error => console.error("DESTINATION PROJECTION LOYALTY REWARD UPDATE SYNC ERROR", { businessId, error }));
         return Response.json({ success: true });
     } catch (error) {
         console.error("LOYALTY REWARDS PATCH ERROR", error);
@@ -196,6 +199,7 @@ export async function DELETE(request) {
         }
 
         await connection.commit();
+        await refreshDestinationBusinessProjection(businessId).catch(error => console.error("DESTINATION PROJECTION LOYALTY REWARD DELETE SYNC ERROR", { businessId, error }));
         return Response.json({
             success: true,
             deleted: {

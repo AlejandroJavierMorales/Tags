@@ -1,4 +1,4 @@
-const MAX_IMAGES = 10;
+const MAX_IMAGES = 12;
 
 function text(value, limit) {
     return String(value || "").trim().slice(0, limit);

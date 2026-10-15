@@ -28,7 +28,7 @@ export function directorySectionSlot(section) {
     }
     const blockType = section?.blocks?.[0]?.type;
     return settings.directoryBaseSlot
-        || (blockType === "gallery" ? "gallery"
+        || (blockType === "gallery" || section?.type === "gallery" ? "gallery"
             : blockType === "contact_info" ? "contact"
                 : blockType === "catalog" || section?.type === "catalog" ? "catalog"
                     : blockType === "benefits" ? "benefits"

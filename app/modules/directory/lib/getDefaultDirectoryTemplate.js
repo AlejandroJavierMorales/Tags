@@ -79,7 +79,7 @@ export function getDefaultDirectoryTemplate(business) {
                 sort_order: 2,
                 settings_json: { directoryBaseSlot: "gallery" },
                 styles_json: {},
-                blocks: [{ type: "gallery", sort_order: 1, content_json: { eyebrow: "GALERÍA", title: `Conocé ${business.name}`, subtitle: "", images: [], maxImages: 8, imageLayout: "grid" }, styles_json: { alignment: "left" } }]
+                blocks: [{ type: "gallery", sort_order: 1, content_json: { eyebrow: "GALERÍA", title: `Conocé ${business.name}`, subtitle: "", images: [], maxImages: 12, imageLayout: "grid" }, styles_json: { alignment: "left" } }]
             },
             {
                 type: "content",

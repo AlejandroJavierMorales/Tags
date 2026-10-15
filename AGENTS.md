@@ -24,6 +24,8 @@ Este archivo resume el contexto funcional y técnico conocido del proyecto para 
 - Comunicar cada etapa terminada y esperar aprobación cuando el usuario lo solicite.
 - No usar datos falsos ni APIs inventadas para completar funcionalidades.
 - Validar cambios con comprobaciones locales no destructivas; no asumir que una compilación o servidor está disponible.
+- La visibilidad de un prestador es crítica y la autoridad es su estado explícito de publicación. Una publicación no puede quedar invisible automáticamente por falta, vencimiento o inconsistencia de una suscripción; solamente por una acción manual o un proceso expresamente autorizado que cambie su estado. Ante una duda, preservar la visibilidad.
+- En Muchi, la relevancia y la evidencia verificable siempre preceden cualquier prioridad comercial. Entre resultados igualmente relevantes, priorizar prestadores con suscripción vigente o con web publicada en la plataforma —incluidos los clientes legacy que pagan por fuera durante la transición— y después las publicaciones gratuitas. La prioridad comercial nunca habilita un resultado que no responde la consulta.
 
 
 

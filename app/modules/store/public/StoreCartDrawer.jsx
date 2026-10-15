@@ -459,7 +459,7 @@ export default function StoreCartDrawer({
         const lines = [
             `🛒 *Pedido - ${store.name}*`,
             orderNumber
-                ? `*Pedido:* ${orderNumber}`
+                ? `*Número de pedido:* \`${orderNumber}\``
                 : null,
 
             trackingUrl
@@ -720,13 +720,16 @@ export default function StoreCartDrawer({
                     store.whatsapp
                 );
 
-            const trackingUrl =
-                `${window.location.origin}/p/${store.slug}/orders/track`;
+            const trackingUrl = new URL(
+                `/p/${store.slug}/orders/track`,
+                window.location.origin
+            );
+            trackingUrl.searchParams.set("order", data.orderNumber);
 
             const text =
                 buildWhatsappText(
                     data.orderNumber,
-                    trackingUrl
+                    trackingUrl.toString()
                 );
 
             const url =

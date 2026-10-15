@@ -6,6 +6,8 @@ import { requireQRPageAccess } from "@/app/modules/qr-page/lib/requireQRPageAcce
 import { getDirectoryWebPageData } from "@/app/modules/directory/lib/getDirectoryWebPageData";
 import { DIRECTORY_MODULE_CODES, getDirectoryModuleSettings } from "@/app/modules/directory/lib/directoryModuleSettings";
 import { normalizeDirectorySectionGroups } from "@/app/modules/directory/lib/directorySectionGroups";
+import { normalizeDirectoryDbValue } from "@/app/modules/directory/lib/normalizeDirectoryDbValue";
+import { safeParseJSON } from "@/app/modules/qr-page/lib/safeParseJSON";
 
 function parse(value) {
     if (!value) return {};
@@ -38,10 +40,54 @@ export async function GET(request) {
     const url = new URL(request.url);
     const businessId = Number(url.searchParams.get("businessId") || 0);
     const pageId = Number(url.searchParams.get("pageId") || 0);
+    const sectionId = Number(url.searchParams.get("sectionId") || 0);
     if (!businessId || !pageId) return Response.json({ error: "Datos incompletos" }, { status: 400 });
     const access = await requireQRPageAccess(businessId, { skipQRPageValidation: true });
     if (!access.ok) return Response.json({ error: access.error }, { status: access.status });
     if (!(await pageFor(businessId, pageId))) return Response.json({ error: "Web Directory no encontrada" }, { status: 404 });
+    if (sectionId) {
+        const [sections] = await db.query("SELECT * FROM tags_qr_page_sections WHERE id=? AND page_id=? LIMIT 1", [sectionId, pageId]);
+        if (!sections.length) return Response.json({ error: "Sección no encontrada" }, { status: 404 });
+        const [blocks, media] = await Promise.all([
+            db.query("SELECT * FROM tags_qr_page_blocks WHERE section_id=? ORDER BY sort_order,id", [sectionId]),
+            db.query(`SELECT m.id,m.media_type,m.url,m.alt_text,m.sort_order
+                        FROM tags_directory_media m
+                        INNER JOIN tags_directory_listings l ON l.id=m.listing_id
+                       WHERE l.qr_page_id=? AND l.business_id=? AND m.is_active=1
+                         AND m.media_type IN ('cover','gallery')
+                       ORDER BY FIELD(m.media_type,'cover','gallery'),m.sort_order,m.id
+                       LIMIT 12`, [pageId, businessId])
+        ]);
+        const section = normalizeDirectoryDbValue({
+            ...sections[0],
+            settings_json: safeParseJSON(sections[0].settings_json),
+            styles_json: safeParseJSON(sections[0].styles_json),
+            blocks: blocks[0].map(block => ({
+                ...block,
+                content_json: safeParseJSON(block.content_json),
+                styles_json: safeParseJSON(block.styles_json)
+            }))
+        });
+        const effectiveMedia = [];
+        const usedUrls = new Set();
+        const appendMedia = (source, fallbackId) => {
+            const normalized = normalizeDirectoryDbValue(source);
+            const url = typeof normalized === "string"
+                ? normalized
+                : normalized?.url || normalized?.src || normalized?.image_url || normalized?.imageUrl;
+            if (!url || usedUrls.has(url) || effectiveMedia.length >= 12) return;
+            usedUrls.add(url);
+            effectiveMedia.push({
+                id: normalized?.id || fallbackId,
+                media_type: normalized?.media_type || "gallery",
+                url,
+                alt_text: normalized?.alt_text || normalized?.alt || normalized?.imageAlt || "",
+                sort_order: effectiveMedia.length
+            });
+        };
+        normalizeDirectoryDbValue(media[0]).forEach(item => appendMedia(item, `directory-media-${item.id}`));
+        return Response.json({ ok: true, section, directoryMedia: effectiveMedia });
+    }
     const web = await getDirectoryWebPageData(pageId, { includeDraft: true });
     return Response.json({ ok: true, web });
 }

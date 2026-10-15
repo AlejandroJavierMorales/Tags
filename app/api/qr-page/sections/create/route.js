@@ -12,6 +12,7 @@ import { db }
 
 import { requireQRPageAccess }
     from "@/app/modules/qr-page/lib/requireQRPageAccess";
+import { refreshDestinationBusinessProjection } from "@/app/modules/destination-ai/server/refreshDestinationBusinessProjection";
 
 export async function POST(req) {
 
@@ -70,7 +71,8 @@ export async function POST(req) {
             await db.query(
                 `
                 SELECT
-                    id
+                    id,
+                    page_type
                 FROM
                     tags_qr_pages
                 WHERE
@@ -133,6 +135,8 @@ export async function POST(req) {
                     JSON.stringify(styles_json || {})
                 ]
             );
+
+        await refreshDestinationBusinessProjection(businessId).catch(error => console.error("DESTINATION PROJECTION SECTION CREATE SYNC ERROR", { businessId, error }));
 
         return Response.json({
             ok: true,

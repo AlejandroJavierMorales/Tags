@@ -3,53 +3,71 @@ import { getDirectoryPublicData } from "./getDirectoryPublicData";
 import { getDiningCategoryNodes } from "./directoryGastronomy";
 
 function normalized(value) {
-  return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
 
-function findByName(nodes, parentId, names) {
-  const expected = names.map(normalized);
-  return nodes.find(node => Number(node.parent_id || 0) === Number(parentId || 0) && expected.includes(normalized(node.name))) || null;
+function bySlug(nodes, slugs, parentId = null) {
+  const expected = new Set(slugs.map(normalized));
+  return nodes.find(node => (parentId == null || Number(node.parent_id || 0) === Number(parentId)) && expected.has(normalized(node.slug || node.name))) || null;
+}
+
+function uniqueResults(items) {
+  return [...new Map(items.map(item => [`${item.result_type || "provider"}:${item.id}`, item])).values()];
+}
+
+async function loadAllCategoryPages(categoryId, siteCode) {
+  if (!categoryId) return [];
+  const first = await getDirectoryPublicData({ categoria:categoryId, pagina:1 }, siteCode);
+  if (!first) return [];
+  const totalPages = Math.max(1, Number(first.pagination?.totalPages || 1));
+  if (totalPages === 1) return [first];
+  const remaining = await Promise.all(Array.from({ length:totalPages - 1 }, (_, index) =>
+    getDirectoryPublicData({ categoria:categoryId, pagina:index + 2 }, siteCode)
+  ));
+  return [first, ...remaining.filter(Boolean)];
+}
+
+function mergePages(pages, { tourism, selectedTourismCategory = null, categories = null } = {}) {
+  const valid = pages.filter(Boolean);
+  if (!valid.length) return null;
+  const first = valid[0];
+  const listings = uniqueResults(valid.flatMap(page => page.listings || []));
+  const mapListings = uniqueResults(valid.flatMap(page => page.mapListings || []));
+  const localities = [...new Map(valid.flatMap(page => page.localities || []).map(item => [Number(item.id), item])).values()];
+  const visibleCategories = categories || [...new Map(valid.flatMap(page => page.categories || []).map(item => [Number(item.id), item])).values()];
+  return { ...first,tourism,selectedTourismCategory,categories:visibleCategories,listings,mapListings,localities,
+    pagination:{ ...first.pagination,page:1,total:listings.length,totalPages:1 } };
 }
 
 export async function getDirectoryTourismPageData(kind, siteCode = "calamuchitar") {
   const [nodes] = await db.execute("SELECT id,parent_id,name,slug,depth,image_url,description,sort_order FROM tags_directory_taxonomy_nodes WHERE is_active=1 ORDER BY depth,sort_order,name");
-  const tourism = nodes.find(node => Number(node.depth) === 0 && normalized(node.name) === "turismo");
+  const tourism = bySlug(nodes, ["turismo"]);
   if (!tourism) return null;
 
-  let selected = null;
-  if (kind === "accommodation") selected = findByName(nodes, tourism.id, ["Alojamientos", "Alojamiento"]);
-  if (kind === "restaurants") selected = nodes.find(node => Number(node.depth) === 0 && normalized(node.name) === "gastronomia") || findByName(nodes, tourism.id, ["Restoranes", "Restaurantes", "Gastronomía"]);
-  if (kind === "activities") selected = findByName(nodes, tourism.id, ["Actividades de Recreación", "Actividades Recreativas"]);
-
-  if (kind === "activities" && !selected) selected = findByName(nodes, tourism.id, ["Actividades de Recreacion", "Actividades Recreativas"]);
-  if (kind === "restaurants" && !selected) selected = nodes.find(node => Number(node.depth) === 0 && normalized(node.name) === "gastronomia") || findByName(nodes, tourism.id, ["Restoranes", "Restaurantes", "Gastronomia"]);
-
-  if (kind === "restaurants" && selected && Number(selected.depth) === 0) {
-    const gastronomyCategories = getDiningCategoryNodes(nodes, selected.id);
-    const pages = await Promise.all(gastronomyCategories.map(category => getDirectoryPublicData({ categoria: category.id, pagina: 1 }, siteCode)));
-    const validPages = pages.filter(Boolean);
-    if (validPages.length) {
-      const first = validPages[0];
-      const listings = [...new Map(validPages.flatMap(page => page.listings).map(item => [item.id, item])).values()];
-      const mapListings = [...new Map(validPages.flatMap(page => page.mapListings).map(item => [item.id, item])).values()];
-      const localities = [...new Map(validPages.flatMap(page => page.localities).map(item => [item.id, item])).values()];
-      return { ...first, categories: gastronomyCategories, listings, mapListings, localities, selectedTourismCategory: selected, pagination: { ...first.pagination, total: listings.length, totalPages: Math.max(1, Math.ceil(listings.length / first.pagination.pageSize)) }, tourism };
-    }
+  if (kind === "accommodation") {
+    const category = bySlug(nodes, ["alojamientos", "alojamiento"], tourism.id);
+    return mergePages(await loadAllCategoryPages(category?.id, siteCode), { tourism,selectedTourismCategory:category });
   }
-
+  if (kind === "restaurants") {
+    const gastronomy = bySlug(nodes, ["gastronomia"]);
+    const categories = gastronomy ? getDiningCategoryNodes(nodes, gastronomy.id) : [];
+    const pages = (await Promise.all(categories.map(category => loadAllCategoryPages(category.id, siteCode)))).flat();
+    return mergePages(pages, { tourism,selectedTourismCategory:gastronomy,categories });
+  }
+  if (kind === "activities") {
+    const roots = [
+      bySlug(nodes, ["actividades-de-recreacion", "actividades-recreativas"], tourism.id),
+      bySlug(nodes, ["atractivos-y-lugares-de-interes"], tourism.id),
+      bySlug(nodes, ["servicios-turisticos"], tourism.id),
+    ].filter(Boolean);
+    const pages = (await Promise.all(roots.map(category => loadAllCategoryPages(category.id, siteCode)))).flat();
+    return mergePages(pages, { tourism,categories:roots });
+  }
   if (kind === "gifts") {
-    const excluded = new Set(["alojamientos", "alojamiento", "actividades de recreacion", "actividades recreativas"]);
-    const giftCategories = nodes.filter(node => Number(node.parent_id) === Number(tourism.id) && !excluded.has(normalized(node.name)));
-    const pages = await Promise.all(giftCategories.map(category => getDirectoryPublicData({ categoria: category.id, pagina: 1 }, siteCode)));
-    const validPages = pages.filter(Boolean);
-    if (!validPages.length) return null;
-    const first = validPages[0];
-    const listings = [...new Map(validPages.flatMap(page => page.listings).map(item => [item.id, item])).values()];
-    const mapListings = [...new Map(validPages.flatMap(page => page.mapListings).map(item => [item.id, item])).values()];
-    const localities = [...new Map(validPages.flatMap(page => page.localities).map(item => [item.id, item])).values()];
-    return { ...first, categories: giftCategories, listings, mapListings, localities, selectedTourismCategory: null, pagination: { ...first.pagination, total: listings.length, totalPages: Math.max(1, Math.ceil(listings.length / first.pagination.pageSize)) }, tourism };
+    const giftSlugs = new Set(["regaleria","regalerias","regionales","productos-regionales","chocolaterias","venta-de-alfajores","artesanias","artesanias-y-regionales"]);
+    const categories = nodes.filter(node => Number(node.parent_id) === Number(tourism.id) && giftSlugs.has(normalized(node.slug || node.name)));
+    const pages = (await Promise.all(categories.map(category => loadAllCategoryPages(category.id, siteCode)))).flat();
+    return mergePages(pages, { tourism,categories });
   }
-  const data = await getDirectoryPublicData({ categoria: selected?.id || tourism.id, pagina: 1 }, siteCode);
-  if (!data) return null;
-  return { ...data, tourism, selectedTourismCategory: selected };
+  return null;
 }

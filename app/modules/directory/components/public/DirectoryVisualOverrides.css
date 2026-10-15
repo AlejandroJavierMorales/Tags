@@ -17,5 +17,9 @@
 .tags_directory_category_card:hover .tags_directory_category_image{border-color:#cbe0d2;box-shadow:inset 2px 2px 5px #ffffffcc,inset -2px -2px 5px #8eb7a040}
 .tags_directory_category_card:hover .tags_directory_category_image img{filter:none}
 .tags_directory_category_image img{padding:3px;filter:grayscale(1) contrast(1.12) brightness(.82) drop-shadow(0 3px 2px #24302b44)}
+.tags_directory_category_card{grid-template-columns:52px minmax(0,1fr)!important}
+.tags_directory_category_card:before{content:"";position:absolute;left:-1px;top:50%;width:4px;height:36%;min-height:28px;transform:translateY(-50%);border-radius:0 5px 5px 0;background:linear-gradient(180deg,#efa63c,#cb791d);box-shadow:0 2px 7px #cb791d45;transition:height .2s ease,box-shadow .2s ease}
+.tags_directory_category_card:hover:before{height:62%;box-shadow:0 3px 10px #cb791d66}
+.tags_directory_category_card h3{display:block!important;min-height:0!important;overflow:visible!important;overflow-wrap:anywhere;line-clamp:unset;-webkit-line-clamp:unset}
 .tags_directory_footer_contact svg,.tags_directory_footer_social>a svg{width:1.28rem;height:1.28rem;flex:0 0 1.28rem}
 .tags_directory_identity span{font-size:clamp(.62rem,1.45vw,.74rem)}

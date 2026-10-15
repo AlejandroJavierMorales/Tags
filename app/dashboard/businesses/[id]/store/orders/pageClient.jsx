@@ -22,13 +22,14 @@ import {
 
 import showAlert from "@/app/components/showAlert";
 import TagsSpinner from "@/app/components/TagsSpinner";
+import { platformCurrencySymbol } from "@/app/lib/platformCurrencies";
 
 import "@/app/styles/qr-page.css";
 import "@/app/styles/tags_dashboard.css";
 import "@/app/styles/tags_store_admin.css";
 
 function formatPrice(value, currency = "ARS") {
-    return `${currency} ${Number(value || 0).toLocaleString("es-AR")}`;
+    return `${platformCurrencySymbol(currency)} ${Number(value || 0).toLocaleString("es-AR")}`;
 }
 
 function formatDate(value) {

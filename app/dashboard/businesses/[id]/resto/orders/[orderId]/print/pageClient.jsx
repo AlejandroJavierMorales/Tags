@@ -65,7 +65,7 @@ function money(
         code === "ARS"
             ? "$"
             : code === "USD"
-                ? "US$"
+                ? "U$S"
                 : code;
 
     const sign =

@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 
 import showAlert from "@/app/components/showAlert";
 import TagsSpinner from "@/app/components/TagsSpinner";
+import { platformCurrencySymbol } from "@/app/lib/platformCurrencies";
 
 import "@/app/styles/qr-page.css";
 import "@/app/styles/tags_dashboard.css";
@@ -55,7 +56,6 @@ export default function StoreProductsClient({
 
     const [variantsLoading, setVariantsLoading] =
         useState(false);
-
 
     useEffect(() => {
         loadProducts();
@@ -180,7 +180,7 @@ export default function StoreProductsClient({
         const price =
             Number(product.sale_price || product.price || 0);
 
-        return `${currency} ${price.toLocaleString("es-AR")}`;
+        return `${platformCurrencySymbol(currency)} ${price.toLocaleString("es-AR")}`;
     }
 
     if (loading) {

@@ -580,11 +580,10 @@ const shareButtonWrapperStyle = createButtonWrapperStyle("share");
     return (
         <main className="store_product_detail_page" style={pageStyle}>
 
-            {!storeReturnUrl && (
-                <StoreHeaderBlock
-                    entity={store}
-                />
-            )}
+            <StoreHeaderBlock
+                entity={store}
+                content={{ showSearch: false, showFavorites: false, showCart: true, sticky: true }}
+            />
 
             <div className="store_detail_breadcrumb">
                 {

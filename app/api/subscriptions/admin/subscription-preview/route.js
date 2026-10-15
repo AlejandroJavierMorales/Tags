@@ -53,6 +53,7 @@ export async function POST(req) {
     const durationMonths = Number(request.durationMonths || request.duration_months || row.stored_duration || 1);
     const status = String(request.paymentState || request.status || row.stored_status || "pending");
     const expiresAt = request.expiresAt || request.expires_at || row.stored_expires_at || null;
+    const graceDays = Math.min(30, Math.max(0, Number(request.graceDays ?? request.grace_days ?? 0)));
     const requestedAddons = Object.entries(request.addons || {}).filter(([, quantity]) => Number(quantity) > 0).map(([code, quantity]) => ({ code: String(code), quantity: Math.min(999, Math.max(1, Number(quantity))) }));
     const [addonRows] = requestedAddons.length ? await db.query(`SELECT code,name FROM tags_addons WHERE is_active=1 AND code IN (${requestedAddons.map(() => "?").join(",")})`, requestedAddons.map(item => item.code)) : [[]];
     const addonNames = new Map(addonRows.map(item => [item.code, item.name]));
@@ -65,7 +66,7 @@ export async function POST(req) {
       mode, businessName: row.business_name, businessEmail: row.business_email,
       planName: row.plan_name, planCode: row.plan_code, planId: row.plan_id,
       provider, providerLabel: providerLabel(provider), amount, currency: "ARS",
-      durationMonths, status, statusLabel: statusLabel(status), expiresAt,
+      durationMonths, status, statusLabel: statusLabel(status), expiresAt, graceDays,
       addons: selectedAddons,
       siteName: row.site_name || null,
       directoryAssignmentRequired: request.directoryAssignmentRequired === true,

@@ -78,7 +78,7 @@ export default function BusinessStatsPageClient({ session, isAdmin }) {
         month: "",
     });
 
-    const [qrId, setQrId] = useState("all");
+    const [qrId, setQrId] = useState(() => searchParams.get("qr_id") || "all");
 
     const timelineRef = useRef(null);
     const qrsClicksRef = useRef(null);

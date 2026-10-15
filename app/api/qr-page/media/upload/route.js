@@ -11,6 +11,12 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 import sharp from "sharp";
+import ffmpegPath from "ffmpeg-static";
+import { execFile } from "node:child_process";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { promisify } from "node:util";
 
 import { uploadFile }
     from "@/app/modules/files/lib/uploadFile";
@@ -23,6 +29,35 @@ import { requireQRPageAccess }
 
 import { requireDirectoryAdmin }
     from "@/app/modules/directory/lib/requireDirectoryAdmin";
+
+const execFileAsync = promisify(execFile);
+
+async function optimizeTutorialVideo(buffer, mimeType) {
+    if (!ffmpegPath) throw new Error("FFmpeg no está disponible en el servidor");
+    const temporaryDirectory = await mkdtemp(path.join(tmpdir(), "tags-tutorial-"));
+    const inputExtension = mimeType === "video/webm" ? "webm" : "mp4";
+    const inputPath = path.join(temporaryDirectory, `original.${inputExtension}`);
+    const outputPath = path.join(temporaryDirectory, "tutorial.mp4");
+    try {
+        await writeFile(inputPath, buffer);
+        await execFileAsync(ffmpegPath, [
+            "-hide_banner", "-loglevel", "error", "-y",
+            "-i", inputPath,
+            "-map", "0:v:0", "-map", "0:a?", "-sn", "-dn",
+            "-vf", "scale=1280:720:force_original_aspect_ratio=decrease:force_divisible_by=2,fps=30,setsar=1",
+            "-c:v", "libx264", "-preset", "fast", "-crf", "26",
+            "-threads", "1", "-x264-params", "threads=1",
+            "-maxrate", "1800k", "-bufsize", "3600k",
+            "-pix_fmt", "yuv420p",
+            "-c:a", "aac", "-b:a", "96k", "-ac", "2",
+            "-movflags", "+faststart",
+            outputPath
+        ], { timeout: 5 * 60 * 1000, maxBuffer: 10 * 1024 * 1024, windowsHide: true });
+        return await readFile(outputPath);
+    } finally {
+        await rm(temporaryDirectory, { recursive: true, force: true });
+    }
+}
 
 function sanitizeFileName(name = "file") {
     return name
@@ -284,8 +319,11 @@ export async function POST(req) {
         const maxImageSize =
             12 * 1024 * 1024;
 
+        const isTutorialVideo =
+            hasNewFormat && module === "directory" && variant === "tutorials";
+
         const maxVideoSize =
-            15 * 1024 * 1024;
+            (isTutorialVideo ? 90 : 15) * 1024 * 1024;
 
         if (isImage && file.size > maxImageSize) {
             return Response.json(
@@ -296,7 +334,7 @@ export async function POST(req) {
 
         if (isVideo && file.size > maxVideoSize) {
             return Response.json(
-                { error: "Video demasiado grande. Máximo permitido: 15MB." },
+                { error: `Video demasiado grande. Máximo permitido: ${isTutorialVideo ? 90 : 15}MB.` },
                 { status: 400 }
             );
         }
@@ -328,11 +366,25 @@ export async function POST(req) {
         // -----------------------------
 
         if (isVideo) {
+            let videoBuffer = originalBuffer;
+            let videoMimeType = file.type;
+            let videoOptimized = false;
+            let optimizationWarning = null;
+            if (isTutorialVideo) {
+                try {
+                    videoBuffer = await optimizeTutorialVideo(originalBuffer, file.type);
+                    videoMimeType = "video/mp4";
+                    videoOptimized = true;
+                } catch (error) {
+                    optimizationWarning = "El servidor no pudo optimizar este video. Se guardó el archivo original para no perder la carga.";
+                    console.error("TUTORIAL VIDEO OPTIMIZATION ERROR", error.message);
+                }
+            }
             const cleanName =
                 sanitizeFileName(file.name);
 
             const extension =
-                cleanName.split(".").pop();
+                videoOptimized ? "mp4" : cleanName.split(".").pop();
 
             const videoFileName =
                 hasNewFormat
@@ -346,9 +398,9 @@ export async function POST(req) {
 
             const result =
                 await uploadFile({
-                    buffer: originalBuffer,
+                    buffer: videoBuffer,
                     storagePath,
-                    mimeType: file.type
+                    mimeType: videoMimeType
                 });
 
             if (
@@ -368,10 +420,12 @@ export async function POST(req) {
                     url: result.url,
                     storagePath: result.storagePath,
                     filename: file.name,
-                    mimeType: file.type,
+                    mimeType: videoMimeType,
                     originalSize: file.size,
-                    finalSize: originalBuffer.length
-                }
+                    finalSize: videoBuffer.length,
+                    optimized: videoOptimized
+                },
+                warning: optimizationWarning
             });
         }
 

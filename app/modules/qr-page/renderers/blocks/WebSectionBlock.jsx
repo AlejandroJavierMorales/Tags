@@ -7,7 +7,7 @@ import "./WebSectionBlock.css";
 export default function WebSectionBlock({ content = {} }) {
     const [active, setActive] = useState(0);
     const paragraphs = Array.isArray(content.paragraphs) ? content.paragraphs.filter(Boolean) : [];
-    const images = Array.isArray(content.images) ? content.images.filter(item => item?.url).slice(0, 10) : [];
+    const images = Array.isArray(content.images) ? content.images.filter(item => item?.url).slice(0, 12) : [];
     const carousel = content.imageLayout === "carousel";
     return <div className="tags_qr_web_section_block">
         {(content.title || content.subtitle) && <header>{content.title && <h2>{content.title}</h2>}{content.subtitle && <h3>{content.subtitle}</h3>}</header>}

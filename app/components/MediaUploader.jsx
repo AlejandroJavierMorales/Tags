@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { FaSpinner, FaUpload } from "react-icons/fa6";
 
 import showAlert
     from "@/app/components/showAlert";
@@ -29,6 +30,26 @@ export default function MediaUploader({
 }) {
     const [uploading, setUploading] =
         useState(false);
+    const [progress, setProgress] = useState(0);
+
+    function uploadWithProgress(formData) {
+        return new Promise((resolve, reject) => {
+            const request = new XMLHttpRequest();
+            request.open("POST", uploadEndpoint);
+            request.responseType = "json";
+            request.upload.addEventListener("progress", event => {
+                if (event.lengthComputable) setProgress(Math.min(100, Math.round((event.loaded / event.total) * 100)));
+            });
+            request.addEventListener("load", () => {
+                const data = request.response || {};
+                if (request.status >= 200 && request.status < 300) resolve(data);
+                else reject(new Error(data.error || "Error subiendo archivo"));
+            });
+            request.addEventListener("error", () => reject(new Error("No se pudo conectar con el servidor para subir el archivo")));
+            request.addEventListener("abort", () => reject(new Error("La carga fue cancelada")));
+            request.send(formData);
+        });
+    }
 
     async function handleFileChange(e) {
         const file =
@@ -39,6 +60,7 @@ export default function MediaUploader({
         }
 
         setUploading(true);
+        setProgress(0);
 
         try {
             const formData =
@@ -75,28 +97,15 @@ export default function MediaUploader({
                 formData.append("folder", folder);
             }
 
-            const res =
-                await fetch(
-                    uploadEndpoint,
-                    {
-                        method: "POST",
-                        body: formData
-                    }
-                );
-
-            const data =
-                await res.json().catch(() => ({}));
-
-            if (!res.ok) {
-                throw new Error(
-                    data.error ||
-                    "Error subiendo archivo"
-                );
-            }
+            const data = await uploadWithProgress(formData);
 
             onChange(data.media);
 
-            showAlert({
+            showAlert(data.warning ? {
+                title: "Archivo subido sin optimizar",
+                text: data.warning,
+                icon: "warning"
+            } : {
                 title: "Archivo subido",
                 text: "El archivo se cargó correctamente.",
                 icon: "success"
@@ -111,6 +120,7 @@ export default function MediaUploader({
 
         } finally {
             setUploading(false);
+            setProgress(0);
             e.target.value = "";
         }
     }
@@ -135,7 +145,7 @@ export default function MediaUploader({
             )}
 
             <label className="qr_page_upload_btn">
-                {uploading ? "Subiendo..." : label}
+                {uploading ? <><FaSpinner className="qr_page_upload_spinner" /> Subiendo {progress}%</> : <><FaUpload /> {label}</>}
 
                 <input
                     type="file"
@@ -145,6 +155,12 @@ export default function MediaUploader({
                     hidden
                 />
             </label>
+
+            {uploading && (
+                <div className="qr_page_upload_progress" role="progressbar" aria-label="Progreso de carga" aria-valuemin="0" aria-valuemax="100" aria-valuenow={progress}>
+                    <span style={{ width: `${progress}%` }} />
+                </div>
+            )}
 
             {value && (
                 <button

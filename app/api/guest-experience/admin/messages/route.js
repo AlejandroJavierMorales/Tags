@@ -44,7 +44,7 @@ export async function GET(req) {
           ON cv.stay_id=s.id AND cv.guest_app_id=s.guest_app_id
         INNER JOIN tags_guest_people g ON g.id=s.primary_guest_id
         LEFT JOIN tags_guest_units u ON u.id=s.unit_id
-        WHERE s.guest_app_id=? AND s.status IN ('reserved','active')
+        WHERE s.guest_app_id=? AND s.status IN ('reserved','active','no_show_rebooking')
         ORDER BY cv.last_message_at IS NULL,
           COALESCE(cv.last_message_at,s.starts_at) DESC`,
         [guestAppId],
@@ -68,7 +68,7 @@ export async function GET(req) {
       FROM tags_guest_stays s
       INNER JOIN tags_guest_people g ON g.id=s.primary_guest_id
       LEFT JOIN tags_guest_units u ON u.id=s.unit_id
-      WHERE s.id=? AND s.guest_app_id=? AND s.status IN ('reserved','active')
+      WHERE s.id=? AND s.guest_app_id=? AND s.status IN ('reserved','active','no_show_rebooking')
       LIMIT 1`,
       [stayId, guestAppId],
     );
@@ -129,7 +129,7 @@ export async function POST(req) {
       FROM tags_guest_stays s
       INNER JOIN tags_guest_apps a
         ON a.id=s.guest_app_id AND a.business_id=?
-      WHERE s.id=? AND s.guest_app_id=? AND s.status IN ('reserved','active')
+      WHERE s.id=? AND s.guest_app_id=? AND s.status IN ('reserved','active','no_show_rebooking')
       LIMIT 1 FOR UPDATE`,
       [businessId, stayId, guestAppId],
     );

@@ -12,6 +12,7 @@ import { db }
 
 import { requireQRPageAccess }
     from "@/app/modules/qr-page/lib/requireQRPageAccess";
+import { refreshDestinationBusinessProjection } from "@/app/modules/destination-ai/server/refreshDestinationBusinessProjection";
 
 function jsonObject(value) {
     if (value && typeof value === "object" && !Array.isArray(value)) return value;
@@ -141,6 +142,8 @@ export async function POST(req) {
                 pageId
             ]
         );
+
+        await refreshDestinationBusinessProjection(businessId).catch(error => console.error("DESTINATION PROJECTION SECTION UPDATE SYNC ERROR", { businessId, error }));
 
         return Response.json({
             ok: true

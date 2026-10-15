@@ -6,13 +6,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 import { FaWhatsapp } from "react-icons/fa";
+import { FiArrowLeft, FiCreditCard, FiFileText, FiShoppingCart, FiTag, FiTruck, FiUser } from "react-icons/fi";
 import { SiMercadopago } from "react-icons/si";
 import { BsBank } from "react-icons/bs";
 import { HiOutlineCash } from "react-icons/hi";
-import StoreHeaderBlock
-    from "../blocks/StoreHeaderBlock";
+import StorePurchaseHeader from "./StorePurchaseHeader";
 
 import showAlert
     from "@/app/components/showAlert";
@@ -29,6 +30,7 @@ import {
 
 import "@/app/modules/store/styles/store-public.css";
 import { formatStorePrice } from "../../lib/formatStorePrice";
+import { withStoreReturnUrl } from "../../lib/storePublicContext";
 
 function normalizeWhatsappAR(phone) {
 
@@ -598,7 +600,7 @@ export default function StoreCheckoutPageClient({
         const lines = [
             `🛒 *Pedido - ${store.name}*`,
             orderNumber
-                ? `*Pedido:* ${orderNumber}`
+                ? `*Número de pedido:* \`${orderNumber}\``
                 : null,
 
             trackingUrl
@@ -920,13 +922,16 @@ export default function StoreCheckoutPageClient({
                     store.whatsapp
                 );
 
-            const trackingUrl =
-                `${window.location.origin}/p/${store.slug}/orders/track`;
+            const trackingUrl = new URL(
+                `/p/${store.slug}/orders/track`,
+                window.location.origin
+            );
+            trackingUrl.searchParams.set("order", data.orderNumber);
 
             const text =
                 buildWhatsappText(
                     data.orderNumber,
-                    trackingUrl
+                    trackingUrl.toString()
                 );
 
             const url =
@@ -1274,19 +1279,20 @@ export default function StoreCheckoutPageClient({
             style={pageStyle}
         >
 
-            {!store?.embedded_return_url && (
-                <StoreHeaderBlock
-                    entity={store}
-                />
-            )}
+            <StorePurchaseHeader store={store} currentStep="checkout" />
 
             <section className="store_checkout_shell">
                 <div className="store_checkout_inner">
 
+                    <div className="store_cart_page_back">
+                        <Link href={withStoreReturnUrl(`/p/${store.slug}/cart`, store)} className="store_detail_back_link"><FiArrowLeft /> Volver al carrito</Link>
+                    </div>
+
                     <div className="store_checkout_title">
                         {
                             settings.content?.showTitle !== false && (
-                                <h1 style={typography.title || {}}>
+                                <h1 className="store_context_title" style={typography.title || {}}>
+                                    <FiCreditCard />
                                     Finalizar compra
                                 </h1>
                             )
@@ -1309,7 +1315,7 @@ export default function StoreCheckoutPageClient({
                                 settings.content?.showProducts !== false && (
                                     <div className="store_checkout_panel">
 
-                                        <h2 style={typography.title || {}}>Productos</h2>
+                                        <h2 className="store_context_title" style={typography.title || {}}><FiShoppingCart /> Productos</h2>
 
                                         {items.map((item, index) => (
                                             <div
@@ -1361,7 +1367,8 @@ export default function StoreCheckoutPageClient({
                                         settings.content?.showDelivery !== false && (
                                             <div className="store_checkout_panel">
 
-                                                <h2 style={typography.title || {}}>
+                                                <h2 className="store_context_title" style={typography.title || {}}>
+                                                    <FiTruck />
                                                     Entrega
                                                 </h2>
 
@@ -1561,7 +1568,8 @@ export default function StoreCheckoutPageClient({
                                         settings.content?.showCustomerData !== false && (
                                             <div className="store_checkout_panel">
 
-                                                <h2 style={typography.title || {}}>
+                                                <h2 className="store_context_title" style={typography.title || {}}>
+                                                    <FiUser />
                                                     Datos del comprador
                                                 </h2>
 
@@ -1681,7 +1689,7 @@ export default function StoreCheckoutPageClient({
                                         settings.content?.showCoupon !== false && (
                                             <div className="store_checkout_panel">
 
-                                                <h2>Cupón promocional</h2>
+                                                <h2 className="store_context_title"><FiTag /> Cupón promocional</h2>
 
                                                 <div className="store_cart_coupon_row">
                                                     <input
@@ -1731,8 +1739,10 @@ export default function StoreCheckoutPageClient({
                                     <aside className="store_checkout_summary">
 
                                         <h2
+                                            className="store_context_title"
                                             style={typography.title || {}}
                                         >
+                                            <FiFileText />
                                             Resumen
                                         </h2>
 
@@ -1794,7 +1804,7 @@ export default function StoreCheckoutPageClient({
                                             settings.content?.showPaymentMethod !== false && (
                                                 <div className="store_cart_payment">
 
-                                                    <label style={typography.text || {}}>Medio de pago</label>
+                                                    <label className="store_context_label" style={typography.text || {}}><FiCreditCard /> Medio de pago</label>
 
                                                     <select
                                                         className="store_cart_payment_select"

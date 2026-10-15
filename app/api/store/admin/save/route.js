@@ -12,6 +12,7 @@ import {
     from "@/app/modules/store/lib/installStoreDemoContent";
 
 import { db } from "@/app/lib/tags-db";
+import { normalizePlatformCurrency } from "@/app/lib/platformCurrencies";
 import {
     installStoreTemplate
 }
@@ -185,7 +186,7 @@ export async function POST(req) {
                     safe(whatsapp),
                     safe(email),
                     safe(address),
-                    currency || "ARS",
+                    normalizePlatformCurrency(currency, "ARS"),
                     status || "draft",
                     safe(seo_title),
                     safe(seo_description),
@@ -365,7 +366,7 @@ export async function POST(req) {
                     safe(whatsapp),
                     safe(email),
                     safe(address),
-                    currency || "ARS",
+                    normalizePlatformCurrency(currency, "ARS"),
                     status || "draft",
                     safe(seo_title),
                     safe(seo_description),

@@ -28,7 +28,7 @@ export default function DirectoryTourismPage({ data, kind }) {
     <div className="tags_directory_tourism_images tags_directory_tourism_images_desktop">{config.images.map(image => <Image src={`/directory/calamuchitar/tourism/${image}`} alt="" width={480} height={190} sizes="25vw" key={image} />)}</div>
     <div className="tags_directory_tourism_images tags_directory_tourism_images_mobile">{config.images.slice(0, 2).map(image => <Image src={`/directory/calamuchitar/tourism/${image}`} alt="" width={240} height={125} sizes="50vw" key={image} />)}</div>
     <div className="tags_directory_tourism_page_content">
-      <nav className="tags_directory_tourism_back"><Link href="/directorio">← Volver al Directorio</Link></nav>
+      <nav className="tags_directory_tourism_back"><Link href="/directorio">Volver</Link></nav>
       {data.categories.length > 0 && <DirectoryCategoryGrid categories={data.categories} title="Explorá por categoría" />}
       <section className="tags_directory_tourism_results" id="resultados">
         <header><DirectoryResultsHeading title={resultsTitle} total={data.pagination.total} navigationKey={`${kind}|${data.pagination.total}`} /><DirectoryLocalityFilter localities={data.localities} categoryId={data.filters.categoryId} localityId={data.filters.localityId} /></header>

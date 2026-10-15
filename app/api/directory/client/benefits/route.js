@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 
 import { db } from "@/app/lib/tags-db";
 import { requireQRPageAccess } from "@/app/modules/qr-page/lib/requireQRPageAccess";
+import { refreshDestinationBusinessProjection } from "@/app/modules/destination-ai/server/refreshDestinationBusinessProjection";
 
 function text(value, max = 2000) {
     return String(value ?? "").trim().slice(0, max);
@@ -116,6 +117,7 @@ export async function POST(request) {
                 (business_id,site_id,listing_id,name,benefit_type,benefit_value,promotion_buy_quantity,promotion_pay_quantity,promotion_item,valid_from,valid_until,description,image_url,visibility,validation_mode,is_active,sort_order)
             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
         `, [businessId, item.site_id || null, item.listing_id, value.name, value.benefitType, value.value, value.promotionBuyQuantity, value.promotionPayQuantity, value.promotionItem, value.validFrom, value.validUntil, value.description, value.imageUrl, value.visibility, value.validationMode, value.isActive, value.sortOrder]);
+        await refreshDestinationBusinessProjection(businessId).catch(error => console.error("DESTINATION PROJECTION BENEFIT CREATE SYNC ERROR", { businessId, error }));
         return Response.json({ ok: true, id: result.insertId }, { status: 201 });
     } catch (error) {
         console.error("DIRECTORY BENEFITS POST ERROR", error);
@@ -140,6 +142,7 @@ export async function PATCH(request) {
             WHERE id=? AND business_id=? AND listing_id=?
         `, [value.name, value.benefitType, value.value, value.promotionBuyQuantity, value.promotionPayQuantity, value.promotionItem, value.validFrom, value.validUntil, value.description, value.imageUrl, value.visibility, value.validationMode, value.isActive, value.sortOrder, id, businessId, item.listing_id]);
         if (!result.affectedRows) return responseError("Beneficio no encontrado.", 404);
+        await refreshDestinationBusinessProjection(businessId).catch(error => console.error("DESTINATION PROJECTION BENEFIT UPDATE SYNC ERROR", { businessId, error }));
         return Response.json({ ok: true });
     } catch (error) {
         console.error("DIRECTORY BENEFITS PATCH ERROR", error);
@@ -159,6 +162,7 @@ export async function DELETE(request) {
         if (!item) return responseError("Ficha de Directorio no encontrada.", 404);
         const [result] = await db.query("DELETE FROM tags_directory_benefits WHERE id=? AND business_id=? AND listing_id=?", [id, businessId, item.listing_id]);
         if (!result.affectedRows) return responseError("Beneficio no encontrado.", 404);
+        await refreshDestinationBusinessProjection(businessId).catch(error => console.error("DESTINATION PROJECTION BENEFIT DELETE SYNC ERROR", { businessId, error }));
         return Response.json({ ok: true });
     } catch (error) {
         console.error("DIRECTORY BENEFITS DELETE ERROR", error);

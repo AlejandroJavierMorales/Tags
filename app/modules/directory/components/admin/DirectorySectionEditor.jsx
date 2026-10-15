@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FaArrowDown, FaArrowUp, FaTrash, FaXmark } from "react-icons/fa6";
 import MediaUploader from "@/app/components/MediaUploader";
 import TagsSpinner from "@/app/components/TagsSpinner";
@@ -9,7 +9,17 @@ import "./DirectorySectionEditor.css";
 
 function kindOf(section) {
   const type = section?.blocks?.[0]?.type;
-  return section?.settings_json?.directoryBaseSlot || (type === "gallery" ? "gallery" : type === "contact_info" ? "contact" : type === "catalog" || section?.type === "catalog" ? "catalog" : type === "benefits" ? "benefits" : type === "loyalty_program" ? "loyalty" : "web");
+  const sectionType = String(section?.type || "").toLowerCase();
+  const sectionTitle = normalizedText(section?.title);
+  const configuredSlot = section?.settings_json?.directoryBaseSlot;
+  if (configuredSlot) return configuredSlot === "legacy-web-section" ? "web" : configuredSlot;
+  return type === "gallery" || sectionType === "gallery" ? "gallery"
+      : type === "contact_info" ? "contact"
+        : type === "catalog" || sectionType === "catalog" ? "catalog"
+          : type === "benefits" ? "benefits"
+            : type === "loyalty_program" ? "loyalty"
+              : sectionType === "hero" || ["presentacion", "presentación"].includes(sectionTitle) ? "presentation"
+                : "web";
 }
 
 async function payload(response) { const text = await response.text(); try { return text ? JSON.parse(text) : {}; } catch { return {}; } }
@@ -18,45 +28,140 @@ function normalizedText(value) {
   return String(value || "").replace(/\s+/g, " ").trim().toLocaleLowerCase();
 }
 
-function editorContent(blockContent, kind, fallback) {
+function contentObject(value) {
+  if (value && typeof value === "object") return value;
+  if (typeof value === "string") {
+    try { return JSON.parse(value); } catch {}
+  }
+  return {};
+}
+
+function legacyImage(content) {
+  const source = contentObject(content);
+  const url = source.url || source.src || source.imageUrl || source.image_url || source.image?.url;
+  return url ? { url, alt: source.alt || source.alt_text || source.imageAlt || source.image?.alt || "", storagePath: source.storagePath || "" } : null;
+}
+
+function normalizedImage(value) {
+  if (typeof value === "string") return value.trim() ? { url: value.trim(), alt: "", storagePath: "" } : null;
+  if (!value || typeof value !== "object") return null;
+  const url = value.url || value.src || value.imageUrl || value.image_url || value.image?.url;
+  return url ? { ...value, url, alt: value.alt || value.alt_text || value.imageAlt || value.image?.alt || "", storagePath: value.storagePath || "" } : null;
+}
+
+function editableBlock(section, kind) {
+  const blocks = Array.isArray(section?.blocks) ? section.blocks : [];
+  const expectedType = kind === "gallery" ? "gallery" : ["web", "presentation"].includes(kind) ? "web_section" : null;
+  return blocks.find(item => item.type === expectedType) || blocks[0];
+}
+
+function editorContent(section, block, kind, fallback) {
+  const blockContent = contentObject(block?.content_json);
   const current = blockContent && typeof blockContent === "object" ? blockContent : {};
-  if (kind !== "presentation" || current.contentManaged === true) return current;
-  const owns = field => Object.prototype.hasOwnProperty.call(current, field);
-  const highlightedText = owns("highlightedText") ? current.highlightedText || "" : fallback?.highlightedText || "";
+  const allBlocks = Array.isArray(section?.blocks) ? section.blocks : [];
+  const images = [];
+  const imageKeys = new Set();
+  const appendImage = image => {
+    const normalized = normalizedImage(image);
+    if (!normalized?.url || imageKeys.has(normalized.url)) return;
+    imageKeys.add(normalized.url);
+    images.push(normalized);
+  };
+  allBlocks.forEach(item => {
+    const itemContent = contentObject(item?.content_json);
+    (Array.isArray(itemContent.images) ? itemContent.images : []).forEach(appendImage);
+    appendImage(legacyImage(itemContent));
+  });
+  if (kind === "gallery") {
+    (Array.isArray(fallback?.images) ? fallback.images : []).forEach(appendImage);
+  }
+
   const paragraphs = (Array.isArray(current.paragraphs) ? current.paragraphs : [])
     .map(item => typeof item === "string" ? item : item?.text)
     .filter(Boolean);
+  const knownParagraphs = new Set(paragraphs.map(normalizedText));
+  allBlocks.forEach(item => {
+    const itemContent = contentObject(item?.content_json);
+    const candidates = [itemContent.text, itemContent.description, itemContent.body];
+    candidates.forEach(value => {
+      const text = String(value || "").trim();
+      const key = normalizedText(text);
+      if (text && !knownParagraphs.has(key)) {
+        knownParagraphs.add(key);
+        paragraphs.push(text);
+      }
+    });
+  });
+
+  const migrated = {
+    ...current,
+    ...(kind === "gallery" ? {
+      eyebrow: Object.prototype.hasOwnProperty.call(current, "eyebrow") ? current.eyebrow : "GALERÍA",
+      title: Object.prototype.hasOwnProperty.call(current, "title") ? current.title : `Conocé ${fallback?.providerName || "nuestro espacio"}`
+    } : {}),
+    paragraphs,
+    images: images.slice(0, 12)
+  };
+  if (kind !== "presentation" || current.contentManaged === true) return migrated;
+  const owns = field => Object.prototype.hasOwnProperty.call(current, field);
+  const highlightedText = owns("highlightedText") ? current.highlightedText || "" : fallback?.highlightedText || "";
   const description = String(fallback?.description || "").trim();
   const known = new Set([highlightedText, ...paragraphs].map(normalizedText).filter(Boolean));
   if (description && !known.has(normalizedText(description))) paragraphs.push(description);
   return {
-    ...current,
-    title: owns("title") ? current.title || "" : fallback?.title || "",
+    ...migrated,
+    title: owns("title") ? current.title || "" : fallback?.providerName || "",
     highlightedText,
     paragraphs
   };
 }
 
-export default function DirectorySectionEditor({ businessId, pageId, section, presentationFallback, onClose, onSaved }) {
-  const block = section.blocks?.[0];
+export default function DirectorySectionEditor({ businessId, pageId, section, contentFallback, onClose, onSaved }) {
   const kind = kindOf(section);
-  const maxImages = 10;
+  const [block, setBlock] = useState(() => editableBlock(section, kind));
+  const maxImages = 12;
   const [title, setTitle] = useState(section.title || "");
-  const [content, setContent] = useState(() => editorContent(block?.content_json, kind, presentationFallback));
+  const [content, setContent] = useState(() => editorContent(section, block, kind, contentFallback));
   const [styles, setStyles] = useState(block?.styles_json || {});
   const [busy, setBusy] = useState(false);
+  const [loadingContent, setLoadingContent] = useState(true);
   const images = Array.isArray(content.images) ? content.images.slice(0,maxImages) : [];
   const update = (field,value) => setContent(current=>({...current,[field]:value}));
   const updateTypography = (part,field,value) => setStyles(current=>({...current,typography:{...(current.typography||{}),[part]:{...(current.typography?.[part]||{}),[field]:value}}}));
   const moveImage = (index,direction) => { const next=[...images],target=index+direction;if(target<0||target>=next.length)return;[next[index],next[target]]=[next[target],next[index]];update("images",next); };
 
+  useEffect(() => {
+    let active = true;
+    fetch(`/api/directory/client/modules?businessId=${businessId}&pageId=${pageId}&sectionId=${section.id}`, { cache: "no-store" })
+      .then(async response => {
+        const result = await payload(response);
+        if (!response.ok) throw new Error(result.error || "No se pudo cargar la sección");
+        return result;
+      })
+      .then(result => {
+        if (!active || !result?.section) return;
+        const freshSection = result.section;
+        const freshKind = kindOf(freshSection);
+        const freshBlock = editableBlock(freshSection, freshKind);
+        const mediaImages = (result.directoryMedia || []).map(item => ({ url: item.url, alt: item.alt_text || "" }));
+        setBlock(freshBlock);
+        setTitle(freshSection.title || "");
+        setContent(editorContent(freshSection, freshBlock, freshKind, { ...contentFallback, images: mediaImages }));
+        setStyles(freshBlock?.styles_json || {});
+      })
+      .catch(error => showAlert({ title: "No se pudo cargar el contenido", text: error.message, icon: "error" }))
+      .finally(() => { if (active) setLoadingContent(false); });
+    return () => { active = false; };
+  }, [businessId, pageId, section.id]);
+
   async function save(closeAfter) {
     if (!block?.id) return;
     setBusy(true);
     try {
-      const sectionResponse = await fetch("/api/qr-page/sections/update",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({businessId,pageId,sectionId:section.id,type:section.type,title:title.trim()||section.title,is_visible:section.is_visible,settings_json:section.settings_json||{},styles_json:section.styles_json||{}})});
+      const canonicalType = kind === "gallery" ? "gallery" : ["web","presentation"].includes(kind) ? "web_section" : block.type;
+      const sectionResponse = await fetch("/api/qr-page/sections/update",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({businessId,pageId,sectionId:section.id,type:section.type,title:title.trim()||section.title,is_visible:section.is_visible,settings_json:{...(section.settings_json||{}),...(["gallery","presentation"].includes(kind)?{directoryBaseSlot:kind}:{})},styles_json:section.styles_json||{}})});
       const sectionPayload=await payload(sectionResponse);if(!sectionResponse.ok)throw new Error(sectionPayload.error||"No se pudo guardar la sección");
-      const blockResponse = await fetch("/api/qr-page/blocks/update",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({businessId,pageId,sectionId:section.id,blockId:block.id,type:block.type,is_visible:block.is_visible,content_json:{...content,...(kind==="presentation"?{contentManaged:true}:{}),images:images.slice(0,maxImages),...(kind==="gallery"?{maxImages:8}:{})},styles_json:styles})});
+      const blockResponse = await fetch("/api/qr-page/blocks/update",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({businessId,pageId,sectionId:section.id,blockId:block.id,type:canonicalType,is_visible:block.is_visible,content_json:{...content,...(kind==="presentation"?{contentManaged:true}:{}),images:images.slice(0,maxImages),...(kind==="gallery"?{maxImages:12}:{})},styles_json:styles})});
       const blockPayload=await payload(blockResponse);if(!blockResponse.ok)throw new Error(blockPayload.error||"No se pudo guardar el bloque");
       await onSaved();
       await showAlert({title:"Cambios guardados",icon:"success",timer:1200});
@@ -66,7 +171,7 @@ export default function DirectorySectionEditor({ businessId, pageId, section, pr
 
   return <div className="tags_directory_section_editor_overlay" role="dialog" aria-modal="true">
     <div className="tags_directory_section_editor">
-      {busy&&<div className="tags_directory_section_editor_busy"><TagsSpinner /></div>}
+      {(busy||loadingContent)&&<div className="tags_directory_section_editor_busy"><TagsSpinner /></div>}
       <header><div><small>EDITOR DE BLOQUE</small><h2>{kind==="presentation"?"Presentación":kind==="gallery"?"Galería":kind==="catalog"?"Catálogo":kind==="contact"?"Contacto":kind==="benefits"?"Beneficios":kind==="loyalty"?"Fidelización":"Sección web"}</h2></div><button type="button" onClick={onClose} aria-label="Cerrar"><FaXmark /></button></header>
       <div className="tags_directory_section_editor_body">
         <section><h3>Contenido</h3><div className="tags_directory_section_editor_grid">

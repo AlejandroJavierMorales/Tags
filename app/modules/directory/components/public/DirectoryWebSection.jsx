@@ -15,7 +15,7 @@ export default function DirectoryWebSection({ content = {}, styles = {} }) {
   const paragraphs = (Array.isArray(content.paragraphs) ? content.paragraphs : [])
     .filter(Boolean)
     .filter(paragraph => normalizeText(typeof paragraph === "string" ? paragraph : paragraph?.text) !== highlightedKey);
-  const images = Array.isArray(content.images) ? content.images.filter(item => item?.url).slice(0, 10) : [];
+  const images = Array.isArray(content.images) ? content.images.filter(item => item?.url).slice(0, 12) : [];
   const carousel = content.imageLayout === "carousel";
   const moveCarousel = direction => {
     const element = carouselRef.current;

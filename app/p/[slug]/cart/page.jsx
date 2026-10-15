@@ -45,11 +45,15 @@ async function getStore(slug) {
             `
         SELECT
             s.*,
+            COALESCE(NULLIF(s.name,''),NULLIF(b.display_name,''),b.name) AS name,
+            COALESCE(NULLIF(b.logo_url,''),s.logo_url) AS logo_url,
             qrp.theme_id,
             t.code AS theme_code,
             t.name AS theme_name,
             t.css_tokens AS theme_css_tokens
         FROM tags_stores s
+        LEFT JOIN tags_businesses b
+            ON b.id = s.business_id
         INNER JOIN tags_qr_pages qrp
             ON qrp.id = s.page_id
         LEFT JOIN tags_qr_page_themes t

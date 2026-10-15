@@ -37,7 +37,7 @@ SELECT NULL,parent.id,seed.name,seed.slug,'category',parent.depth+1,seed.descrip
     UNION ALL SELECT 'gastronomia','Cafeterías y casas de té','cafeterias-y-casas-de-te','Cafeterías, casas de té y propuestas para merendar.',60
     UNION ALL SELECT 'gastronomia','Meriendas y desayunos','meriendas-y-desayunos','Propuestas especializadas en desayunos y meriendas.',70
     UNION ALL SELECT 'gastronomia','Comidas rápidas','comidas-rapidas','Locales de comidas rápidas.',80
-    UNION ALL SELECT 'gastronomia','Comida para llevar','comida-para-llevar','Locales con comida preparada para retirar.',90
+    UNION ALL SELECT 'gastronomia','Comidas para llevar','comidas-para-llevar','Locales con comida preparada para retirar.',90
     UNION ALL SELECT 'eventos-y-agenda','Eventos culturales','eventos-culturales','Encuentros artísticos, culturales y educativos.',10
     UNION ALL SELECT 'eventos-y-agenda','Fiestas tradicionales y populares','fiestas-tradicionales-y-populares','Fiestas patronales, veladas criollas y celebraciones tradicionales.',20
     UNION ALL SELECT 'eventos-y-agenda','Eventos deportivos','eventos-deportivos','Competencias y encuentros deportivos con fecha.',30

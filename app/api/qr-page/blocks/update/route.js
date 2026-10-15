@@ -13,6 +13,7 @@ import { db }
 import { requireQRPageAccess }
     from "@/app/modules/qr-page/lib/requireQRPageAccess";
 import { normalizeWebSectionBlock } from "@/app/modules/qr-page/lib/normalizeWebSectionBlock";
+import { safeParseJSON } from "@/app/modules/qr-page/lib/safeParseJSON";
 import { refreshDestinationBusinessProjection } from "@/app/modules/destination-ai/server/refreshDestinationBusinessProjection";
 
 export async function POST(req) {
@@ -79,7 +80,8 @@ export async function POST(req) {
                 `
                 SELECT
                     b.id,
-                    p.page_type
+                    p.page_type,
+                    s.settings_json
                 FROM
                     tags_qr_page_blocks b
                 INNER JOIN
@@ -139,7 +141,7 @@ export async function POST(req) {
         );
 
         if (blocks[0].page_type === "directory" && type === "gallery") {
-            const images = (Array.isArray(content_json?.images) ? content_json.images : []).filter(item => item?.url).slice(0, 10);
+            const images = (Array.isArray(content_json?.images) ? content_json.images : []).filter(item => item?.url).slice(0, 12);
             const [listings] = await db.query("SELECT id FROM tags_directory_listings WHERE qr_page_id=? AND business_id=? LIMIT 1", [pageId, businessId]);
             if (listings.length) {
                 await db.query("DELETE FROM tags_directory_media WHERE listing_id=? AND media_type='gallery'", [listings[0].id]);
@@ -149,7 +151,19 @@ export async function POST(req) {
             }
         }
 
-        if (blocks[0].page_type === "directory") await refreshDestinationBusinessProjection(businessId).catch(error => console.error("DESTINATION PROJECTION BLOCK SYNC ERROR", { businessId, error }));
+        const directorySlot = safeParseJSON(blocks[0].settings_json)?.directoryBaseSlot;
+        if (blocks[0].page_type === "directory" && type === "web_section" && directorySlot === "presentation") {
+            const normalized = normalizeWebSectionBlock(content_json);
+            const description = normalized.paragraphs.join("\n\n").trim() || normalized.highlightedText || null;
+            await db.query(
+                `UPDATE tags_directory_listings
+                    SET short_description=?, description=?, updated_at=NOW()
+                  WHERE qr_page_id=? AND business_id=?`,
+                [normalized.highlightedText || null, description, pageId, businessId]
+            );
+        }
+
+        await refreshDestinationBusinessProjection(businessId).catch(error => console.error("DESTINATION PROJECTION BLOCK SYNC ERROR", { businessId, error }));
 
         return Response.json({
             ok: true

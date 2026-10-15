@@ -9,6 +9,7 @@ export const dynamic = "force-dynamic";
 import { db } from "@/app/lib/tags-db";
 import { getLoyaltyAdminScope, loyaltyApiError } from "@/app/modules/loyalty/lib/loyaltyAdminScope";
 import { getProgramsByBusinessId, saveProgram } from "@/app/modules/loyalty/lib/loyaltyProgramService";
+import { refreshDestinationBusinessProjection } from "@/app/modules/destination-ai/server/refreshDestinationBusinessProjection";
 
 export async function GET(request) {
     try {
@@ -37,6 +38,7 @@ export async function PUT(request) {
             settings: body?.settings,
             status: body?.status || "active"
         });
+        await refreshDestinationBusinessProjection(businessId).catch(error => console.error("DESTINATION PROJECTION LOYALTY PROGRAM SYNC ERROR", { businessId, error }));
         return Response.json({ success: true, program });
     } catch (error) {
         console.error("LOYALTY PROGRAM PUT ERROR", error);

@@ -12,6 +12,7 @@ import { db }
 
 import { requireQRPageAccess }
     from "@/app/modules/qr-page/lib/requireQRPageAccess";
+import { refreshDestinationBusinessProjection } from "@/app/modules/destination-ai/server/refreshDestinationBusinessProjection";
 
 export async function POST(req) {
 
@@ -64,7 +65,8 @@ export async function POST(req) {
             await db.query(
                 `
                 SELECT
-                    s.id
+                    s.id,
+                    p.page_type
                 FROM
                     tags_qr_page_sections s
                 INNER JOIN
@@ -116,6 +118,8 @@ export async function POST(req) {
                 pageId
             ]
         );
+
+        await refreshDestinationBusinessProjection(businessId).catch(error => console.error("DESTINATION PROJECTION SECTION DELETE SYNC ERROR", { businessId, error }));
 
         return Response.json({
             ok: true

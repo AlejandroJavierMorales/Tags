@@ -1,7 +1,9 @@
 import { sendMail } from "@/app/lib/sendMail";
 
+import { platformCurrencySymbol } from "@/app/lib/platformCurrencies";
+
 function money(value, currency = "ARS") {
-    return `${currency} ${Number(value || 0).toLocaleString("es-AR")}`;
+    return `${platformCurrencySymbol(currency)} ${Number(value || 0).toLocaleString("es-AR")}`;
 }
 
 function safe(value, fallback = "") {

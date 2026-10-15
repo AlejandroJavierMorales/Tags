@@ -99,8 +99,9 @@ export async function PUT(req) {
   const requestedPlanId = Number(body?.planId || 0);
   const requestedProvider = ["manual", "transfer", "mercadopago"].includes(String(body?.paymentProvider)) ? String(body.paymentProvider) : null;
   const requestedDuration = Number(body?.durationMonths) >= 1 && Number(body?.durationMonths) <= 12 ? Number(body.durationMonths) : null;
+  const requestedGraceDays = Number(body?.graceDays);
   const notifyClient = body?.notifyClient !== false;
-  if (!id || !allowedStatuses.has(status) || !Number.isFinite(amount) || amount < 0) {
+  if (!id || !allowedStatuses.has(status) || !Number.isFinite(amount) || amount < 0 || !Number.isInteger(requestedGraceDays) || requestedGraceDays < 0 || requestedGraceDays > 30) {
     return Response.json({ ok: false, error: "Suscripción, estado e importe son obligatorios" }, { status: 400 });
   }
   const conn = await db.getConnection();
@@ -114,10 +115,10 @@ export async function PUT(req) {
     if (!plan || Number(plan.is_active) !== 1) throw Object.assign(new Error("El plan seleccionado no existe o está inactivo"), { status: 400 });
     const effectiveProvider = requestedProvider || subscription.payment_provider || "manual";
     const effectiveDuration = requestedDuration || Number(subscription.duration_months || 1);
-    await conn.query("UPDATE tags_subscriptions SET plan_id=?,status=?,amount=?,payment_provider=?,duration_months=?,expires_at=?,next_billing_at=?,auto_renew=?,updated_at=NOW() WHERE id=?", [effectivePlanId, status, amount, effectiveProvider, effectiveDuration, expiresAt, effectiveProvider === "mercadopago" ? expiresAt : null, effectiveProvider === "mercadopago" ? 1 : 0, id]);
+    await conn.query("UPDATE tags_subscriptions SET plan_id=?,status=?,amount=?,payment_provider=?,duration_months=?,expires_at=?,next_billing_at=?,auto_renew=?,grace_days=?,updated_at=NOW() WHERE id=?", [effectivePlanId, status, amount, effectiveProvider, effectiveDuration, expiresAt, effectiveProvider === "mercadopago" ? expiresAt : null, effectiveProvider === "mercadopago" ? 1 : 0, requestedGraceDays, id]);
     const addonStatus = ["active", "trial"].includes(status) ? "active" : "inactive";
     const hasAddonSelection = Object.prototype.hasOwnProperty.call(body || {}, "addons");
-    if (!hasAddonSelection) await conn.query(`UPDATE tags_business_addons ba INNER JOIN tags_subscription_addon_grants g ON g.business_addon_id=ba.id SET ba.status=?,ba.expires_at=?,ba.updated_at=NOW(),g.status=?,g.expires_at=?,g.updated_at=NOW() WHERE g.subscription_id=? AND g.status<>'removed'`, [addonStatus, expiresAt, addonStatus, expiresAt, id]);
+    if (!hasAddonSelection) await conn.query(`UPDATE tags_business_addons ba INNER JOIN tags_subscription_addon_grants g ON g.business_addon_id=ba.id SET ba.status=?,ba.expires_at=?,ba.grace_days=?,ba.updated_at=NOW(),g.status=?,g.expires_at=?,g.updated_at=NOW() WHERE g.subscription_id=? AND g.status<>'removed'`, [addonStatus, expiresAt, requestedGraceDays, addonStatus, expiresAt, id]);
     const [[profile]] = await conn.query("SELECT current_version_id FROM tags_plan_profiles WHERE plan_id=? AND status='active' LIMIT 1", [effectivePlanId]);
     if (hasAddonSelection) {
       const requested = Object.entries(body.addons || {}).filter(([, quantity]) => Number(quantity) > 0).map(([code, quantity]) => ({ code: String(code), quantity: Math.min(999, Math.max(1, Number(quantity))) }));
@@ -135,7 +136,7 @@ export async function PUT(req) {
           continue;
         }
         await conn.query("UPDATE tags_subscription_addon_grants SET quantity=?,status=?,expires_at=?,updated_at=NOW() WHERE id=?", [selected.quantity, addonStatus, expiresAt, grant.id]);
-        await conn.query("UPDATE tags_business_addons SET quantity=?,status=?,expires_at=?,updated_at=NOW() WHERE id=? AND business_id=?", [selected.quantity, addonStatus, expiresAt, grant.business_addon_id, subscription.business_id]);
+        await conn.query("UPDATE tags_business_addons SET quantity=?,status=?,expires_at=?,grace_days=?,updated_at=NOW() WHERE id=? AND business_id=?", [selected.quantity, addonStatus, expiresAt, requestedGraceDays, grant.business_addon_id, subscription.business_id]);
         desired.delete(grant.addon_code);
       }
       const [planConfigs] = profile?.current_version_id ? await conn.query("SELECT addon_code,entitlement_config_json FROM tags_plan_version_addons WHERE plan_version_id=?", [profile.current_version_id]) : [[]];
@@ -147,12 +148,12 @@ export async function PUT(req) {
           ORDER BY (ba.status='active') DESC,ba.id DESC FOR UPDATE`, [subscription.business_id, selected.code]);
         let businessAddonId = unlinkedAddons[0]?.id;
         if (businessAddonId) {
-          await conn.query("UPDATE tags_business_addons SET quantity=?,status=?,expires_at=?,notes='Vinculado a la suscripción existente',updated_at=NOW() WHERE id=? AND business_id=?", [selected.quantity, addonStatus, expiresAt, businessAddonId, subscription.business_id]);
+          await conn.query("UPDATE tags_business_addons SET quantity=?,status=?,expires_at=?,grace_days=?,notes='Vinculado a la suscripción existente',updated_at=NOW() WHERE id=? AND business_id=?", [selected.quantity, addonStatus, expiresAt, requestedGraceDays, businessAddonId, subscription.business_id]);
           for (const duplicate of unlinkedAddons.slice(1)) {
             await conn.query("UPDATE tags_business_addons SET status='inactive',notes='Asignación duplicada reemplazada al vincular la suscripción',updated_at=NOW() WHERE id=? AND business_id=?", [duplicate.id, subscription.business_id]);
           }
         } else {
-          const [createdAddon] = await conn.query("INSERT INTO tags_business_addons (business_id,addon_code,quantity,status,started_at,expires_at,amount,currency,notes,created_at,updated_at) VALUES (?,?,?,?,NOW(),?,0,?,'Agregado a la suscripción',NOW(),NOW())", [subscription.business_id, selected.code, selected.quantity, addonStatus, expiresAt, subscription.currency || "ARS"]);
+          const [createdAddon] = await conn.query("INSERT INTO tags_business_addons (business_id,addon_code,quantity,status,started_at,expires_at,grace_days,amount,currency,notes,created_at,updated_at) VALUES (?,?,?,?,NOW(),?,?,0,?,'Agregado a la suscripción',NOW(),NOW())", [subscription.business_id, selected.code, selected.quantity, addonStatus, expiresAt, requestedGraceDays, subscription.currency || "ARS"]);
           businessAddonId = createdAddon.insertId;
         }
         await conn.query("INSERT INTO tags_subscription_addon_grants (subscription_id,business_id,business_addon_id,addon_code,quantity,status,starts_at,expires_at,entitlement_snapshot_json) VALUES (?,?,?,?,?,?,NOW(),?,?)", [id, subscription.business_id, businessAddonId, selected.code, selected.quantity, addonStatus, expiresAt, configs.get(selected.code) || "{}"]);
@@ -166,8 +167,8 @@ export async function PUT(req) {
         if (grant?.status === "removed") continue;
         const [[existingAddon]] = await conn.query("SELECT id FROM tags_business_addons WHERE business_id=? AND addon_code=? ORDER BY id DESC LIMIT 1", [subscription.business_id, addon.addon_code]);
         let businessAddonId = existingAddon?.id;
-        if (businessAddonId) await conn.query("UPDATE tags_business_addons SET quantity=?,status=?,expires_at=?,updated_at=NOW() WHERE id=?", [Number(addon.quantity || 1), addonStatus, expiresAt, businessAddonId]);
-        else { const [createdAddon] = await conn.query("INSERT INTO tags_business_addons (business_id,addon_code,quantity,status,expires_at,amount,currency,notes,created_at,updated_at) VALUES (?,?,?, ?,?,0,?,'Asignado por suscripción',NOW(),NOW())", [subscription.business_id, addon.addon_code, Number(addon.quantity || 1), addonStatus, expiresAt, subscription.currency || "ARS"]); businessAddonId = createdAddon.insertId; }
+        if (businessAddonId) await conn.query("UPDATE tags_business_addons SET quantity=?,status=?,expires_at=?,grace_days=?,updated_at=NOW() WHERE id=?", [Number(addon.quantity || 1), addonStatus, expiresAt, requestedGraceDays, businessAddonId]);
+        else { const [createdAddon] = await conn.query("INSERT INTO tags_business_addons (business_id,addon_code,quantity,status,expires_at,grace_days,amount,currency,notes,created_at,updated_at) VALUES (?,?,?, ?,?,?,0,?,'Asignado por suscripción',NOW(),NOW())", [subscription.business_id, addon.addon_code, Number(addon.quantity || 1), addonStatus, expiresAt, requestedGraceDays, subscription.currency || "ARS"]); businessAddonId = createdAddon.insertId; }
         if (grant) await conn.query("UPDATE tags_subscription_addon_grants SET business_addon_id=?,quantity=?,status=?,starts_at=COALESCE(starts_at,NOW()),expires_at=?,entitlement_snapshot_json=?,updated_at=NOW() WHERE id=?", [businessAddonId, Number(addon.quantity || 1), addonStatus, expiresAt, jsonText(addon.entitlement_config_json), grant.id]);
         else await conn.query("INSERT INTO tags_subscription_addon_grants (subscription_id,business_id,business_addon_id,addon_code,quantity,status,starts_at,expires_at,entitlement_snapshot_json) VALUES (?,?,?,?,?,?,NOW(),?,?)", [id, subscription.business_id, businessAddonId, addon.addon_code, Number(addon.quantity || 1), addonStatus, expiresAt, jsonText(addon.entitlement_config_json)]);
       }
@@ -176,7 +177,8 @@ export async function PUT(req) {
     const paidWebAvailable = Number(plan.is_free) !== 1 && isEffectiveSubscriptionActive({
       ...subscription,
       status,
-      expires_at: expiresAt
+      expires_at: expiresAt,
+      grace_days: requestedGraceDays
     });
     const listingStatus = Number(plan.is_free) === 1 || paidWebAvailable ? "published" : status === "cancelled" ? "archived" : "suspended";
     const publicationStatus = Number(plan.is_free) === 1 || paidWebAvailable ? "published" : status === "cancelled" ? "archived" : "hidden";
@@ -184,7 +186,7 @@ export async function PUT(req) {
     await conn.query("UPDATE tags_directory_site_listings sl INNER JOIN tags_directory_listings l ON l.id=sl.listing_id SET sl.is_free=?,sl.publication_status=?,sl.updated_at=NOW() WHERE l.business_id=?", [Number(plan.is_free) === 1 ? 1 : 0, publicationStatus, subscription.business_id]);
     if (Number(plan.is_free) === 1) await conn.query("UPDATE tags_qr_pages SET status='draft',robots_index=0,updated_at=NOW() WHERE business_id=? AND page_type='directory'", [subscription.business_id]);
     await conn.query("UPDATE tags_subscription_payments SET plan_id=?,amount=? WHERE subscription_id=? AND status='pending'", [effectivePlanId, amount, id]);
-    await conn.query("INSERT INTO tags_subscription_audit_events (subscription_id,business_id,event_code,actor_type,actor_id,previous_state_json,next_state_json) VALUES (?,?,?,'admin',?,?,?)", [id, subscription.business_id, status === "inactive" ? "subscription.suspended" : status === "active" && subscription.status === "inactive" ? "subscription.reactivated" : "subscription.updated", Number(access.session?.businessId || 0) || null, JSON.stringify({status:subscription.status,amount:subscription.amount,expiresAt:subscription.expires_at}), JSON.stringify({status,amount,expiresAt})]);
+    await conn.query("INSERT INTO tags_subscription_audit_events (subscription_id,business_id,event_code,actor_type,actor_id,previous_state_json,next_state_json) VALUES (?,?,?,'admin',?,?,?)", [id, subscription.business_id, status === "inactive" ? "subscription.suspended" : status === "active" && subscription.status === "inactive" ? "subscription.reactivated" : "subscription.updated", Number(access.session?.businessId || 0) || null, JSON.stringify({status:subscription.status,amount:subscription.amount,expiresAt:subscription.expires_at,graceDays:Number(subscription.grace_days || 0)}), JSON.stringify({status,amount,expiresAt,graceDays:requestedGraceDays})]);
     changedSubscription = { businessId: subscription.business_id, planId: effectivePlanId, status, previousStatus: subscription.status };
     await conn.commit();
     if (paidWebAvailable) {

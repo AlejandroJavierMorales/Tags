@@ -46,7 +46,8 @@ export async function createAppQRCode({
     value = null,
     finalUrl = null,
     status = "active",
-    allowTrial = false
+    allowTrial = false,
+    skipCapacityCheck = false
 }) {
     if (!conn) {
         throw new Error("conn requerido");
@@ -60,7 +61,7 @@ export async function createAppQRCode({
         throw new Error("label requerido");
     }
 
-    const canCreate =
+    const canCreate = skipCapacityCheck ? { ok: true } :
         await canCreateQR({
             conn,
             businessId,

@@ -18,7 +18,7 @@ function hasPrice(value) {
 
 function formatCatalogPrice(value, currency) {
   if (!hasPrice(value)) return "";
-  const label = String(currency || "ARS").toUpperCase() === "ARS" ? "$" : String(currency || "").toUpperCase() === "USD" ? "US$" : String(currency || "").toUpperCase();
+  const label = String(currency || "ARS").toUpperCase() === "ARS" ? "$" : String(currency || "").toUpperCase() === "USD" ? "U$S" : String(currency || "").toUpperCase();
   return `${label} ${Number(value).toLocaleString("es-AR", { maximumFractionDigits: 2 })}`;
 }
 
@@ -64,6 +64,7 @@ function ProductCard({ product, page, listingSlug }) {
       {product.description && <p>{product.description}</p>}
       {hasPrice(product.price) && <strong>{formatCatalogPrice(product.price, product.currency)}</strong>}
       <div className="tags_directory_catalog_actions">
+        <a className="detail" href={productPageHref(product, listingSlug)} aria-label={"Ver producto " + product.title} title="Ver producto"><FaArrowUpRightFromSquare /><span>Ver producto</span></a>
         {whatsapp && <a href={whatsapp} target="_blank" rel="noreferrer" aria-label={"Consultar " + product.title + " por WhatsApp"} title="Consultar por WhatsApp"><FaWhatsapp /></a>}
         <button type="button" onClick={() => shareProduct(product, listingSlug)} aria-label={"Compartir " + product.title} title="Compartir producto"><FaShareNodes /></button>
       </div>
@@ -127,13 +128,14 @@ function ProductDetailModal({ product, page, listingSlug, onClose }) {
   </div>;
 }
 
-export default function DirectoryCatalogBlock({ products = [], page, content = {}, styles = {}, listingSlug = "" }) {
+export default function DirectoryCatalogBlock({ products = [], page, content = {}, styles = {}, listingSlug = "", defaultCategory = "all" }) {
   const catalogRef = useRef(null);
-  const [category, setCategory] = useState("all");
-  const [query, setQuery] = useState("");
-  const [catalogPage, setCatalogPage] = useState(1);
   const visible = products.filter(product => Number(product.is_visible));
   const categories = useMemo(() => [...new Set(visible.map(product => String(product.category || "General").trim()).filter(Boolean))], [products]);
+  const initialCategory = categories.includes(defaultCategory) && visible.some(product => String(product.category || "General") === defaultCategory) ? defaultCategory : "all";
+  const [category, setCategory] = useState(initialCategory);
+  const [query, setQuery] = useState("");
+  const [catalogPage, setCatalogPage] = useState(1);
   const filtered = visible.filter(product => (category === "all" || String(product.category || "General") === category) && (!query || normalized(product.title + " " + product.category + " " + product.description).includes(normalized(query))));
   const perPage = Math.max(6, Math.min(24, Number(content.productsPerPage || 12)));
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));

@@ -7,8 +7,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { FaBagShopping, FaBoxOpen, FaCreditCard, FaReceipt, FaTruck } from "react-icons/fa6";
 
 import showAlert from "@/app/components/showAlert";
+import { platformCurrencySymbol } from "@/app/lib/platformCurrencies";
 
 import "@/app/styles/tags_store_public.css";
 
@@ -39,7 +41,7 @@ const shippingStatusLabels = {
 };
 
 function formatPrice(value, currency = "ARS") {
-    return `${currency} ${Number(value || 0).toLocaleString("es-AR")}`;
+    return `${platformCurrencySymbol(currency)} ${Number(value || 0).toLocaleString("es-AR")}`;
 }
 
 function formatDate(value) {
@@ -53,6 +55,12 @@ function formatDate(value) {
     });
 }
 
+function normalizeOrderInput(value) {
+    const text = String(value || "").trim();
+    const match = text.match(/\bST\d+(?:-[A-Z0-9]+){1,3}\b/i);
+    return match ? match[0].toUpperCase() : text.replace(/[`*]/g, "").trim();
+}
+
 export default function StoreOrderTrackClient({
     slug,
     store,
@@ -60,7 +68,7 @@ export default function StoreOrderTrackClient({
 }) {
 
     const [orderNumber, setOrderNumber] =
-        useState(prefilledOrder);
+        useState(normalizeOrderInput(prefilledOrder));
 
     const [contact, setContact] =
         useState("");
@@ -74,7 +82,9 @@ export default function StoreOrderTrackClient({
     async function handleSearch(e) {
         e.preventDefault();
 
-        if (!orderNumber.trim() || !contact.trim()) {
+        const normalizedOrderNumber = normalizeOrderInput(orderNumber);
+
+        if (!normalizedOrderNumber || !contact.trim()) {
             showAlert({
                 title: "Datos requeridos",
                 text: "Ingresá número de pedido y email o teléfono.",
@@ -97,7 +107,7 @@ export default function StoreOrderTrackClient({
                     },
                     body: JSON.stringify({
                         slug,
-                        orderNumber,
+                        orderNumber: normalizedOrderNumber,
                         contact
                     })
                 }
@@ -179,10 +189,12 @@ export default function StoreOrderTrackClient({
                         <input
                             value={orderNumber}
                             onChange={(e) =>
-                                setOrderNumber(e.target.value)
+                                setOrderNumber(normalizeOrderInput(e.target.value))
                             }
                             placeholder="Ej: ST1-81769809"
+                            autoCapitalize="characters"
                         />
+                        <small>El enlace de WhatsApp completa este dato automáticamente. También podés pegar el número o la línea completa del mensaje.</small>
                     </div>
 
                     <div>
@@ -223,7 +235,9 @@ export default function StoreOrderTrackClient({
                 <section className="store_track_result">
 
                     <div className="store_track_result_head">
-                        <div>
+                        <div className="store_track_order_identity">
+                            <span className="store_track_order_icon"><FaReceipt /></span>
+                            <div>
                             <h2>
                                 Pedido {result.order.order_number}
                             </h2>
@@ -231,6 +245,7 @@ export default function StoreOrderTrackClient({
                             <p>
                                 {result.order.store_name} · {formatDate(result.order.created_at)}
                             </p>
+                            </div>
                         </div>
 
                         <strong>
@@ -244,7 +259,7 @@ export default function StoreOrderTrackClient({
                     <div className="store_track_status_grid">
 
                         <article>
-                            <span>Pedido</span>
+                            <div className="store_track_status_title"><FaBoxOpen /><span>Pedido</span></div>
 
                             <strong>
                                 {orderStatusLabels[result.order.order_status] || result.order.order_status}
@@ -252,7 +267,7 @@ export default function StoreOrderTrackClient({
                         </article>
 
                         <article>
-                            <span>Pago</span>
+                            <div className="store_track_status_title"><FaCreditCard /><span>Pago</span></div>
 
                             <strong>
                                 {paymentStatusLabels[result.order.payment_status] || result.order.payment_status}
@@ -260,7 +275,7 @@ export default function StoreOrderTrackClient({
                         </article>
 
                         <article>
-                            <span>Envío</span>
+                            <div className="store_track_status_title"><FaTruck /><span>Envío</span></div>
 
                             <strong>
                                 {shippingStatusLabels[result.order.shipping_status] || result.order.shipping_status}
@@ -270,7 +285,7 @@ export default function StoreOrderTrackClient({
                     </div>
 
                     <div className="store_track_shipping">
-                        <h3>Entrega</h3>
+                        <h3><FaTruck /> Entrega</h3>
 
                         <p>
                             Método: {result.order.shipping_method_name || "No informado"}
@@ -301,31 +316,30 @@ export default function StoreOrderTrackClient({
                     </div>
 
                     <div className="store_track_items">
-                        <h3>Productos</h3>
+                        <h3><FaBagShopping /> Productos</h3>
 
                         {result.items.map(item => (
                             <div
                                 key={item.id}
                                 className="store_track_item"
                             >
-                                <div>
-                                    <strong>
-                                        {item.title}
-                                    </strong>
-
-                                    {item.variant_title && (
-                                        <small>
-                                            {item.variant_title}
-                                        </small>
-                                    )}
+                                <div className="store_track_item_main">
+                                    <div className="store_track_item_media">
+                                        {item.image_url
+                                            ? <img src={item.image_url} alt="" />
+                                            : <FaBoxOpen />}
+                                    </div>
+                                    <div className="store_track_item_description">
+                                        <strong>{item.title}</strong>
+                                        {item.variant_title && <small>{item.variant_title}</small>}
+                                        {item.sku && <small>Código: {item.sku}</small>}
+                                    </div>
                                 </div>
 
-                                <span>
-                                    {item.quantity} × {formatPrice(
-                                        item.unit_price,
-                                        result.order.currency
-                                    )}
-                                </span>
+                                <div className="store_track_item_amount">
+                                    <small>{item.quantity} × {formatPrice(item.unit_price,result.order.currency)}</small>
+                                    <strong>{formatPrice(item.total_price,result.order.currency)}</strong>
+                                </div>
                             </div>
                         ))}
                     </div>

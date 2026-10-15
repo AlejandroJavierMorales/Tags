@@ -15,7 +15,7 @@ function columnsForWidth(width){if(width>=992)return 4;if(width>=768)return 3;if
 
 export default function DirectoryProviderGallery({ images = [], providerName, content = {}, styles = {} }) {
   const [failed,setFailed]=useState([]),[zoomed,setZoomed]=useState(null),[active,setActive]=useState(0),[columns,setColumns]=useState(1);
-  const visible=images.slice(0,8).filter(image=>!failed.includes(image.id));
+  const visible=images.slice(0,12).filter(image=>!failed.includes(image.id));
   const carousel=content.imageLayout==="carousel";
   const maxStart=Math.max(0,visible.length-columns);
   useEffect(()=>{const resize=()=>setColumns(columnsForWidth(window.innerWidth));resize();window.addEventListener("resize",resize);return()=>window.removeEventListener("resize",resize);},[]);

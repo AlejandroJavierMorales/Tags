@@ -2,11 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { FaCalendarCheck, FaChartLine, FaGift, FaGlobe, FaGoogle, FaHotel, FaQrcode, FaRobot, FaStar, FaStore, FaUtensils, FaUsers } from "react-icons/fa6";
+import { FaCalendarCheck, FaChartLine, FaGift, FaGlobe, FaGoogle, FaGraduationCap, FaHotel, FaQrcode, FaRobot, FaStar, FaStore, FaUtensils, FaUsers } from "react-icons/fa6";
 import "./BusinessToolsNav.css";
 
-const ICONS = { panel: FaChartLine, staff: FaUsers, qr_page: FaQrcode, tags_id: FaQrcode, guest_experience: FaHotel, store: FaStore, resto: FaUtensils, turnos: FaCalendarCheck, events: FaCalendarCheck, e_events: FaCalendarCheck, client_reviews: FaStar, qr_agency: FaQrcode, ai_chatbot: FaRobot, google_business_profile: FaGoogle, loyalty: FaGift, directory: FaGlobe, portal_public: FaGlobe };
-const LABELS = { panel: "Panel", staff: "Colaboradores", guest_experience: "Mi Estadía", store: "Tienda online", resto: "Restaurant - Carta de menú", turnos: "Turnos y Reservas", events: "Eventos", e_events: "Eventos Pro", client_reviews: "Reseñas de Clientes", qr_agency: "QR Agency", ai_chatbot: "ChatBot", loyalty: "Beneficios", directory: "Web", portal_public: "Portal" };
+const ICONS = { panel: FaChartLine, staff: FaUsers, tutorials: FaGraduationCap, qr_page: FaQrcode, tags_id: FaQrcode, guest_experience: FaHotel, store: FaStore, resto: FaUtensils, turnos: FaCalendarCheck, events: FaCalendarCheck, e_events: FaCalendarCheck, client_reviews: FaStar, qr_agency: FaQrcode, ai_chatbot: FaRobot, google_business_profile: FaGoogle, loyalty: FaGift, directory: FaGlobe, portal_public: FaGlobe };
+const LABELS = { panel: "Panel", staff: "Colaboradores", tutorials: "Tutoriales", guest_experience: "Mi Estadía", store: "Tienda online", resto: "Restaurant - Carta de menú", turnos: "Turnos y Reservas", events: "Eventos", e_events: "Eventos Pro", client_reviews: "Reseñas de Clientes", qr_agency: "QR Agency", ai_chatbot: "ChatBot", loyalty: "Beneficios", directory: "Web", portal_public: "Portal" };
 
 export default function BusinessToolsNav({ businessId }) {
     const pathname = usePathname();
@@ -28,7 +28,15 @@ export default function BusinessToolsNav({ businessId }) {
         }).catch(() => {});
         return () => { active = false; document.body.classList.remove("tags_has_business_tools_nav"); };
     }, [businessId, pathname, router]);
-    const options = useMemo(() => { const list = payload?.options || []; const selected = payload?.selected || "panel"; return [...list].sort((a, b) => a.key === selected ? -1 : b.key === selected ? 1 : 0); }, [payload]);
+    const options = useMemo(() => {
+        const list = payload?.options || [];
+        const selected = payload?.selected || "panel";
+        return [...list].sort((a, b) => {
+            if (a.key === "tutorials") return 1;
+            if (b.key === "tutorials") return -1;
+            return a.key === selected ? -1 : b.key === selected ? 1 : 0;
+        });
+    }, [payload]);
     const isPanel = pathname === `/dashboard/businesses/${businessId}` || pathname === `/dashboard/businesses/${businessId}/`;
     if (isPanel || !options.length) return null;
     return <nav className="tags_business_tools_nav" aria-label="Navegación entre herramientas">{options.map(option => { const Icon = ICONS[option.key] || FaGlobe; const isActive = pathname === option.path || pathname.startsWith(`${option.path}/`); const label = LABELS[option.key] || option.label; return <button type="button" key={option.key} className={isActive ? "is_active" : ""} onClick={() => router.push(option.path)} title={`Abrir ${label}`}><Icon aria-hidden="true" /><span>{label}</span></button>; })}</nav>;

@@ -767,7 +767,7 @@ async function activateMigratedDirectoryPages(source, target, plan) {
     if (!channels.length) throw new Error(`La ficha ${item.listingId} no tiene un canal asignado`);
     const [listingRows] = await target.execute("SELECT * FROM tags_directory_listings WHERE id=? AND business_id=? LIMIT 1", [item.listingId, businessId]);
     const listing = listingRows[0];
-    const [legacyMedia] = await target.execute("SELECT media_type,url,alt_text FROM tags_directory_media WHERE listing_id=? AND is_active=1 ORDER BY FIELD(media_type,'logo','cover','gallery'),sort_order,id LIMIT 10", [item.listingId]);
+    const [legacyMedia] = await target.execute("SELECT media_type,url,alt_text FROM tags_directory_media WHERE listing_id=? AND is_active=1 ORDER BY FIELD(media_type,'logo','cover','gallery'),sort_order,id LIMIT 14", [item.listingId]);
     const channel = channels[0];
     const publicSlug = slug(channel.slug || business.name);
     const preferredPageSlug = publicSlug;
@@ -802,7 +802,7 @@ async function activateMigratedDirectoryPages(source, target, plan) {
       sections: [
         { type: "content", title: "Presentación", sort_order: 1, settings_json: { directoryBaseSlot: "presentation" }, blocks: [{ type: "web_section", sort_order: 1, content_json: { title: templateBusiness.name, subtitle: "", highlightedText: templateBusiness.description, paragraphs: [], images: [], imageLayout: "grid" } }] },
         ...publisherSections.map((section, index) => ({ type: "content", title: nullable(section.title) || "Sección web", sort_order: index + 2, settings_json: { directoryBaseSlot: "legacy-web-section", legacySectionId: Number(section.id) }, blocks: [{ type: "web_section", sort_order: 1, content_json: legacyWebSectionContent(section) }] })),
-        { type: "content", title: "Galería", sort_order: publisherSections.length + 2, settings_json: { directoryBaseSlot: "gallery" }, blocks: [{ type: "gallery", sort_order: 1, content_json: { images: legacyMedia.filter(media => ["cover", "gallery"].includes(media.media_type)).slice(0, 8).map(media => ({ url: media.url, alt: media.alt_text || "" })), maxImages: 8 } }] },
+        { type: "content", title: "Galería", sort_order: publisherSections.length + 2, settings_json: { directoryBaseSlot: "gallery" }, blocks: [{ type: "gallery", sort_order: 1, content_json: { images: legacyMedia.filter(media => ["cover", "gallery"].includes(media.media_type)).slice(0, 12).map(media => ({ url: media.url, alt: media.alt_text || "" })), maxImages: 12 } }] },
         { type: "content", title: "Contacto", sort_order: publisherSections.length + 3, settings_json: { directoryBaseSlot: "contact" }, blocks: [{ type: "contact_info", sort_order: 1, content_json: { showWhatsapp: true, showPhone: true, showEmail: true, showAddress: true } }] },
       ],
     };

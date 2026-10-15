@@ -67,6 +67,11 @@ export async function POST(req) {
             return Response.json({ ok: true, status: "checked_out", earlyCheckout });
         }
 
+        if (!["reserved", "upcoming", "active"].includes(stay.status)) {
+            await connection.rollback();
+            return guestError("La reserva debe reprogramarse antes de realizar el check-in", 409);
+        }
+
         for (const person of companions) {
             if (!cleanGuestText(person.firstName, 100) || !cleanGuestText(person.lastName, 100) || !cleanGuestText(person.documentNumber, 80)) {
                 await connection.rollback();
@@ -78,10 +83,6 @@ export async function POST(req) {
             const checkinDate = String(stay.starts_at).slice(0, 10);
             const settings = parseGuestJson(stay.settings_json);
             if (checkinDate > today) { await connection.rollback(); return guestError(`La fecha de Check-in es ${checkinDate.split("-").reverse().join("/")} desde ${settings.checkinTime || "el horario definido"} hs.`, 409); }
-        }
-        if (complete && companions.length !== Math.max(0, Number(stay.adults) + Number(stay.children) - 1)) {
-            await connection.rollback();
-            return guestError(`Para confirmar el check-in deben cargarse ${Math.max(0, Number(stay.adults) + Number(stay.children) - 1)} acompañantes`);
         }
         if (complete && !confirmOutstanding) {
             const [[account]] = await connection.query(`SELECT COALESCE(SUM(CASE WHEN e.status='confirmed' THEN e.total_amount ELSE 0 END),0) balance

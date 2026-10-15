@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { FaBuilding, FaFileImport, FaFolderTree, FaGlobe, FaLocationDot, FaMoneyBillTransfer, FaPen, FaPlus, FaRobot, FaTrash, FaWhatsapp } from "react-icons/fa6";
+import { FaBuilding, FaFileImport, FaFolderTree, FaGlobe, FaLocationDot, FaMoneyBillTransfer, FaPen, FaPlus, FaRobot, FaTrash, FaVideo, FaWhatsapp } from "react-icons/fa6";
 import TagsSpinner from "@/app/components/TagsSpinner";
 import MediaUploader from "@/app/components/MediaUploader";
 import showAlert from "@/app/components/showAlert";
@@ -9,6 +9,7 @@ import DestinationAiAdminPanel from "@/app/modules/destination-ai/components/adm
 import DestinationAiKnowledgePanel from "@/app/modules/destination-ai/components/admin/DestinationAiKnowledgePanel";
 import DirectoryPointsAdminPanel from "@/app/modules/directory-points/components/DirectoryPointsAdminPanel";
 import ProductImportAdminPanel from "@/app/modules/product-import/components/admin/ProductImportAdminPanel";
+import DirectoryTutorialsAdmin from "@/app/modules/directory/components/admin/DirectoryTutorialsAdmin";
 import "./directoryAdmin.css";
 
 const EMPTY_SITE = { name: "", code: "", primaryHost: "", territoryPlaceId: "", logoUrl: "", slogan: "", primaryColor: "#2f7958", emailFrom: "", replyTo: "", notificationEmail: "", whatsapp: "", phone: "", destinationAssistantEnabled: false, voiceResponseEnabled: false, isActive: true };
@@ -452,6 +453,7 @@ export default function DirectoryAdminClient() {
         ["destination-ai", FaRobot, "Muchi / IA"],
         ["directory-points", FaLocationDot, "Puntos QR"],
         ["product-import", FaFileImport, "Importar productos"],
+        ["tutorials", FaVideo, "Tutoriales"],
         ["pricing", FaGlobe, "Planes Directorio"],
         ["subscriptions", FaMoneyBillTransfer, "Suscripciones"],
         ["automatic-subscriptions", FaMoneyBillTransfer, "Automáticas MP"],
@@ -479,6 +481,7 @@ export default function DirectoryAdminClient() {
         {tab === "destination-ai" && <DestinationAiAdminPanel />}
         {tab === "directory-points" && <DirectoryPointsAdminPanel />}
         {tab === "product-import" && <ProductImportAdminPanel />}
+        {tab === "tutorials" && <DirectoryTutorialsAdmin />}
         {tab === "pricing" && <DirectoryPricing pricing={pricing} onSave={savePricing} />}
         {tab === "subscriptions" && <DirectorySubscriptions data={subscriptions} filters={subscriptionFilters} setFilters={setSubscriptionFilters} onCreate={openSubscription} onConfirm={confirmManualPayment} onAction={updateSubscription} onNotify={notifySubscription} />}
         {tab === "automatic-subscriptions" && <DirectoryAutomaticSubscriptions data={automaticSubscriptions} filters={automaticFilters} setFilters={setAutomaticFilters} onAction={automaticSubscriptionAction} />}

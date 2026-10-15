@@ -9,10 +9,12 @@ INSERT INTO tags_directory_taxonomy_nodes
 SELECT NULL,g.id,seed.name,seed.slug,'category',g.depth+1,seed.description,seed.sort_order,1
 FROM (
   SELECT 'Restaurantes' name,'restoranes' slug,'Restaurantes, comedores y establecimientos con atención gastronómica.' description,10 sort_order
-  UNION ALL SELECT 'Comidas para llevar','comida-para-llevar','Comidas preparadas para retirar o pedir.',20
+  UNION ALL SELECT 'Comidas para llevar','comidas-para-llevar','Comidas preparadas para retirar o pedir.',20
   UNION ALL SELECT 'Parrillas','parrillas','Parrillas y propuestas especializadas en carnes asadas.',30
   UNION ALL SELECT 'Cervecerías','bares-y-cervecerias','Cervecerías con atención al público, excluyendo fábricas sin atención gastronómica.',40
   UNION ALL SELECT 'Pizzerías','pizzerias','Pizzerías y locales cuya propuesta principal es la pizza.',50
+  UNION ALL SELECT 'Bar - Cafetería','cafeterias-y-casas-de-te','Bares, cafeterías, casas de té y propuestas para desayunar o merendar.',60
+  UNION ALL SELECT 'Casas de Té','casas-de-te','Casas de té con atención al público.',70
 ) seed
 INNER JOIN tags_directory_taxonomy_nodes g
   ON g.parent_id IS NULL AND g.slug='gastronomia' AND g.is_active=1
@@ -27,22 +29,26 @@ UPDATE tags_directory_taxonomy_nodes node
 INNER JOIN tags_directory_taxonomy_nodes parent ON parent.id=node.parent_id AND parent.slug='gastronomia'
 SET node.name=CASE node.slug
   WHEN 'restoranes' THEN 'Restaurantes'
-  WHEN 'comida-para-llevar' THEN 'Comidas para llevar'
+  WHEN 'comidas-para-llevar' THEN 'Comidas para llevar'
   WHEN 'parrillas' THEN 'Parrillas'
   WHEN 'bares-y-cervecerias' THEN 'Cervecerías'
   WHEN 'pizzerias' THEN 'Pizzerías'
+  WHEN 'cafeterias-y-casas-de-te' THEN 'Bar - Cafetería'
+  WHEN 'casas-de-te' THEN 'Casas de Té'
   ELSE node.name
 END,
 node.sort_order=CASE node.slug
   WHEN 'restoranes' THEN 10
-  WHEN 'comida-para-llevar' THEN 20
+  WHEN 'comidas-para-llevar' THEN 20
   WHEN 'parrillas' THEN 30
   WHEN 'bares-y-cervecerias' THEN 40
   WHEN 'pizzerias' THEN 50
+  WHEN 'cafeterias-y-casas-de-te' THEN 60
+  WHEN 'casas-de-te' THEN 70
   ELSE node.sort_order
 END
 WHERE node.id>0
-  AND node.slug IN ('restoranes','comida-para-llevar','parrillas','bares-y-cervecerias','pizzerias');
+  AND node.slug IN ('restoranes','comidas-para-llevar','parrillas','bares-y-cervecerias','pizzerias','cafeterias-y-casas-de-te','casas-de-te');
 
 INSERT IGNORE INTO tags_directory_taxonomy_closure (ancestor_id,descendant_id,depth)
 SELECT node.id,node.id,0

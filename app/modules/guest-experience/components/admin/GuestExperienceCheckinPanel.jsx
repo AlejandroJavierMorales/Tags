@@ -19,7 +19,7 @@ export default function GuestExperienceCheckinPanel({businessId,data,busy,onSave
 <div>
 <span>RECEPCIÓN</span>
 <h2>Checkin</h2>
-<p>Completá pasajeros y vehículo antes de confirmar el ingreso.</p>
+<p>El titular es suficiente para confirmar el ingreso. Podés completar acompañantes y vehículo cuando corresponda.</p>
 </div>
 </header><div className="tags_guest_checkin_filters"><label>Buscar reserva<input type="search" placeholder="Código, DNI o nombre" value={search} onChange={event=>setSearch(event.target.value)}/></label><label>Estado<select value={filter} onChange={event=>setFilter(event.target.value)}><option value="all">Todas</option><option value="ready">Con pre-check-in</option><option value="pending">Pre-check-in pendiente</option></select></label></div>
 <div className="tags_guest_checkin_list">{reservations.map(item=>

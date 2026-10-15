@@ -167,10 +167,22 @@ export default function GuestExperienceAdminPage({
     return true;
   }
   async function updateReservation(form) {
-    return Boolean(await request("/api/guest-experience/admin/stays", "PATCH", form, "Reserva modificada."));
+    const previous = data.stays.find(item => Number(item.id) === Number(form.stayId));
+    const reprogrammed = previous?.status === "no_show_rebooking";
+    const updated = await request("/api/guest-experience/admin/stays", "PATCH", form, reprogrammed ? "Reserva reprogramada." : "Reserva modificada.");
+    if (!updated) return false;
+    if (reprogrammed) {
+      const unit = data.units.find(item => Number(item.id) === Number(form.unitId));
+      const nights = Math.max(1, Math.round((new Date(`${form.endsAt}T12:00:00`) - new Date(`${form.startsAt}T12:00:00`)) / 86400000));
+      await invite({ ...previous, guest_name: `${form.firstName} ${form.lastName}`.trim(), guest_email: form.email, guest_phone: form.phone, starts_at: form.startsAt, ends_at: form.endsAt, adults: form.adults, children: form.children, unit_name: unit?.name || "A confirmar", lodging_total: Number(form.nightlyRate || 0) * nights, deposit_required_amount: Number(form.nightlyRate || 0) * nights * Number(form.depositPercentage || 0) / 100, status: "reserved" }, "email");
+    }
+    return true;
   }
   async function deleteReservation(stayId) {
     return Boolean(await request("/api/guest-experience/admin/stays", "DELETE", { stayId }, "Reserva eliminada."));
+  }
+  async function markNoShow(payload) {
+    return Boolean(await request("/api/guest-experience/admin/no-show", "POST", payload, "La reserva quedó pendiente de reprogramación y la unidad fue liberada."));
   }
   async function addUnit(e) {
     e.preventDefault();
@@ -178,11 +190,13 @@ export default function GuestExperienceAdminPage({
   }
   async function invite(item, channel) {
     const reminder = channel === "reminder";
-    if (channel === "email" || reminder) {
-      const preview = buildReservationAccessCommunication({ stay: { ...item, app_name: data.app.name, logo_url: data.app.logo_url, currency: data.app.currency || "ARS" }, settings: data.app.settings || {}, eventCode: reminder ? "arrival_reminder" : "access_link" });
+    const rebooking = item.status === "no_show_rebooking";
+    const eventCode = rebooking ? "no_show_rebooking" : reminder ? "arrival_reminder" : "access_link";
+    if (channel === "email" || channel === "whatsapp" || reminder) {
+      const preview = buildReservationAccessCommunication({ stay: { ...item, app_name: data.app.name, logo_url: data.app.logo_url, currency: data.app.currency || "ARS" }, settings: data.app.settings || {}, eventCode });
       const confirmed = await showAlert({
-        title: "Revisá el email antes de enviarlo",
-        text: `<div style="margin-bottom:12px;text-align:left;font-size:13px"><strong>Destinatario:</strong> ${String(item.guest_email || "Sin email").replace(/[<>&]/g, "")}<br><strong>Asunto:</strong> ${preview.title}<br><small>También se enviará una copia a la plataforma.</small></div>${preview.html}`,
+        title: `Revisá el aviso por ${channel === "whatsapp" ? "WhatsApp" : "email"} antes de enviarlo`,
+        text: `<div style="margin-bottom:12px;text-align:left;font-size:13px"><strong>Destinatario:</strong> ${String(channel === "whatsapp" ? item.guest_phone || "Sin teléfono" : item.guest_email || "Sin email").replace(/[<>&]/g, "")}<br><strong>Asunto:</strong> ${preview.title}${channel === "email" ? "<br><small>También se enviará una copia a la plataforma.</small>" : ""}</div>${preview.html}`,
         icon: "info",
         isHtml: true,
         showCancelButton: true,
@@ -195,14 +209,13 @@ export default function GuestExperienceAdminPage({
     const p = await request("/api/guest-experience/admin/invitations", "POST", {
       stayId: item.id,
       channel: reminder ? "email" : channel,
-      eventCode: reminder ? "arrival_reminder" : "access_link"
-    }, reminder ? "Recordatorio de ingreso enviado." : channel === "email" ? "Acceso enviado por email." : null);
+      eventCode
+    }, reminder ? "Recordatorio de ingreso enviado." : channel === "email" ? rebooking ? "Aviso de reprogramación enviado por email." : "Acceso enviado por email." : null);
     if (!p) return false;
     if (channel === "whatsapp" && p.whatsappUrl) {
       const url = new URL(p.whatsappUrl);
       const phone = normalizeArgentinaWhatsapp(item.guest_phone);
       if (phone) url.pathname = `/${phone}`;
-      url.searchParams.set("text", `🏡 *Mi Estadía*\n\n*Acceso a Mi Estadía en ${data.app.name}*\n\n📌 *Reserva:* ${item.stay_code}\n📅 *Estadía:* ${new Date(item.starts_at).toLocaleDateString("es-AR")} al ${new Date(item.ends_at).toLocaleDateString("es-AR")}\n\n🔗 *Enlace de acceso:*\n${p.link}\n\nTe esperamos.`);
       window.open(url.toString(), "_blank", "noopener,noreferrer");
     }
     if (channel === "manual") {
@@ -289,6 +302,7 @@ export default function GuestExperienceAdminPage({
   const adminGroups = [
     { key:"stays",label:"Reservas / Estadías",icon:FaCalendarDays,items:[
       can("guest.stays.view")&&{key:"reservations",label:"Grilla de ocupación",icon:FaCalendarDays},
+      can("guest.stays.view")&&{key:"rebookings",label:"Reprogramaciones",icon:FaCalendarCheck},
       can("guest.stays.view")&&{key:"arrivals",label:"Ingresos",icon:FaDoorOpen},
       can("guest.accounts.view")&&{key:"finance",label:"Estadías y pagos",icon:FaMoneyBillWave},
       can("guest.checkin.manage")&&{key:"checkin",label:"Checkin",icon:FaUserCheck},
@@ -330,6 +344,7 @@ export default function GuestExperienceAdminPage({
 </header>
 {adminNavigation}
 <GuestExperienceCheckinPanel businessId={businessId} data={data} busy={busy} onSaved={saveCheckin} onDataChanged={()=>load(true)} />{busy && <TagsSpinner size={120} logoSize={66} borderSize={5} background="rgba(255,255,255,.72)" />}</main>;
+  if (!missing && tab === "rebookings") return <main className="tags_guest_admin"><header className="tags_guest_admin_hero"><div className="tags_guest_admin_identity"><span className="tags_guest_admin_icon"><FaCalendarCheck /></span><div><small>RESERVAS</small><h1>Reprogramaciones</h1><p>Reservas no presentadas que todavía necesitan una nueva fecha</p></div></div><div className="tags_guest_admin_hero_actions"><button type="button" onClick={()=>setTab("reservations")}><FaArrowLeft /> Volver a la grilla</button></div></header>{adminNavigation}<GuestExperienceReservationsPanel rebookingsOnly canManage={can("guest.stays.manage")} canCheckin={can("guest.checkin.manage")} data={data} busy={busy} onCreate={createReservation} onUpdate={updateReservation} onDelete={deleteReservation} onNoShow={markNoShow} onInvite={invite} onDeleteCommunication={deleteCommunication} onCheckout={checkoutReservation} onDataChanged={()=>load(true)} /></main>;
   if (!missing && tab === "active") return <main className="tags_guest_admin">
 <header className="tags_guest_admin_hero">
 <div className="tags_guest_admin_identity">
@@ -361,7 +376,7 @@ export default function GuestExperienceAdminPage({
 </section>
 </main>;
   if (!missing && tab === "arrivals") return <main className="tags_guest_admin"><header className="tags_guest_admin_hero"><div className="tags_guest_admin_identity"><span className="tags_guest_admin_icon"><FaHotel /></span><div><small>RECEPCIÓN</small><h1>{data.app.name}</h1><p>Ingresos previstos</p></div></div></header>{adminNavigation}<GuestExperienceArrivalsPanel data={data} onBack={() => setTab("reservations")} onReminder={item=>invite(item,"reminder")} onCheckin={stayId => { sessionStorage.setItem("tags_guest_checkin_stay", String(stayId)); setTab("checkin"); }} onViewDetail={stayId=>{sessionStorage.setItem("tags_guest_open_stay",String(stayId));setTab("reservations")}} /></main>;
-  if (!missing && tab === "finance") return <main className="tags_guest_admin"><header className="tags_guest_admin_hero"><div className="tags_guest_admin_identity"><span className="tags_guest_admin_icon"><FaHotel /></span><div><small>ADMINISTRACIÓN</small><h1>{data.app.name}</h1><p>Estadías, ventas y pagos</p></div></div></header>{adminNavigation}<GuestExperienceFinanceReport businessId={businessId} data={data} onBack={() => setTab("reservations")} onManage={financeManage} />{externalStayId&&<GuestExperienceReservationsPanel canManage={can("guest.stays.manage")} canCheckin={can("guest.checkin.manage")} overlayOnly stayId={externalStayId} onClose={()=>setExternalStayId(null)} data={data} busy={busy} onCreate={createReservation} onUpdate={updateReservation} onDelete={deleteReservation} onInvite={invite} onDeleteCommunication={deleteCommunication} onCheckout={checkoutReservation} onDataChanged={()=>load(true)}/>}</main>;
+  if (!missing && tab === "finance") return <main className="tags_guest_admin"><header className="tags_guest_admin_hero"><div className="tags_guest_admin_identity"><span className="tags_guest_admin_icon"><FaHotel /></span><div><small>ADMINISTRACIÓN</small><h1>{data.app.name}</h1><p>Estadías, ventas y pagos</p></div></div></header>{adminNavigation}<GuestExperienceFinanceReport businessId={businessId} data={data} onBack={() => setTab("reservations")} onManage={financeManage} />{externalStayId&&<GuestExperienceReservationsPanel canManage={can("guest.stays.manage")} canCheckin={can("guest.checkin.manage")} overlayOnly stayId={externalStayId} onClose={()=>setExternalStayId(null)} data={data} busy={busy} onCreate={createReservation} onUpdate={updateReservation} onDelete={deleteReservation} onNoShow={markNoShow} onInvite={invite} onDeleteCommunication={deleteCommunication} onCheckout={checkoutReservation} onDataChanged={()=>load(true)}/>}</main>;
   if (missing) return <main className="tags_guest_admin">
 <header className="tags_guest_admin_hero">
 <div className="tags_guest_admin_identity">
@@ -413,7 +428,7 @@ export default function GuestExperienceAdminPage({
 <FaEye /> Ver página</a>
 </div>
 </header>
-{adminNavigation}{data.access?.isStaff&&tab==="reservations"&&<PushNotificationButton businessId={businessId}/>} {tab === "reservations" && <GuestExperienceReservationsPanel canManage={can("guest.stays.manage")} canCheckin={can("guest.checkin.manage")} data={data} busy={busy} onCreate={createReservation} onUpdate={updateReservation} onDelete={deleteReservation} onInvite={invite} onDeleteCommunication={deleteCommunication} onCheckout={checkoutReservation} onDataChanged={()=>load(true)} />} {tab === "checkin" && <section className="tags_guest_admin_panel">
+{adminNavigation}{data.access?.isStaff&&tab==="reservations"&&<PushNotificationButton businessId={businessId}/>} {tab === "reservations" && <GuestExperienceReservationsPanel canManage={can("guest.stays.manage")} canCheckin={can("guest.checkin.manage")} data={data} busy={busy} onCreate={createReservation} onUpdate={updateReservation} onDelete={deleteReservation} onNoShow={markNoShow} onInvite={invite} onDeleteCommunication={deleteCommunication} onCheckout={checkoutReservation} onDataChanged={()=>load(true)} />} {tab === "checkin" && <section className="tags_guest_admin_panel">
 <h2>Pre-check-in y check-in</h2>
 <p>Las reservas pendientes aparecerán aquí para completar acompañantes, vehículo y confirmar el ingreso.</p>
 </section>}{tab === "active" && <section className="tags_guest_admin_panel">

@@ -154,8 +154,8 @@ export async function createAdminSubscription(input, actorId = null) {
     await conn.query("INSERT INTO tags_subscription_terms (subscription_id,plan_version_id,offer_id,price_code,billing_mode,terms_snapshot_json) VALUES (?,?,NULL,?,?,?)", [subscriptionId, resolved.versionId, resolved.priceCode, resolved.price.billing_mode, JSON.stringify(snapshot)]);
     for (const addon of snapshot.addons) {
       const [businessAddon] = await conn.query(
-        `INSERT INTO tags_business_addons (business_id,addon_code,quantity,status,started_at,expires_at,amount,currency,notes,created_at,updated_at) VALUES (?,?,?,'inactive',NULL,NULL,0,?,?,NOW(),NOW())`,
-        [businessId, addon.code, addon.quantity, snapshot.price.currency, `Incluido en ${plan.name} · suscripción ${subscriptionId}`]
+        `INSERT INTO tags_business_addons (business_id,addon_code,quantity,status,started_at,expires_at,grace_days,amount,currency,notes,created_at,updated_at) VALUES (?,?,?,'inactive',NULL,NULL,?,0,?,?,NOW(),NOW())`,
+        [businessId, addon.code, addon.quantity, graceDays, snapshot.price.currency, `Incluido en ${plan.name} · suscripción ${subscriptionId}`]
       );
       await conn.query(
         `INSERT INTO tags_subscription_addon_grants (subscription_id,business_id,business_addon_id,addon_code,quantity,status,entitlement_snapshot_json) VALUES (?,?,?,?,?,'pending',?)`,

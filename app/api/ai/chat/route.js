@@ -6,10 +6,11 @@ import { DESTINATION_ANSWER_SCHEMA, DESTINATION_INTENT_SCHEMA, destinationIntent
 import { DESTINATION_ANSWER_V2_SCHEMA, DESTINATION_INTENT_V2_SCHEMA, destinationIntentV2Prompt, fallbackDestinationIntentV2, normalizeDestinationIntentV2 } from "@/app/modules/destination-ai/server/destinationIntentV2";
 import { prepareDestinationDayPlan } from "@/app/modules/destination-ai/server/destinationDayPlanner";
 import { getDestinationTaxonomyCatalog } from "@/app/modules/destination-ai/server/destinationTaxonomy";
-import { buildDestinationV2Context, getDestinationCandidatesByKeysV2, isDestinationEngineV2Available, searchDestinationTaskV2 } from "@/app/modules/destination-ai/server/searchDestinationEngineV2";
+import { buildDestinationV2Context, getDestinationBusinessContextV2, getDestinationCandidatesByKeysV2, isDestinationEngineV2Available, searchDestinationTaskV2 } from "@/app/modules/destination-ai/server/searchDestinationEngineV2";
 import { selectRecommendedCandidates } from "@/app/modules/destination-ai/server/selectRecommendedCandidates";
 import { getDestinationUsageState, notifyDestinationUsageThreshold } from "@/app/modules/destination-ai/server/getDestinationUsageState";
 import { recordDestinationQueryAnalytics } from "@/app/modules/destination-ai/server/destinationQueryAnalytics";
+import { buildCalamuchitarPlatformContext, isCalamuchitarPlatformQuery } from "@/app/modules/destination-ai/server/calamuchitarPlatformProvider";
 import { generateAnswer, generateStructuredJson } from "@/app/modules/ai-chat/server/openai";
 import { checkRateLimit } from "@/app/modules/ai-chat/server/rateLimit";
 import { getBusinessChatPlan, getMonthlyChatUsage, recordChatUsage } from "@/app/modules/ai-chat/server/usage";
@@ -109,6 +110,19 @@ function sanitizeDestinationAnswer(answer,candidates=[]){
         .replace(/\b(?:business_location|directory_listing|tourism_content|qr_product|store_product|turnos_service):\d+\b/gi,key=>byKey.get(key.toLowerCase())||"la opción encontrada")
         .replace(/\bbusiness\s+locati\w*\s+(\d+)\b/gi,(_,id)=>byKey.get(`business_location:${id}`)||"la opción encontrada")
         .replace(/\b(?:disponible\s+)?en\s+el\s+contexto\b/gi,"entre las opciones encontradas");
+}
+
+function groundedCandidateFallback(candidates = []) {
+    const selected = candidates.filter(item => item.evidenceLevel !== "explicit_business_text" || Number(item.explicitOfferStrength || 0) >= 30).slice(0, 3);
+    if (!selected.length) return null;
+    const details = selected.map(item => {
+        const evidence = String(item.evidenceExcerpt || item.description || "").replace(/\s+/g, " ").trim();
+        return `- ${item.name}${item.locality ? ` (${item.locality})` : ""}${evidence ? `: ${evidence.slice(0, 220)}` : ""}`;
+    });
+    return {
+        answer: `Encontré ${selected.length === 1 ? "esta opción que publica lo que buscás" : "estas opciones que publican lo que buscás"}:\n${details.join("\n")}`,
+        recommendationKeys: selected.map(item => item.entityKey),
+    };
 }
 
 function parseUserLocation(value) {
@@ -232,6 +246,8 @@ export async function POST(request) {
         const history = sanitizeHistory(body?.history);
         if (history.at(-1)?.role === "user" && normalizeForMatch(history.at(-1)?.content) === normalizeForMatch(message)) history.pop();
         const previousSearchQuery = String(body?.conversationState?.searchQuery || "").trim().slice(0, 500);
+        const platformCommercialQuery = Boolean(siteCode && isCalamuchitarPlatformQuery(message));
+        const platformCommercialContext = platformCommercialQuery ? buildCalamuchitarPlatformContext() : "";
         const clientRecommendations = extractRecentRecommendations([
             ...(Array.isArray(body?.history) ? body.history : []),
             { role: "assistant", candidates: Array.isArray(body?.conversationState?.recommendations) ? body.conversationState.recommendations : [] }
@@ -297,7 +313,7 @@ export async function POST(request) {
             : { intent: destinationIntent, clarification: null, isDayPlan: false };
         destinationIntent = preparedDayPlan.intent;
         const planClarification = preparedDayPlan.clarification;
-        const searchRequests = useEngineV2
+        const searchRequests = platformCommercialQuery ? [] : useEngineV2
             ? planClarification ? [] : destinationIntent.tasks
             : indexMode === "active" && destinationIntent.shouldSearch
             ? (destinationIntent.searchQueries?.length
@@ -429,7 +445,12 @@ export async function POST(request) {
         const inspectsBusiness = useEngineV2
             ? destinationIntent.tasks.some(task => task.type === "inspect_business")
             : destinationIntent.intent === "inspect_business";
-        if (useKnowledgeIndex && inspectsBusiness && candidates[0]?.businessId) {
+        if (useKnowledgeIndex && useEngineV2) {
+            businessKnowledgeContext = await getDestinationBusinessContextV2({
+                siteCode,
+                businessIds: candidates.map(item => item.businessId).filter(Boolean)
+            });
+        } else if (useKnowledgeIndex && inspectsBusiness && candidates[0]?.businessId) {
             businessKnowledgeContext = await getBusinessKnowledgeContext({ siteCode, businessId: candidates[0].businessId });
         }
         const context = siteCode
@@ -441,7 +462,7 @@ export async function POST(request) {
             : await retrieveKnowledge(message, { businessId, maxChars: Number(process.env.AI_CHAT_MAX_CONTEXT_CHARS || 8000) });
         const userPrompt = buildUserPrompt({
             question: message,
-            context: [siteCode ? `MODO DE LA PERSONA: ${destinationMode}` : "", userLocation ? "La persona autorizó usar su ubicación actual. Las distancias disponibles ya fueron calculadas y son aproximadas." : "La persona no compartió su ubicación geográfica.", siteCode ? getDestinationTemporalContext() : "", context, contactContext].filter(Boolean).join("\n\n")
+            context: [siteCode ? `MODO DE LA PERSONA: ${destinationMode}` : "", userLocation ? "La persona autorizó usar su ubicación actual. Las distancias disponibles ya fueron calculadas y son aproximadas." : "La persona no compartió su ubicación geográfica.", siteCode ? getDestinationTemporalContext() : "", context, platformCommercialContext, contactContext].filter(Boolean).join("\n\n")
         });
         const answerHistory = useEngineV2 ? (destinationIntent.continuesPrevious ? history : []) : destinationIntent.isNewTopic ? [] : history;
         const generated = planClarification
@@ -492,7 +513,15 @@ export async function POST(request) {
             }
             : null;
         const answerText = normalizeForMatch(generated.answer);
-        const explicitlyRecommended = selectRecommendedCandidates({ candidates, answer: generated.answer, recommendationKeys: generated.recommendationKeys, limit: 9 });
+        let explicitlyRecommended = selectRecommendedCandidates({ candidates, answer: generated.answer, recommendationKeys: generated.recommendationKeys, limit: 9 });
+        if (useEngineV2 && searchRequests.length && candidates.length && !generated.needsClarification && explicitlyRecommended.length === 0) {
+            const fallback = groundedCandidateFallback(candidates);
+            if (fallback) {
+                generated.answer = fallback.answer;
+                generated.recommendationKeys = fallback.recommendationKeys;
+                explicitlyRecommended = selectRecommendedCandidates({ candidates, answer: generated.answer, recommendationKeys: generated.recommendationKeys, limit: 9 });
+            }
+        }
         const recommendedCandidates = siteCode
             ? useKnowledgeIndex
                 ? useEngineV2

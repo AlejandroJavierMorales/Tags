@@ -283,7 +283,7 @@ export default function StoreHeaderBlock({
                     entity?.logo_url && (
 
                         <Link
-                            href={`/p/${entity?.slug}`}
+                            href={embeddedReturnUrl || `/p/${entity?.slug}`}
                             className="store_header_logo_center"
                         >
                             <Image

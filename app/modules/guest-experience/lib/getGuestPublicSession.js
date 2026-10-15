@@ -6,7 +6,7 @@ export async function getGuestPublicSession(slug) {
     const token = (await cookies()).get("tags_guest_session")?.value || "";
     if (!token || !slug) return null;
     const [rows] = await db.query(
-        `SELECT se.id session_id,se.stay_id,se.guest_id,se.expires_at,a.*,s.stay_code,s.status stay_status,s.starts_at,s.ends_at,s.adults,s.children,s.expected_arrival_text,
+        `SELECT se.id session_id,se.stay_id,se.guest_id,se.expires_at,a.*,s.stay_code,s.status stay_status,s.starts_at,s.ends_at,s.adults,s.children,s.expected_arrival_text,s.no_show_reason,s.no_show_financial_action,s.no_show_credit_expires_at,s.no_show_total_amount,s.no_show_paid_amount,s.no_show_pending_amount,
                 (SELECT pc.status FROM tags_guest_precheckins pc WHERE pc.stay_id=s.id LIMIT 1) precheckin_status,
                 u.name unit_name,g.name guest_name,g.email guest_email,g.phone guest_phone
          FROM tags_guest_sessions se

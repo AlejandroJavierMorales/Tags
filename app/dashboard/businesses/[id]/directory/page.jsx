@@ -1,6 +1,7 @@
 import { db } from "@/app/lib/tags-db";
 import { requireQRPageAccess } from "@/app/modules/qr-page/lib/requireQRPageAccess";
 import DirectoryWebBuilderClient from "@/app/modules/directory/components/admin/DirectoryWebBuilderClient";
+import { normalizeDirectoryDbValue } from "@/app/modules/directory/lib/normalizeDirectoryDbValue";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -27,7 +28,7 @@ export default async function DirectoryBusinessPage({ params }) {
   const publicUrl = listing.slug
     ? (process.env.NODE_ENV === "development" ? `/${listing.slug}` : `https://${listing.primary_host}/${listing.slug}`)
     : null;
-  const directoryData = { listing: { ...listing }, media: media.map(item => ({ ...item })), taxonomy: [] };
+  const directoryData = normalizeDirectoryDbValue({ listing: { ...listing }, media: media.map(item => ({ ...item })), taxonomy: [] });
 
   return <DirectoryWebBuilderClient businessId={businessId} qrCodeId={listing.qr_code_id} business={access.business} publicUrl={publicUrl} directoryData={directoryData} />;
 }

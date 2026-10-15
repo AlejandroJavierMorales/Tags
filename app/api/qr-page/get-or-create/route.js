@@ -515,7 +515,7 @@ export async function GET(req) {
                   WHERE l.qr_page_id=? AND l.business_id=?
                     AND m.media_type='gallery' AND m.is_active=1
                   ORDER BY m.sort_order,m.id
-                  LIMIT 8`,
+                  LIMIT 12`,
                 [page.id, business.id]
             );
             const legacyImages = normalizeDirectoryDbValue(legacyGalleryRows).map(item => ({
@@ -526,12 +526,19 @@ export async function GET(req) {
                 sectionsWithBlocks = sectionsWithBlocks.map(section => ({
                     ...section,
                     blocks: (section.blocks || []).map(block => {
-                        const isGallery = section.settings_json?.directoryBaseSlot === "gallery" || block.type === "gallery";
-                        const configuredImages = Array.isArray(block.content_json?.images) ? block.content_json.images.filter(item => item?.url) : [];
-                        if (!isGallery || configuredImages.length) return block;
+                        const isGallery = section.settings_json?.directoryBaseSlot === "gallery" || section.type === "gallery" || block.type === "gallery";
+                        const configuredImages = (Array.isArray(block.content_json?.images) ? block.content_json.images : [])
+                            .map(item => typeof item === "string" ? { url: item, alt: "" } : item)
+                            .filter(item => item?.url);
+                        if (!isGallery) return block;
+                        const imageUrls = new Set(configuredImages.map(item => item.url));
+                        const effectiveImages = [
+                            ...configuredImages,
+                            ...legacyImages.filter(item => !imageUrls.has(item.url))
+                        ].slice(0, 12);
                         return {
                             ...block,
-                            content_json: { ...block.content_json, images: legacyImages, maxImages: 8 }
+                            content_json: { ...block.content_json, images: effectiveImages, maxImages: 12 }
                         };
                     })
                 }));

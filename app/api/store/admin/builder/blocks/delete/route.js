@@ -14,6 +14,7 @@ import { db }
     from "@/app/lib/tags-db";
 import { requireStoreResourceAccess, storeAccessResponse }
     from "@/app/modules/store/lib/storeAdminAccess";
+import { refreshDestinationBusinessProjection } from "@/app/modules/destination-ai/server/refreshDestinationBusinessProjection";
 
 export async function POST(req) {
     try {
@@ -53,6 +54,8 @@ export async function POST(req) {
                 sectionId
             ]
         );
+
+        await refreshDestinationBusinessProjection(access.store.business_id).catch(error => console.error("DESTINATION PROJECTION STORE BLOCK DELETE SYNC ERROR", { businessId: access.store.business_id, error }));
 
         return Response.json({
             ok: true

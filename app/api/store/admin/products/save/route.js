@@ -17,6 +17,7 @@ import {
     restoAccessResponse
 } from "@/app/modules/resto/lib/staff/getRestoAccess";
 import { refreshDestinationBusinessProjection } from "@/app/modules/destination-ai/server/refreshDestinationBusinessProjection";
+import { normalizePlatformCurrency } from "@/app/lib/platformCurrencies";
 
 const VALID_APP_TYPES = [
     "store",
@@ -386,7 +387,7 @@ export async function POST(req) {
                     )
                         ? null
                         : Number(sale_price),
-                    currency || "ARS",
+                    normalizePlatformCurrency(currency, "ARS"),
                     Number(resolvedStockEnabled) === 1
                         ? 1
                         : 0,
@@ -493,7 +494,7 @@ export async function POST(req) {
                         )
                             ? null
                             : Number(sale_price),
-                        currency || "ARS",
+                        normalizePlatformCurrency(currency, "ARS"),
                         Number(resolvedStockEnabled) === 1
                             ? 1
                             : 0,

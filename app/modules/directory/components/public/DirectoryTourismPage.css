@@ -6,3 +6,4 @@
 @media(max-width:600px){.tags_directory_tourism_hero{padding:12px 0 2px}.tags_directory_tourism_hero h1{font-size:clamp(1.3rem,6vw,1.8rem)}}
 @media(min-width:0px){.tags_directory_tourism_results{margin-top:18px;margin-bottom:26px;padding-top:10px;padding-bottom:18px}}
 @media(max-width:600px){.tags_directory_tourism_results{margin-top:14px;margin-bottom:30px;padding-top:8px;padding-bottom:14px}}
+.tags_directory_tourism_back a{display:inline-flex;align-items:center;justify-content:center;border:1px solid #277052;border-radius:10px;background:#fff;padding:8px 14px;color:#277052;font-size:.8rem;font-weight:800;text-decoration:none;box-shadow:0 3px 10px #173b2c12}.tags_directory_tourism_back a:hover{background:#277052;color:#fff}

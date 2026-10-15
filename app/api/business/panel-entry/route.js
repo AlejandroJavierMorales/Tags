@@ -22,6 +22,7 @@ const ROUTES = {
     e_events: ({ id }) => `/dashboard/businesses/${id}/events-pro`,
     directory: ({ id }) => `/dashboard/businesses/${id}/directory`,
     portal_public: ({ id }) => `/dashboard/businesses/${id}/portal`,
+    tutorials: ({ id }) => `/dashboard/businesses/${id}/tutoriales`,
 };
 
 const LABELS = {
@@ -31,7 +32,7 @@ const LABELS = {
     qr_agency: "Tags QR Agency", ai_chatbot: "Chatbot con IA", loyalty: "Beneficios y fidelización",
     events: "Eventos", e_events: "Eventos Pro",
     directory: "Mi Web", portal_public: "Portal público",
-    google_business_profile: "Perfil de Empresa en Google Maps"
+    google_business_profile: "Perfil de Empresa en Google Maps", tutorials: "Tutoriales"
 };
 
 async function authorized(businessId) {
@@ -46,6 +47,7 @@ async function optionsFor(businessId) {
     const [pages] = await db.query("SELECT DISTINCT page_type,qr_code_id FROM tags_qr_pages WHERE business_id=? AND status='published'", [businessId]);
     const pageTypes = new Set(pages.map(item => String(item.page_type || "").toLowerCase()));
     Object.keys(ROUTES).filter(key => !["panel", "staff"].includes(key)).forEach(key => {
+        if (key === "tutorials") return;
         const available = active.has(key)
             || pageTypes.has(key)
             || (key === "tags_id" && active.has("tagsid"))
@@ -60,6 +62,21 @@ async function optionsFor(businessId) {
                 : ROUTES[key]({ id: businessId });
         options.push({ key, label: LABELS[key], path });
     });
+    try {
+        const [[tutorials]] = await db.query(`SELECT COUNT(*) total
+          FROM tags_directory_tutorials v
+          INNER JOIN tags_directory_tutorial_groups g ON g.id=v.group_id AND g.is_active=1
+          WHERE v.status='published' AND v.is_active=1 AND (
+            g.product_code='general' OR g.site_id IN (
+              SELECT sl.site_id FROM tags_directory_listings l
+              INNER JOIN tags_directory_site_listings sl ON sl.listing_id=l.id
+              WHERE l.business_id=? AND sl.publication_status='published'
+            )
+          )`, [businessId]);
+        if (Number(tutorials?.total || 0) > 0) options.push({ key: "tutorials", label: LABELS.tutorials, path: ROUTES.tutorials({ id: businessId }) });
+    } catch (error) {
+        if (!["ER_NO_SUCH_TABLE", "ER_BAD_FIELD_ERROR"].includes(error?.code)) throw error;
+    }
     return options;
 }
 
@@ -97,7 +114,7 @@ export async function GET(request) {
             ? configurableOptions.map(item => item.key)
             : configuredKeys.filter(key => availableKeys.has(key));
         if (!visibleKeys.length) visibleKeys = ["panel"];
-        const clientOptions = configurableOptions.filter(item => item.key === "staff" || visibleKeys.includes(item.key));
+        const clientOptions = configurableOptions.filter(item => item.key === "staff" || item.key === "tutorials" || visibleKeys.includes(item.key));
         const selected = clientOptions.some(item => item.key === preference.panel_entry_key)
             ? preference.panel_entry_key
             : clientOptions[0]?.key || "panel";

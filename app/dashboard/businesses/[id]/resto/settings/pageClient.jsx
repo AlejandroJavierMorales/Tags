@@ -585,16 +585,10 @@ export default function RestoSettingsClient({
                     <>
                         <PanelTitle title="Pagos y cuentas bancarias" text="Métodos aceptados y cuentas disponibles para transferencias." />
                         <div className="tags_resto_settings_grid">
-                            <Field
+                            <CurrencyField
                                 label="Moneda operativa"
                                 value={form.configuration.payment.currency}
-                                onChange={value =>
-                                    setSection(
-                                        "payment",
-                                        "currency",
-                                        value.toUpperCase()
-                                    )
-                                }
+                                onChange={value => setSection("payment", "currency", value)}
                             />
                         </div>
                         <div className="tags_resto_settings_checks">
@@ -657,6 +651,10 @@ function Field({ label, value, onChange, wide = false }) {
 
 function NumberField({ label, value, onChange }) {
     return <label className="tags_resto_settings_field"><span>{label}</span><input type="number" min="1" value={value || ""} onChange={event => onChange(Number(event.target.value))} /></label>;
+}
+
+function CurrencyField({ label, value, onChange }) {
+    return <label className="tags_resto_settings_field"><span>{label}</span><select value={value || "ARS"} onChange={event => onChange(event.target.value)}><option value="ARS">$ · Pesos argentinos</option><option value="USD">U$S · Dólares</option></select></label>;
 }
 
 function Check({ label, checked, onChange }) {

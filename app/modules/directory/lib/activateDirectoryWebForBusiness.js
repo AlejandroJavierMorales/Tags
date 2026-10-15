@@ -103,7 +103,7 @@ export async function activateDirectoryWebForBusiness({ conn, businessId, siteId
     const finalPageSlug = collision ? createSlug(`directory-${businessId}-${pageSlug}`) : pageSlug;
 
     const [legacyMedia] = await conn.query(
-        "SELECT media_type,url,alt_text FROM tags_directory_media WHERE listing_id=? AND is_active=1 ORDER BY FIELD(media_type,'logo','cover','gallery'),sort_order,id LIMIT 10",
+        "SELECT media_type,url,alt_text FROM tags_directory_media WHERE listing_id=? AND is_active=1 ORDER BY FIELD(media_type,'logo','cover','gallery'),sort_order,id LIMIT 14",
         [listing.id]
     );
     const templateBusiness = {
@@ -117,7 +117,7 @@ export async function activateDirectoryWebForBusiness({ conn, businessId, siteId
     if (galleryBlock) {
         galleryBlock.content_json.images = legacyMedia
             .filter(item => ["cover", "gallery"].includes(item.media_type))
-            .slice(0, 8)
+            .slice(0, 12)
             .map(item => ({ url: item.url, alt: item.alt_text || "" }));
     }
 

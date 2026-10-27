@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import showAlert from "@/app/components/showAlert";
+import confirmPublicPageStatusChange from "@/app/lib/confirmPublicPageStatusChange";
 import TagsSpinner from "@/app/components/TagsSpinner";
 import MediaUploader from "@/app/components/MediaUploader";
 import AiChatSurfaceSettings from "@/app/modules/ai-chat/components/admin/AiChatSurfaceSettings";
@@ -383,6 +384,8 @@ export default function StoreAdminClient({
     }
 
     async function handlePublish(nextStatus) {
+        const confirmed = await confirmPublicPageStatusChange(nextStatus, "la tienda");
+        if (!confirmed) return;
         await handleSave({
             overrideStatus: nextStatus
         });

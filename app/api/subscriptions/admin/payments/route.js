@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 
 import { db } from "@/app/lib/tags-db";
 import { requireSubscriptionAdmin, subscriptionAdminError } from "@/app/modules/subscriptions/lib/requireSubscriptionAdmin";
-import { activateSubscription } from "@/app/modules/subscriptions/lib/subscriptionActivationService";
+import { recordManualSubscriptionCoverage } from "@/app/modules/subscriptions/lib/subscriptionActivationService";
 
 export async function POST(req) {
   const access = await requireSubscriptionAdmin();
@@ -13,11 +13,11 @@ export async function POST(req) {
   const amount = Number(body?.amount);
   if (!subscriptionId || !Number.isFinite(amount) || amount <= 0) return Response.json({ ok:false,error:"Suscripción e importe son obligatorios" },{status:400});
   try {
-    await activateSubscription({ subscriptionId, provider: String(body?.provider || "manual"), amount, notes: String(body?.notes || "Pago imputado por administración"), actorType:"admin", actorId:Number(access.session?.businessId || 0) || null });
-    return Response.json({ ok:true });
+    const result = await recordManualSubscriptionCoverage({ subscriptionId, provider: String(body?.provider || "manual"), amount, paidAt: body?.paidAt, periodStart: body?.periodStart, periodEnd: body?.periodEnd, notes: String(body?.notes || "Pago manual imputado por administración"), actorId:Number(access.session?.businessId || 0) || null });
+    return Response.json({ ok:true, ...result });
   } catch (error) {
     console.error("SUBSCRIPTION PAYMENT CREATE ERROR",error);
-    return Response.json({ok:false,error:error?.message||"No se pudo imputar el pago"},{status:500});
+    return Response.json({ok:false,error:error?.message||"No se pudo imputar el pago"},{status:Number(error?.status || 500)});
   }
 }
 

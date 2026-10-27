@@ -15,6 +15,7 @@ import TagsSpinner
 
 import showAlert
     from "@/app/components/showAlert";
+import confirmPublicPageStatusChange from "@/app/lib/confirmPublicPageStatusChange";
 
 import {
     FaUtensils,
@@ -163,6 +164,9 @@ export default function RestoDashboardClient({
             return;
 
         }
+
+        const confirmed = await confirmPublicPageStatusChange(nextStatus, "la página del restaurante");
+        if (!confirmed) return;
 
         setPublishing(true);
 

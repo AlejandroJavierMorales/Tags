@@ -106,3 +106,74 @@ export async function markSubscriptionPaymentFailure({ subscriptionId, providerS
     [idempotencyKey, JSON.stringify({ providerStatus }), JSON.stringify(rawResponse || {}), Number(subscriptionId)]
   );
 }
+
+export async function recordManualSubscriptionCoverage({
+  subscriptionId,
+  paidAt = new Date(),
+  periodStart,
+  periodEnd,
+  amount,
+  provider = "manual",
+  notes = "Pago manual imputado por administración",
+  actorId = null
+}) {
+  const allowedProviders = new Set(["manual", "transfer", "cash"]);
+  const paymentProvider = allowedProviders.has(String(provider)) ? String(provider) : "manual";
+  const parseDateInput = value => new Date(/^\d{4}-\d{2}-\d{2}$/.test(String(value || "")) ? `${value}T12:00:00` : value);
+  const start = parseDateInput(periodStart);
+  const end = parseDateInput(periodEnd);
+  const paid = parseDateInput(paidAt);
+  if ([start, end, paid].some(value => Number.isNaN(value.getTime())) || end <= start) {
+    throw Object.assign(new Error("El período cubierto no es válido"), { status: 400 });
+  }
+
+  const conn = await db.getConnection();
+  try {
+    await conn.beginTransaction();
+    const [[subscription]] = await conn.query("SELECT * FROM tags_subscriptions WHERE id=? LIMIT 1 FOR UPDATE", [Number(subscriptionId)]);
+    if (!subscription) throw Object.assign(new Error("Suscripción inexistente"), { status: 404 });
+    const [[existing]] = await conn.query(
+      "SELECT id FROM tags_subscription_payments WHERE subscription_id=? AND status='approved' AND provider<>'mercadopago' AND period_start=? AND period_end=? LIMIT 1 FOR UPDATE",
+      [subscription.id, start, end]
+    );
+    if (existing) throw Object.assign(new Error("Ese período ya tiene un pago manual imputado"), { status: 409 });
+
+    const automaticRemainsActive = subscription.payment_provider === "mercadopago" && ["authorized", "pending"].includes(String(subscription.provider_status || ""));
+    const paymentNotes = automaticRemainsActive
+      ? `${notes}. La autorización automática permanece ${subscription.provider_status}; Mercado Pago todavía podría reintentar la cuota del período.`
+      : notes;
+    const [payment] = await conn.query(
+      `INSERT INTO tags_subscription_payments (subscription_id,business_id,plan_id,amount,currency,provider,provider_status,status,paid_at,period_start,period_end,notes,created_by,created_at,updated_at)
+       VALUES (?,?,?,?,?,?,?,'approved',?,?,?,?,?,NOW(),NOW())`,
+      [subscription.id, subscription.business_id, subscription.plan_id, amount, subscription.currency || "ARS", paymentProvider, "manual_coverage", paid, start, end, paymentNotes, actorId]
+    );
+
+    await conn.query(
+      `UPDATE tags_subscriptions SET status='active',expires_at=IF(expires_at IS NULL OR expires_at<?,?,expires_at),next_billing_at=IF(payment_provider='mercadopago',next_billing_at,IF(next_billing_at IS NULL OR next_billing_at<?,?,next_billing_at)),updated_at=NOW() WHERE id=?`,
+      [end, end, end, end, subscription.id]
+    );
+    await conn.query(
+      "UPDATE tags_businesses SET plan_id=?,subscription_status='active',plan_started_at=COALESCE(plan_started_at,?),plan_expires_at=IF(plan_expires_at IS NULL OR plan_expires_at<?,?,plan_expires_at),updated_at=NOW() WHERE id=?",
+      [subscription.plan_id, start, end, end, subscription.business_id]
+    );
+    await conn.query(
+      `UPDATE tags_business_addons ba INNER JOIN tags_subscription_addon_grants g ON g.business_addon_id=ba.id
+       SET ba.status='active',ba.started_at=COALESCE(ba.started_at,?),ba.expires_at=IF(ba.expires_at IS NULL OR ba.expires_at<?,?,ba.expires_at),ba.updated_at=NOW(),
+           g.status='active',g.starts_at=COALESCE(g.starts_at,?),g.expires_at=IF(g.expires_at IS NULL OR g.expires_at<?,?,g.expires_at),g.updated_at=NOW()
+       WHERE g.subscription_id=?`,
+      [start, end, end, start, end, end, subscription.id]
+    );
+    await conn.query(
+      `INSERT INTO tags_subscription_audit_events (subscription_id,business_id,event_code,actor_type,actor_id,next_state_json,context_json)
+       VALUES (?,?,'payment.manual_coverage','admin',?,?,?)`,
+      [subscription.id, subscription.business_id, actorId, JSON.stringify({ status: "approved", expiresAt: end }), JSON.stringify({ paymentId: Number(payment.insertId), provider: paymentProvider, automaticRemainsActive, providerStatus: subscription.provider_status, periodStart: start, periodEnd: end })]
+    );
+    await conn.commit();
+    return { paymentId: Number(payment.insertId), automaticRemainsActive, providerStatus: subscription.provider_status, nextAutomaticPaymentAt: subscription.provider_next_payment_at || null };
+  } catch (error) {
+    await conn.rollback();
+    throw error;
+  } finally {
+    conn.release();
+  }
+}

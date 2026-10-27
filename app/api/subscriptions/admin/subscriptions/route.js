@@ -108,12 +108,20 @@ export async function PUT(req) {
   let changedSubscription = null;
   try {
     await conn.beginTransaction();
-    const [[subscription]] = await conn.query("SELECT id,business_id,plan_id,status,amount,currency,expires_at,payment_provider,duration_months,grace_days,auto_disable_on_expire,admin_override_until FROM tags_subscriptions WHERE id=? LIMIT 1 FOR UPDATE", [id]);
+    const [[subscription]] = await conn.query("SELECT id,business_id,plan_id,status,amount,currency,expires_at,payment_provider,duration_months,grace_days,auto_disable_on_expire,admin_override_until,external_subscription_id,provider_status FROM tags_subscriptions WHERE id=? LIMIT 1 FOR UPDATE", [id]);
     if (!subscription) throw Object.assign(new Error("Suscripción inexistente"), { status: 404 });
     const effectivePlanId = requestedPlanId || Number(subscription.plan_id);
     const [[plan]] = await conn.query("SELECT id,code,is_active,is_free FROM tags_plans WHERE id=? LIMIT 1", [effectivePlanId]);
     if (!plan || Number(plan.is_active) !== 1) throw Object.assign(new Error("El plan seleccionado no existe o está inactivo"), { status: 400 });
     const effectiveProvider = requestedProvider || subscription.payment_provider || "manual";
+    const changedToMercadoPago = effectiveProvider === "mercadopago" && subscription.payment_provider !== "mercadopago";
+    const payerEmail = String(body?.payerEmail || "").trim().toLowerCase();
+    if (changedToMercadoPago && (body?.mercadoPagoTransitionMode !== "new" || !payerEmail || !payerEmail.includes("@"))) {
+      throw Object.assign(new Error("Elegí Vincular una existente o Crear nueva autorización e ingresá un email pagador válido."), { status: 409 });
+    }
+    if (changedToMercadoPago && subscription.external_subscription_id) {
+      throw Object.assign(new Error("Esta suscripción ya tiene un identificador de Mercado Pago. Vinculá o revisá esa autorización antes de crear otra."), { status: 409 });
+    }
     const effectiveDuration = requestedDuration || Number(subscription.duration_months || 1);
     await conn.query("UPDATE tags_subscriptions SET plan_id=?,status=?,amount=?,payment_provider=?,duration_months=?,expires_at=?,next_billing_at=?,auto_renew=?,grace_days=?,updated_at=NOW() WHERE id=?", [effectivePlanId, status, amount, effectiveProvider, effectiveDuration, expiresAt, effectiveProvider === "mercadopago" ? expiresAt : null, effectiveProvider === "mercadopago" ? 1 : 0, requestedGraceDays, id]);
     const addonStatus = ["active", "trial"].includes(status) ? "active" : "inactive";
@@ -186,6 +194,14 @@ export async function PUT(req) {
     await conn.query("UPDATE tags_directory_site_listings sl INNER JOIN tags_directory_listings l ON l.id=sl.listing_id SET sl.is_free=?,sl.publication_status=?,sl.updated_at=NOW() WHERE l.business_id=?", [Number(plan.is_free) === 1 ? 1 : 0, publicationStatus, subscription.business_id]);
     if (Number(plan.is_free) === 1) await conn.query("UPDATE tags_qr_pages SET status='draft',robots_index=0,updated_at=NOW() WHERE business_id=? AND page_type='directory'", [subscription.business_id]);
     await conn.query("UPDATE tags_subscription_payments SET plan_id=?,amount=? WHERE subscription_id=? AND status='pending'", [effectivePlanId, amount, id]);
+    if (changedToMercadoPago) {
+      const [[termsRow]] = await conn.query("SELECT terms_snapshot_json FROM tags_subscription_terms WHERE subscription_id=? FOR UPDATE", [id]);
+      let snapshot = {};
+      try { snapshot = typeof termsRow?.terms_snapshot_json === "object" ? termsRow.terms_snapshot_json : JSON.parse(termsRow?.terms_snapshot_json || "{}"); } catch { snapshot = {}; }
+      snapshot.payment = { ...(snapshot.payment || {}), provider: "mercadopago", payerEmail };
+      if (termsRow) await conn.query("UPDATE tags_subscription_terms SET billing_mode='recurring',terms_snapshot_json=?,updated_at=NOW() WHERE subscription_id=?", [JSON.stringify(snapshot), id]);
+      else await conn.query("INSERT INTO tags_subscription_terms (subscription_id,plan_version_id,offer_id,price_code,billing_mode,terms_snapshot_json) VALUES (?,NULL,NULL,NULL,'recurring',?)", [id, JSON.stringify(snapshot)]);
+    }
     await conn.query("INSERT INTO tags_subscription_audit_events (subscription_id,business_id,event_code,actor_type,actor_id,previous_state_json,next_state_json) VALUES (?,?,?,'admin',?,?,?)", [id, subscription.business_id, status === "inactive" ? "subscription.suspended" : status === "active" && subscription.status === "inactive" ? "subscription.reactivated" : "subscription.updated", Number(access.session?.businessId || 0) || null, JSON.stringify({status:subscription.status,amount:subscription.amount,expiresAt:subscription.expires_at,graceDays:Number(subscription.grace_days || 0)}), JSON.stringify({status,amount,expiresAt,graceDays:requestedGraceDays})]);
     changedSubscription = { businessId: subscription.business_id, planId: effectivePlanId, status, previousStatus: subscription.status };
     await conn.commit();

@@ -26,6 +26,7 @@ import {
 } from "react-icons/fa";
 import TagsSpinner from "@/app/components/TagsSpinner";
 import showAlert from "@/app/components/showAlert";
+import confirmPublicPageStatusChange from "@/app/lib/confirmPublicPageStatusChange";
 import { tagsSiteConfig } from "@/app/config/configSite";
 import "./BusinessWorkspaceOverview.css";
 
@@ -273,16 +274,7 @@ export default function BusinessWorkspaceOverview({
 
     async function changePortalStatus() {
         const nextActive = !portalActive;
-        const confirmed = await showAlert({
-            title: nextActive ? "¿Activar el Portal?" : "¿Desactivar el Portal?",
-            text: nextActive
-                ? "La URL principal comenzará a mostrar la Home configurada."
-                : "El sitio unificado dejará de estar público. Las páginas y configuraciones no se eliminarán.",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonText: nextActive ? "Activar Portal" : "Desactivar Portal",
-            cancelButtonText: "Cancelar"
-        });
+        const confirmed = await confirmPublicPageStatusChange(nextActive, "el Portal");
         if (!confirmed) return;
 
         setBusy("portal-status");

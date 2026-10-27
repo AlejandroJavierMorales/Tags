@@ -6,6 +6,7 @@ import { FaArrowLeft, FaEye, FaGlobe, FaLink, FaMagnifyingGlass, FaPalette, FaPu
 import MediaUploader from "@/app/components/MediaUploader";
 import TagsSpinner from "@/app/components/TagsSpinner";
 import showAlert from "@/app/components/showAlert";
+import confirmPublicPageStatusChange from "@/app/lib/confirmPublicPageStatusChange";
 import DirectoryStructureManager from "./DirectoryStructureManager";
 import DirectoryCatalogManager from "./DirectoryCatalogManager";
 import DirectoryCommerceVisualBuilder from "./DirectoryCommerceVisualBuilder";
@@ -122,6 +123,8 @@ export default function DirectoryWebBuilderClient({ businessId, qrCodeId, busine
   }
 
   async function publication(nextStatus) {
+    const confirmed = await confirmPublicPageStatusChange(nextStatus, "la Web");
+    if (!confirmed) return;
     setBusy(true);
     try {
       const response = await fetch(nextStatus === "published" ? "/api/qr-page/publish" : "/api/qr-page/unpublish", {

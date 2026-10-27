@@ -29,7 +29,7 @@ function normalizeAdminExpiration(value) {
   return `${date} 23:59:59`;
 }
 
-async function resolveSelection(input, actorId) {
+export async function resolveAdminSubscriptionSelection(input, actorId) {
   const businessId = Number(input.businessId || 0);
   const planId = Number(input.planId || 0);
   const selection = String(input.priceSelection || "");
@@ -109,13 +109,16 @@ export async function createAdminSubscription(input, actorId = null) {
   const paymentState = input.paymentState === "paid" ? "paid" : "pending";
   const graceDays = Math.min(30, Math.max(0, Number(input.graceDays || 0)));
   const requestedExpiresAt = normalizeAdminExpiration(input.expiresAt);
-  const resolved = await resolveSelection(input, actorId);
+  const resolved = await resolveAdminSubscriptionSelection(input, actorId);
   if (input.customAmount !== undefined && input.customAmount !== null && input.customAmount !== "") {
     const customAmount = Number(input.customAmount);
     if (!Number.isFinite(customAmount) || customAmount <= 0) {
       throw Object.assign(new Error("El importe excepcional debe ser mayor a cero"), { status: 400 });
     }
     resolved.price = { ...resolved.price, amount: customAmount };
+  }
+  if (input.legacyMercadoPagoImport === true) {
+    resolved.price = { ...resolved.price, billing_mode: "recurring", provider: "mercadopago", duration_months: Math.max(1, Number(input.durationMonths || 1)) };
   }
   const conn = await db.getConnection();
   let subscriptionId;
@@ -138,6 +141,10 @@ export async function createAdminSubscription(input, actorId = null) {
       selectedAddons = requested.map(item => ({ ...item, config: planConfig.get(item.code) || {} }));
     }
     const provider = resolved.price.billing_mode === "recurring" ? "mercadopago" : "manual";
+    const payerEmail = provider === "mercadopago" ? String(input.payerEmail || business.email || "").trim().toLowerCase() : null;
+    if (provider === "mercadopago" && (!payerEmail || !payerEmail.includes("@"))) {
+      throw Object.assign(new Error("Ingresá un email válido para la suscripción de Mercado Pago"), { status: 400 });
+    }
     const [subscription] = await conn.query(
       `INSERT INTO tags_subscriptions (business_id,plan_id,status,payment_provider,amount,currency,started_at,expires_at,duration_months,source,next_billing_at,auto_renew,auto_disable_on_expire,grace_days,admin_override_until,created_at,updated_at) VALUES (?,?,'inactive',?,?,?,?,?,?,'manual',NULL,?,1,?,?,NOW(),NOW())`,
       [businessId, planId, provider, Number(resolved.price.amount), resolved.price.currency || "ARS", null, null, Number(resolved.price.duration_months || 1), provider === "mercadopago" ? 1 : 0, graceDays, requestedExpiresAt]
@@ -149,6 +156,7 @@ export async function createAdminSubscription(input, actorId = null) {
       price: { id: Number(resolved.price.id), code: resolved.priceCode, billingMode: resolved.price.billing_mode, provider, durationMonths: Number(resolved.price.duration_months || 1), amount: Number(resolved.price.amount), currency: resolved.price.currency || "ARS", settings: parseJson(resolved.price.settings_json) },
       addons: selectedAddons,
       policy: { graceDays, requestedExpiresAt },
+      payment: { provider, payerEmail },
       createdBy: "admin"
     };
     await conn.query("INSERT INTO tags_subscription_terms (subscription_id,plan_version_id,offer_id,price_code,billing_mode,terms_snapshot_json) VALUES (?,?,NULL,?,?,?)", [subscriptionId, resolved.versionId, resolved.priceCode, resolved.price.billing_mode, JSON.stringify(snapshot)]);

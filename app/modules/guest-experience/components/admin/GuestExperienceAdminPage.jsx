@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FaArrowLeft, FaBed, FaCalendarCheck, FaCalendarDays, FaComments, FaDoorOpen, FaEye, FaGear, FaGift, FaHotel, FaLocationDot, FaMoneyBillWave, FaPlus, FaShop, FaStar, FaUsers, FaUtensils, FaUserCheck } from "react-icons/fa6";
 import TagsSpinner from "@/app/components/TagsSpinner";
 import showAlert from "@/app/components/showAlert";
+import confirmPublicPageStatusChange from "@/app/lib/confirmPublicPageStatusChange";
 import { normalizeArgentinaWhatsapp } from "@/app/modules/qr-page/lib/normalizeContactFields";
 import { buildReservationAccessCommunication } from "@/app/modules/guest-experience/lib/reservationAccessCommunication";
 import GuestExperienceReservationsPanel from "./GuestExperienceReservationsPanel";
@@ -235,16 +236,8 @@ export default function GuestExperienceAdminPage({
     return Boolean(await request("/api/guest-experience/admin/communications", "DELETE", { communicationId: record.id }, "Comunicación eliminada del historial."));
   }
   async function togglePublication() {
-    const next = data.app.status === "published" ? "draft" : "published",
-      action = next === "published" ? "publicar" : "despublicar";
-    const ok = await showAlert({
-      title: `¿${action[0].toUpperCase() + action.slice(1)} la página?`,
-      text: next === "published" ? "Los huéspedes con acceso podrán ingresar a Mi Estadía." : "Los accesos públicos quedarán temporalmente deshabilitados.",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: next === "published" ? "Publicar" : "Despublicar",
-      cancelButtonText: "Cancelar"
-    });
+    const next = data.app.status === "published" ? "draft" : "published";
+    const ok = await confirmPublicPageStatusChange(next, "Mi Estadía");
     if (ok) await request("/api/guest-experience/admin/publication", "PATCH", {
       status: next
     }, next === "published" ? "Página publicada." : "Página despublicada.");

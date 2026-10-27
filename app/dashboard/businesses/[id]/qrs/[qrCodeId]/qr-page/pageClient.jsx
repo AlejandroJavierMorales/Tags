@@ -7,6 +7,7 @@ import { useEffect, useState }
 
 import showAlert
     from "@/app/components/showAlert";
+import confirmPublicPageStatusChange from "@/app/lib/confirmPublicPageStatusChange";
 
 import "@/app/styles/qr-page.css";
 
@@ -486,6 +487,9 @@ export default function QRPageBuilderClient({
         if (!qrPage?.page) {
             return;
         }
+
+        const confirmed = await confirmPublicPageStatusChange(status, "la QR-Page");
+        if (!confirmed) return;
 
         const endpoint =
             status === "published"

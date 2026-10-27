@@ -26,10 +26,11 @@ export function subscriptionIdFromReference(value) {
 export async function ensureDirectoryMercadoPagoSubscription({ subscriptionId, baseUrl }) {
   const [[row]] = await db.query(`
     SELECT s.id,s.business_id,s.plan_id,s.amount,s.currency,s.external_subscription_id,s.provider_init_point,
-           b.email,b.name business_name,p.name plan_name,ds.name site_name
+           b.email,b.name business_name,p.name plan_name,ds.name site_name,t.terms_snapshot_json
       FROM tags_subscriptions s
       INNER JOIN tags_businesses b ON b.id=s.business_id
       INNER JOIN tags_plans p ON p.id=s.plan_id
+      LEFT JOIN tags_subscription_terms t ON t.subscription_id=s.id
       LEFT JOIN tags_directory_listings l ON l.business_id=s.business_id
       LEFT JOIN tags_directory_site_listings sl ON sl.listing_id=l.id
       LEFT JOIN tags_directory_sites ds ON ds.id=sl.site_id
@@ -42,12 +43,16 @@ export async function ensureDirectoryMercadoPagoSubscription({ subscriptionId, b
 
   const root = cleanBaseUrl(baseUrl || process.env.NEXT_PUBLIC_BASE_URL || process.env.BASE_URL_PROD || process.env.NEXT_PUBLIC_APP_URL);
   if (!root) throw Object.assign(new Error("No está configurada la URL pública de la plataforma"), { status: 503 });
+  let terms = {};
+  try { terms = typeof row.terms_snapshot_json === "object" ? row.terms_snapshot_json : JSON.parse(row.terms_snapshot_json || "{}"); } catch { terms = {}; }
+  const payerEmail = String(terms?.payment?.payerEmail || row.email || "").trim().toLowerCase();
+  if (!payerEmail || !payerEmail.includes("@")) throw Object.assign(new Error("La suscripción no tiene un email pagador válido"), { status: 409 });
   const preapproval = new PreApproval(directoryMercadoPagoClient());
   const response = await preapproval.create({
     body: {
       reason: `${row.plan_name} · ${row.site_name || "Directorio"}`.slice(0, 120),
       external_reference: directorySubscriptionReference(row.id),
-      payer_email: row.email,
+      payer_email: payerEmail,
       auto_recurring: { frequency: 1, frequency_type: "months", transaction_amount: Number(row.amount), currency_id: row.currency || "ARS" },
       back_url: `${root}/suscripcion/mercadopago/resultado?subscription=${row.id}`,
       status: "pending"

@@ -66,6 +66,7 @@ export async function POST(req) {
       mode, businessName: row.business_name, businessEmail: row.business_email,
       planName: row.plan_name, planCode: row.plan_code, planId: row.plan_id,
       provider, providerLabel: providerLabel(provider), amount, currency: "ARS",
+      payerEmail: provider === "mercadopago" ? String(request.payerEmail || row.business_email || "").trim().toLowerCase() : null,
       durationMonths, status, statusLabel: statusLabel(status), expiresAt, graceDays,
       addons: selectedAddons,
       siteName: row.site_name || null,

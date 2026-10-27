@@ -172,6 +172,11 @@ export async function POST(req) {
       }
       const changedToMercadoPago = provider === "mercadopago" && subscription.payment_provider !== "mercadopago";
       const changedFromMercadoPago = provider !== "mercadopago" && subscription.payment_provider === "mercadopago";
+      const payerEmail = String(body?.payerEmail || "").trim().toLowerCase();
+      if (changedToMercadoPago && (body?.mercadoPagoTransitionMode !== "new" || !payerEmail || !payerEmail.includes("@"))) {
+        await conn.rollback();
+        return Response.json({ error: "Elegí expresamente Crear nueva autorización e ingresá un email pagador válido. Para una autorización existente usá el flujo de importación." }, { status: 409 });
+      }
       if (changedFromMercadoPago && subscription.external_subscription_id) await updateDirectoryMercadoPagoPreapproval(subscription.external_subscription_id, "cancelled");
       const nextStatus = changedToMercadoPago ? "trial" : subscription.status;
       const nextExpiresAt = changedToMercadoPago ? new Date(Date.now() + 72 * 60 * 60 * 1000) : expiresAt;
@@ -189,6 +194,14 @@ export async function POST(req) {
       await conn.query("UPDATE tags_businesses SET plan_id=?,subscription_status=?,plan_started_at=?,plan_expires_at=?,updated_at=NOW() WHERE id=?", [planId, nextStatus, startedAt, nextExpiresAt, subscription.business_id]);
       await conn.query("UPDATE tags_business_addons SET amount=?,expires_at=?,updated_at=NOW() WHERE business_id=? AND addon_code='directory'", [amount, nextExpiresAt, subscription.business_id]);
       await conn.query("UPDATE tags_subscription_payments SET plan_id=?,amount=?,updated_at=NOW() WHERE subscription_id=? AND status='pending'", [planId, amount, subscriptionId]);
+      if (changedToMercadoPago) {
+        const [[termsRow]] = await conn.query("SELECT terms_snapshot_json FROM tags_subscription_terms WHERE subscription_id=? FOR UPDATE", [subscriptionId]);
+        let snapshot = {};
+        try { snapshot = typeof termsRow?.terms_snapshot_json === "object" ? termsRow.terms_snapshot_json : JSON.parse(termsRow?.terms_snapshot_json || "{}"); } catch { snapshot = {}; }
+        snapshot.payment = { ...(snapshot.payment || {}), provider: "mercadopago", payerEmail };
+        if (termsRow) await conn.query("UPDATE tags_subscription_terms SET billing_mode='recurring',terms_snapshot_json=?,updated_at=NOW() WHERE subscription_id=?", [JSON.stringify(snapshot), subscriptionId]);
+        else await conn.query("INSERT INTO tags_subscription_terms (subscription_id,plan_version_id,offer_id,price_code,billing_mode,terms_snapshot_json) VALUES (?,NULL,NULL,NULL,'recurring',?)", [subscriptionId, JSON.stringify(snapshot)]);
+      }
       if (provider !== "mercadopago") {
         const [[currentPayment]] = await conn.query("SELECT id FROM tags_subscription_payments WHERE subscription_id=? AND status='approved' ORDER BY COALESCE(period_end,paid_at,created_at) DESC,id DESC LIMIT 1", [subscriptionId]);
         if (currentPayment) await conn.query("UPDATE tags_subscription_payments SET plan_id=?,amount=?,updated_at=NOW() WHERE id=?", [planId, amount, currentPayment.id]);

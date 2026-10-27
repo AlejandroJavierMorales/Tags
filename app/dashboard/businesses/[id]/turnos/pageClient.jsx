@@ -13,6 +13,7 @@ import TurnosAdminTabs from "@/app/modules/turnos/components/admin/TurnosAdminTa
 import TurnosAdminCalendar from "@/app/modules/turnos/components/admin/TurnosAdminCalendar";
 import TurnosAdminCustomers from "@/app/modules/turnos/components/admin/TurnosAdminCustomers";
 import showAlert from "@/app/components/showAlert";
+import confirmPublicPageStatusChange from "@/app/lib/confirmPublicPageStatusChange";
 import TagsSpinner from "@/app/components/TagsSpinner";
 import AiChatSurfaceSettings from "@/app/modules/ai-chat/components/admin/AiChatSurfaceSettings";
 import SportsClubAdmin from "@/app/modules/sports/components/admin/SportsClubAdmin";
@@ -96,7 +97,7 @@ export default function TurnosAdminPageClient({ businessId }) {
     }
 
     async function saveSettings(event) { event.preventDefault(); await save("/api/turnos/admin/settings", "POST", { settings: { ...settings, turnosTemplate: templateCode }, publicBookingPolicy: publicPolicy, depositPolicy }, "Configuración guardada."); }
-    async function togglePublication() { await save("/api/turnos/admin/settings", "PATCH", { status: app?.status === "published" ? "draft" : "published" }, app?.status === "published" ? "Página despublicada." : "Página publicada."); }
+    async function togglePublication() { const nextStatus = app?.status === "published" ? "draft" : "published"; const confirmed = await confirmPublicPageStatusChange(nextStatus, "la página de Turnos"); if (!confirmed) return; await save("/api/turnos/admin/settings", "PATCH", { status: nextStatus }, nextStatus === "published" ? "Página publicada." : "Página despublicada."); }
     async function saveService(event) { event.preventDefault(); const ok = await save("/api/turnos/admin/services", editingServiceId ? "PUT" : "POST", { ...serviceForm, serviceId: editingServiceId, bookingMode: selectedTemplate.bookingMode }, editingServiceId ? "Servicio actualizado." : "Servicio creado."); if (ok) { setEditingServiceId(null); setServiceForm({ ...serviceForm, name: "" }); } }
     async function saveResource(event) { event.preventDefault(); const ok = await save("/api/turnos/admin/resources", editingResourceId ? "PUT" : "POST", { ...resourceForm, resourceId: editingResourceId }, editingResourceId ? "Recurso actualizado." : "Recurso creado."); if (ok) { setEditingResourceId(null); setResourceForm({ ...resourceForm, name: "" }); } }
     async function saveSchedule(event) { event.preventDefault(); const existingId = editingScheduleId && schedules.some(item => Number(item.id) === Number(editingScheduleId)) ? editingScheduleId : null; if (editingScheduleId && !existingId) setEditingScheduleId(null); const ok = await save("/api/turnos/admin/schedules", existingId ? "PUT" : "POST", { ...scheduleForm, scheduleId: existingId }, existingId ? "Horario actualizado." : "Horario agregado."); if (ok) setEditingScheduleId(null); }

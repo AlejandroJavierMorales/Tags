@@ -8,6 +8,7 @@ import { useRouter }
 
 import showAlert
     from "@/app/components/showAlert";
+import confirmPublicPageStatusChange from "@/app/lib/confirmPublicPageStatusChange";
 
 import "../../../../styles/tagsModals.css";
 
@@ -241,19 +242,7 @@ export default function EventInvitationsPageClient({
 
     async function publishInvitation(id) {
 
-        const confirm =
-            await showAlert({
-
-                title:
-                    "Publicar invitación",
-
-                text:
-                    "La invitación quedará disponible",
-
-                icon: "question",
-
-                showCancelButton: true
-            });
+        const confirm = await confirmPublicPageStatusChange("published", "la invitación");
 
         if (!confirm) return;
 
@@ -439,21 +428,7 @@ export default function EventInvitationsPageClient({
 
     async function unpublishInvitation(id) {
 
-        const confirm =
-            await showAlert({
-
-                title:
-                    "Despublicar invitación",
-
-                text:
-                    "Los links públicos dejarán de estar disponibles. ¿Continuar?",
-
-                icon:
-                    "warning",
-
-                showCancelButton:
-                    true
-            });
+        const confirm = await confirmPublicPageStatusChange("draft", "la invitación");
 
         if (!confirm) return;
 

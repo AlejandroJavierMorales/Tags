@@ -10,6 +10,7 @@ import { db }
     from "@/app/lib/tags-db";
 import { sendMail } from "@/app/lib/sendMail";
 import { directoryEmailBranding, directoryEmailHeader } from "@/app/modules/directory/lib/directoryEmailBranding";
+import { reconcileMercadoPagoSubscription } from "@/app/modules/subscriptions/lib/subscriptionMercadoPagoReconciliation";
 
 const escapeHtml = value => String(value || "").replace(/[&<>\"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
 
@@ -49,6 +50,19 @@ async function notifyUpcomingExpirations() {
     return notified;
 }
 
+async function reconcileAutomaticPayments() {
+    const [subscriptions] = await db.query(`SELECT id FROM tags_subscriptions WHERE payment_provider='mercadopago' AND external_subscription_id IS NOT NULL AND (provider_last_synced_at IS NULL OR provider_last_synced_at<DATE_SUB(NOW(),INTERVAL 6 HOUR)) ORDER BY COALESCE(provider_last_synced_at,'2000-01-01') LIMIT 50`);
+    const results = [];
+    for (const subscription of subscriptions) {
+        try {
+            results.push({ ok: true, ...(await reconcileMercadoPagoSubscription(subscription.id)) });
+        } catch (error) {
+            results.push({ subscriptionId: Number(subscription.id), ok: false, error: String(error?.message || error).slice(0, 300) });
+        }
+    }
+    return results;
+}
+
 export async function POST(req) {
 
     try {
@@ -70,6 +84,8 @@ export async function POST(req) {
                 }
             );
         }
+
+        const automaticPayments = await reconcileAutomaticPayments();
 
         const [subscriptionsResult] =
             await db.query(
@@ -135,7 +151,9 @@ export async function POST(req) {
                 addonsResult.affectedRows || 0,
             businessesExpired:
                 businessesResult.affectedRows || 0,
-            notificationsSent
+            notificationsSent,
+            automaticPaymentsProcessed: automaticPayments.reduce((total, item) => total + Number(item.paymentsProcessed || 0), 0),
+            automaticPaymentsFailed: automaticPayments.filter(item => !item.ok).length
         });
 
     } catch (err) {

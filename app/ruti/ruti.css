@@ -1,0 +1,64 @@
+.tags_ruti_page {
+  min-height: 100dvh;
+  overflow-x: hidden;
+  background: radial-gradient(circle at 80% 18%, #f4dca9 0, transparent 28%), linear-gradient(145deg, #fffaf0, #f2e4c5);
+  color: #4a2815;
+  font-family: inherit;
+}
+
+.tags_ruti_brand {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px clamp(20px, 5vw, 72px);
+}
+
+.tags_ruti_brand img { width: clamp(76px, 9vw, 118px); height: auto; }
+.tags_ruti_brand > a:last-child { border: 1px solid #6b2e0c; border-radius: 999px; padding: 10px 15px; color: #6b2e0c; font-weight: 800; text-decoration: none; }
+
+.tags_ruti_hero {
+  display: grid;
+  grid-template: auto 1fr / minmax(0, 1fr) minmax(280px, 520px);
+  align-items: start;
+  gap: 12px clamp(24px, 5vw, 80px);
+  max-width: 1220px;
+  margin: auto;
+  padding: 24px clamp(22px, 6vw, 80px) 52px;
+}
+
+.tags_ruti_headline { align-self: end; padding-top: 38px; }
+.tags_ruti_headline > span { color: #2f6a45; font-size: .78rem; font-weight: 900; letter-spacing: .12em; }
+.tags_ruti_headline h1 { margin: 14px 0 0; color: #6b2e0c; line-height: .84; }
+.tags_ruti_headline h1 span { display: block; font-size: clamp(1.4rem, 3vw, 2.2rem); font-weight: 650; letter-spacing: -.02em; }
+.tags_ruti_headline h1 strong { display: block; font-size: clamp(4.8rem, 9vw, 8rem); font-weight: 850; letter-spacing: -.06em; }
+
+.tags_ruti_hero > img { grid-column: 2; grid-row: 1 / 3; width: 100%; border-radius: 42px; mix-blend-mode: multiply; }
+.tags_ruti_copy { align-self: start; }
+.tags_ruti_copy p { max-width: 650px; margin: 0; font-size: clamp(1.15rem, 2vw, 1.65rem); line-height: 1.45; }
+.tags_ruti_invitation { display: block; width: max-content; max-width: 100%; margin-top: 24px; border: 0; border-radius: 999px; background: #6b2e0c; padding: 13px 20px; color: #fff; font: inherit; font-size: .9rem; font-weight: 850; cursor: pointer; }
+.tags_ruti_invitation:hover { background: #481800; }
+
+.tags_ruti_footer { display: grid; gap: 10px; border-top: 1px solid #dfc394; background: #f5e4c1; padding: 24px clamp(20px, 5vw, 72px); color: #633015; text-align: center; }
+.tags_ruti_footer p, .tags_ruti_footer small { max-width: 900px; margin: auto; line-height: 1.5; }
+.tags_ruti_footer small { color: #805536; font-size: .72rem; }
+.tags_ruti_footer nav { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px 16px; }
+.tags_ruti_footer nav a { color: #6b2e0c; font-size: .72rem; font-weight: 800; }
+
+@media (max-width: 720px) {
+  .tags_ruti_brand { padding: 14px 18px; }
+  .tags_ruti_brand img { width: 82px; }
+  .tags_ruti_brand > a:last-child { max-width: 190px; padding: 9px 12px; font-size: .72rem; text-align: center; }
+  .tags_ruti_hero { grid-template: auto auto auto / minmax(0, 1fr); gap: 16px; padding: 18px 18px 34px; text-align: center; }
+  .tags_ruti_headline { grid-row: 1; padding: 0; }
+  .tags_ruti_headline > span { display: block; max-width: 340px; margin-inline: auto; font-size: .64rem; line-height: 1.45; letter-spacing: .08em; text-wrap: balance; }
+  .tags_ruti_headline h1 { margin-top: 10px; }
+  .tags_ruti_headline h1 span { font-size: 1.35rem; }
+  .tags_ruti_headline h1 strong { margin-top: 3px; font-size: clamp(4.2rem, 22vw, 6rem); }
+  .tags_ruti_hero > img { grid-column: 1; grid-row: 2; width: min(72vw, 310px); margin: -4px auto -12px; border-radius: 28px; }
+  .tags_ruti_copy { grid-row: 3; }
+  .tags_ruti_copy p { max-width: 360px; margin-inline: auto; font-size: 1.05rem; }
+  .tags_ruti_invitation { margin: 20px auto 0; font-size: .82rem; }
+  .tags_ruti_footer { padding: 22px 18px 185px; }
+  .tags_ruti_footer p { font-size: .8rem; }
+  .tags_ruti_footer nav { gap: 9px 13px; }
+}

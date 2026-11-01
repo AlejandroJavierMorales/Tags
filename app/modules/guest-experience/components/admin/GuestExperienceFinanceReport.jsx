@@ -10,7 +10,7 @@ import "./GuestExperienceFinanceReportActions.css";
 
 const iso = date => date.toISOString().slice(0, 10);
 const money = value => `$ ${Number(value || 0).toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-const stayState = status => status === "active" ? "En curso" : status === "checked_out" ? "Concluida" : "Pendiente";
+const stayState = status => status === "active" ? "En curso" : status === "checked_out" ? "Concluida" : status === "cancelled" ? "Cancelada" : status === "no_show_rebooking" ? "Pendiente de reprogramación" : "Pendiente";
 const checkinState = item => ["active", "checked_out"].includes(item.status) ? { label: "Confirmado", kind: "confirmed" } : ["submitted", "reviewed"].includes(item.precheckin_status) ? { label: "Pre-Check-in recibido", kind: "received" } : { label: "Pre-Check-in pendiente", kind: "pending" };
 
 export default function GuestExperienceFinanceReport({ businessId, data, onBack, onManage }) {

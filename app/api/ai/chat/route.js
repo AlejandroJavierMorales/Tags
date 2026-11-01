@@ -1,4 +1,4 @@
-import { buildUserPrompt, BUSINESS_SYSTEM_PROMPT, DESTINATION_SYSTEM_PROMPT, SYSTEM_PROMPT } from "@/app/modules/ai-chat/server/prompts";
+import { buildUserPrompt, BUSINESS_SYSTEM_PROMPT, getDestinationSystemPrompt, SYSTEM_PROMPT } from "@/app/modules/ai-chat/server/prompts";
 import { retrieveKnowledge } from "@/app/modules/ai-chat/server/knowledge";
 import { buildDestinationContext, searchDirectoryCandidates } from "@/app/modules/destination-ai/server/searchDirectoryCandidates";
 import { buildKnowledgeIndexContext, compareCandidateSets, getBusinessKnowledgeContext, getKnowledgeCandidatesByKeys, searchKnowledgeIndex } from "@/app/modules/destination-ai/server/searchKnowledgeIndex";
@@ -15,6 +15,9 @@ import { generateAnswer, generateStructuredJson } from "@/app/modules/ai-chat/se
 import { checkRateLimit } from "@/app/modules/ai-chat/server/rateLimit";
 import { getBusinessChatPlan, getMonthlyChatUsage, recordChatUsage } from "@/app/modules/ai-chat/server/usage";
 import { db } from "@/app/lib/tags-db";
+import { resolveChatbotBookingFlow } from "@/app/modules/guest-experience/server/getChatbotBookingContext";
+import { getBusinessChatCapabilities } from "@/app/modules/ai-chat/server/businessChatCapabilityRegistry";
+import { classifyLodgingConversation, mergeLodgingConversationState } from "@/app/modules/ai-chat/server/lodgingConversationState.mjs";
 import crypto from "node:crypto";
 
 export const runtime = "nodejs";
@@ -22,6 +25,7 @@ export const dynamic = "force-dynamic";
 
 const MAX_MESSAGE_CHARS = Number(process.env.AI_CHAT_MAX_MESSAGE_CHARS || 1200);
 const MAX_HISTORY_ITEMS = 6;
+const BOOKING_INTENT_SCHEMA = { type: "object", additionalProperties: false, properties: { bookingIntent: { type: "boolean" }, startsOn: { type: "string" }, endsOn: { type: "string" }, adults: { type: "integer" }, children: { type: "integer" } }, required: ["bookingIntent", "startsOn", "endsOn", "adults", "children"] };
 
 function getClientKey(request) {
     return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
@@ -246,7 +250,8 @@ export async function POST(request) {
         const history = sanitizeHistory(body?.history);
         if (history.at(-1)?.role === "user" && normalizeForMatch(history.at(-1)?.content) === normalizeForMatch(message)) history.pop();
         const previousSearchQuery = String(body?.conversationState?.searchQuery || "").trim().slice(0, 500);
-        const platformCommercialQuery = Boolean(siteCode && isCalamuchitarPlatformQuery(message));
+        const destinationSystemPrompt = getDestinationSystemPrompt(siteCode);
+        const platformCommercialQuery = Boolean(siteCode === "calamuchitar" && isCalamuchitarPlatformQuery(message));
         const platformCommercialContext = platformCommercialQuery ? buildCalamuchitarPlatformContext() : "";
         const clientRecommendations = extractRecentRecommendations([
             ...(Array.isArray(body?.history) ? body.history : []),
@@ -305,6 +310,57 @@ export async function POST(request) {
                 intentModel = interpreted.model;
             } catch (error) {
                 console.warn("DESTINATION INTENT FALLBACK", { requestId, code: error?.code || error?.message });
+            }
+        }
+        let bookingContext = "";
+        let bookingAction = null;
+        let bookingDirectAnswer = "";
+        let bookingState = body?.conversationState?.booking && typeof body.conversationState.booking === "object"
+            ? body.conversationState.booking
+            : null;
+        if (businessId && !siteCode) {
+            const bookingRequested = classifyLodgingConversation({ message, state: bookingState, hasCapability: true }) === "lodging_booking";
+            try {
+                const capabilities = await getBusinessChatCapabilities(businessId);
+                const route = bookingRequested && capabilities.lodgingReservations ? "lodging_booking" : "business_information";
+                if (route === "lodging_booking") {
+                    bookingState = mergeLodgingConversationState({ previous: bookingState, message, userHistory: history.filter(item => item.role === "user").map(item => item.content) });
+                    try {
+                        const interpretedBooking = await generateStructuredJson({
+                            systemPrompt: "Interpretás datos de una búsqueda de alojamiento. No respondas. Extraé solamente fechas, adultos y menores expresamente indicados. Si un dato no aparece, devolvé cadena vacía o 0.",
+                            userPrompt: `Fecha local: ${new Date().toLocaleDateString("en-CA", { timeZone: "America/Argentina/Cordoba" })}. Estado actual: ${JSON.stringify(bookingState)}. Mensaje: ${message}`,
+                            schema: BOOKING_INTENT_SCHEMA,
+                            schemaName: "business_booking_intent",
+                            maxCompletionTokens: 180,
+                            model: process.env.OPENAI_MODEL
+                        });
+                        const extracted = interpretedBooking.data || {};
+                        const bookingUserText = [...history.filter(item => item.role === "user").map(item => item.content), message].join(" ");
+                        const explicitlyMentionsAdults = /\b(?:adult|mayores?|grandes?)\w*/i.test(bookingUserText);
+                        const explicitlyMentionsChildren = /\b(?:menor|niñ|nin|chic)\w*/i.test(bookingUserText);
+                        bookingState = {
+                            ...bookingState,
+                            startsOn: bookingState.startsOn || extracted.startsOn || "",
+                            endsOn: bookingState.endsOn || extracted.endsOn || "",
+                            adults: Number(bookingState.adults || (explicitlyMentionsAdults ? extracted.adults : 0) || 0),
+                            children: Number(bookingState.children || (explicitlyMentionsChildren ? extracted.children : 0) || 0)
+                        };
+                        intentUsage = mergeOpenAiUsage(intentUsage, interpretedBooking.usage);
+                        intentModel ||= interpretedBooking.model;
+                    } catch (error) {
+                        console.warn("BUSINESS BOOKING EXTRACTION FALLBACK", { requestId, code: error?.code || error?.message });
+                    }
+                    const bookingFlow = await resolveChatbotBookingFlow({ setup: capabilities.lodgingReservations, intent: { ...bookingState, bookingIntent: true } });
+                    bookingContext = bookingFlow?.context || "";
+                    bookingDirectAnswer = bookingFlow?.answer || "";
+                    bookingAction = bookingFlow?.action || null;
+                    bookingState.completed = Boolean(bookingAction);
+                } else if (bookingRequested) {
+                    bookingDirectAnswer = "El motor de reservas no está conectado al asistente en este momento. No voy a inventarte disponibilidad ni unidades. Podés consultar desde la página de reservas del alojamiento.";
+                }
+            } catch (error) {
+                console.error("BUSINESS CAPABILITY OR BOOKING FLOW ERROR", { requestId, code: error?.code || error?.message });
+                bookingDirectAnswer = bookingRequested || bookingState?.active ? "No pude consultar la disponibilidad en este momento. No voy a inventarte unidades ni precios. Intentá nuevamente en unos minutos." : "";
             }
         }
         if (analyticsFailureContext) analyticsFailureContext.destinationIntent = destinationIntent;
@@ -462,14 +518,16 @@ export async function POST(request) {
             : await retrieveKnowledge(message, { businessId, maxChars: Number(process.env.AI_CHAT_MAX_CONTEXT_CHARS || 8000) });
         const userPrompt = buildUserPrompt({
             question: message,
-            context: [siteCode ? `MODO DE LA PERSONA: ${destinationMode}` : "", userLocation ? "La persona autorizó usar su ubicación actual. Las distancias disponibles ya fueron calculadas y son aproximadas." : "La persona no compartió su ubicación geográfica.", siteCode ? getDestinationTemporalContext() : "", context, platformCommercialContext, contactContext].filter(Boolean).join("\n\n")
+            context: [siteCode ? `MODO DE LA PERSONA: ${destinationMode}` : "", userLocation ? "La persona autorizó usar su ubicación actual. Las distancias disponibles ya fueron calculadas y son aproximadas." : "La persona no compartió su ubicación geográfica.", siteCode ? getDestinationTemporalContext() : "", context, bookingContext, platformCommercialContext, contactContext].filter(Boolean).join("\n\n")
         });
         const answerHistory = useEngineV2 ? (destinationIntent.continuesPrevious ? history : []) : destinationIntent.isNewTopic ? [] : history;
-        const generated = planClarification
+        const generated = bookingDirectAnswer
+            ? { answer: bookingDirectAnswer, recommendationKeys: [], needsClarification: !bookingAction, suggestedPrompts: [], model: intentModel, usage: {} }
+            : planClarification
             ? { answer:planClarification,recommendationKeys:[],needsClarification:true,suggestedPrompts:["Estamos en Villa General Belgrano y tenemos auto","Salimos desde Los Reartes sin auto"],model:intentModel,usage:{} }
             : useKnowledgeIndex
             ? await generateStructuredJson({
-                systemPrompt: `${DESTINATION_SYSTEM_PROMPT}\nDevolvé JSON según el schema. recommendationKeys debe contener únicamente IDs autorizados incluidos en el contexto y todos los lugares que realmente mencionás en reply. Si pedís una aclaración sin recomendar a nadie, usá una lista vacía. Nunca inventes un ID. Si hay varias tareas, resolvé cada necesidad por separado sin mezclar sus opciones. No hables de evidencia, registros, índices, directorios ni limitaciones técnicas: explicá de forma natural qué encontraste y por qué puede servir.`,
+                systemPrompt: `${destinationSystemPrompt}\nDevolvé JSON según el schema. recommendationKeys debe contener únicamente IDs autorizados incluidos en el contexto y todos los lugares que realmente mencionás en reply. Si pedís una aclaración sin recomendar a nadie, usá una lista vacía. Nunca inventes un ID. Si hay varias tareas, resolvé cada necesidad por separado sin mezclar sus opciones. No hables de evidencia, registros, índices, directorios ni limitaciones técnicas: explicá de forma natural qué encontraste y por qué puede servir.`,
                 userPrompt,
                 history: answerHistory,
                 schema: useEngineV2 ? DESTINATION_ANSWER_V2_SCHEMA : DESTINATION_ANSWER_SCHEMA,
@@ -478,14 +536,14 @@ export async function POST(request) {
                 model: process.env.OPENAI_MODEL
             }).then(result => ({ answer: result.data.reply, recommendationKeys: result.data.recommendationKeys, needsClarification: result.data.needsClarification, suggestedPrompts: result.data.suggestedPrompts || [], model: result.model, usage: result.usage }))
             : await generateAnswer({
-                systemPrompt: siteCode ? DESTINATION_SYSTEM_PROMPT : businessId ? BUSINESS_SYSTEM_PROMPT : SYSTEM_PROMPT,
+                systemPrompt: siteCode ? destinationSystemPrompt : businessId ? BUSINESS_SYSTEM_PROMPT : SYSTEM_PROMPT,
                 userPrompt,
                 history,
                 maxCompletionTokens: siteCode ? Number(process.env.DESTINATION_AI_MAX_OUTPUT_TOKENS || 350) : null
             });
 
         const combinedUsage = mergeOpenAiUsage(intentUsage, generated.usage);
-        if(planClarification){
+        if(!bookingDirectAnswer&&planClarification){
             generated.answer=planClarification;
             generated.recommendationKeys=[];
             generated.needsClarification=true;
@@ -493,7 +551,7 @@ export async function POST(request) {
         } else if(useEngineV2&&searchRequests.length&&candidates.length===0&&!destinationIntent.tasks.some(task=>task.needsClarification)){
             const subjects=destinationIntent.tasks.map(task=>task.subject||task.query).filter(Boolean).slice(0,2).join(" y ");
             const locality=destinationIntent.tasks.find(task=>task.localityPreference==="specified"&&task.locality)?.locality;
-            generated.answer=`No encontré por ahora una opción que publique exactamente ${subjects||"eso"}${locality?` en ${locality}`:" en el Valle de Calamuchita"}.`;
+            generated.answer=`No encontré por ahora una opción que publique exactamente ${subjects||"eso"}${locality?` en ${locality}`:siteCode === "ruta100cordoba"?" en Ruta 100 Córdoba":" en el Valle de Calamuchita"}.`;
             generated.recommendationKeys=[];
             generated.needsClarification=false;
         }
@@ -545,7 +603,7 @@ export async function POST(request) {
                 ...clientJourneyKeys.filter(key => useEngineV2 || destinationIntent.intent !== "challenge_recommendation" || (destinationIntent.resultReferenceKey ? key !== destinationIntent.resultReferenceKey : !recentRecommendations.some(item => item.entityKey === key))),
                 ...(recommendedCandidates || []).map(item => item.entityKey)
             ])].slice(-18)
-        } : undefined;
+        } : bookingState ? { booking: bookingState } : undefined;
         if (siteCode) {
             await recordDestinationQueryAnalytics({
                 siteCode,
@@ -564,7 +622,7 @@ export async function POST(request) {
             });
             analyticsFailureContext = null;
         }
-        return Response.json({ success: true, answer: generated.answer, candidates: recommendedCandidates, suggestedPrompts: generated.suggestedPrompts || [], conversationState, usage, tokens, engineVersion: useEngineV2 ? "v2" : "v1" });
+        return Response.json({ success: true, answer: generated.answer, candidates: recommendedCandidates, bookingAction, suggestedPrompts: generated.suggestedPrompts || [], conversationState, usage, tokens, engineVersion: useEngineV2 ? "v2" : "v1" });
     } catch (error) {
         if (analyticsFailureContext) await recordDestinationQueryAnalytics({ ...analyticsFailureContext,answerStatus:"error" });
         console.error("AI CHAT ERROR", {

@@ -1,4 +1,4 @@
-import { FaCalendarDays, FaClock, FaEye, FaLocationDot, FaMountainSun, FaPhone, FaWhatsapp } from "react-icons/fa6";
+import { FaArrowRight, FaCalendarDays, FaClock, FaEye, FaLocationDot, FaMountainSun, FaPhone, FaWhatsapp } from "react-icons/fa6";
 import ChatMarkdown from "./ChatMarkdown";
 
 function cleanPhone(value) {
@@ -27,7 +27,20 @@ const PLAN_LABELS = {
     event: "Evento vigente"
 };
 
-export default function ChatMessage({ role, content, candidates = [] }) {
+function bookingHref(value) {
+    const href = String(value || "");
+    if (!href || /^https?:\/\//i.test(href) || typeof window === "undefined") return href;
+    if (window.parent === window || !document.referrer) return href;
+    try {
+        const referrer = new URL(document.referrer);
+        const action = new URL(href, window.location.origin);
+        return `${referrer.origin}/reservar${action.search}${action.hash}`;
+    } catch {
+        return href;
+    }
+}
+
+export default function ChatMessage({ role, content, candidates = [], bookingAction = null }) {
     return <div className={`tags_ai_chat_message tags_ai_chat_message_${role}`}>
         <div className="tags_ai_chat_message_bubble">
             <ChatMarkdown content={content} />
@@ -56,6 +69,7 @@ export default function ChatMessage({ role, content, candidates = [] }) {
                     </article>;
                 })}
             </div>}
+            {bookingAction?.href && <a className="tags_ai_chat_booking_action" href={bookingHref(bookingAction.href)} target="_top">{bookingAction.label || "Continuar con la reserva"} <FaArrowRight /></a>}
         </div>
     </div>;
 }

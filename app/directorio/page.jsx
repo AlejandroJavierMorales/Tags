@@ -33,7 +33,9 @@ export async function generateMetadata() {
   const context = await getPublicSitemapContext();
   const canonicalPath = context.isTags ? "/directorio" : "/";
   return {
-    title: site.code === "calamuchitar"
+    title: site.code === "ruta100cordoba"
+      ? "Ruta 100 Córdoba | Comercios, servicios y experiencias"
+      : site.code === "calamuchitar"
       ? "La Plataforma Comercial de Calamuchita | Comercios y Servicios"
       : `Comercios y servicios | ${site.name}`,
     ...(site.code === "calamuchitar" && !context.isTags
@@ -51,7 +53,9 @@ export async function generateMetadata() {
         "max-video-preview": -1,
       },
     },
-    description: `Encontrá comercios, profesionales, productos y servicios en ${site.name}.`
+    description: site.code === "ruta100cordoba"
+      ? "Descubrí comercios, servicios, lugares y experiencias de Córdoba por la Ruta 100."
+      : `Encontrá comercios, profesionales, productos y servicios en ${site.name}.`
   };
 }
 
@@ -75,9 +79,14 @@ export default async function DirectoryPublicPage({ searchParams }) {
   const navigationTrail = [{ label: "Inicio", href: "/directorio" }, ...data.breadcrumbs.map(item => ({ label: item.name, href: href(data.filters, { categoria: item.id, pagina: 1 }) }))];
   if (!data.breadcrumbs.length && data.filters.query) navigationTrail.push({ label: `Resultados para “${data.filters.query}”`, href: returnHref });
 
-  const destinationAssistant = isHome ? await applyDestinationUsagePolicy(getDestinationAssistantConfig(data.site, data.site.code === "calamuchitar" ? { initialOpen: false, launchHref: "https://muchi.calamuchita.ar", dismissible: true, characterTitle: "", characterButtonLabel: "Hablar con Muchi" } : { initialOpen: String(filters.muchi || "") === "1" }), data.site.code) : null;
+  const destinationOverrides = data.site.code === "calamuchitar"
+    ? { initialOpen: false, launchHref: "https://muchi.calamuchita.ar", dismissible: true, characterTitle: "", characterButtonLabel: "Hablar con Muchi" }
+    : data.site.code === "ruta100cordoba"
+      ? { initialOpen: false, launchHref: "https://ruti.ruta100cordoba.com", dismissible: true, characterTitle: "", characterButtonLabel: "Hablar con Ruti" }
+      : { initialOpen: String(filters.muchi || "") === "1" };
+  const destinationAssistant = isHome ? await applyDestinationUsagePolicy(getDestinationAssistantConfig(data.site, destinationOverrides), data.site.code) : null;
 
-  return <main className="tags_directory_page">
+  return <main className="tags_directory_page" data-directory-site={data.site.code}>
     <DirectoryPublicHeader site={data.site} query={data.filters.query} compact={!isHome} />
     <div className="tags_directory_content">
       {isHome && data.site.code === "calamuchitar" && <DirectoryTourismShortcuts />}

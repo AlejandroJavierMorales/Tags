@@ -1,7 +1,8 @@
 const TAGS_ORIGIN = "https://tags.com.ar";
-const DIRECTORY_CHANNEL_HOSTS = new Set(["calamuchita.ar"]);
+const DIRECTORY_CHANNEL_HOSTS = new Set(["calamuchita.ar", "ruta100cordoba.com"]);
 const DESTINATION_ASSISTANT_HOSTS = new Map([
   ["muchi.calamuchita.ar", { siteHost: "calamuchita.ar", entryPath: "/muchi" }],
+  ["ruti.ruta100cordoba.com", { siteHost: "ruta100cordoba.com", entryPath: "/ruti" }],
 ]);
 const ORIGIN_CANONICAL_WWW_HOSTS = new Set(["cabanasecosdelvalle.com.ar"]);
 
@@ -46,6 +47,12 @@ async function resolvePublicFavicon(publicHost, request) {
   // El favicon se resuelve por dominio antes de aplicar las reescrituras HTML.
   if (publicHost === "calamuchita.ar") {
     return fetch(`${TAGS_ORIGIN}/branding/favicons/calamuchitar.ico`, {
+      method: "GET",
+      cf: { cacheEverything: true, cacheTtl: 86400 },
+    });
+  }
+  if (publicHost === "ruta100cordoba.com") {
+    return fetch(`${TAGS_ORIGIN}/assets/icons/Ruta100Cordoba_Favicon.ico`, {
       method: "GET",
       cf: { cacheEverything: true, cacheTtl: 86400 },
     });

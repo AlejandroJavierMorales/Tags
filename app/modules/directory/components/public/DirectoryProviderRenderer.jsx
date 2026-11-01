@@ -35,7 +35,7 @@ function baseSlot(section) {
   return "web";
 }
 
-export default function DirectoryProviderRenderer({ data, web = null, standalone = false, catalogOnly = false, embeddedStoreContent = null, embeddedStoreName = "Tienda", embeddedRestoContent = null, embeddedRestoName = "Gastronomía", embeddedTurnosContent = null, embeddedTurnosName = "Reservas", embeddedEventsContent = null, embeddedEventsName = "Eventos" }) {
+export default function DirectoryProviderRenderer({ data, web = null, standalone = false, catalogOnly = false, bookingLink = "", embeddedStoreContent = null, embeddedStoreName = "Tienda", embeddedRestoContent = null, embeddedRestoName = "Gastronomía", embeddedTurnosContent = null, embeddedTurnosName = "Reservas", embeddedEventsContent = null, embeddedEventsName = "Eventos" }) {
   const { listing, media = [] } = data;
   const page = web?.page || null;
   const sections = [...(web?.sections || [])].sort((a,b)=>Number(a.sort_order)-Number(b.sort_order));
@@ -185,7 +185,7 @@ export default function DirectoryProviderRenderer({ data, web = null, standalone
       {header.showCover !== false && (listing.business_cover_url || page?.cover_image_url) && <img src={listing.business_cover_url || page.cover_image_url} alt="" className="tags_directory_provider_cover" />}
       {header.showLogo !== false && logo && <img src={directoryImageUrl(logo.url)} alt={`Logo de ${mergedListing.display_name}`} className="tags_directory_provider_logo" />}
       <div>{header.eyebrow && <span>{header.eyebrow}</span>}{header.showName !== false && <h1>{header.title || mergedListing.display_name}</h1>}{header.subtitle && <p className="subtitle">{header.subtitle}</p>}{header.showLocation !== false && listing.locality_name && <p><FaLocationDot /> {listing.locality_name}</p>}</div>
-      {header.showMenu !== false && <DirectoryNavigationMenu sections={navigationSections} direction={header.drawerDirection || "right"} />}
+      {header.showMenu !== false && <DirectoryNavigationMenu sections={navigationSections} direction={header.drawerDirection || "right"} links={bookingLink ? [{ label: "Reservar Online", href: bookingLink, featured: true }] : []} />}
     </header>}
     <main className="tags_directory_provider_sections">{publicLayoutItems.map(item => {
       if (item.type === "section") return <DirectoryReveal mode={animationMode} key={item.key}><section className="tags_directory_provider_section" id={`directory-section-${item.section.id}`}>{renderSection(item.section)}</section></DirectoryReveal>;

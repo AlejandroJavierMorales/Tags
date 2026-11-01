@@ -27,12 +27,11 @@ function normalizeIcon(value) {
   return `/${icon}`;
 }
 
-function resolveActionUrl(url, audience) {
-  const value = String(url || "/dashboard");
+function resolveActionUrl(url) {
+  const value = String(url || "/dashboard").trim();
   if (/^https?:\/\//i.test(value)) return value;
-  if (!["admin", "platform_admin"].includes(audience)) return value;
-  const platformOrigin = String(process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL_PROD || "").replace(/\/+$/, "");
-  return platformOrigin ? `${platformOrigin}${value.startsWith("/") ? value : `/${value}`}` : value;
+  if (value.startsWith("//")) return "/dashboard";
+  return value.startsWith("/") ? value : `/${value}`;
 }
 
 async function resolvePushIcon(businessId, moduleCode, suppliedIcon) {
@@ -76,7 +75,7 @@ export async function sendPushTest(endpointHash) {
 export async function sendBusinessPush({ businessId, moduleCode, eventCode, entityType, entityId, title, body, url, icon = "", payload = {}, idempotencyKey, audience = "admin", recipientId = null, includePlatformAdmins = false }) {
   if (!configure()) return { ok: false, skipped: "vapid_not_configured" };
   try {
-    const actionUrl = resolveActionUrl(url, audience);
+    const actionUrl = resolveActionUrl(url);
     const [eventResult] = await db.query(`INSERT IGNORE INTO tags_notification_events
       (business_id,module_code,event_code,entity_type,entity_id,title,body,action_url,payload_json,idempotency_key)
       VALUES (?,?,?,?,?,?,?,?,?,?)`, [businessId, moduleCode, eventCode, entityType || null, entityId || null, title, body, actionUrl, JSON.stringify(payload), idempotencyKey]);
@@ -95,7 +94,7 @@ export async function sendBusinessPush({ businessId, moduleCode, eventCode, enti
               AND st.business_id=tags_push_subscriptions.business_id
               AND st.status='active' AND aa.status='active' AND aa.app_code=?
           ))`;
-    const includePlatformRecipients = includePlatformAdmins || (moduleCode === "guest_experience" && audience === "admin");
+    const includePlatformRecipients = includePlatformAdmins === true;
     const recipientFilter = audience === "platform_admin"
       ? "recipient_type='platform_admin'"
       : audience === "guest"

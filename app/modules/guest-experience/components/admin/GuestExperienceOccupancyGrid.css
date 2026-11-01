@@ -22,6 +22,7 @@
 .tags_guest_occupancy_unit small{color:#718078}
 .tags_guest_occupancy_cell{z-index:1;border:0;border-right:1px solid #edf1ef;border-bottom:1px solid #e5ece8;background:#fff;cursor:pointer}
 .tags_guest_occupancy_cell:hover{background:#def3e7}
+.tags_guest_occupancy_cell.is_blocked{background:repeating-linear-gradient(135deg,#edb98f,#edb98f 7px,#f7d4b8 7px,#f7d4b8 14px);cursor:not-allowed}
 .tags_guest_occupancy_booking{z-index:3;align-self:center;height:44px;margin:0 3px;padding:5px 8px;overflow:hidden;border:0;border-radius:8px;color:#fff;text-align:left;cursor:pointer;box-shadow:0 3px 8px #173f2d2e}
 .tags_guest_occupancy_booking strong,.tags_guest_occupancy_booking span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tags_guest_occupancy_booking strong{font-size:12px}

@@ -16,17 +16,25 @@ const PAGE_CONFIG = {
   gifts: { title: "Regalos, Artesanías y Regionales", eyebrow: "QUÉ REGALAR", route: "/regalos-artesanias-regionales", intro: "Llevate un recuerdo del Valle: artesanías, alfajores, chocolates, cervezas y productos regionales.", images: ["regalos-en-calamuchita.webp", "artesanias-en-calamuchita.webp", "regionales-en-calamuchita.webp", "alfajores-y-chocolates-en-calamuchita.webp"], seo: ["Cuando salimos de vacaciones es habitual llevarnos un recuerdo o souvenir representativo del lugar que visitamos. En cada localidad del Valle de Calamuchita vas a encontrar innumerables comercios con una amplia variedad de opciones en regalos, artesanías y artículos regionales.", "En CalamuchitAr los ponemos a tu disposición. Encontrarás proveedores de vasijas, jarrones, macetas de barro, alfajores, chocolates, conservas, dulces, embutidos, cervezas artesanales, productos tejidos, textiles, remeras, sombreros, jarros y productos de cerámica, entre muchas cosas más."] },
 };
 
+const RUTA100_PAGE_CONFIG = {
+  accommodation: { title: "Alojamientos en Ruta 100 Córdoba", eyebrow: "DÓNDE DORMIR", route: "/alojamientos", intro: "Encontrá alojamientos para recorrer y disfrutar Córdoba por la Ruta 100.", images: [], seo: ["Consultá las opciones publicadas y contactá directamente a cada establecimiento para conocer disponibilidad, servicios y condiciones."] },
+  restaurants: { title: "Dónde comer en Ruta 100 Córdoba", eyebrow: "DÓNDE COMER", route: "/donde-comer", intro: "Descubrí restaurantes, bares, cafeterías y sabores regionales a lo largo de la Ruta 100.", images: [], seo: ["Explorá las propuestas gastronómicas publicadas y comunicate directamente con cada establecimiento."] },
+  activities: { title: "Qué hacer en Ruta 100 Córdoba", eyebrow: "QUÉ HACER", route: "/actividades-turisticas", intro: "Encontrá lugares, actividades y experiencias para descubrir Córdoba por la Ruta 100.", images: [], seo: ["Consultá las propuestas publicadas y coordiná cada experiencia directamente con sus prestadores."] },
+  gifts: { title: "Regalos, artesanías y productos regionales", eyebrow: "QUÉ REGALAR", route: "/regalos-artesanias-regionales", intro: "Descubrí artesanías, regalos y productos regionales de Córdoba por la Ruta 100.", images: [], seo: ["Conocé los productos publicados y contactá directamente a sus comercios y productores."] },
+};
+
 export default function DirectoryTourismPage({ data, kind }) {
-  const config = PAGE_CONFIG[kind];
+  const isRuta100Cordoba = data.site?.code === "ruta100cordoba";
+  const config = isRuta100Cordoba ? RUTA100_PAGE_CONFIG[kind] : PAGE_CONFIG[kind];
   const returnHref = data.publicPath || config.route;
   const pageTitle = data.pageTitle || config.title;
   const seoParagraphs = data.seo?.length ? data.seo : config.seo;
   const resultsTitle = data.selectedTourismCategory ? `Opciones de ${data.selectedTourismCategory.name}` : "Lugares, actividades y prestadores";
-  return <main className="tags_directory_tourism_page">
+  return <main className="tags_directory_tourism_page" data-directory-site={data.site?.code || ""}>
     <DirectoryPublicHeader site={data.site} compact showSearch={false} />
     <section className="tags_directory_tourism_hero"><div><span>{config.eyebrow}</span><h1>{pageTitle}</h1><p>{config.intro}</p></div></section>
-    <div className="tags_directory_tourism_images tags_directory_tourism_images_desktop">{config.images.map(image => <Image src={`/directory/calamuchitar/tourism/${image}`} alt="" width={480} height={190} sizes="25vw" key={image} />)}</div>
-    <div className="tags_directory_tourism_images tags_directory_tourism_images_mobile">{config.images.slice(0, 2).map(image => <Image src={`/directory/calamuchitar/tourism/${image}`} alt="" width={240} height={125} sizes="50vw" key={image} />)}</div>
+    {config.images.length > 0 && <div className="tags_directory_tourism_images tags_directory_tourism_images_desktop">{config.images.map(image => <Image src={`/directory/calamuchitar/tourism/${image}`} alt="" width={480} height={190} sizes="25vw" key={image} />)}</div>}
+    {config.images.length > 0 && <div className="tags_directory_tourism_images tags_directory_tourism_images_mobile">{config.images.slice(0, 2).map(image => <Image src={`/directory/calamuchitar/tourism/${image}`} alt="" width={240} height={125} sizes="50vw" key={image} />)}</div>}
     <div className="tags_directory_tourism_page_content">
       <nav className="tags_directory_tourism_back"><Link href="/directorio">Volver</Link></nav>
       {data.categories.length > 0 && <DirectoryCategoryGrid categories={data.categories} title="Explorá por categoría" />}
@@ -35,7 +43,7 @@ export default function DirectoryTourismPage({ data, kind }) {
         <DirectoryResultsMap listings={data.mapListings} apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ""} mapId={process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID || "DEMO_MAP_ID"} />
         <DirectoryListingGrid listings={data.listings} returnHref={returnHref} navigationTrail={[{ label: config.title, href: returnHref }]} />
       </section>
-      <div className="tags_directory_tourism_images tags_directory_tourism_images_mobile">{config.images.slice(2).map(image => <Image src={`/directory/calamuchitar/tourism/${image}`} alt="" width={240} height={125} sizes="50vw" key={image} />)}</div>
+      {config.images.length > 2 && <div className="tags_directory_tourism_images tags_directory_tourism_images_mobile">{config.images.slice(2).map(image => <Image src={`/directory/calamuchitar/tourism/${image}`} alt="" width={240} height={125} sizes="50vw" key={image} />)}</div>}
       <section className="tags_directory_tourism_seo">{seoParagraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)}</section>
     </div>
     <DirectoryPublicFooter site={data.site} />

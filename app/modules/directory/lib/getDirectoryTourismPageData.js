@@ -1,5 +1,7 @@
+import { headers } from "next/headers";
 import { db } from "@/app/lib/tags-db";
-import { getDirectoryPublicData } from "./getDirectoryPublicData";
+import { getHeadersHost } from "@/app/lib/channelContext";
+import { getDirectoryPublicData, getDirectorySiteCodeByHost } from "./getDirectoryPublicData";
 import { getDiningCategoryNodes } from "./directoryGastronomy";
 
 function normalized(value) {
@@ -39,7 +41,9 @@ function mergePages(pages, { tourism, selectedTourismCategory = null, categories
     pagination:{ ...first.pagination,page:1,total:listings.length,totalPages:1 } };
 }
 
-export async function getDirectoryTourismPageData(kind, siteCode = "calamuchitar") {
+export async function getDirectoryTourismPageData(kind, requestedSiteCode = null) {
+  const requestHeaders = requestedSiteCode ? null : await headers();
+  const siteCode = requestedSiteCode || await getDirectorySiteCodeByHost(getHeadersHost(requestHeaders));
   const [nodes] = await db.execute("SELECT id,parent_id,name,slug,depth,image_url,description,sort_order FROM tags_directory_taxonomy_nodes WHERE is_active=1 ORDER BY depth,sort_order,name");
   const tourism = bySlug(nodes, ["turismo"]);
   if (!tourism) return null;

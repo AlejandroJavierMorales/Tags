@@ -76,7 +76,16 @@ export async function generateMetadata() {
         if (directoryName && !channel?.isTags) {
             return {
                 ...defaultMetadata,
-                title: directoryName
+                title: directoryName,
+                ...(channel.code === "ruta100cordoba" ? {
+                    description: channel.brandConfig?.slogan || "Descubrí comercios, servicios, lugares y experiencias de Córdoba por la Ruta 100.",
+                    icons: {
+                        icon: [{ url: "/assets/icons/Ruta100Cordoba_Favicon.ico", type: "image/x-icon" }],
+                        shortcut: "/assets/icons/Ruta100Cordoba_Favicon.ico",
+                        apple: [{ url: "/assets/icons/Ruta100Cordoba_512.png", sizes: "512x512", type: "image/png" }]
+                    },
+                    themeColor: "#481800"
+                } : {})
             };
         }
     } catch {}

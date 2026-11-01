@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { FaComments, FaRobot, FaXmark } from "react-icons/fa6";
 import ChatWindow from "./ChatWindow";
 import MuchiCharacter from "@/app/modules/destination-ai/components/MuchiCharacter";
+import RutiCharacter from "@/app/modules/destination-ai/components/RutiCharacter";
 import "./ChatWidget.css";
 
 const initialMessage = { role: "assistant", content: "Hola, soy el asistente de Tags. ¿Qué solución o funcionalidad querés conocer?" };
@@ -89,12 +90,12 @@ export default function ChatWidget({ config = null }) {
             const response = await fetch("/api/ai/chat", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ message: question, businessId: Number(config?.businessId || 0), siteCode: destination ? config?.siteCode : undefined, mode: destination ? mode : undefined, userLocation: destination ? userLocation : undefined, source: destination ? `destination:${config?.siteCode}` : undefined, conversationId: destination ? conversationIdRef.current : undefined, history: nextMessages.slice(-6), conversationState: destination ? conversationState : undefined })
+                body: JSON.stringify({ message: question, businessId: Number(config?.businessId || 0), siteCode: destination ? config?.siteCode : undefined, mode: destination ? mode : undefined, userLocation: destination ? userLocation : undefined, source: destination ? `destination:${config?.siteCode}` : undefined, conversationId: destination ? conversationIdRef.current : undefined, history: nextMessages.slice(-6), conversationState })
             });
             const payload = await response.json();
             if (!response.ok || !payload.success) throw new Error(payload.error || "No pudimos responder en este momento.");
-            setMessages(current => [...current, { role: "assistant", content: payload.answer, candidates: payload.candidates || [] }]);
-            if (destination && payload.conversationState) setConversationState(payload.conversationState);
+            setMessages(current => [...current, { role: "assistant", content: payload.answer, candidates: payload.candidates || [], bookingAction: payload.bookingAction || null }]);
+            if (payload.conversationState) setConversationState(payload.conversationState);
             if (destination) setSuggestedPrompts(Array.isArray(payload.suggestedPrompts) ? payload.suggestedPrompts.slice(0,3) : []);
             setLastAnswer(payload.answer);
             await speak(payload.answer);
@@ -165,8 +166,9 @@ export default function ChatWidget({ config = null }) {
         setLocationStatus("loading");
         navigator.geolocation.getCurrentPosition(position => {
             const nextLocation = { latitude: position.coords.latitude, longitude: position.coords.longitude };
-            const insideCalamuchita = nextLocation.latitude >= -33.15 && nextLocation.latitude <= -31.35 && nextLocation.longitude >= -65.35 && nextLocation.longitude <= -63.7;
-            if (!insideCalamuchita) { setUserLocation(null); setLocationStatus("outside"); return; }
+            const bounds = config?.locationBounds;
+            const insideCoverage = !bounds || (nextLocation.latitude >= bounds.minLatitude && nextLocation.latitude <= bounds.maxLatitude && nextLocation.longitude >= bounds.minLongitude && nextLocation.longitude <= bounds.maxLongitude);
+            if (!insideCoverage) { setUserLocation(null); setLocationStatus("outside"); return; }
             setUserLocation(nextLocation);
             setLocationStatus("ready");
         }, () => {
@@ -184,8 +186,11 @@ export default function ChatWidget({ config = null }) {
     if (!visible) return null;
 
     return <div className={`tags_ai_chat_widget${config?.embedded ? " tags_ai_chat_widget_embedded" : ""}${destination ? " tags_destination_widget" : ""}`} data-position={config?.position || "right"} data-open={open ? "true" : "false"} data-fullscreen={destination || config?.fullscreen ? "true" : "false"} style={{ "--tags-ai-primary": config?.primaryColor || "#1f9d55", "--tags-ai-launcher": config?.launcherColor || "#1f9d55", "--tags-ai-bottom": `${Number(config?.launcherOffsetBottom ?? 100)}px` }}>
-        {open && <ChatWindow messages={messages} message={message} loading={loading} error={error} onChange={setMessage} onSubmit={submit} onClose={destination ? dismiss : () => setOpen(false)} scrollToIndex={scrollToIndex} title={config?.title} subtitle={config?.subtitle} mode={mode} onModeChange={destination ? nextMode => { setMode(nextMode); window.dispatchEvent(new CustomEvent("tags:destination-assistant:mode", { detail: { mode: nextMode } })); } : undefined} suggestions={suggestedPrompts} onSuggestion={destination ? sendQuestion : undefined} location={destination ? { status: locationStatus, request: requestLocation } : undefined} voice={destination && config?.voiceInputEnabled ? { recording, transcribing, responseEnabled: Boolean(config?.voiceResponseEnabled), speechEnabled, canReplay: Boolean(lastAnswer), start: startRecording, stop: stopRecording, replay: () => speak(lastAnswer), toggleSpeech: () => { audioRef.current?.pause(); setSpeechEnabled(value => !value); } } : undefined} />}
-        {destination && config?.character ? <MuchiCharacter images={config.character.images} mode={mode || "tourist"} open={open} title={config.characterTitle} buttonLabel={config.characterButtonLabel} onDismiss={config?.dismissible ? () => setVisible(false) : undefined} onClick={() => config?.launchHref ? window.location.assign(config.launchHref) : setOpen(value => !value)} /> : <button type="button" className={`tags_ai_chat_launcher${avatarSrc ? " tags_ai_chat_launcher_avatar_mode" : ""}`} style={{ bottom: `${config?.embedded ? 0 : Number(config?.launcherOffsetBottom ?? 100)}px` }} onClick={() => setOpen(value => !value)} aria-label={open ? "Cerrar asistente de Tags" : "Abrir asistente de Tags"}>{open ? <FaXmark /> : avatarSrc ? <img className="tags_ai_chat_launcher_avatar" src={avatarSrc} alt="Asistente del chatbot" /> : config?.widgetType === "robot" ? <FaRobot /> : <FaComments />}</button>}
+        {open && <ChatWindow messages={messages} message={message} loading={loading} error={error} onChange={setMessage} onSubmit={submit} onClose={destination ? dismiss : () => setOpen(false)} scrollToIndex={scrollToIndex} title={config?.title} subtitle={config?.subtitle} assistantName={config?.assistantName || config?.title || "El asistente"} destination={destination} mode={mode} onModeChange={destination ? nextMode => { setMode(nextMode); window.dispatchEvent(new CustomEvent("tags:destination-assistant:mode", { detail: { mode: nextMode } })); } : undefined} suggestions={suggestedPrompts} onSuggestion={destination ? sendQuestion : undefined} location={destination ? { status: locationStatus, request: requestLocation } : undefined} voice={destination && config?.voiceInputEnabled ? { recording, transcribing, responseEnabled: Boolean(config?.voiceResponseEnabled), speechEnabled, canReplay: Boolean(lastAnswer), start: startRecording, stop: stopRecording, replay: () => speak(lastAnswer), toggleSpeech: () => { audioRef.current?.pause(); setSpeechEnabled(value => !value); } } : undefined} />}
+        {destination && config?.character ? (config.character.type === "ruti"
+          ? <RutiCharacter images={config.character.images} open={open} title={config.characterTitle} buttonLabel={config.characterButtonLabel} onDismiss={config?.dismissible ? () => setVisible(false) : undefined} onClick={() => config?.launchHref ? window.location.assign(config.launchHref) : setOpen(value => !value)} />
+          : <MuchiCharacter images={config.character.images} mode={mode || "tourist"} open={open} title={config.characterTitle} buttonLabel={config.characterButtonLabel} onDismiss={config?.dismissible ? () => setVisible(false) : undefined} onClick={() => config?.launchHref ? window.location.assign(config.launchHref) : setOpen(value => !value)} />)
+          : <button type="button" className={`tags_ai_chat_launcher${avatarSrc ? " tags_ai_chat_launcher_avatar_mode" : ""}`} style={{ bottom: `${config?.embedded ? 0 : Number(config?.launcherOffsetBottom ?? 100)}px` }} onClick={() => setOpen(value => !value)} aria-label={open ? "Cerrar asistente de Tags" : "Abrir asistente de Tags"}>{open ? <FaXmark /> : avatarSrc ? <img className="tags_ai_chat_launcher_avatar" src={avatarSrc} alt="Asistente del chatbot" /> : config?.widgetType === "robot" ? <FaRobot /> : <FaComments />}</button>}
         {!open && config?.launcherPrompt && <span className="tags_ai_chat_launcher_prompt" style={{ bottom: `${(config?.embedded ? 0 : Number(config?.launcherOffsetBottom ?? 100)) + 64}px`, fontSize: `${Number(config.launcherPromptSize || 12)}px` }}>{config.launcherPrompt}</span>}
     </div>;
 }

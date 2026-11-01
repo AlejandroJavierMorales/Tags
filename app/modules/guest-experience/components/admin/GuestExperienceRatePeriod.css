@@ -1,0 +1,80 @@
+.tags_guest_rates_modal.is_period {
+  width: min(940px, 100%);
+}
+
+.tags_guest_rates_modal.is_period h3 {
+  margin-top: 20px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #e2ebe6;
+}
+
+.tags_guest_rates_modal:not(.is_period) > .grid > label:nth-child(3),
+.tags_guest_rates_modal:not(.is_period) > .grid > label:nth-child(5),
+.tags_guest_rates_modal:not(.is_period) > .grid > label:nth-child(6) {
+  display: none;
+}
+
+.tags_guest_period_units {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 8px !important;
+}
+
+.tags_guest_period_units label {
+  display: grid !important;
+  grid-template-columns: auto 1fr;
+  gap: 2px 7px;
+  padding: 8px;
+  border-radius: 8px;
+  background: #f5f8f6;
+}
+
+.tags_guest_period_units small {
+  grid-column: 2;
+  color: #697b71;
+}
+
+.tags_guest_period_prices {
+  display: grid;
+  gap: 12px;
+}
+
+.tags_guest_period_prices > section {
+  overflow: hidden;
+  border: 1px solid #dce8e1;
+  border-radius: 11px;
+}
+
+.tags_guest_period_prices > section > header {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: #edf5f0;
+}
+
+.tags_guest_period_prices > section > div {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+  gap: 8px;
+  padding: 11px;
+}
+
+.tags_guest_period_prices label {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 4px;
+}
+
+.tags_guest_period_prices input {
+  width: 100%;
+}
+
+@media (max-width: 560px) {
+  .tags_guest_period_prices > section > div {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .tags_guest_rates_modal.is_period {
+    padding: 18px 12px;
+  }
+}

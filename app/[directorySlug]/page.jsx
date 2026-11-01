@@ -143,6 +143,7 @@ export default async function DirectoryStandaloneProviderPage({ params, searchPa
   const serviceAvailable = data.listing.publication_status === "published" && Number(data.listing.is_free) === 0 && entitlement.allowed;
   if (!serviceAvailable) return <PublicServicePaused businessName={data.listing.display_name} />;
   const web = await getDirectoryWebPageData(data.listing.qr_page_id);
+  const [bookingApps] = await db.query("SELECT id FROM tags_guest_apps WHERE business_id=? AND status='published' LIMIT 1", [data.listing.business_id]);
   const modules = web?.page?.global_styles?.directoryModules || {};
   const { internal, trail } = getInternalNavigation(query);
   const site = {
@@ -165,6 +166,7 @@ export default async function DirectoryStandaloneProviderPage({ params, searchPa
     <DirectoryProviderRenderer
       data={data}
       web={web}
+      bookingLink={bookingApps[0] ? `/${data.listing.slug}/reservar` : ""}
       standalone={!internal}
       embeddedStoreName={web?.embeddedStore?.store?.name || "Tienda"}
       embeddedStoreContent={web?.embeddedStore && modules.store?.enabled !== false

@@ -1,5 +1,10 @@
 import { db } from "@/app/lib/tags-db";
 
+const businessAssistantText = (value, fallback) => {
+    const text = String(value || "").trim();
+    return !text || /\bmuchi\b/i.test(text) ? fallback : text;
+};
+
 export async function getPublicAiChatConfig(businessId, surfaceType, surfaceId) {
     try {
         const [addons] = await db.query(
@@ -42,9 +47,10 @@ export async function getPublicAiChatConfig(businessId, surfaceType, surfaceId) 
         try { extra = typeof surface.settings_json === "string" ? JSON.parse(surface.settings_json || "{}") : (surface.settings_json || {}); } catch { extra = {}; }
         return {
             businessId: Number(businessId),
-            title: settingsRows[0]?.title || `Asistente de ${settingsRows[0]?.business_name || "este negocio"}`,
-            subtitle: settingsRows[0]?.subtitle || "¿En qué podemos ayudarte?",
-            greeting: settingsRows[0]?.greeting || `Hola, soy el asistente de ${settingsRows[0]?.business_name || "este negocio"}. ¿En qué puedo ayudarte?`,
+            assistantName: `Asistente de ${settingsRows[0]?.business_name || "este negocio"}`,
+            title: businessAssistantText(settingsRows[0]?.title, `Asistente de ${settingsRows[0]?.business_name || "este negocio"}`),
+            subtitle: businessAssistantText(settingsRows[0]?.subtitle, "¿En qué podemos ayudarte?"),
+            greeting: businessAssistantText(settingsRows[0]?.greeting, `Hola, soy el asistente de ${settingsRows[0]?.business_name || "este negocio"}. ¿En qué puedo ayudarte?`),
             position: surface.position || settingsRows[0]?.position || "right",
             widgetType: surface.widget_type || "bubble",
             primaryColor: surface.primary_color || "#1f9d55",
@@ -52,7 +58,7 @@ export async function getPublicAiChatConfig(businessId, surfaceType, surfaceId) 
             buttonLabel: surface.button_label || "Chat con Tags",
             launcherLabel: String(extra.launcher_label || "Chat").trim().slice(0, 18),
             launcherOffsetBottom: Math.max(0, Math.min(400, Number(extra.launcher_offset_bottom ?? 100))),
-            launcherPrompt: String(extra.launcher_prompt ?? generalExtra.launcher_prompt ?? "Cómo podemos ayudarte").trim().slice(0, 80),
+            launcherPrompt: businessAssistantText(extra.launcher_prompt ?? generalExtra.launcher_prompt, "¿Cómo podemos ayudarte?").slice(0, 80),
             launcherPromptSize: Math.max(8, Math.min(20, Number(extra.launcher_prompt_size ?? generalExtra.launcher_prompt_size ?? 12))),
             embedded: surfaceType === "external"
         };

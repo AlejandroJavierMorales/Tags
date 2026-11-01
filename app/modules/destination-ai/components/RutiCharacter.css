@@ -1,0 +1,16 @@
+.tags_destination_widget .tags_ruti_character,
+.tags_destination_widget[data-open="true"] .tags_ruti_character {
+  aspect-ratio: 2 / 3;
+  height: auto;
+  overflow: hidden;
+  border-radius: 28px;
+  background: transparent;
+}
+
+.tags_ruti_character img {
+  object-fit: contain;
+}
+
+.tags_ruti_character_shell .tags_destination_character_title {
+  color: #6b2e0c;
+}

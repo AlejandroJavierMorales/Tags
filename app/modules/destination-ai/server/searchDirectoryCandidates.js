@@ -50,6 +50,13 @@ function isInsideCalamuchita(location) {
   return location && location.latitude >= -33.15 && location.latitude <= -31.35 && location.longitude >= -65.35 && location.longitude <= -63.7;
 }
 
+function isUsableLocation(location, siteCode) {
+  if (!location || !Number.isFinite(Number(location.latitude)) || !Number.isFinite(Number(location.longitude))) return false;
+  if (siteCode === "calamuchitar") return isInsideCalamuchita(location);
+  return Number(location.latitude) >= -90 && Number(location.latitude) <= 90
+    && Number(location.longitude) >= -180 && Number(location.longitude) <= 180;
+}
+
 function distanceKm(from, to) {
   const radians = value => value * Math.PI / 180;
   const dLat = radians(to.latitude - from.latitude);
@@ -181,7 +188,7 @@ export async function searchDirectoryCandidates({ siteCode, query, limit = 6, us
     values
   );
 
-  const validUserLocation = isInsideCalamuchita(userLocation) ? userLocation : null;
+  const validUserLocation = isUsableLocation(userLocation, siteCode) ? userLocation : null;
   const exactCandidates = rows.map(row => ({
     id: Number(row.id),
     name: row.display_name,

@@ -1,0 +1,49 @@
+/* Identidad aislada de Ruta 100 Córdoba. No modifica CalamuchitAr ni Tags. */
+[data-directory-site="ruta100cordoba"]{--ruta100-brown:#481800;--ruta100-brown-soft:#6b2e0c;--ruta100-orange:#ee8a12;--ruta100-gold:#f2ad24;--ruta100-cream:#fff4e3;--ruta100-paper:#fffaf2;--ruta100-ink:#2b1207}
+.tags_directory_topbar[data-directory-site="ruta100cordoba"]{border-bottom:1px solid #ead7bd;background:#fffaf2f5;box-shadow:0 5px 24px #48180014}
+.tags_directory_topbar[data-directory-site="ruta100cordoba"] .tags_directory_topbar_inner{min-height:94px}
+.tags_directory_topbar[data-directory-site="ruta100cordoba"] .tags_directory_identity{display:flex;align-items:center;justify-content:center}
+.tags_directory_topbar[data-directory-site="ruta100cordoba"] .tags_directory_identity img{width:92px;height:92px;border-radius:50%;object-fit:cover;box-shadow:0 4px 16px #2b12072b}
+.tags_directory_topbar[data-directory-site="ruta100cordoba"] .tags_directory_identity span{max-width:150px;margin:0;color:#6b2e0c;font-size:.72rem;font-style:normal;font-weight:850;line-height:1.3}
+.tags_directory_topbar[data-directory-site="ruta100cordoba"] .tags_directory_desktop_nav{gap:2px}
+.tags_directory_topbar[data-directory-site="ruta100cordoba"] .tags_directory_desktop_nav a{color:#54220e;font-size:.74rem}
+.tags_directory_topbar[data-directory-site="ruta100cordoba"] .tags_directory_desktop_nav a:hover{background:#fff0d8;color:#481800}
+.tags_directory_topbar[data-directory-site="ruta100cordoba"] .tags_directory_desktop_nav a.is_publish{border-color:#ee8a12;background:#ee8a12;color:#2b1207;box-shadow:none}
+.tags_directory_topbar[data-directory-site="ruta100cordoba"] .tags_directory_desktop_nav a.is_login,.tags_directory_topbar[data-directory-site="ruta100cordoba"] .tags_directory_desktop_nav a.is_logout{background:#481800;color:#fff}
+.tags_directory_topbar[data-directory-site="ruta100cordoba"] .tags_directory_mobile_nav summary{border-color:#dfbd8c;background:#fff3df;color:#603018}
+.tags_directory_topbar[data-directory-site="ruta100cordoba"] .tags_directory_mobile_nav nav{background:#fffaf2}
+.tags_directory_topbar[data-directory-site="ruta100cordoba"] .tags_directory_drawer_brand{border-bottom-color:#ecd7b9}
+.tags_directory_topbar[data-directory-site="ruta100cordoba"] .tags_directory_drawer_brand img{width:112px;height:112px;border-radius:50%;object-fit:cover}
+.tags_directory_topbar[data-directory-site="ruta100cordoba"] .tags_directory_drawer_brand span{color:#603018;font-style:normal}
+.tags_directory_page[data-directory-site="ruta100cordoba"]{background:#f8f3eb;color:#35180b}
+.tags_directory_page[data-directory-site="ruta100cordoba"] .tags_directory_commercial_hero{min-height:500px;overflow:hidden;background:linear-gradient(118deg,#2b1207 0%,#481800 47%,#78320b 100%);color:#fff4e3}
+.tags_directory_page[data-directory-site="ruta100cordoba"] .tags_directory_commercial_hero:after{position:absolute;right:-110px;bottom:-225px;width:560px;height:560px;border:2px solid #f2ad2450;border-radius:50%;box-shadow:0 0 0 38px #f2ad2409,0 0 0 92px #f2ad2408;content:""}
+.tags_directory_page[data-directory-site="ruta100cordoba"] .tags_directory_hero_overlay{background:linear-gradient(90deg,#2b1207b8 0%,#48180070 58%,transparent 100%)}
+.tags_directory_page[data-directory-site="ruta100cordoba"] .tags_directory_hero_content{padding-top:82px;padding-bottom:100px}
+.tags_directory_page[data-directory-site="ruta100cordoba"] .tags_directory_hero_content>span{color:#f2ad24}
+.tags_directory_page[data-directory-site="ruta100cordoba"] .tags_directory_hero_content h1{max-width:820px;margin:14px 0 8px;font-size:clamp(3.6rem,8vw,6.4rem);line-height:.92}
+.tags_directory_page[data-directory-site="ruta100cordoba"] .tags_directory_ruta100_claim{display:block;margin-bottom:10px;color:#f2ad24;font-size:clamp(1.45rem,3vw,2.4rem);line-height:1.08}
+.tags_directory_page[data-directory-site="ruta100cordoba"] .tags_directory_hero_content>p{max-width:650px;margin-bottom:25px;color:#fff1dc;font-size:clamp(1rem,2vw,1.25rem);font-weight:800;letter-spacing:.04em}
+.tags_directory_page[data-directory-site="ruta100cordoba"] .tags_directory_hero_search{border-color:#f2ad2466;box-shadow:0 18px 42px #16080070}
+.tags_directory_page[data-directory-site="ruta100cordoba"] .tags_directory_hero_search button,.tags_directory_page[data-directory-site="ruta100cordoba"] .tags_directory_compact_search button{background:#ee8a12;color:#2b1207}
+.tags_directory_page[data-directory-site="ruta100cordoba"] .tags_directory_compact_search{background:linear-gradient(120deg,#351407,#6b2e0c)}
+.tags_directory_page[data-directory-site="ruta100cordoba"] .tags_directory_hero_actions a{border-color:#fff4e35c;color:#fff4e3}
+.tags_directory_page[data-directory-site="ruta100cordoba"] .tags_directory_hero_actions a.is_benefits{border-color:#f2ad24;background:#fff4e3;color:#481800}
+.tags_directory_page[data-directory-site="ruta100cordoba"] .tags_directory_hero_actions a.is_publish{border-color:#ee8a12;background:#ee8a12;color:#2b1207}
+.tags_directory_page[data-directory-site="ruta100cordoba"] .tags_directory_content{margin-top:-22px}
+.tags_directory_page[data-directory-site="ruta100cordoba"] .tags_directory_category_card:before{background:linear-gradient(180deg,#f2ad24,#ee8a12);box-shadow:0 2px 7px #48180038}
+.tags_directory_page[data-directory-site="ruta100cordoba"] .tags_directory_category_card:hover{border-color:#f2ad24;box-shadow:0 0 0 1px #f2ad2455,0 8px 22px #4818001f}
+.tags_directory_page[data-directory-site="ruta100cordoba"] .tags_directory_commercial_intro>div{border-color:#ead7bd;background:#fffaf2}
+.tags_directory_page[data-directory-site="ruta100cordoba"] .tags_directory_commercial_intro>div span{color:#c7640a}
+.tags_directory_page[data-directory-site="ruta100cordoba"] .tags_directory_commercial_intro h2{color:#481800}
+.tags_directory_page[data-directory-site="ruta100cordoba"] .tags_directory_commercial_intro>div p{color:#725642}
+.tags_directory_page[data-directory-site="ruta100cordoba"] .tags_directory_commercial_intro aside{background:linear-gradient(145deg,#481800,#74320d);color:#fff4e3}
+.tags_directory_page[data-directory-site="ruta100cordoba"] .tags_directory_commercial_intro aside p{color:#f9dfbd}
+.tags_directory_page[data-directory-site="ruta100cordoba"] .tags_directory_commercial_intro aside a{background:#ee8a12;color:#2b1207}
+.tags_directory_ruta100_footer{border-top:4px solid #ee8a12;background:#2b1207;color:#fff0d8}
+.tags_directory_ruta100_footer .tags_directory_footer_signature img{width:112px;height:112px;padding:0;border-radius:50%;background:transparent}
+.tags_directory_ruta100_footer .tags_directory_footer_signature strong{color:#fff0d8;font-size:1rem}
+.tags_directory_ruta100_footer .tags_directory_footer_signature span{color:#f2ad24}
+.tags_directory_ruta100_footer .tags_directory_footer_legal_links a{color:#fff0d8}
+@media(max-width:899px){.tags_directory_topbar[data-directory-site="ruta100cordoba"] .tags_directory_topbar_inner{min-height:80px}.tags_directory_topbar[data-directory-site="ruta100cordoba"] .tags_directory_identity img{width:70px;height:70px}}
+@media(max-width:520px){.tags_directory_topbar[data-directory-site="ruta100cordoba"] .tags_directory_identity img{width:64px;height:64px}.tags_directory_page[data-directory-site="ruta100cordoba"] .tags_directory_commercial_hero{min-height:485px}.tags_directory_page[data-directory-site="ruta100cordoba"] .tags_directory_hero_content{padding-top:58px;padding-bottom:78px}.tags_directory_page[data-directory-site="ruta100cordoba"] .tags_directory_hero_content>span{display:block;max-width:330px;letter-spacing:.1em;line-height:1.4;text-wrap:balance}.tags_directory_page[data-directory-site="ruta100cordoba"] .tags_directory_hero_content h1{font-size:clamp(3.1rem,16vw,4.4rem)}.tags_directory_page[data-directory-site="ruta100cordoba"] .tags_directory_ruta100_claim{font-size:clamp(1.35rem,7vw,1.8rem)}.tags_directory_page[data-directory-site="ruta100cordoba"] .tags_directory_commercial_hero:after{right:-280px;bottom:-290px}}

@@ -8,6 +8,8 @@ import { db } from "@/app/lib/tags-db";
 import { getGuestAdminAccess, guestAdminAccessResponse } from "@/app/modules/guest-experience/lib/getGuestAdminAccess";
 
 import { cleanGuestText, createGuestToken, getGuestVerificationUrl, guestError, hashGuestToken, parseGuestJson } from "@/app/modules/guest-experience/lib/guestExperienceService";
+import { GUEST_STAY_STATUS, countLodgingNights, normalizeGuestCounts, parseLodgingDateInput, validateUnitCapacity } from "@/app/modules/guest-experience/lib/lodgingReservationRules";
+import { findBlockingStay, findBlockingUnitBlock, lockActiveGuestUnit, lockGuestInventory } from "@/app/modules/guest-experience/server/lodgingAvailabilityService";
 import { sendMail } from "@/app/lib/sendMail";
 
 async function sendReservationAccessEmail(stayId, guestAppId, createdById = null) {
@@ -63,7 +65,7 @@ export async function POST(req) {
 
     const documentNumber = cleanGuestText(body.documentNumber, 80), email = cleanGuestText(body.email, 190)?.toLowerCase(), phone = cleanGuestText(body.phone, 60);
 
-    const starts = new Date(`${body.startsAt}T12:00:00`), ends = new Date(`${body.endsAt}T12:00:00`);
+    const starts = parseLodgingDateInput(body.startsAt), ends = parseLodgingDateInput(body.endsAt);
 
     const access = await getGuestAdminAccess({ businessId, guestAppId, permission: "guest.stays.manage" });
 
@@ -75,16 +77,18 @@ export async function POST(req) {
 
     if (phone.replace(/\D/g, "").length < 8) return guestError("El teléfono no tiene un formato válido");
 
-    if (!unitId || Number.isNaN(starts.getTime()) || Number.isNaN(ends.getTime()) || ends <= starts) return guestError("Unidad y fechas válidas son requeridas");
+    if (!unitId || !starts || !ends || ends <= starts) return guestError("Unidad y fechas válidas son requeridas");
 
     const connection = await db.getConnection();
 
     try {
         await connection.beginTransaction();
 
-        const [apps] = await connection.query("SELECT settings_json,currency FROM tags_guest_apps WHERE id=? AND business_id=? LIMIT 1 FOR UPDATE", [guestAppId, businessId]);
+        const app = await lockGuestInventory(connection, { guestAppId, businessId });
 
-        const settings = parseGuestJson(apps[0]?.settings_json), prefix = cleanGuestText(settings.reservationCodePrefix, 40), padding = Math.max(1, Number(settings.reservationCodePadding || 0));
+        const settings = parseGuestJson(app?.settings_json), prefix = cleanGuestText(settings.reservationCodePrefix, 40), padding = Math.max(1, Number(settings.reservationCodePadding || 0));
+
+        if (!app) { await connection.rollback(); return guestError("Instancia no encontrada", 404); }
 
         if (!prefix || !padding) { await connection.rollback();
  return guestError("Configurá primero la base automática del código de reservas", 409);
@@ -93,20 +97,25 @@ export async function POST(req) {
 
         const code = `${prefix}${String(nextCounter).padStart(padding, "0")}`.toUpperCase();
 
-        const nights = Math.max(1, Math.round((ends - starts) / 86400000)), nightlyRate = Math.max(0, Number(body.nightlyRate || 0)), lodgingTotal = Number((nightlyRate * nights).toFixed(2));
+        const nights = countLodgingNights(starts, ends), nightlyRate = Math.max(0, Number(body.nightlyRate || 0)), lodgingTotal = Number((nightlyRate * nights).toFixed(2));
 
         const depositPercentage = Math.max(0, Math.min(100, Number(body.depositPercentage ?? settings.depositPercentage ?? 0))), depositRequired = Number((lodgingTotal * depositPercentage / 100).toFixed(2));
 
-        const [units] = await connection.query("SELECT id FROM tags_guest_units WHERE id=? AND guest_app_id=? AND is_active=1 LIMIT 1 FOR UPDATE", [unitId, guestAppId]);
+        const unit = await lockActiveGuestUnit(connection, { guestAppId, unitId });
 
-        if (!units.length) { await connection.rollback();
+        if (!unit) { await connection.rollback();
  return guestError("Unidad inválida", 404);
  }
-        const [overlap] = await connection.query("SELECT id FROM tags_guest_stays WHERE guest_app_id=? AND unit_id=? AND status NOT IN ('cancelled','checked_out','no_show_rebooking') AND starts_at<? AND ends_at>? LIMIT 1 FOR UPDATE", [guestAppId, unitId, ends, starts]);
+        const guests = normalizeGuestCounts(body);
+        const capacity = validateUnitCapacity({ unit, ...guests, settings });
+        if (!capacity.ok) { await connection.rollback(); return guestError(capacity.error, 409, capacity.code); }
+        const overlap = await findBlockingStay(connection, { guestAppId, unitId, startsAt: starts, endsAt: ends });
 
-        if (overlap.length) { await connection.rollback();
+        if (overlap) { await connection.rollback();
  return guestError("La unidad ya está ocupada en ese período", 409);
  }
+        const unitBlock = await findBlockingUnitBlock(connection, { guestAppId, unitId, startsAt: starts, endsAt: ends });
+        if (unitBlock) { await connection.rollback(); return guestError(`La unidad está bloqueada en esas fechas${unitBlock.reason ? `: ${unitBlock.reason}` : ""}`, 409, "UNIT_BLOCKED"); }
         const [codes] = await connection.query("SELECT id FROM tags_guest_stays WHERE guest_app_id=? AND stay_code=? LIMIT 1 FOR UPDATE", [guestAppId, code]);
 
         if (codes.length) { await connection.rollback();
@@ -124,7 +133,7 @@ export async function POST(req) {
             guestId = created.insertId;
 
         }
-        const [result] = await connection.query("INSERT INTO tags_guest_stays (guest_app_id,unit_id,primary_guest_id,stay_code,status,starts_at,ends_at,adults,children,nightly_rate,lodging_total,deposit_percentage,deposit_required_amount,arrival_notes,expected_arrival_text,internal_notes,created_by_id) VALUES (?,?,?,?,'reserved',?,?,?,?,?,?,?,?,?,?,?,?)", [guestAppId, unitId, guestId, code, starts, ends, Math.max(1, Number(body.adults || 1)), Math.max(0, Number(body.children || 0)), nightlyRate, lodgingTotal, depositPercentage, depositRequired, cleanGuestText(body.arrivalNotes, 2000) || null, cleanGuestText(body.expectedArrivalText, 120) || null, cleanGuestText(body.internalNotes, 2000) || null, access.session?.id || access.session?.userId || null]);
+        const [result] = await connection.query("INSERT INTO tags_guest_stays (guest_app_id,unit_id,primary_guest_id,stay_code,status,starts_at,ends_at,adults,children,nightly_rate,lodging_total,deposit_percentage,deposit_required_amount,arrival_notes,expected_arrival_text,internal_notes,created_by_id) VALUES (?,?,?,?,'reserved',?,?,?,?,?,?,?,?,?,?,?,?)", [guestAppId, unitId, guestId, code, starts, ends, guests.adults, guests.children, nightlyRate, lodgingTotal, depositPercentage, depositRequired, cleanGuestText(body.arrivalNotes, 2000) || null, cleanGuestText(body.expectedArrivalText, 120) || null, cleanGuestText(body.internalNotes, 2000) || null, access.session?.id || access.session?.userId || null]);
 
         settings.reservationCodeCounter = nextCounter;
 
@@ -134,7 +143,7 @@ export async function POST(req) {
 
         await connection.query("INSERT INTO tags_guest_accounts (guest_app_id,stay_id,currency,status) SELECT id,?,currency,'open' FROM tags_guest_apps WHERE id=?", [result.insertId, guestAppId]);
 
-        await connection.query("INSERT INTO tags_guest_account_entries (account_id,entry_type,source_type,source_id,idempotency_key,description,quantity,unit_amount,total_amount,currency,status,created_by_type,created_by_id) SELECT id,'charge','lodging',?,?,?, ?,?,?,?,'confirmed','owner',? FROM tags_guest_accounts WHERE stay_id=?", [String(result.insertId), `lodging:${result.insertId}`, `Reserva confirmada ${code} · total de alojamiento`, nights, nightlyRate, lodgingTotal, apps[0].currency || "ARS", access.session?.id || access.session?.userId || null, result.insertId]);
+        await connection.query("INSERT INTO tags_guest_account_entries (account_id,entry_type,source_type,source_id,idempotency_key,description,quantity,unit_amount,total_amount,currency,status,created_by_type,created_by_id) SELECT id,'charge','lodging',?,?,?, ?,?,?,?,'confirmed','owner',? FROM tags_guest_accounts WHERE stay_id=?", [String(result.insertId), `lodging:${result.insertId}`, `Reserva confirmada ${code} · total de alojamiento`, nights, nightlyRate, lodgingTotal, app.currency || "ARS", access.session?.id || access.session?.userId || null, result.insertId]);
 
         await connection.query("INSERT INTO tags_guest_audit_log (guest_app_id,stay_id,actor_type,actor_id,action,entity_type,entity_id) VALUES (?,?,'owner',?,'reservation.created','reservation',?)", [guestAppId, result.insertId, access.session?.id || access.session?.userId || null, result.insertId]);
 
@@ -163,34 +172,44 @@ export async function PATCH(req) {
     const body=await req.json().catch(()=>null);
 if(!body)return guestError("Cuerpo JSON inválido");
 
-    const businessId=Number(body.businessId||0),guestAppId=Number(body.guestAppId||0),stayId=Number(body.stayId||0),unitId=Number(body.unitId||0),starts=new Date(`${body.startsAt}T12:00:00`),ends=new Date(`${body.endsAt}T12:00:00`);
+    const businessId=Number(body.businessId||0),guestAppId=Number(body.guestAppId||0),stayId=Number(body.stayId||0),unitId=Number(body.unitId||0),starts=parseLodgingDateInput(body.startsAt),ends=parseLodgingDateInput(body.endsAt);
 
     const firstName=cleanGuestText(body.firstName,100),lastName=cleanGuestText(body.lastName,100),documentNumber=cleanGuestText(body.documentNumber,80),email=cleanGuestText(body.email,190)?.toLowerCase(),phone=cleanGuestText(body.phone,60);
 
     const access=await getGuestAdminAccess({businessId,guestAppId,permission:"guest.stays.manage"});
 if(!access.allowed)return guestAdminAccessResponse(access);
 
-    if(!stayId||!unitId||!firstName||!lastName||!documentNumber||!email||!phone||Number.isNaN(starts.getTime())||Number.isNaN(ends.getTime())||ends<=starts)return guestError("Completá correctamente titular, unidad y fechas");
+    if(!stayId||!unitId||!firstName||!lastName||!documentNumber||!email||!phone||!starts||!ends||ends<=starts)return guestError("Completá correctamente titular, unidad y fechas");
 
     if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||phone.replace(/\D/g,"").length<8)return guestError("Email o teléfono inválidos");
 
     const connection=await db.getConnection();
 try{await connection.beginTransaction();
-const[rows]=await connection.query("SELECT s.primary_guest_id,s.status,s.stay_code,a.currency FROM tags_guest_stays s INNER JOIN tags_guest_apps a ON a.id=s.guest_app_id WHERE s.id=? AND s.guest_app_id=? LIMIT 1 FOR UPDATE",[stayId,guestAppId]);
+const app=await lockGuestInventory(connection,{guestAppId,businessId});
+if(!app){await connection.rollback();return guestError("Instancia no encontrada",404)}
+const[rows]=await connection.query("SELECT primary_guest_id,status,stay_code FROM tags_guest_stays WHERE id=? AND guest_app_id=? LIMIT 1 FOR UPDATE",[stayId,guestAppId]);
 if(!rows[0]){await connection.rollback();
-return guestError("Reserva no encontrada",404)}if(rows[0].status==='active'||rows[0].status==='checked_out'){await connection.rollback();
-return guestError("Una reserva con check-in confirmado ya no puede modificarse",409)}const[overlap]=await connection.query("SELECT id FROM tags_guest_stays WHERE guest_app_id=? AND unit_id=? AND id<>? AND status NOT IN ('cancelled','checked_out','no_show_rebooking') AND starts_at<? AND ends_at>? LIMIT 1 FOR UPDATE",[guestAppId,unitId,stayId,ends,starts]);
-if(overlap.length){await connection.rollback();
-return guestError("La unidad ya está ocupada en ese período",409)}const nights=Math.max(1,Math.round((ends-starts)/86400000)),nightlyRate=Math.max(0,Number(body.nightlyRate||0)),lodgingTotal=Number((nightlyRate*nights).toFixed(2)),depositPercentage=Math.max(0,Math.min(100,Number(body.depositPercentage||0))),depositRequired=Number((lodgingTotal*depositPercentage/100).toFixed(2));
+return guestError("Reserva no encontrada",404)}if(rows[0].status===GUEST_STAY_STATUS.ACTIVE||rows[0].status===GUEST_STAY_STATUS.CHECKED_OUT){await connection.rollback();
+return guestError("Una reserva con check-in confirmado ya no puede modificarse",409)}
+const unit=await lockActiveGuestUnit(connection,{guestAppId,unitId});
+if(!unit){await connection.rollback();return guestError("Unidad inválida",404)}
+const settings=parseGuestJson(app.settings_json),guests=normalizeGuestCounts(body),capacity=validateUnitCapacity({unit,...guests,settings});
+if(!capacity.ok){await connection.rollback();return guestError(capacity.error,409,capacity.code)}
+const overlap=await findBlockingStay(connection,{guestAppId,unitId,startsAt:starts,endsAt:ends,excludeStayId:stayId});
+if(overlap){await connection.rollback();
+return guestError("La unidad ya está ocupada en ese período",409)}
+const unitBlock=await findBlockingUnitBlock(connection,{guestAppId,unitId,startsAt:starts,endsAt:ends});
+if(unitBlock){await connection.rollback();return guestError(`La unidad está bloqueada en esas fechas${unitBlock.reason?`: ${unitBlock.reason}`:""}`,409,"UNIT_BLOCKED")}
+const nights=countLodgingNights(starts,ends),nightlyRate=Math.max(0,Number(body.nightlyRate||0)),lodgingTotal=Number((nightlyRate*nights).toFixed(2)),depositPercentage=Math.max(0,Math.min(100,Number(body.depositPercentage||0))),depositRequired=Number((lodgingTotal*depositPercentage/100).toFixed(2));
 await connection.query("UPDATE tags_guest_people SET name=?,email=?,phone=?,document_type='DNI',document_number=? WHERE id=?",[`${firstName} ${lastName}`,email,phone,documentNumber,rows[0].primary_guest_id]);
-await connection.query("UPDATE tags_guest_stays SET unit_id=?,starts_at=?,ends_at=?,adults=?,children=?,nightly_rate=?,lodging_total=?,deposit_percentage=?,deposit_required_amount=?,arrival_notes=?,expected_arrival_text=?,internal_notes=?,status=IF(status='no_show_rebooking','reserved',status),updated_at=NOW() WHERE id=?",[unitId,starts,ends,Math.max(1,Number(body.adults||1)),Math.max(0,Number(body.children||0)),nightlyRate,lodgingTotal,depositPercentage,depositRequired,cleanGuestText(body.arrivalNotes,2000)||null,cleanGuestText(body.expectedArrivalText,120)||null,cleanGuestText(body.internalNotes,2000)||null,stayId]);
+await connection.query("UPDATE tags_guest_stays SET unit_id=?,starts_at=?,ends_at=?,adults=?,children=?,nightly_rate=?,lodging_total=?,deposit_percentage=?,deposit_required_amount=?,arrival_notes=?,expected_arrival_text=?,internal_notes=?,status=IF(status='no_show_rebooking','reserved',status),updated_at=NOW() WHERE id=?",[unitId,starts,ends,guests.adults,guests.children,nightlyRate,lodgingTotal,depositPercentage,depositRequired,cleanGuestText(body.arrivalNotes,2000)||null,cleanGuestText(body.expectedArrivalText,120)||null,cleanGuestText(body.internalNotes,2000)||null,stayId]);
 const[accounts]=await connection.query("SELECT id FROM tags_guest_accounts WHERE stay_id=? LIMIT 1",[stayId]);
 if(accounts[0]){
 if(rows[0].status==='no_show_rebooking'){
 const[[noShowAdjustment]]=await connection.query("SELECT COALESCE(SUM(total_amount),0) total FROM tags_guest_account_entries WHERE account_id=? AND source_type='no_show' AND source_id=? AND status='confirmed'",[accounts[0].id,String(stayId)]),amount=Number(noShowAdjustment?.total||0);
-if(Math.abs(amount)>0.009)await connection.query("INSERT INTO tags_guest_account_entries (account_id,entry_type,source_type,source_id,idempotency_key,description,quantity,unit_amount,total_amount,currency,status,metadata_json,created_by_type,created_by_id) VALUES (?,'adjustment','no_show_reactivation',?,?,?,1,?,?,?,'confirmed',?,'owner',?) ON DUPLICATE KEY UPDATE id=id",[accounts[0].id,String(stayId),`no-show-reactivation:${stayId}`,`Reactivación de reserva ${rows[0].stay_code}`,-amount,-amount,rows[0].currency||"ARS",JSON.stringify({reversedNoShowAdjustment:amount}),access.session?.id||access.session?.userId||null]);
+if(Math.abs(amount)>0.009)await connection.query("INSERT INTO tags_guest_account_entries (account_id,entry_type,source_type,source_id,idempotency_key,description,quantity,unit_amount,total_amount,currency,status,metadata_json,created_by_type,created_by_id) VALUES (?,'adjustment','no_show_reactivation',?,?,?,1,?,?,?,'confirmed',?,'owner',?) ON DUPLICATE KEY UPDATE id=id",[accounts[0].id,String(stayId),`no-show-reactivation:${stayId}`,`Reactivación de reserva ${rows[0].stay_code}`,-amount,-amount,app.currency||"ARS",JSON.stringify({reversedNoShowAdjustment:amount}),access.session?.id||access.session?.userId||null]);
 }
-await connection.query("INSERT INTO tags_guest_account_entries (account_id,entry_type,source_type,source_id,idempotency_key,description,quantity,unit_amount,total_amount,currency,status,created_by_type,created_by_id) VALUES (?,'charge','lodging',?,?,?,?,?,?,?,'confirmed','owner',?) ON DUPLICATE KEY UPDATE description=VALUES(description),quantity=VALUES(quantity),unit_amount=VALUES(unit_amount),total_amount=VALUES(total_amount)",[accounts[0].id,String(stayId),`lodging:${stayId}`,`Alojamiento ${rows[0].stay_code} · ${nights} noches`,nights,nightlyRate,lodgingTotal,rows[0].currency||"ARS",access.session?.id||access.session?.userId||null]);
+await connection.query("INSERT INTO tags_guest_account_entries (account_id,entry_type,source_type,source_id,idempotency_key,description,quantity,unit_amount,total_amount,currency,status,created_by_type,created_by_id) VALUES (?,'charge','lodging',?,?,?,?,?,?,?,'confirmed','owner',?) ON DUPLICATE KEY UPDATE description=VALUES(description),quantity=VALUES(quantity),unit_amount=VALUES(unit_amount),total_amount=VALUES(total_amount)",[accounts[0].id,String(stayId),`lodging:${stayId}`,`Alojamiento ${rows[0].stay_code} · ${nights} noches`,nights,nightlyRate,lodgingTotal,app.currency||"ARS",access.session?.id||access.session?.userId||null]);
 }
 await connection.commit();
 return Response.json({ok:true})}catch(error){await connection.rollback();
@@ -201,28 +220,26 @@ return Response.json({ok:false,error:"No se pudo modificar la reserva"},{status:
 export async function DELETE(req) {
     const body=await req.json().catch(()=>null);
 if(!body)return guestError("Cuerpo JSON inválido");
-const businessId=Number(body.businessId||0),guestAppId=Number(body.guestAppId||0),stayId=Number(body.stayId||0),access=await getGuestAdminAccess({businessId,guestAppId,permission:"guest.stays.manage"});
+const businessId=Number(body.businessId||0),guestAppId=Number(body.guestAppId||0),stayId=Number(body.stayId||0),reason=cleanGuestText(body.reason,1000)||"Cancelación manual desde la administración",access=await getGuestAdminAccess({businessId,guestAppId,permission:"guest.stays.manage"});
 if(!access.allowed)return guestAdminAccessResponse(access);
 
     const connection=await db.getConnection();
 try{await connection.beginTransaction();
-const[apps]=await connection.query("SELECT settings_json FROM tags_guest_apps WHERE id=? AND business_id=? LIMIT 1 FOR UPDATE",[guestAppId,businessId]);
+const app=await lockGuestInventory(connection,{guestAppId,businessId});
+if(!app){await connection.rollback();return guestError("Instancia no encontrada",404)}
 const[rows]=await connection.query("SELECT stay_code,status FROM tags_guest_stays WHERE id=? AND guest_app_id=? LIMIT 1 FOR UPDATE",[stayId,guestAppId]);
 if(!rows[0]){await connection.rollback();
-return guestError("Reserva no encontrada",404)}if(rows[0].status==='active'||rows[0].status==='checked_out'){await connection.rollback();
-return guestError("No se puede eliminar una estadía iniciada",409)}const settings=parseGuestJson(apps[0]?.settings_json),current=Number(settings.reservationCodeCounter||0),lastCode=`${settings.reservationCodePrefix||''}${String(current).padStart(Number(settings.reservationCodePadding||1),'0')}`.toUpperCase();
-const[accounts]=await connection.query("SELECT id FROM tags_guest_accounts WHERE stay_id=?",[stayId]);
-for(const account of accounts){await connection.query("DELETE FROM tags_guest_payments WHERE account_id=?",[account.id]);
-await connection.query("DELETE FROM tags_guest_account_entries WHERE account_id=?",[account.id])}await connection.query("DELETE FROM tags_guest_accounts WHERE stay_id=?",[stayId]);
-await connection.query("DELETE FROM tags_guest_sessions WHERE stay_id=?",[stayId]);
-await connection.query("DELETE FROM tags_guest_access_tokens WHERE stay_id=?",[stayId]);
-await connection.query("DELETE FROM tags_guest_precheckins WHERE stay_id=?",[stayId]);
-await connection.query("DELETE FROM tags_guest_stay_people WHERE stay_id=?",[stayId]);
-await connection.query("DELETE FROM tags_guest_stays WHERE id=?",[stayId]);
-if(rows[0].stay_code.toUpperCase()===lastCode&&current>0){settings.reservationCodeCounter=current-1;
-await connection.query("UPDATE tags_guest_apps SET settings_json=? WHERE id=?",[JSON.stringify(settings),guestAppId])}await connection.commit();
-return Response.json({ok:true,counterDecremented:rows[0].stay_code.toUpperCase()===lastCode})}catch(error){await connection.rollback();
-console.error("GUEST RESERVATION DELETE ERROR:",error);
-return Response.json({ok:false,error:"No se pudo eliminar la reserva"},{status:500})}finally{connection.release()}
+return guestError("Reserva no encontrada",404)}if(rows[0].status===GUEST_STAY_STATUS.ACTIVE||rows[0].status===GUEST_STAY_STATUS.CHECKED_OUT){await connection.rollback();
+return guestError("No se puede cancelar una estadía iniciada o concluida",409)}
+if(rows[0].status===GUEST_STAY_STATUS.CANCELLED){await connection.commit();return Response.json({ok:true,status:GUEST_STAY_STATUS.CANCELLED,alreadyCancelled:true})}
+const actorId=access.session?.id||access.session?.userId||null;
+await connection.query("UPDATE tags_guest_stays SET status='cancelled',updated_at=NOW() WHERE id=? AND guest_app_id=?",[stayId,guestAppId]);
+await connection.query("UPDATE tags_guest_sessions SET revoked_at=NOW() WHERE stay_id=? AND revoked_at IS NULL",[stayId]);
+await connection.query("UPDATE tags_guest_access_tokens SET revoked_at=NOW() WHERE stay_id=? AND revoked_at IS NULL",[stayId]);
+await connection.query("INSERT INTO tags_guest_audit_log (guest_app_id,stay_id,actor_type,actor_id,action,entity_type,entity_id,metadata_json) VALUES (?,?,'owner',?,'reservation.cancelled','reservation',?,?)",[guestAppId,stayId,actorId,stayId,JSON.stringify({reason,previousStatus:rows[0].status,stayCode:rows[0].stay_code})]);
+await connection.commit();
+return Response.json({ok:true,status:GUEST_STAY_STATUS.CANCELLED})}catch(error){await connection.rollback();
+console.error("GUEST RESERVATION CANCEL ERROR:",error);
+return Response.json({ok:false,error:"No se pudo cancelar la reserva"},{status:500})}finally{connection.release()}
 }
 

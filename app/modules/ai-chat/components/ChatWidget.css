@@ -204,6 +204,7 @@
 @keyframes tags_voice_pulse{50%{box-shadow:0 0 0 6px #c92f2f30}}
 
 .tags_ai_chat_candidates{display:grid;gap:12px;margin-top:14px}
+.tags_ai_chat_booking_action{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:14px;padding:11px 14px;border-radius:10px;background:#168a51;color:#fff!important;font-weight:850;text-decoration:none}.tags_ai_chat_booking_action:hover{background:#107344}
 .tags_ai_chat_candidate{display:grid;min-width:0;overflow:hidden;border:1px solid #d8e6dc;border-radius:18px;background:#fff;color:#214d39;box-shadow:0 8px 24px #193b2c14}
 .tags_ai_chat_candidate>img{width:100%;height:150px;object-fit:cover}
 .tags_ai_chat_candidate_body{display:grid;min-width:0;gap:5px;padding:12px}

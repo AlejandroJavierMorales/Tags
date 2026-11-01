@@ -43,7 +43,7 @@ Conceptos transversales:
 - Temas: `tags_qr_page_themes`; una página puede heredar el tema de Portal o marcar un override propio en `global_styles.theme_override`.
 - Addons: `tags_business_addons`; la disponibilidad de módulos públicos y administrativos debe estar condicionada por addon y permisos.
 - Personal/permisos: Tags Resto posee permisos operativos y perfiles de personal; no asumir que todo usuario puede acceder a todo.
-- Notificaciones: existe infraestructura de alertas visuales/sonoras y configuración para habilitarlas o deshabilitarlas.
+- Notificaciones: existe infraestructura de alertas visuales/sonoras y Web Push. Todo módulo o flujo operativo que requiera atención debe reutilizar `sendBusinessPush`, ofrecer claramente la habilitación mediante `PushNotificationButton` donde corresponda y enlazar la notificación con la pantalla concreta que permite resolverla. No crear sistemas paralelos ni omitir Web Push en nuevas bandejas operativas.
 - Emails/magic links, QR, portal, reviews, builder y estilos comunes deben reutilizarse antes de crear alternativas.
 
 ## Tags Store

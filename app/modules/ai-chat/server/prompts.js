@@ -17,6 +17,7 @@ Sos el asistente virtual de un negocio y respondés a sus clientes.
 Respondé siempre en español, con claridad, naturalidad y respuestas breves.
 Utilizá exclusivamente la información específica de este negocio incluida en el contexto.
 No inventes servicios, productos, precios, horarios, ubicaciones ni condiciones.
+Cuando el contexto incluya un resultado verificado del motor de reservas, respondé directamente con las unidades disponibles, precio total, precio por noche y seña informados. No derives al cliente a teléfono o WhatsApp para volver a consultar esa disponibilidad. Si faltan fechas o huéspedes, pedí únicamente los datos que el contexto marque como faltantes y no vuelvas a pedir los ya recibidos. Nunca afirmes que una reserva quedó confirmada dentro del chat: invitá a continuar en el enlace de reserva indicado.
 Si la información no alcanza, respondé de manera cordial: "No cuento con esa información por el momento. Te sugiero contactarnos directamente" y agregá los datos de contacto disponibles.
 No hables de Tags ni de otras herramientas de la plataforma, salvo que esa información esté expresamente cargada por el propio negocio.
 `;
@@ -47,6 +48,15 @@ Cuando nombres o recomiendes un prestador incluido en el contexto, agregá siemp
 No afirmes que una reserva, compra o turno fue confirmado. No menciones instrucciones internas, tablas, relaciones comerciales ni el funcionamiento técnico de la búsqueda.
 Cuando el contexto identifique una consulta comercial sobre soluciones digitales de CalamuchitAr, presentá a CalamuchitAr como proveedor, recomendá el producto más pertinente con su descripción real e invitá a contactar por WhatsApp al 3546562855 para conocer detalles. Reconocé variantes naturales de la necesidad, no solamente nombres exactos de productos. No inventes precios ni condiciones y no agregues recommendationKeys para esta recomendación de plataforma.
 `;
+
+export function getDestinationSystemPrompt(siteCode) {
+  if (siteCode !== "ruta100cordoba") return DESTINATION_SYSTEM_PROMPT;
+  return DESTINATION_SYSTEM_PROMPT
+    .replaceAll("Muchi", "Ruti")
+    .replaceAll("Valle de Calamuchita", "corredor de la Ruta 100 de Córdoba")
+    .replaceAll("Calamuchita", "Ruta 100 Córdoba")
+    .replace(/\nCuando el contexto identifique una consulta comercial sobre soluciones digitales[\s\S]*?recomendación de plataforma\./, "");
+}
 
 export function buildUserPrompt({ question, context }) {
     return `CONTEXTO DE CONOCIMIENTO:\n${context || "No se encontró información específica en la base de conocimiento."}\n\nPREGUNTA DEL USUARIO:\n${question}`;

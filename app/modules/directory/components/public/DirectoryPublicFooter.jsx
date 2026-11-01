@@ -11,7 +11,26 @@ const FRIENDS = [
   ["LogoCabanasEnSantaRosa.png", "Cabañas en Santa Rosa", "https://xn--cabaasensantarosadecalamuchita-h4c.com.ar/"],
 ];
 
+function parseBrand(value) {
+  if (!value) return {};
+  if (typeof value === "object") return value;
+  try { return JSON.parse(value); } catch { return {}; }
+}
+
 export default function DirectoryPublicFooter({ site = { code: "calamuchitar", name: "CalamuchitAr" } }) {
+  if (site.code === "ruta100cordoba") {
+    const brand = parseBrand(site.brand_config);
+    return <footer className="tags_directory_platform_footer tags_directory_ruta100_footer">
+      <div className="tags_directory_footer_signature">
+        <Image src="/assets/icons/Ruta100Cordoba_512.png" alt="Ruta 100 Córdoba" width={512} height={512} sizes="112px" />
+        <strong>Ruta 100 Córdoba</strong>
+        <span>{brand.slogan || "Descubrí Córdoba por la Ruta 100"}</span>
+        <small>Desarrollado con Tags</small>
+      </div>
+      <nav className="tags_directory_footer_legal_links" aria-label="Información legal"><Link href="/politica-de-privacidad">Política de Privacidad</Link><Link href="/terminos-y-condiciones">Términos y Condiciones</Link><Link href="/gestion-de-datos">Gestión de datos</Link></nav>
+      <div className="tags_directory_footer_legal">© Ruta 100 Córdoba · Todos los derechos reservados</div>
+    </footer>;
+  }
   if (site.code !== "calamuchitar") {
     return <footer className="tags_directory_platform_footer"><div className="tags_directory_footer_signature"><strong>{site.name}</strong><span>Plataforma Comercial</span><small>Desarrollado con Tags</small></div><nav className="tags_directory_footer_legal_links" aria-label="Información legal"><Link href="/politica-de-privacidad">Política de Privacidad</Link><Link href="/terminos-y-condiciones">Términos y Condiciones</Link><Link href="/gestion-de-datos">Gestión de datos</Link></nav><div className="tags_directory_footer_legal">© {site.name} · Todos los derechos reservados</div></footer>;
   }

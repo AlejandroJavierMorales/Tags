@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FaArrowLeft, FaBed, FaCalendarCheck, FaCalendarDays, FaComments, FaDoorOpen, FaEye, FaGear, FaGift, FaHotel, FaLocationDot, FaMoneyBillWave, FaPlus, FaShop, FaStar, FaUsers, FaUtensils, FaUserCheck } from "react-icons/fa6";
+import { FaArrowLeft, FaBed, FaCalendarCheck, FaCalendarDays, FaComments, FaDoorOpen, FaEye, FaGear, FaGift, FaHotel, FaLocationDot, FaMoneyBillWave, FaShop, FaStar, FaUsers, FaUtensils, FaUserCheck } from "react-icons/fa6";
 import TagsSpinner from "@/app/components/TagsSpinner";
 import showAlert from "@/app/components/showAlert";
 import confirmPublicPageStatusChange from "@/app/lib/confirmPublicPageStatusChange";
@@ -22,15 +22,14 @@ import GuestExperienceCommerceOrders from "./GuestExperienceCommerceOrders";
 import GuestExperienceReviewsManager from "./GuestExperienceReviewsManager";
 import GuestExperienceAdminNavigation from "./GuestExperienceAdminNavigation";
 import GuestExperienceTeamManager from "./GuestExperienceTeamManager";
+import GuestExperienceUnitBlocksManager from "./GuestExperienceUnitBlocksManager";
+import GuestExperienceUnitsManager from "./GuestExperienceUnitsManager";
+import GuestExperienceBookingRequests from "./GuestExperienceBookingRequests";
+import GuestExperienceRateCalendar from "./GuestExperienceRateCalendar";
+import GuestExperiencePromotionsManager from "./GuestExperiencePromotionsManager";
 import PushNotificationButton from "@/app/modules/notifications/components/PushNotificationButton";
 import "./GuestExperienceAdminPage.css";
 import "./GuestExperienceAdminHeader.css";
-const UNIT = {
-  name: "",
-  code: "",
-  capacityAdults: 2,
-  capacityChildren: 0
-};
 export default function GuestExperienceAdminPage({
   businessId
 }) {
@@ -41,7 +40,6 @@ export default function GuestExperienceAdminPage({
     [missing, setMissing] = useState(false),
     [tab, setTab] = useState("reservations"),
     [externalStayId, setExternalStayId] = useState(null),
-    [unit, setUnit] = useState(UNIT),
     [activation, setActivation] = useState({
       name: "Mi Estadía",
       slug: "mi-estadia"
@@ -66,6 +64,8 @@ export default function GuestExperienceAdminPage({
       setMissing(false);
       setData(p);
       if (p.access?.isStaff) {
+        const requestedTab = new URLSearchParams(window.location.search).get("tab");
+        if (requestedTab) { setTab(requestedTab); return; }
         const permissions = p.access.permissions || [];
         setTab(permissions.includes("guest.stays.view") ? "reservations" : permissions.includes("guest.messages.view") ? "messages" : permissions.includes("guest.accounts.view") ? "finance" : "reservations");
       }
@@ -76,6 +76,7 @@ export default function GuestExperienceAdminPage({
   useEffect(() => {
     load();
   }, [businessId]);
+  useEffect(()=>{const requested=new URLSearchParams(window.location.search).get("tab");if(requested)setTab(requested)},[]);
   useEffect(() => {
     const openCheckin = event => { sessionStorage.setItem("tags_guest_checkin_stay", String(event.detail)); setExternalStayId(null); setTab("checkin"); };
     window.addEventListener("tags-guest-open-checkin", openCheckin);
@@ -179,15 +180,11 @@ export default function GuestExperienceAdminPage({
     }
     return true;
   }
-  async function deleteReservation(stayId) {
-    return Boolean(await request("/api/guest-experience/admin/stays", "DELETE", { stayId }, "Reserva eliminada."));
+  async function deleteReservation(stayId, reason) {
+    return Boolean(await request("/api/guest-experience/admin/stays", "DELETE", { stayId, reason }, "Reserva cancelada. La unidad quedó liberada y se conservó el historial."));
   }
   async function markNoShow(payload) {
     return Boolean(await request("/api/guest-experience/admin/no-show", "POST", payload, "La reserva quedó pendiente de reprogramación y la unidad fue liberada."));
-  }
-  async function addUnit(e) {
-    e.preventDefault();
-    if (await request("/api/guest-experience/admin/units", "POST", unit, "Unidad creada.")) setUnit(UNIT);
   }
   async function invite(item, channel) {
     const reminder = channel === "reminder";
@@ -295,13 +292,14 @@ export default function GuestExperienceAdminPage({
   const adminGroups = [
     { key:"stays",label:"Reservas / Estadías",icon:FaCalendarDays,items:[
       can("guest.stays.view")&&{key:"reservations",label:"Grilla de ocupación",icon:FaCalendarDays},
+      can("guest.stays.view")&&{key:"booking_requests",label:"Solicitudes online",icon:FaCalendarCheck},
       can("guest.stays.view")&&{key:"rebookings",label:"Reprogramaciones",icon:FaCalendarCheck},
       can("guest.stays.view")&&{key:"arrivals",label:"Ingresos",icon:FaDoorOpen},
       can("guest.accounts.view")&&{key:"finance",label:"Estadías y pagos",icon:FaMoneyBillWave},
       can("guest.checkin.manage")&&{key:"checkin",label:"Checkin",icon:FaUserCheck},
       can("guest.stays.view")&&{key:"active",label:"Estadías en curso",icon:FaBed},
     ].filter(Boolean)},
-    data?.access?.isOwner&&{ key:"configuration",label:"Configuración",icon:FaGear,items:[{key:"settings",label:"General",icon:FaGear},{key:"units",label:"Unidades / Habitaciones",icon:FaHotel},{key:"team",label:"Equipo y accesos",icon:FaUsers}]},
+    data?.access?.isOwner&&{ key:"configuration",label:"Configuración",icon:FaGear,items:[{key:"settings",label:"General",icon:FaGear},{key:"units",label:"Unidades / Habitaciones",icon:FaHotel},{key:"rates",label:"Tarifas y disponibilidad",icon:FaCalendarDays},{key:"team",label:"Equipo y accesos",icon:FaUsers}]},
     { key:"guest_services",label:"Servicios al huésped",icon:FaGift,items:[
       data?.access?.isOwner&&{key:"turnos",label:"Reservas de amenities",icon:FaCalendarCheck},
       data?.access?.isOwner&&{key:"commerce",label:"Tienda y gastronomía",icon:FaShop},
@@ -314,6 +312,8 @@ export default function GuestExperienceAdminPage({
     ].filter(Boolean)},
   ].filter(group=>group&&group.items.length);
   const adminNavigation = <GuestExperienceAdminNavigation groups={adminGroups} active={tab} onChange={setTab}/>;
+  if (!missing && tab === "booking_requests") return <main className="tags_guest_admin"><header className="tags_guest_admin_hero"><div className="tags_guest_admin_identity"><span className="tags_guest_admin_icon"><FaCalendarCheck /></span><div><small>MOTOR DE RESERVAS</small><h1>Solicitudes online</h1><p>Consultas y retenciones recibidas desde la página pública</p></div></div></header>{adminNavigation}<GuestExperienceBookingRequests businessId={businessId} guestAppId={data.app.id} app={data.app} onDataChanged={()=>load(true)}/></main>;
+  if (!missing && tab === "rates" && data.access?.isOwner) return <main className="tags_guest_admin"><header className="tags_guest_admin_hero"><div className="tags_guest_admin_identity"><span className="tags_guest_admin_icon"><FaCalendarDays /></span><div><small>MOTOR DE RESERVAS</small><h1>Tarifas y disponibilidad</h1><p>Calendario de venta, precios, restricciones y promociones</p></div></div></header>{adminNavigation}<GuestExperienceRateCalendar businessId={businessId} data={data}/><GuestExperiencePromotionsManager businessId={businessId} guestAppId={data.app.id} units={data.units||[]}/></main>;
   if (!missing && tab === "commerce_resto") return <main className="tags_guest_admin"><header className="tags_guest_admin_hero"><div className="tags_guest_admin_identity"><span className="tags_guest_admin_icon"><FaUtensils /></span><div><small>GASTRONOMÍA</small><h1>{data.app.name}</h1><p>Configuración de instancia de Resto</p></div></div></header>{adminNavigation}<GuestExperienceCommerceManager businessId={businessId} data={data} moduleType="resto" /></main>;
   if (!missing && tab === "reviews") return <main className="tags_guest_admin"><header className="tags_guest_admin_hero"><div className="tags_guest_admin_identity"><span className="tags_guest_admin_icon"><FaStar /></span><div><small>EXPERIENCIA DEL HUÉSPED</small><h1>{data.app.name}</h1><p>Reseñas de huéspedes</p></div></div></header>{adminNavigation}<GuestExperienceReviewsManager businessId={businessId} data={data} /></main>;
   if (!missing && tab === "team" && data.access?.isOwner) return <main className="tags_guest_admin"><header className="tags_guest_admin_hero"><div className="tags_guest_admin_identity"><span className="tags_guest_admin_icon"><FaUsers /></span><div><small>ADMINISTRACIÓN</small><h1>{data.app.name}</h1><p>Equipo y accesos</p></div></div></header>{adminNavigation}<GuestExperienceTeamManager businessId={businessId} data={data} /></main>;
@@ -428,38 +428,7 @@ export default function GuestExperienceAdminPage({
 <h2>Estadías en curso</h2>
 <p>Esta vista mostrará únicamente las reservas cuyo check-in ya fue confirmado.</p>
 </section>}{tab === "units" && <section className="tags_guest_admin_panel">
-<header>
-<h2>Unidades del alojamiento</h2>
-</header>
-<form className="tags_guest_admin_form" onSubmit={addUnit}>
-<label>Nombre<input required value={unit.name} onChange={e => setUnit({
-            ...unit,
-            name: e.target.value
-          })} />
-</label>
-<label>Código<input value={unit.code} onChange={e => setUnit({
-            ...unit,
-            code: e.target.value
-          })} />
-</label>
-<label>Adultos<input type="number" min="1" value={unit.capacityAdults} onChange={e => setUnit({
-            ...unit,
-            capacityAdults: e.target.value
-          })} />
-</label>
-<label>Niños<input type="number" min="0" value={unit.capacityChildren} onChange={e => setUnit({
-            ...unit,
-            capacityChildren: e.target.value
-          })} />
-</label>
-<button disabled={busy}>
-<FaPlus /> Crear unidad</button>
-</form>
-<div className="tags_guest_admin_list">{data.units.map(item => <article key={item.id}>
-<div>
-<strong>{item.name}</strong>
-<span>{item.code || "Sin código"} · Capacidad: {item.capacity_adults} adultos y {item.capacity_children} niños</span>
-</div>
-</article>)}</div>
+<GuestExperienceUnitsManager businessId={businessId} guestAppId={data.app.id} units={data.units} onChanged={()=>load(true)}/>
+<GuestExperienceUnitBlocksManager businessId={businessId} guestAppId={data.app.id} units={data.units} onChanged={()=>load(true)}/>
 </section>}{tab === "nearby" && <GuestExperienceNearbyManager businessId={businessId} data={data}/>} {tab === "benefits" && <GuestExperienceBenefitsManager businessId={businessId} data={data}/>} {tab === "turnos" && <GuestExperienceTurnosManager businessId={businessId} data={data}/>} {tab === "commerce" && <GuestExperienceCommerceManager businessId={businessId} data={data} moduleType="store"/>} {tab === "messages" && <GuestExperienceMessagesManager businessId={businessId} data={data}/>} {tab === "settings" && <GuestExperienceSettingsPanel businessId={businessId} data={data} onSaved={() => load(true)} />} {busy && <TagsSpinner size={120} logoSize={66} borderSize={5} background="rgba(255,255,255,.72)" />}</main>;
 }

@@ -29,7 +29,8 @@ export function buildReservationAccessCommunication({ stay, settings = {}, link 
     const accessButton = link
         ? `<a href="${escapeHtml(link)}" style="display:inline-block;padding:13px 20px;background:#22a35a;color:#fff;text-decoration:none;border-radius:9px;font-weight:bold">Acceder a Mi Estadía</a>`
         : `<span style="display:inline-block;padding:13px 20px;background:#22a35a;color:#fff;border-radius:9px;font-weight:bold">Acceder a Mi Estadía</span><small style="display:block;margin-top:8px;color:#63746a">El enlace seguro se generará al confirmar el envío.</small>`;
-    const financial = lodgingTotal > 0 ? `<br><strong>Total de la reserva:</strong> ${escapeHtml(money(lodgingTotal, currency))}${depositRequired > 0 ? `<br><strong>Seña requerida:</strong> ${escapeHtml(money(depositRequired, currency))}` : ""}` : "";
+    const assignmentNotice = "La unidad definitiva se asignará al organizar la grilla de ocupación. Siempre se respetarán la capacidad, las características y el equipamiento correspondientes a la categoría reservada.";
+    const financial = `${lodgingTotal > 0 ? `<br><strong>Total de la reserva:</strong> ${escapeHtml(money(lodgingTotal, currency))}${depositRequired > 0 ? `<br><strong>Seña requerida:</strong> ${escapeHtml(money(depositRequired, currency))}` : ""}` : ""}<br><br><span style="display:block;padding:12px;background:#fff7ed;border-left:4px solid #f97316;font-size:13px">${escapeHtml(assignmentNotice)}</span>`;
     if (isRebooking) {
         const financialLabels = { credit: "La seña queda disponible como crédito", retained: "La seña fue retenida por la no presentación", refund: "La seña será reintegrada" };
         const financialAction = financialLabels[stay.no_show_financial_action] || "El tratamiento de la seña será coordinado con el alojamiento";
@@ -42,6 +43,6 @@ export function buildReservationAccessCommunication({ stay, settings = {}, link 
         return { title, html, text };
     }
     const html = `<div style="max-width:620px;margin:auto;font-family:Arial,sans-serif;color:#183226;border:1px solid #dfe9e4;border-radius:18px;overflow:hidden"><div style="padding:24px;background:#f4f8f5;text-align:center">${stay.logo_url || stay.logoUrl ? `<img src="${escapeHtml(stay.logo_url || stay.logoUrl)}" alt="${escapeHtml(appName)}" style="max-width:150px;max-height:90px">` : ""}<h1 style="margin:12px 0 0">${escapeHtml(title)}</h1></div><div style="padding:24px"><p>Hola <strong>${escapeHtml(guestName)}</strong>.</p><p>Estos son los datos de tu reserva:</p><p><strong>Reserva:</strong> ${escapeHtml(stayCode)}<br><strong>Huéspedes:</strong> ${people || 1}<br><strong>Ingreso:</strong> ${escapeHtml(checkin)}<br><strong>Egreso:</strong> ${escapeHtml(checkout)}${financial}</p><p style="text-align:center;margin:28px 0">${accessButton}</p><p style="font-size:12px;color:#63746a">El enlace estará disponible durante la estadía y el período de gracia configurado.</p></div></div>`;
-    const text = `${title}\n\nReserva: ${stayCode}\nHuéspedes: ${people || 1}\nIngreso: ${checkin}\nEgreso: ${checkout}${lodgingTotal > 0 ? `\nTotal: ${money(lodgingTotal, currency)}` : ""}${link ? `\n\nAcceso a Mi Estadía: ${link}` : ""}`;
+    const text = `${title}\n\nReserva: ${stayCode}\nHuéspedes: ${people || 1}\nIngreso: ${checkin}\nEgreso: ${checkout}${lodgingTotal > 0 ? `\nTotal: ${money(lodgingTotal, currency)}` : ""}\n\nImportante: ${assignmentNotice}${link ? `\n\nAcceso a Mi Estadía: ${link}` : ""}`;
     return { title, html, text };
 }

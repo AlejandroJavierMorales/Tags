@@ -1,0 +1,199 @@
+.tags_lodging_booking {
+  background: var(--qr-bg, #f4f6f3);
+  color: var(--qr-text, #17251e);
+}
+
+.tags_lodging_booking > header {
+  grid-template-columns: minmax(0, 1fr) minmax(300px, .85fr);
+  place-items: stretch;
+  gap: clamp(24px, 5vw, 72px);
+  min-height: 430px;
+  padding: clamp(42px, 7vw, 88px) max(22px, calc((100% - 1120px) / 2));
+  background-color: var(--qr-primary, #173d2a);
+  text-align: left;
+}
+
+.tags_lodging_booking_hero_identity {
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  min-width: 0;
+}
+
+.tags_lodging_booking > header .tags_lodging_booking_hero_identity > img {
+  display: block;
+  width: auto;
+  max-width: min(360px, 80%);
+  height: auto;
+  max-height: 140px;
+  margin: 0 0 22px;
+  border-radius: 0;
+  background: transparent;
+  object-fit: contain;
+  filter: drop-shadow(0 5px 12px #0005);
+}
+
+.tags_lodging_booking_hero_identity > span {
+  padding: 6px 10px;
+  border: 1px solid #ffffff55;
+  border-radius: 999px;
+  background: #0003;
+  color: #fff;
+}
+
+.tags_lodging_booking_hero_identity h1 {
+  max-width: 720px;
+  margin: 12px 0 8px;
+  color: #fff;
+  line-height: .98;
+  text-wrap: balance;
+}
+
+.tags_lodging_booking_hero_identity p {
+  max-width: 650px;
+  margin: 0;
+  color: #fff;
+  font-size: clamp(15px, 2vw, 18px);
+  line-height: 1.55;
+}
+
+.tags_lodging_booking_hero_gallery {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 8px;
+  min-height: 280px;
+  overflow: hidden;
+  border: 1px solid #ffffff55;
+  border-radius: var(--qr-radius, 18px);
+  box-shadow: 0 20px 55px #0007;
+  transform: rotate(1deg);
+}
+
+.tags_lodging_booking > header .tags_lodging_booking_hero_gallery img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  margin: 0;
+  border-radius: 0;
+  background: transparent;
+  object-fit: cover;
+  transition: transform .35s ease;
+}
+
+.tags_lodging_booking_hero_gallery img:hover { transform: scale(1.04); }
+.tags_lodging_booking_hero_gallery.has_1 img { grid-column: 1 / -1; grid-row: 1 / -1; }
+.tags_lodging_booking_hero_gallery.has_2 img { grid-row: 1 / -1; }
+.tags_lodging_booking_hero_gallery.has_3 img:first-child { grid-row: 1 / -1; }
+
+.tags_lodging_booking_search,
+.tags_lodging_booking_results,
+.tags_lodging_booking_notice {
+  border-color: var(--qr-border, #dce5df);
+  border-radius: var(--qr-radius, 18px);
+  background: var(--qr-surface, #fff);
+  box-shadow: var(--qr-shadow, 0 12px 32px #173a2d17);
+}
+
+.tags_lodging_booking_search > div > span,
+.tags_lodging_booking_results > header span,
+.tags_lodging_booking_results article span {
+  color: var(--qr-primary, #26734f);
+}
+
+.tags_lodging_booking input {
+  border-color: var(--qr-border, #cbd8d1);
+  border-radius: var(--qr-radius, 10px);
+  color: var(--qr-text, #17251e);
+}
+
+.tags_lodging_booking button,
+.tags_lodging_booking_results a,
+.tags_lodging_request_modal form > button,
+.tags_lodging_request_success a {
+  border-radius: var(--qr-radius, 10px);
+  background: var(--qr-primary, #26734f);
+  color: var(--qr-primary-text, #fff);
+}
+
+.tags_lodging_booking_results article {
+  border-color: var(--qr-border, #d9e5de);
+  border-radius: var(--qr-radius, 13px);
+  background: var(--qr-surface, #fff);
+}
+
+.tags_lodging_booking_results article > i,
+.tags_lodging_booking_results > header > strong,
+.tags_lodging_booking_price,
+.tags_lodging_request_quote {
+  background: var(--qr-surface-alt, #e9f5ed);
+  color: var(--qr-primary, #226b43);
+}
+
+.tags_lodging_request_modal {
+  border-radius: var(--qr-radius, 18px);
+  background: var(--qr-surface, #fff);
+  color: var(--qr-text, #183226);
+}
+
+.tags_lodging_request_modal > span,
+.tags_lodging_request_success > span { color: var(--qr-primary, #26734f); }
+
+@media (max-width: 900px) {
+  .tags_lodging_booking > header {
+    grid-template-columns: 1fr;
+    gap: 28px;
+    min-height: 0;
+    padding: 52px 28px 34px;
+  }
+  .tags_lodging_booking_hero_identity { justify-items: center; text-align: center; }
+  .tags_lodging_booking > header .tags_lodging_booking_hero_identity > img {
+    max-width: min(340px, 75vw);
+    max-height: 125px;
+  }
+  .tags_lodging_booking_hero_gallery {
+    width: min(680px, 100%);
+    min-height: 230px;
+    margin: auto;
+    transform: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .tags_lodging_booking > header { padding: 34px 14px 18px; }
+  .tags_lodging_booking > header .tags_lodging_booking_hero_identity > img {
+    max-width: min(300px, 82vw);
+    max-height: 105px;
+    margin-bottom: 16px;
+  }
+  .tags_lodging_booking_hero_identity h1 { font-size: clamp(30px, 10vw, 43px); }
+  .tags_lodging_booking_hero_gallery {
+    gap: 5px;
+    min-height: 165px;
+    border-radius: var(--qr-radius, 14px);
+  }
+  .tags_lodging_booking_search,
+  .tags_lodging_booking_results,
+  .tags_lodging_booking_notice {
+    width: calc(100% - 20px);
+    margin: 12px auto;
+    padding: 14px;
+  }
+  .tags_lodging_booking_search form { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .tags_lodging_booking input { min-width: 0; width: 100%; font-size: 16px; }
+  .tags_lodging_booking_results article {
+    grid-template-columns: 30px minmax(0, 1fr);
+    gap: 8px;
+    padding: 12px;
+  }
+  .tags_lodging_booking_results article > i { width: 30px; height: 30px; }
+  .tags_lodging_booking_results article > button { grid-column: 1 / -1; width: 100%; }
+}
+
+@media (max-width: 380px) {
+  .tags_lodging_booking > header { padding-inline: 10px; }
+  .tags_lodging_booking_hero_gallery { min-height: 140px; }
+  .tags_lodging_booking_search form { grid-template-columns: 1fr; }
+  .tags_lodging_booking_search form > button { grid-column: auto; }
+}

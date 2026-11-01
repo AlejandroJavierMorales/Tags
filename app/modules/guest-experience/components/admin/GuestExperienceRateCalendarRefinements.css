@@ -1,0 +1,205 @@
+.tags_guest_rates_filters {
+  align-items: end;
+}
+
+.tags_guest_rates_table_wrap {
+  max-height: 72vh;
+}
+
+.tags_guest_rates_backdrop {
+  z-index: 10020;
+  padding-bottom: max(18px, env(safe-area-inset-bottom));
+}
+
+.tags_guest_rates_modal.is_period {
+  max-height: calc(100dvh - 36px - env(safe-area-inset-bottom));
+  scroll-padding-bottom: 76px;
+}
+
+.tags_guest_rates_modal.is_period > .save {
+  position: sticky;
+  bottom: 0;
+  z-index: 4;
+  min-height: 48px;
+  margin: 18px -4px -4px;
+  box-shadow: 0 -10px 18px #fff, 0 5px 14px #173f2d24;
+}
+
+.tags_guest_rates_filters .tags_guest_rates_occupants {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  align-self: end;
+  gap: 7px;
+  min-height: 39px;
+  white-space: nowrap;
+}
+
+.tags_guest_rates_filters .tags_guest_rates_occupants input {
+  width: 70px;
+}
+
+.tags_guest_rates_filters > button {
+  min-height: 39px;
+  padding: 7px 14px;
+  border: 0;
+  border-radius: 8px;
+  background: #1e7650;
+  color: #fff;
+  font-weight: 900;
+}
+
+.tags_guest_rates thead .tags_guest_rates_months th {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  height: 37px;
+  padding: 8px;
+  background: #dfece5;
+  color: #244f39;
+  text-transform: capitalize;
+}
+
+.tags_guest_rates thead .tags_guest_rates_months th.is_month_tone_0 {
+  background: #d8e9df;
+  color: #16482f;
+}
+
+.tags_guest_rates thead .tags_guest_rates_months th.is_month_tone_1 {
+  background: #f3dfc9;
+  color: #744313;
+}
+
+.tags_guest_rates thead .tags_guest_rates_days th {
+  position: sticky;
+  top: 37px;
+  z-index: 5;
+  background: #f4f8f5;
+}
+
+.tags_guest_rates thead .tags_guest_rates_days th:first-child {
+  left: auto;
+  min-width: 92px;
+}
+
+.tags_guest_rates thead .tags_guest_rates_months th:first-child {
+  left: 0;
+  z-index: 8;
+  min-width: 175px;
+}
+
+.tags_guest_rates td > button.is_sellable {
+  background: #d9f1e2;
+  color: #175936;
+}
+
+.tags_guest_rates td > button.is_sellable:hover {
+  background: #c3e7d0;
+}
+
+.tags_guest_rates td > button.is_unavailable {
+  background: #f5dddd;
+  color: #8a3030;
+}
+
+.tags_guest_rates td > button.is_unavailable:hover {
+  background: #efcaca;
+}
+
+.tags_guest_rates td > button.is_unavailable.is_occupied {
+  background: #dfddf2;
+  color: #4d427d;
+}
+
+.tags_guest_rates td > button.is_unavailable.is_occupied:hover {
+  background: #d2cfea;
+}
+
+.tags_guest_rates td > button.is_unavailable.is_held {
+  background: #fff0c7;
+  color: #76520e;
+}
+
+.tags_guest_rates td > button.is_unavailable.is_blocked {
+  background: #dfe5e8;
+  color: #46565f;
+}
+
+.tags_guest_rates_modal.is_period > p {
+  margin: -8px 0 16px;
+  color: #617269;
+}
+
+.tags_guest_rates_rules > p {
+  margin: -5px 0 5px;
+  color: #64766c;
+  font-size: 0.82rem;
+}
+
+@media (max-width: 720px) {
+  .tags_guest_rates {
+    padding: 8px;
+  }
+
+  .tags_guest_rates thead .tags_guest_rates_months th:first-child,
+  .tags_guest_rates thead th:first-child,
+  .tags_guest_rates tbody th {
+    width: 88px;
+    min-width: 88px;
+    max-width: 88px;
+    padding: 6px;
+    font-size: 0.72rem;
+    white-space: normal;
+  }
+
+  .tags_guest_rates thead .tags_guest_rates_days th,
+  .tags_guest_rates thead .tags_guest_rates_days th:first-child {
+    width: 60px;
+    min-width: 60px;
+    max-width: 60px;
+    padding: 5px 2px;
+  }
+
+  .tags_guest_rates thead .tags_guest_rates_months th {
+    height: 32px;
+    padding: 5px;
+    font-size: 0.72rem;
+  }
+
+  .tags_guest_rates thead .tags_guest_rates_days th {
+    top: 32px;
+  }
+
+  .tags_guest_rates td > button {
+    min-height: 57px;
+    padding: 5px 2px;
+  }
+
+  .tags_guest_rates td > button > strong {
+    font-size: 0.66rem;
+  }
+
+  .tags_guest_rates td > button > span,
+  .tags_guest_rates td > button > i {
+    font-size: 0.58rem;
+  }
+
+  .tags_guest_rates_filters .tags_guest_rates_occupants {
+    flex: 1 1 100%;
+    justify-content: flex-start;
+  }
+
+  .tags_guest_rates_filters > button {
+    flex: 1 1 100%;
+  }
+
+  .tags_guest_rates_backdrop {
+    align-items: stretch;
+    padding: 6px 6px max(6px, env(safe-area-inset-bottom));
+  }
+
+  .tags_guest_rates_modal.is_period {
+    max-height: calc(100dvh - 12px - env(safe-area-inset-bottom));
+    border-radius: 13px;
+  }
+}

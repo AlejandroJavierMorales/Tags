@@ -250,7 +250,7 @@ export async function POST(req) {
 
         const applicationBase =
             route.addon_code === "guest_experience"
-                ? `/p/${encodedSlug}/mi-estadia`
+                ? routePath === "/reservar" ? `/p/${encodedSlug}/reservar` : `/p/${encodedSlug}/mi-estadia`
                 : route.addon_code === "loyalty"
                     ? "/fidelizacion"
                     : `/p/${encodedSlug}`;

@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa6";
+import { stayBlocksInventory } from "../../lib/lodgingReservationRules";
 import "./GuestExperienceOccupancyGrid.css";
 
 const MONTHS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
@@ -12,7 +13,7 @@ const diffDays = (a,b) => Math.round((a-b)/86400000);
 const configuredDate = value => /^\d{4}-\d{2}-\d{2}$/.test(String(value||"")) ? localDate(value) : null;
 const configuredDays = value => Math.min(120,Math.max(7,Number(value||30)));
 
-export default function GuestExperienceOccupancyGrid({ units, stays, settings={}, onReservationClick, onAvailableClick, onRangeChange }) {
+export default function GuestExperienceOccupancyGrid({ units, stays, blocks=[], settings={}, onReservationClick, onAvailableClick, onRangeChange }) {
     const today = new Date(); today.setHours(12,0,0,0);
     const initialStart = settings.occupancyFixedPeriod && configuredDate(settings.occupancyStartDate) ? configuredDate(settings.occupancyStartDate) : today;
     const [start,setStart] = useState(initialStart), [daysCount,setDaysCount] = useState(configuredDays(settings.occupancyDays));
@@ -41,9 +42,9 @@ export default function GuestExperienceOccupancyGrid({ units, stays, settings={}
             <div className="tags_guest_occupancy_corner">Unidad</div>
             {monthGroups.map(group=><div className="tags_guest_occupancy_month" style={{gridColumn:`${group.start+2}/span ${group.count}`,gridRow:1}} key={group.id}>{group.label}</div>)}
             {days.map((day,index)=><div className={`tags_guest_occupancy_day ${[0,6].includes(day.getDay())?"is_weekend":""} ${key(day)===key(today)?"is_today":""}`} style={{gridColumn:index+2,gridRow:2}} key={key(day)}><strong>{day.getDate()}</strong><small>{day.toLocaleDateString("es-AR",{weekday:"short"})}</small></div>)}
-            {visibleUnits.map((unit,rowIndex)=>{const row=rowIndex+3,bookings=stays.filter(stay=>Number(stay.unit_id)===Number(unit.id)&&localDate(stay.starts_at)<end&&localDate(stay.ends_at)>start&&!['cancelled','no_show_rebooking'].includes(stay.status));return <div className="tags_guest_occupancy_row_contents" key={unit.id}>
+            {visibleUnits.map((unit,rowIndex)=>{const row=rowIndex+3,bookings=stays.filter(stay=>Number(stay.unit_id)===Number(unit.id)&&localDate(stay.starts_at)<end&&localDate(stay.ends_at)>start&&(stayBlocksInventory(stay.status)||stay.status==='checked_out'));return <div className="tags_guest_occupancy_row_contents" key={unit.id}>
                 <div className="tags_guest_occupancy_unit" style={{gridColumn:1,gridRow:row}}><strong>{unit.name}</strong><small>{unit.code||`Unidad ${unit.id}`}</small></div>
-                {days.map((day,index)=><button type="button" aria-label={`Reservar ${unit.name} el ${day.toLocaleDateString("es-AR")}`} className={`tags_guest_occupancy_cell ${[0,6].includes(day.getDay())?"is_weekend":""}`} style={{gridColumn:index+2,gridRow:row}} key={`${unit.id}-${key(day)}`} onClick={()=>onAvailableClick?.(unit,key(day))} onContextMenu={event=>{event.preventDefault();onAvailableClick?.(unit,key(day))}}/>)}
+                {days.map((day,index)=>{const block=blocks.find(item=>(item.scope_type==='property'||Number(item.unit_id)===Number(unit.id))&&localDate(item.starts_on)<=day&&localDate(item.ends_on)>day);return <button type="button" disabled={Boolean(block)} title={block?.reason||""} aria-label={block?`${unit.name} bloqueada`: `Reservar ${unit.name} el ${day.toLocaleDateString("es-AR")}`} className={`tags_guest_occupancy_cell ${[0,6].includes(day.getDay())?"is_weekend":""} ${block?"is_blocked":""}`} style={{gridColumn:index+2,gridRow:row}} key={`${unit.id}-${key(day)}`} onClick={()=>!block&&onAvailableClick?.(unit,key(day))} onContextMenu={event=>{event.preventDefault();if(!block)onAvailableClick?.(unit,key(day))}}/>})}
                 {bookings.map(stay=>{const from=Math.max(0,diffDays(localDate(stay.starts_at),start)),to=Math.min(daysCount,diffDays(localDate(stay.ends_at),start));return <button type="button" className={`tags_guest_occupancy_booking status_${stay.status}`} style={{gridColumn:`${from+2}/${to+2}`,gridRow:row,background:stay.status==='checked_out'?'#596861':COLORS[Number(stay.id)%COLORS.length]}} key={stay.id} onClick={()=>onReservationClick?.(stay)} title={`${stay.stay_code} · ${stay.guest_name}${stay.status==='checked_out'?' · Estadía concluida':''}`}><strong>{stay.stay_code}</strong><span>{stay.guest_name} · {Number(stay.adults||0)+Number(stay.children||0)} pax{stay.status==='checked_out'?' · Concluida':''}</span></button>})}
             </div>})}
         </div></div>

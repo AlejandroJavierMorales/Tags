@@ -1,0 +1,65 @@
+.tags_guest_booking_requests article > footer {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.tags_guest_booking_whatsapp{display:inline-flex;align-items:center;justify-content:center;gap:7px;width:max-content;margin-top:11px;padding:9px 12px;border-radius:9px;background:#e1f6e8;color:#176b3c;font-size:12px;font-weight:900;text-decoration:none}.tags_guest_booking_whatsapp svg{font-size:16px;color:#1f9d55}@media(max-width:650px){.tags_guest_booking_whatsapp{width:100%}}
+
+.tags_guest_booking_requests article > footer button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 7px 11px;
+  border: 0;
+  border-radius: 8px;
+  background: #249459;
+  color: #fff;
+  font-weight: 900;
+}
+
+.tags_guest_booking_requests article > footer button.is_reject {
+  background: #f3ded9;
+  color: #923828;
+}
+
+.tags_guest_booking_notify {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 2px 7px;
+  margin-right: auto;
+  color: #183226;
+  font-size: 0.88rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.tags_guest_booking_notify input {
+  width: 17px;
+  height: 17px;
+  margin: 0;
+  accent-color: #249459;
+}
+
+.tags_guest_booking_notify small {
+  grid-column: 2;
+  color: #9a5b22;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+@media (max-width: 620px) {
+  .tags_guest_booking_notify {
+    flex-basis: 100%;
+    margin-bottom: 5px;
+  }
+
+  .tags_guest_booking_requests article > footer button {
+    flex: 1;
+    justify-content: center;
+  }
+}
+.tags_guest_booking_requests .tags_guest_test_delete,.tags_guest_test_delete{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:40px;margin-top:11px;padding:9px 13px;border:1px solid #e3aaa0;border-radius:9px;background:#fff4f2;color:#a32d22;font-size:12px;font-weight:900;cursor:pointer;transition:background .18s ease,border-color .18s ease,transform .18s ease}.tags_guest_booking_requests .tags_guest_test_delete:hover,.tags_guest_test_delete:hover{border-color:#c84b3d;background:#ffe5e0;transform:translateY(-1px)}.tags_guest_test_delete svg{font-size:14px}@media(max-width:650px){.tags_guest_booking_requests .tags_guest_test_delete,.tags_guest_test_delete{width:100%}}

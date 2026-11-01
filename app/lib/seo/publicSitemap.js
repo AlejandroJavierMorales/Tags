@@ -213,10 +213,28 @@ export function getSitemapUrl(context) {
 export async function getDirectoryChannelMetadata({ path, title, description, forceNoindex = false }) {
   const context = await getPublicSitemapContext();
   const indexable = !forceNoindex && !context.isTags;
+  const ruta100Metadata = context.site?.code === "ruta100cordoba" ? {
+    "/alojamientos": {
+      title: "Alojamientos en Ruta 100 Córdoba",
+      description: "Encontrá alojamientos para recorrer y disfrutar Córdoba por la Ruta 100.",
+    },
+    "/donde-comer": {
+      title: "Dónde comer en Ruta 100 Córdoba",
+      description: "Descubrí restaurantes, bares, cafeterías y sabores regionales de Ruta 100 Córdoba.",
+    },
+    "/actividades-turisticas": {
+      title: "Qué hacer en Ruta 100 Córdoba",
+      description: "Encontrá lugares, actividades y experiencias para descubrir Córdoba por la Ruta 100.",
+    },
+    "/regalos-artesanias-regionales": {
+      title: "Regalos, artesanías y productos regionales | Ruta 100 Córdoba",
+      description: "Descubrí artesanías, regalos y productos regionales de Córdoba por la Ruta 100.",
+    },
+  }[path] : null;
   return {
     metadataBase: new URL(context.baseUrl),
-    title,
-    description,
+    title: ruta100Metadata?.title || title,
+    description: ruta100Metadata?.description || description,
     alternates: { canonical: new URL(path, `${context.baseUrl}/`).toString() },
     robots: {
       index: indexable,

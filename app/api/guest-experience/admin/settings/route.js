@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic";
 import { db } from "@/app/lib/tags-db";
 import { getGuestAdminAccess, guestAdminAccessResponse } from "@/app/modules/guest-experience/lib/getGuestAdminAccess";
 import { cleanGuestText, guestError, parseGuestJson } from "@/app/modules/guest-experience/lib/guestExperienceService";
+import { normalizeLodgingPolicy } from "@/app/modules/guest-experience/lib/lodgingReservationRules";
 
 export async function PATCH(req) {
     const body = await req.json().catch(() => null);
@@ -30,11 +31,38 @@ export async function PATCH(req) {
     const previous = parseGuestJson(apps[0]?.settings_json);
     const baseChanged = previous.reservationCodeBase !== codeBase;
     const depositPercentage = Math.max(0, Math.min(100, Number(body.depositPercentage || 0)));
+    const currency = ["ARS", "USD"].includes(String(body.currency || "").toUpperCase())
+        ? String(body.currency).toUpperCase()
+        : "ARS";
     const occupancyFixedPeriod = body.occupancyFixedPeriod === true, occupancyStartDate = cleanGuestText(body.occupancyStartDate, 10), occupancyDays = Math.min(120, Math.max(7, Number(body.occupancyDays || 30)));
     if (occupancyFixedPeriod && !/^\d{4}-\d{2}-\d{2}$/.test(occupancyStartDate || "")) return guestError("Definí una fecha válida para el inicio de la grilla");
     const sectionKeys = ["pre-checkin", "wifi", "beneficios", "actividades", "tienda", "gastronomia", "mensajes", "cerca", "cuenta", "resena"];
     const sectionVisibility = Object.fromEntries(sectionKeys.map(key => [key, body.sectionVisibility?.[key] !== false]));
-    const settings = { ...previous, themeId, themeCode, themeOverride, pwaIcon192Url: cleanGuestText(body.pwaIcon192Url, 2000) || previous.pwaIcon192Url || "", pwaIcon512Url: cleanGuestText(body.pwaIcon512Url, 2000) || previous.pwaIcon512Url || "", reservationCodeBase: codeBase, reservationCodePrefix: codeMatch[1], reservationCodePadding: codeMatch[2].length, reservationCodeCounter: baseChanged ? Number(codeMatch[2]) : Number(previous.reservationCodeCounter ?? codeMatch[2]), checkinTime: cleanGuestText(body.checkinTime, 20) || "15:00", checkoutTime: cleanGuestText(body.checkoutTime, 20) || "10:00", depositPercentage, occupancyFixedPeriod, occupancyStartDate: occupancyStartDate || "", occupancyDays, reminderHoursBefore: 48, receptionPhone: cleanGuestText(body.receptionPhone, 60) || "", receptionEmail: cleanGuestText(body.receptionEmail, 190) || "", arrivalInstructions: cleanGuestText(body.arrivalInstructions, 2000) || "", departureInstructions: cleanGuestText(body.departureInstructions, 2000) || "", houseRules: cleanGuestText(body.houseRules, 4000) || "", sectionVisibility };
-    await db.query("UPDATE tags_guest_apps SET name=?,logo_url=?,cover_url=?,welcome_message=?,settings_json=?,updated_at=NOW() WHERE id=? AND business_id=?", [name, cleanGuestText(body.logoUrl, 2000) || null, cleanGuestText(body.coverUrl, 2000) || null, welcome || null, JSON.stringify(settings), guestAppId, businessId]);
+    const lodgingPolicy = normalizeLodgingPolicy(body.lodgingPolicy || previous.lodgingPolicy);
+    const reservationPaymentHours = Math.max(1, Math.min(720, Math.trunc(Number(body.reservationPaymentHours || 48))));
+    const bookingCoverSource = body.bookingCoverSource === "custom" ? "custom" : "business";
+    const settings = { ...previous, themeId, themeCode, themeOverride, bookingShowLogo: body.bookingShowLogo !== false, bookingShowCover: body.bookingShowCover !== false, bookingCoverSource, bookingCoverUrl: cleanGuestText(body.bookingCoverUrl, 2000) || "", pwaIcon192Url: cleanGuestText(body.pwaIcon192Url, 2000) || previous.pwaIcon192Url || "", pwaIcon512Url: cleanGuestText(body.pwaIcon512Url, 2000) || previous.pwaIcon512Url || "", reservationCodeBase: codeBase, reservationCodePrefix: codeMatch[1], reservationCodePadding: codeMatch[2].length, reservationCodeCounter: baseChanged ? Number(codeMatch[2]) : Number(previous.reservationCodeCounter ?? codeMatch[2]), checkinTime: cleanGuestText(body.checkinTime, 20) || "15:00", checkoutTime: cleanGuestText(body.checkoutTime, 20) || "10:00", depositPercentage, reservationPaymentHours, bankPaymentDetails: cleanGuestText(body.bankPaymentDetails, 4000) || "", bookingBudgetDetails: cleanGuestText(body.bookingBudgetDetails, 4000) || "", groupBookingEnabled: body.groupBookingEnabled !== false, groupSuggestionMode: body.groupSuggestionMode === "when_no_single_available" ? "when_no_single_available" : "exceeds_single_capacity", groupMaximumOptions: Math.max(1, Math.min(5, Math.trunc(Number(body.groupMaximumOptions || 3)))), occupancyFixedPeriod, occupancyStartDate: occupancyStartDate || "", occupancyDays, reminderHoursBefore: 48, receptionPhone: cleanGuestText(body.receptionPhone, 60) || "", receptionEmail: cleanGuestText(body.receptionEmail, 190) || "", arrivalInstructions: cleanGuestText(body.arrivalInstructions, 2000) || "", departureInstructions: cleanGuestText(body.departureInstructions, 2000) || "", houseRules: cleanGuestText(body.houseRules, 4000) || "", sectionVisibility, lodgingPolicy, lodgingCapacityMode: lodgingPolicy.capacityMode };
+    settings.bookingUnitDisplay = ["unit", "category_unit"].includes(body.bookingUnitDisplay) ? body.bookingUnitDisplay : "category";
+    const rawQuoteSections = Array.isArray(body.bookingQuoteSections) ? body.bookingQuoteSections : [];
+    settings.bookingQuoteSections = rawQuoteSections.slice(0, 20).map((section, index) => ({
+        id: cleanGuestText(section?.id, 100) || `section-${index + 1}`,
+        title: cleanGuestText(section?.title, 190) || "",
+        enabled: section?.enabled !== false,
+        content: cleanGuestText(section?.content, 12000) || "",
+    })).filter(section => section.title || section.content);
+    settings.connectBookingToChatbot = body.connectBookingToChatbot !== false;
+    const connection = await db.getConnection();
+    try {
+        await connection.beginTransaction();
+        await connection.query("UPDATE tags_guest_apps SET name=?,logo_url=?,cover_url=?,welcome_message=?,currency=?,settings_json=?,updated_at=NOW() WHERE id=? AND business_id=?", [name, cleanGuestText(body.logoUrl, 2000) || null, cleanGuestText(body.coverUrl, 2000) || null, welcome || null, currency, JSON.stringify(settings), guestAppId, businessId]);
+        await connection.query("UPDATE tags_guest_rate_plans SET currency=?,updated_at=NOW() WHERE guest_app_id=? AND code='standard'", [currency, guestAppId]);
+        await connection.commit();
+    } catch (error) {
+        await connection.rollback();
+        console.error("GUEST SETTINGS UPDATE ERROR", error);
+        return guestError("No se pudo guardar la configuración", 500);
+    } finally {
+        connection.release();
+    }
     return Response.json({ ok: true });
 }

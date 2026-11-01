@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test:ai-chat": "node tests/ai-chat-lodging-conversation.test.mjs && node tests/ai-chat-lodging-presenter.test.mjs && node tests/ai-chat-capabilities-and-prefill.test.mjs"
   },
   "dependencies": {
     "@fullcalendar/core": "^6.1.14",

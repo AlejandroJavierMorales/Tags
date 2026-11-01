@@ -14,6 +14,7 @@ export async function GET(req) {
     const app = apps[0];
     if (!app) return guestError("Mi Estadía todavía no fue creada", 404, "GUEST_APP_NOT_FOUND");
     const [units] = await db.query("SELECT * FROM tags_guest_units WHERE guest_app_id=? ORDER BY sort_order,name", [app.id]);
+    const [unitBlocks] = await db.query("SELECT b.*,u.name unit_name FROM tags_guest_unit_blocks b LEFT JOIN tags_guest_units u ON u.id=b.unit_id WHERE b.guest_app_id=? AND b.status='active' ORDER BY b.starts_on,b.id", [app.id]);
     const [guests] = await db.query("SELECT * FROM tags_guest_people WHERE business_id=? ORDER BY name LIMIT 500", [businessId]);
     const [stays] = await db.query(`SELECT s.*,u.name unit_name,g.name guest_name,g.email guest_email,g.phone guest_phone,g.document_number,
         (SELECT pc.status FROM tags_guest_precheckins pc WHERE pc.stay_id=s.id LIMIT 1) precheckin_status,
@@ -40,5 +41,6 @@ export async function GET(req) {
     const [portals] = await db.query("SELECT theme_code FROM tags_portals WHERE business_id=? LIMIT 1", [businessId]);
     const canSeeStays = access.isOwner || access.permissions?.includes("guest.stays.view");
     const canManageSettings = access.isOwner || access.permissions?.includes("guest.settings.manage");
-    return Response.json({ ok: true, access: { isOwner: access.isOwner, isStaff: access.isStaff, permissions: access.permissions || [] }, app: { ...app, settings: canManageSettings ? parseGuestJson(app.settings_json) : {}, styles: canManageSettings ? parseGuestJson(app.styles_json) : {} }, units: canSeeStays || canManageSettings ? units : [], guests: canSeeStays ? guests : [], stays: canSeeStays ? staysWithCommunications : [], wifiNetworks: canManageSettings ? wifiNetworks : [], themes: canManageSettings ? themes.map(item => ({ ...item, css_tokens: parseGuestJson(item.css_tokens) })) : [], portalThemeCode: canManageSettings ? portals[0]?.theme_code || null : null });
+    const normalizedUnits = units.map(item => ({ ...item, features: parseGuestJson(item.features_json) }));
+    return Response.json({ ok: true, access: { isOwner: access.isOwner, isStaff: access.isStaff, permissions: access.permissions || [] }, app: { ...app, settings: canManageSettings ? parseGuestJson(app.settings_json) : {}, styles: canManageSettings ? parseGuestJson(app.styles_json) : {} }, units: canSeeStays || canManageSettings ? normalizedUnits : [], unitBlocks: canSeeStays || canManageSettings ? unitBlocks : [], guests: canSeeStays ? guests : [], stays: canSeeStays ? staysWithCommunications : [], wifiNetworks: canManageSettings ? wifiNetworks : [], themes: canManageSettings ? themes.map(item => ({ ...item, css_tokens: parseGuestJson(item.css_tokens) })) : [], portalThemeCode: canManageSettings ? portals[0]?.theme_code || null : null });
 }

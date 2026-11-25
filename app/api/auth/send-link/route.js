@@ -41,16 +41,6 @@ export async function POST(req) {
         return Response.json({ error: "Cliente no encontrado" }, { status: 404 });
     }
 
-    const hasPaidDirectorySubscription = Number(business.directory_subscription_amount || 0) > 0
-        && ["active", "trial", "past_due"].includes(business.directory_subscription_status);
-
-    if (business.role !== "admin" && Number(business.is_free) === 1 && !hasPaidDirectorySubscription) {
-        return Response.json(
-            { error: "Tu ficha gratuita está publicada en el Directorio, pero el acceso al Panel de Control requiere contratar un plan pago." },
-            { status: 402 }
-        );
-    }
-
     const allowed = business.role === "admin"
         ? channel.isTags
         : await canBusinessAccessChannel({ businessId: business.id, channel });

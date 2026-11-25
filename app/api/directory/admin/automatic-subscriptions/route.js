@@ -1,6 +1,7 @@
 import { db } from "@/app/lib/tags-db";
 import { requireDirectoryAdmin, directoryAdminError } from "@/app/modules/directory/lib/requireDirectoryAdmin";
-import { directoryMercadoPagoBaseUrl, ensureDirectoryMercadoPagoSubscription, getDirectoryMercadoPagoPreapproval } from "@/app/modules/directory/lib/directoryMercadoPago";
+import { directoryMercadoPagoBaseUrl, ensureDirectoryMercadoPagoSubscription } from "@/app/modules/directory/lib/directoryMercadoPago";
+import { reconcileMercadoPagoSubscription } from "@/app/modules/subscriptions/lib/subscriptionMercadoPagoReconciliation";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -38,9 +39,8 @@ export async function POST(req) {
     }
     const [[subscription]] = await db.query("SELECT external_subscription_id FROM tags_subscriptions WHERE id=? AND payment_provider='mercadopago' LIMIT 1",[subscriptionId]);
     if (!subscription?.external_subscription_id) return Response.json({error:"La suscripción todavía no tiene identificador de Mercado Pago"},{status:409});
-    const resource = await getDirectoryMercadoPagoPreapproval(subscription.external_subscription_id);
-    await db.query("UPDATE tags_subscriptions SET provider_status=?,provider_init_point=COALESCE(?,provider_init_point),provider_next_payment_at=?,provider_last_synced_at=NOW(),provider_payload=?,auto_renew=?,updated_at=NOW() WHERE id=?",[resource.status || null,resource.init_point || null,resource.next_payment_date ? new Date(resource.next_payment_date) : null,JSON.stringify(resource),["authorized","pending"].includes(resource.status) ? 1 : 0,subscriptionId]);
-    return Response.json({ok:true,status:resource.status});
+    const result = await reconcileMercadoPagoSubscription(subscriptionId);
+    return Response.json({ok:true,status:result.status,paymentsProcessed:result.paymentsProcessed});
   } catch(error) {
     console.error("DIRECTORY AUTOMATIC SUBSCRIPTION ACTION ERROR",error);
     return Response.json({error:error.message || "No se pudo sincronizar con Mercado Pago"},{status:error.status || 500});

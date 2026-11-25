@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FaArrowLeft, FaBed, FaCalendarCheck, FaCalendarDays, FaComments, FaDoorOpen, FaEye, FaGear, FaGift, FaHotel, FaLocationDot, FaMoneyBillWave, FaShop, FaStar, FaUsers, FaUtensils, FaUserCheck } from "react-icons/fa6";
+import { FaArrowLeft, FaBed, FaCalendarCheck, FaCalendarDays, FaComments, FaDoorOpen, FaEye, FaFileInvoiceDollar, FaGear, FaGift, FaHotel, FaLocationDot, FaMoneyBillWave, FaShop, FaStar, FaUsers, FaUtensils, FaUserCheck } from "react-icons/fa6";
 import TagsSpinner from "@/app/components/TagsSpinner";
 import showAlert from "@/app/components/showAlert";
 import confirmPublicPageStatusChange from "@/app/lib/confirmPublicPageStatusChange";
@@ -27,6 +27,7 @@ import GuestExperienceUnitsManager from "./GuestExperienceUnitsManager";
 import GuestExperienceBookingRequests from "./GuestExperienceBookingRequests";
 import GuestExperienceRateCalendar from "./GuestExperienceRateCalendar";
 import GuestExperiencePromotionsManager from "./GuestExperiencePromotionsManager";
+import GuestExperienceQuotesPanel from "./GuestExperienceQuotesPanel";
 import PushNotificationButton from "@/app/modules/notifications/components/PushNotificationButton";
 import "./GuestExperienceAdminPage.css";
 import "./GuestExperienceAdminHeader.css";
@@ -143,7 +144,26 @@ export default function GuestExperienceAdminPage({
     }
   }
   async function createReservation(form) {
-    const created = await request("/api/guest-experience/admin/stays", "POST", form, null);
+    const hasPayment = form.registerInitialPayment && Number(form.initialPaymentAmount || 0) > 0;
+    if (!hasPayment) {
+      const createdRequest = await request("/api/guest-experience/admin/booking-requests", "POST", form, null);
+      if (!createdRequest) return false;
+      const previewResponse = await fetch("/api/guest-experience/admin/booking-requests/notify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ businessId, guestAppId: data.app.id, requestId: createdRequest.requestId, notifyCustomer: true, previewOnly: true }) });
+      const preview = await previewResponse.json().catch(() => ({}));
+      if (!previewResponse.ok) {
+        await showAlert({ title: "Reserva pendiente registrada", text: preview.error || "No se pudo preparar el aviso al cliente.", icon: "warning" });
+        return true;
+      }
+      const send = await showAlert({ title: "Revisá el aviso antes de enviarlo", text: `<div style="margin-bottom:12px;text-align:left;font-size:13px"><strong>Destinatario:</strong> ${String(form.email).replace(/[<>&]/g, "")}<br><strong>Asunto:</strong> ${preview.subject}</div>${preview.html}`, icon: "info", isHtml: true, showCancelButton: true, confirmButtonText: "Confirmar y enviar", cancelButtonText: "No enviar", width: "760px" });
+      if (send) {
+        const sentResponse = await fetch("/api/guest-experience/admin/booking-requests/notify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ businessId, guestAppId: data.app.id, requestId: createdRequest.requestId, notifyCustomer: true }) });
+        const sent = await sentResponse.json().catch(() => ({}));
+        await showAlert({ title: sentResponse.ok ? "Reserva pendiente de pago" : "Reserva registrada sin aviso", text: sentResponse.ok ? "Se enviaron el detalle, el plazo y los datos para confirmar con el pago." : sent.error || "No se pudo enviar el email.", icon: sentResponse.ok ? "success" : "warning" });
+      } else await showAlert({ title: "Reserva pendiente registrada", text: "La unidad quedó retenida, pero no se envió el aviso al cliente.", icon: "info" });
+      await load(true);
+      return true;
+    }
+    const created = await request("/api/guest-experience/admin/stays", "POST", { ...form, initialPaymentAmount: Number(form.initialPaymentAmount) }, null);
     if (!created) return false;
     const unit = data.units.find(item => Number(item.id) === Number(form.unitId));
     const nights = Math.max(1, Math.round((new Date(`${form.endsAt}T12:00:00`) - new Date(`${form.startsAt}T12:00:00`)) / 86400000));
@@ -292,6 +312,7 @@ export default function GuestExperienceAdminPage({
   const adminGroups = [
     { key:"stays",label:"Reservas / Estadías",icon:FaCalendarDays,items:[
       can("guest.stays.view")&&{key:"reservations",label:"Grilla de ocupación",icon:FaCalendarDays},
+      can("guest.stays.view")&&{key:"quotes",label:"Presupuestos",icon:FaFileInvoiceDollar},
       can("guest.stays.view")&&{key:"booking_requests",label:"Solicitudes online",icon:FaCalendarCheck},
       can("guest.stays.view")&&{key:"rebookings",label:"Reprogramaciones",icon:FaCalendarCheck},
       can("guest.stays.view")&&{key:"arrivals",label:"Ingresos",icon:FaDoorOpen},
@@ -312,6 +333,7 @@ export default function GuestExperienceAdminPage({
     ].filter(Boolean)},
   ].filter(group=>group&&group.items.length);
   const adminNavigation = <GuestExperienceAdminNavigation groups={adminGroups} active={tab} onChange={setTab}/>;
+  if (!missing && tab === "quotes") return <main className="tags_guest_admin"><header className="tags_guest_admin_hero"><div className="tags_guest_admin_identity"><span className="tags_guest_admin_icon"><FaFileInvoiceDollar /></span><div><small>RESERVAS</small><h1>Presupuestos</h1><p>Propuestas comerciales, envíos y conversión a reservas</p></div></div></header>{adminNavigation}<GuestExperienceQuotesPanel businessId={businessId} data={data} onConvert={quote=>{sessionStorage.setItem("tags_guest_quote_to_reservation",JSON.stringify(quote));setTab("reservations")}}/></main>;
   if (!missing && tab === "booking_requests") return <main className="tags_guest_admin"><header className="tags_guest_admin_hero"><div className="tags_guest_admin_identity"><span className="tags_guest_admin_icon"><FaCalendarCheck /></span><div><small>MOTOR DE RESERVAS</small><h1>Solicitudes online</h1><p>Consultas y retenciones recibidas desde la página pública</p></div></div></header>{adminNavigation}<GuestExperienceBookingRequests businessId={businessId} guestAppId={data.app.id} app={data.app} onDataChanged={()=>load(true)}/></main>;
   if (!missing && tab === "rates" && data.access?.isOwner) return <main className="tags_guest_admin"><header className="tags_guest_admin_hero"><div className="tags_guest_admin_identity"><span className="tags_guest_admin_icon"><FaCalendarDays /></span><div><small>MOTOR DE RESERVAS</small><h1>Tarifas y disponibilidad</h1><p>Calendario de venta, precios, restricciones y promociones</p></div></div></header>{adminNavigation}<GuestExperienceRateCalendar businessId={businessId} data={data}/><GuestExperiencePromotionsManager businessId={businessId} guestAppId={data.app.id} units={data.units||[]}/></main>;
   if (!missing && tab === "commerce_resto") return <main className="tags_guest_admin"><header className="tags_guest_admin_hero"><div className="tags_guest_admin_identity"><span className="tags_guest_admin_icon"><FaUtensils /></span><div><small>GASTRONOMÍA</small><h1>{data.app.name}</h1><p>Configuración de instancia de Resto</p></div></div></header>{adminNavigation}<GuestExperienceCommerceManager businessId={businessId} data={data} moduleType="resto" /></main>;
@@ -337,7 +359,7 @@ export default function GuestExperienceAdminPage({
 </header>
 {adminNavigation}
 <GuestExperienceCheckinPanel businessId={businessId} data={data} busy={busy} onSaved={saveCheckin} onDataChanged={()=>load(true)} />{busy && <TagsSpinner size={120} logoSize={66} borderSize={5} background="rgba(255,255,255,.72)" />}</main>;
-  if (!missing && tab === "rebookings") return <main className="tags_guest_admin"><header className="tags_guest_admin_hero"><div className="tags_guest_admin_identity"><span className="tags_guest_admin_icon"><FaCalendarCheck /></span><div><small>RESERVAS</small><h1>Reprogramaciones</h1><p>Reservas no presentadas que todavía necesitan una nueva fecha</p></div></div><div className="tags_guest_admin_hero_actions"><button type="button" onClick={()=>setTab("reservations")}><FaArrowLeft /> Volver a la grilla</button></div></header>{adminNavigation}<GuestExperienceReservationsPanel rebookingsOnly canManage={can("guest.stays.manage")} canCheckin={can("guest.checkin.manage")} data={data} busy={busy} onCreate={createReservation} onUpdate={updateReservation} onDelete={deleteReservation} onNoShow={markNoShow} onInvite={invite} onDeleteCommunication={deleteCommunication} onCheckout={checkoutReservation} onDataChanged={()=>load(true)} /></main>;
+  if (!missing && tab === "rebookings") return <main className="tags_guest_admin"><header className="tags_guest_admin_hero"><div className="tags_guest_admin_identity"><span className="tags_guest_admin_icon"><FaCalendarCheck /></span><div><small>RESERVAS</small><h1>Reprogramaciones</h1><p>Reservas no presentadas que todavía necesitan una nueva fecha</p></div></div><div className="tags_guest_admin_hero_actions"><button type="button" onClick={()=>setTab("reservations")}><FaArrowLeft /> Volver a la grilla</button></div></header>{adminNavigation}<GuestExperienceReservationsPanel businessId={businessId} rebookingsOnly canManage={can("guest.stays.manage")} canCheckin={can("guest.checkin.manage")} data={data} busy={busy} onCreate={createReservation} onUpdate={updateReservation} onDelete={deleteReservation} onNoShow={markNoShow} onInvite={invite} onDeleteCommunication={deleteCommunication} onCheckout={checkoutReservation} onDataChanged={()=>load(true)} /></main>;
   if (!missing && tab === "active") return <main className="tags_guest_admin">
 <header className="tags_guest_admin_hero">
 <div className="tags_guest_admin_identity">
@@ -369,7 +391,7 @@ export default function GuestExperienceAdminPage({
 </section>
 </main>;
   if (!missing && tab === "arrivals") return <main className="tags_guest_admin"><header className="tags_guest_admin_hero"><div className="tags_guest_admin_identity"><span className="tags_guest_admin_icon"><FaHotel /></span><div><small>RECEPCIÓN</small><h1>{data.app.name}</h1><p>Ingresos previstos</p></div></div></header>{adminNavigation}<GuestExperienceArrivalsPanel data={data} onBack={() => setTab("reservations")} onReminder={item=>invite(item,"reminder")} onCheckin={stayId => { sessionStorage.setItem("tags_guest_checkin_stay", String(stayId)); setTab("checkin"); }} onViewDetail={stayId=>{sessionStorage.setItem("tags_guest_open_stay",String(stayId));setTab("reservations")}} /></main>;
-  if (!missing && tab === "finance") return <main className="tags_guest_admin"><header className="tags_guest_admin_hero"><div className="tags_guest_admin_identity"><span className="tags_guest_admin_icon"><FaHotel /></span><div><small>ADMINISTRACIÓN</small><h1>{data.app.name}</h1><p>Estadías, ventas y pagos</p></div></div></header>{adminNavigation}<GuestExperienceFinanceReport businessId={businessId} data={data} onBack={() => setTab("reservations")} onManage={financeManage} />{externalStayId&&<GuestExperienceReservationsPanel canManage={can("guest.stays.manage")} canCheckin={can("guest.checkin.manage")} overlayOnly stayId={externalStayId} onClose={()=>setExternalStayId(null)} data={data} busy={busy} onCreate={createReservation} onUpdate={updateReservation} onDelete={deleteReservation} onNoShow={markNoShow} onInvite={invite} onDeleteCommunication={deleteCommunication} onCheckout={checkoutReservation} onDataChanged={()=>load(true)}/>}</main>;
+  if (!missing && tab === "finance") return <main className="tags_guest_admin"><header className="tags_guest_admin_hero"><div className="tags_guest_admin_identity"><span className="tags_guest_admin_icon"><FaHotel /></span><div><small>ADMINISTRACIÓN</small><h1>{data.app.name}</h1><p>Estadías, ventas y pagos</p></div></div></header>{adminNavigation}<GuestExperienceFinanceReport businessId={businessId} data={data} onBack={() => setTab("reservations")} onManage={financeManage} /><GuestExperienceBookingRequests businessId={businessId} guestAppId={data.app.id} app={data.app} onDataChanged={()=>load(true)}/>{externalStayId&&<GuestExperienceReservationsPanel businessId={businessId} canManage={can("guest.stays.manage")} canCheckin={can("guest.checkin.manage")} overlayOnly stayId={externalStayId} onClose={()=>setExternalStayId(null)} data={data} busy={busy} onCreate={createReservation} onUpdate={updateReservation} onDelete={deleteReservation} onNoShow={markNoShow} onInvite={invite} onDeleteCommunication={deleteCommunication} onCheckout={checkoutReservation} onDataChanged={()=>load(true)}/>}</main>;
   if (missing) return <main className="tags_guest_admin">
 <header className="tags_guest_admin_hero">
 <div className="tags_guest_admin_identity">
@@ -421,7 +443,7 @@ export default function GuestExperienceAdminPage({
 <FaEye /> Ver página</a>
 </div>
 </header>
-{adminNavigation}{data.access?.isStaff&&tab==="reservations"&&<PushNotificationButton businessId={businessId}/>} {tab === "reservations" && <GuestExperienceReservationsPanel canManage={can("guest.stays.manage")} canCheckin={can("guest.checkin.manage")} data={data} busy={busy} onCreate={createReservation} onUpdate={updateReservation} onDelete={deleteReservation} onNoShow={markNoShow} onInvite={invite} onDeleteCommunication={deleteCommunication} onCheckout={checkoutReservation} onDataChanged={()=>load(true)} />} {tab === "checkin" && <section className="tags_guest_admin_panel">
+{adminNavigation}{data.access?.isStaff&&tab==="reservations"&&<PushNotificationButton businessId={businessId}/>} {tab === "reservations" && <GuestExperienceReservationsPanel businessId={businessId} onOpenQuotes={()=>setTab("quotes")} canManage={can("guest.stays.manage")} canCheckin={can("guest.checkin.manage")} data={data} busy={busy} onCreate={createReservation} onUpdate={updateReservation} onDelete={deleteReservation} onNoShow={markNoShow} onInvite={invite} onDeleteCommunication={deleteCommunication} onCheckout={checkoutReservation} onDataChanged={()=>load(true)} />} {tab === "checkin" && <section className="tags_guest_admin_panel">
 <h2>Pre-check-in y check-in</h2>
 <p>Las reservas pendientes aparecerán aquí para completar acompañantes, vehículo y confirmar el ingreso.</p>
 </section>}{tab === "active" && <section className="tags_guest_admin_panel">

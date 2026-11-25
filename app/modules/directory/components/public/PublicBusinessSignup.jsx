@@ -72,6 +72,7 @@ export default function PublicBusinessSignup() {
     event.preventDefault();
     setError("");
     const nextErrors = {};
+    const effectivePlan = selectedPlan || plans[0] || null;
     if (!form.name.trim()) nextErrors.name = "Ingresá el nombre del negocio.";
     if (!/^\S+@\S+\.\S+$/.test(form.email.trim())) nextErrors.email = "Ingresá un email válido.";
     const normalizedWhatsapp = normalizeArgentinaWhatsapp(form.whatsapp);
@@ -79,13 +80,14 @@ export default function PublicBusinessSignup() {
     if (form.whatsappGroupOptIn && !normalizedWhatsapp) nextErrors.whatsapp = "Para formar parte del grupo, ingresá un WhatsApp argentino válido.";
     if (!form.placeId) nextErrors.placeId = "Seleccioná una localidad.";
     if (!form.taxonomyId) nextErrors.taxonomyId = "Seleccioná el último nivel de un rubro.";
+    if (!effectivePlan) nextErrors.payment = mode === "free" ? "La modalidad gratuita no tiene un plan público configurado. Contactá a la plataforma." : "No hay un plan pago disponible para seleccionar.";
     if (mode === "deferred" && (!form.planId || !selectedPayment)) nextErrors.payment = "Seleccioná un plan y una modalidad de pago.";
-    if (Object.keys(nextErrors).length) { setFieldErrors(nextErrors); return; }
+    if (Object.keys(nextErrors).length) { setFieldErrors(nextErrors); if (!effectivePlan) setError(nextErrors.payment); return; }
     setFieldErrors({});
     setBusy(true);
     try {
-      const submissionMode = Number(selectedPlan?.is_free) === 0 ? "deferred" : mode;
-      const response = await fetch("/api/directory/public/signup", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...form, mode: submissionMode }) });
+      const submissionMode = Number(effectivePlan?.is_free) === 0 ? "deferred" : mode;
+      const response = await fetch("/api/directory/public/signup", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...form, planId: String(effectivePlan.id), mode: submissionMode }) });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) { setFieldErrors(payload.fieldErrors || {}); throw new Error(payload.error || "No se pudo completar la inscripción."); }
       if (payload.checkoutUrl) { window.location.assign(payload.checkoutUrl); return; }
@@ -96,7 +98,7 @@ export default function PublicBusinessSignup() {
   const fieldClass = key => fieldErrors[key] ? "directory_signup_invalid" : "";
   const fieldMessage = key => fieldErrors[key] && <small className="directory_signup_field_error">{fieldErrors[key]}</small>;
 
-  if (result) return <div className="directory_signup_page"><section className="directory_signup_result"><FaCheck /><h1>{result.pendingPayment ? "Inscripción recibida" : "¡Tu negocio ya está publicado!"}</h1><p>{result.pendingPayment ? "Tu ficha y tu Web ya están activas durante 72 horas mientras aguardamos el pago." : "Tu ficha gratuita ya está publicada en el Directorio."}</p>{result.pendingPayment && (result.accessPath || result.accessLink) ? <a href={result.accessPath || result.accessLink}>Ingresar directamente a mi panel</a> : <p>La modalidad gratuita no incluye acceso al Panel de Control. Podés contratar un plan pago cuando quieras.</p>}</section>{platformWhatsapp && <a className="directory_signup_whatsapp_float" href={`https://wa.me/${platformWhatsapp}?text=${encodeURIComponent("Hola! Quiero Publicar Mi Negocio")}`} target="_blank" rel="noreferrer" aria-label="Consultar por WhatsApp"><FaWhatsapp /><small>¿Podemos ayudarte?</small></a>}</div>;
+  if (result) return <div className="directory_signup_page"><section className="directory_signup_result"><FaCheck /><h1>{result.pendingPayment ? "Inscripción recibida" : "¡Tu negocio ya está publicado!"}</h1><p>{result.pendingPayment ? "Tu ficha y tu Web ya están activas durante 72 horas mientras aguardamos el pago." : "Tu ficha gratuita ya está publicada en el Directorio."}</p>{(result.accessPath || result.accessLink) ? <a href={result.accessPath || result.accessLink}>Ingresar directamente a mi panel</a> : null}</section>{platformWhatsapp && <a className="directory_signup_whatsapp_float" href={`https://wa.me/${platformWhatsapp}?text=${encodeURIComponent("Hola! Quiero Publicar Mi Negocio")}`} target="_blank" rel="noreferrer" aria-label="Consultar por WhatsApp"><FaWhatsapp /><small>¿Podemos ayudarte?</small></a>}</div>;
 
   return <div className="directory_signup_page">
     <header className="directory_signup_header"><a href="/directorio"><FaArrowLeft /> Volver al Directorio</a><h1>Publicá tu negocio</h1><p>Hacé que tus clientes te encuentren, conozcan tus servicios y contacten con vos.</p></header>

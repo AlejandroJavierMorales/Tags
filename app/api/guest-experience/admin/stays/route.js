@@ -71,6 +71,12 @@ export async function POST(req) {
 
     if (!access.allowed) return guestAdminAccessResponse(access);
 
+    const initialPaymentAmount = Math.max(0, Number(body.initialPaymentAmount || 0));
+    if (initialPaymentAmount > 0) {
+        const paymentAccess = await getGuestAdminAccess({ businessId, guestAppId, permission: "guest.payments.register" });
+        if (!paymentAccess.allowed) return guestAdminAccessResponse(paymentAccess);
+    }
+
     if (!firstName || !lastName || !documentNumber || !email || !phone) return guestError("Nombre, apellido, DNI, teléfono y email del titular son obligatorios");
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return guestError("El email no tiene un formato válido");
@@ -99,6 +105,8 @@ export async function POST(req) {
 
         const nights = countLodgingNights(starts, ends), nightlyRate = Math.max(0, Number(body.nightlyRate || 0)), lodgingTotal = Number((nightlyRate * nights).toFixed(2));
 
+        if (initialPaymentAmount > 0 && lodgingTotal > 0 && initialPaymentAmount > lodgingTotal) { await connection.rollback(); return guestError("El pago inicial no puede superar el total de la estadía", 409); }
+
         const depositPercentage = Math.max(0, Math.min(100, Number(body.depositPercentage ?? settings.depositPercentage ?? 0))), depositRequired = Number((lodgingTotal * depositPercentage / 100).toFixed(2));
 
         const unit = await lockActiveGuestUnit(connection, { guestAppId, unitId });
@@ -116,6 +124,8 @@ export async function POST(req) {
  }
         const unitBlock = await findBlockingUnitBlock(connection, { guestAppId, unitId, startsAt: starts, endsAt: ends });
         if (unitBlock) { await connection.rollback(); return guestError(`La unidad está bloqueada en esas fechas${unitBlock.reason ? `: ${unitBlock.reason}` : ""}`, 409, "UNIT_BLOCKED"); }
+        const [holds] = await connection.query("SELECT id FROM tags_guest_booking_requests WHERE guest_app_id=? AND unit_id=? AND status IN ('held','pending_payment') AND hold_expires_at>NOW() AND starts_on<? AND ends_on>? LIMIT 1 FOR UPDATE", [guestAppId, unitId, ends, starts]);
+        if (holds.length) { await connection.rollback(); return guestError("La unidad está retenida por una reserva pendiente", 409, "UNIT_HELD"); }
         const [codes] = await connection.query("SELECT id FROM tags_guest_stays WHERE guest_app_id=? AND stay_code=? LIMIT 1 FOR UPDATE", [guestAppId, code]);
 
         if (codes.length) { await connection.rollback();
@@ -135,15 +145,32 @@ export async function POST(req) {
         }
         const [result] = await connection.query("INSERT INTO tags_guest_stays (guest_app_id,unit_id,primary_guest_id,stay_code,status,starts_at,ends_at,adults,children,nightly_rate,lodging_total,deposit_percentage,deposit_required_amount,arrival_notes,expected_arrival_text,internal_notes,created_by_id) VALUES (?,?,?,?,'reserved',?,?,?,?,?,?,?,?,?,?,?,?)", [guestAppId, unitId, guestId, code, starts, ends, guests.adults, guests.children, nightlyRate, lodgingTotal, depositPercentage, depositRequired, cleanGuestText(body.arrivalNotes, 2000) || null, cleanGuestText(body.expectedArrivalText, 120) || null, cleanGuestText(body.internalNotes, 2000) || null, access.session?.id || access.session?.userId || null]);
 
+        if (Number(body.quoteId || 0)) {
+            const actorId = access.session?.id || access.session?.userId || null;
+            const [linked] = await connection.query("UPDATE tags_guest_lodging_quotes SET status='consumed',consumed_at=NOW() WHERE id=? AND guest_app_id=? AND status='active'", [Number(body.quoteId), guestAppId]);
+            if (!linked.affectedRows) { await connection.rollback(); return guestError("El presupuesto ya fue convertido o no está vigente", 409); }
+            await connection.query("UPDATE tags_guest_stays SET lodging_quote_id=? WHERE id=?", [Number(body.quoteId), result.insertId]);
+            await connection.query("INSERT INTO tags_guest_lodging_quote_events(guest_app_id,quote_id,actor_type,actor_id,event_type,metadata_json) VALUES (?,?,'owner',?,'quote.converted_confirmed',?)", [guestAppId, Number(body.quoteId), actorId, JSON.stringify({ stayId: result.insertId })]);
+        }
         settings.reservationCodeCounter = nextCounter;
 
         await connection.query("UPDATE tags_guest_apps SET settings_json=?,updated_at=NOW() WHERE id=?", [JSON.stringify(settings), guestAppId]);
 
         await connection.query("INSERT INTO tags_guest_stay_people (stay_id,guest_id,role) VALUES (?,?,'primary')", [result.insertId, guestId]);
 
-        await connection.query("INSERT INTO tags_guest_accounts (guest_app_id,stay_id,currency,status) SELECT id,?,currency,'open' FROM tags_guest_apps WHERE id=?", [result.insertId, guestAppId]);
+        const [account] = await connection.query("INSERT INTO tags_guest_accounts (guest_app_id,stay_id,currency,status) SELECT id,?,currency,'open' FROM tags_guest_apps WHERE id=?", [result.insertId, guestAppId]);
 
         await connection.query("INSERT INTO tags_guest_account_entries (account_id,entry_type,source_type,source_id,idempotency_key,description,quantity,unit_amount,total_amount,currency,status,created_by_type,created_by_id) SELECT id,'charge','lodging',?,?,?, ?,?,?,?,'confirmed','owner',? FROM tags_guest_accounts WHERE stay_id=?", [String(result.insertId), `lodging:${result.insertId}`, `Reserva confirmada ${code} · total de alojamiento`, nights, nightlyRate, lodgingTotal, app.currency || "ARS", access.session?.id || access.session?.userId || null, result.insertId]);
+
+        if (initialPaymentAmount > 0) {
+            const paymentMethod = cleanGuestText(body.initialPaymentMethod, 40) || "transfer";
+            const paymentReference = cleanGuestText(body.initialPaymentReference, 190) || null;
+            const paymentNotes = cleanGuestText(body.initialPaymentNotes, 2000) || null;
+            const actorId = access.session?.id || access.session?.userId || null;
+            const [paymentEntry] = await connection.query("INSERT INTO tags_guest_account_entries (account_id,entry_type,source_type,idempotency_key,description,quantity,unit_amount,total_amount,currency,status,created_by_type,created_by_id) VALUES (?,'payment','manual',?,'Pago inicial de la reserva',1,?,? ,?,'confirmed','owner',?)", [account.insertId, `initial-payment:${result.insertId}`, initialPaymentAmount, -initialPaymentAmount, app.currency || "ARS", actorId]);
+            await connection.query("INSERT INTO tags_guest_payments (account_id,account_entry_id,payment_method,amount,currency,reference,notes,received_by_id) VALUES (?,?,?,?,?,?,?,?)", [account.insertId, paymentEntry.insertId, paymentMethod, initialPaymentAmount, app.currency || "ARS", paymentReference, paymentNotes, actorId]);
+            await connection.query("INSERT INTO tags_guest_audit_log (guest_app_id,stay_id,actor_type,actor_id,action,entity_type,entity_id,metadata_json) VALUES (?,?,'owner',?,'payment.recorded','account_entry',?,?)", [guestAppId, result.insertId, actorId, paymentEntry.insertId, JSON.stringify({ amount: initialPaymentAmount, method: paymentMethod, initial: true })]);
+        }
 
         await connection.query("INSERT INTO tags_guest_audit_log (guest_app_id,stay_id,actor_type,actor_id,action,entity_type,entity_id) VALUES (?,?,'owner',?,'reservation.created','reservation',?)", [guestAppId, result.insertId, access.session?.id || access.session?.userId || null, result.insertId]);
 
@@ -155,7 +182,7 @@ export async function POST(req) {
             catch (emailError) { console.error("GUEST RESERVATION ACCESS EMAIL ERROR:", emailError); accessEmail = { sent: false, reason: emailError.message }; }
         }
 
-        return Response.json({ ok: true, reservationId: result.insertId, stayCode: code, accessEmail }, { status: 201 });
+        return Response.json({ ok: true, reservationId: result.insertId, stayCode: code, paymentRecorded: initialPaymentAmount, accessEmail }, { status: 201 });
 
     } catch (error) {
         await connection.rollback();
@@ -191,6 +218,8 @@ const[rows]=await connection.query("SELECT primary_guest_id,status,stay_code FRO
 if(!rows[0]){await connection.rollback();
 return guestError("Reserva no encontrada",404)}if(rows[0].status===GUEST_STAY_STATUS.ACTIVE||rows[0].status===GUEST_STAY_STATUS.CHECKED_OUT){await connection.rollback();
 return guestError("Una reserva con check-in confirmado ya no puede modificarse",409)}
+const[currentGuests]=await connection.query("SELECT id,document_number FROM tags_guest_people WHERE id=? AND business_id=? LIMIT 1 FOR UPDATE",[rows[0].primary_guest_id,businessId]);
+if(!currentGuests[0]){await connection.rollback();return guestError("El titular actual de la reserva no existe",409)}
 const unit=await lockActiveGuestUnit(connection,{guestAppId,unitId});
 if(!unit){await connection.rollback();return guestError("Unidad inválida",404)}
 const settings=parseGuestJson(app.settings_json),guests=normalizeGuestCounts(body),capacity=validateUnitCapacity({unit,...guests,settings});
@@ -201,8 +230,27 @@ return guestError("La unidad ya está ocupada en ese período",409)}
 const unitBlock=await findBlockingUnitBlock(connection,{guestAppId,unitId,startsAt:starts,endsAt:ends});
 if(unitBlock){await connection.rollback();return guestError(`La unidad está bloqueada en esas fechas${unitBlock.reason?`: ${unitBlock.reason}`:""}`,409,"UNIT_BLOCKED")}
 const nights=countLodgingNights(starts,ends),nightlyRate=Math.max(0,Number(body.nightlyRate||0)),lodgingTotal=Number((nightlyRate*nights).toFixed(2)),depositPercentage=Math.max(0,Math.min(100,Number(body.depositPercentage||0))),depositRequired=Number((lodgingTotal*depositPercentage/100).toFixed(2));
-await connection.query("UPDATE tags_guest_people SET name=?,email=?,phone=?,document_type='DNI',document_number=? WHERE id=?",[`${firstName} ${lastName}`,email,phone,documentNumber,rows[0].primary_guest_id]);
-await connection.query("UPDATE tags_guest_stays SET unit_id=?,starts_at=?,ends_at=?,adults=?,children=?,nightly_rate=?,lodging_total=?,deposit_percentage=?,deposit_required_amount=?,arrival_notes=?,expected_arrival_text=?,internal_notes=?,status=IF(status='no_show_rebooking','reserved',status),updated_at=NOW() WHERE id=?",[unitId,starts,ends,guests.adults,guests.children,nightlyRate,lodgingTotal,depositPercentage,depositRequired,cleanGuestText(body.arrivalNotes,2000)||null,cleanGuestText(body.expectedArrivalText,120)||null,cleanGuestText(body.internalNotes,2000)||null,stayId]);
+const currentGuest=currentGuests[0];
+let primaryGuestId=Number(currentGuest.id);
+const holderChanged=String(currentGuest.document_number||"").trim()!==documentNumber;
+if(holderChanged){
+const[matchingGuests]=await connection.query("SELECT id FROM tags_guest_people WHERE business_id=? AND document_number=? LIMIT 1 FOR UPDATE",[businessId,documentNumber]);
+primaryGuestId=Number(matchingGuests[0]?.id||0);
+if(primaryGuestId){
+await connection.query("UPDATE tags_guest_people SET name=?,email=?,phone=?,document_type='DNI',updated_at=NOW() WHERE id=?",[`${firstName} ${lastName}`,email,phone,primaryGuestId]);
+}else{
+const[createdGuest]=await connection.query("INSERT INTO tags_guest_people (business_id,name,email,phone,document_type,document_number) VALUES (?,?,?,?, 'DNI',?)",[businessId,`${firstName} ${lastName}`,email,phone,documentNumber]);
+primaryGuestId=Number(createdGuest.insertId);
+}
+await connection.query("DELETE FROM tags_guest_stay_people WHERE stay_id=? AND role='primary'",[stayId]);
+await connection.query("INSERT INTO tags_guest_stay_people (stay_id,guest_id,role) VALUES (?,?,'primary') ON DUPLICATE KEY UPDATE role='primary'",[stayId,primaryGuestId]);
+await connection.query("UPDATE tags_guest_access_tokens SET revoked_at=NOW() WHERE stay_id=? AND guest_id=? AND revoked_at IS NULL",[stayId,currentGuest.id]);
+await connection.query("UPDATE tags_guest_sessions SET revoked_at=NOW() WHERE stay_id=? AND guest_id=? AND revoked_at IS NULL",[stayId,currentGuest.id]);
+await connection.query("INSERT INTO tags_guest_audit_log (guest_app_id,stay_id,actor_type,actor_id,action,entity_type,entity_id,metadata_json) VALUES (?,?,'owner',?,'reservation.primary_guest_changed','reservation',?,?)",[guestAppId,stayId,access.session?.id||access.session?.userId||null,stayId,JSON.stringify({previousGuestId:Number(currentGuest.id),primaryGuestId})]);
+}else{
+await connection.query("UPDATE tags_guest_people SET name=?,email=?,phone=?,document_type='DNI',document_number=?,updated_at=NOW() WHERE id=?",[`${firstName} ${lastName}`,email,phone,documentNumber,primaryGuestId]);
+}
+await connection.query("UPDATE tags_guest_stays SET unit_id=?,primary_guest_id=?,starts_at=?,ends_at=?,adults=?,children=?,nightly_rate=?,lodging_total=?,deposit_percentage=?,deposit_required_amount=?,arrival_notes=?,expected_arrival_text=?,internal_notes=?,status=IF(status='no_show_rebooking','reserved',status),updated_at=NOW() WHERE id=?",[unitId,primaryGuestId,starts,ends,guests.adults,guests.children,nightlyRate,lodgingTotal,depositPercentage,depositRequired,cleanGuestText(body.arrivalNotes,2000)||null,cleanGuestText(body.expectedArrivalText,120)||null,cleanGuestText(body.internalNotes,2000)||null,stayId]);
 const[accounts]=await connection.query("SELECT id FROM tags_guest_accounts WHERE stay_id=? LIMIT 1",[stayId]);
 if(accounts[0]){
 if(rows[0].status==='no_show_rebooking'){

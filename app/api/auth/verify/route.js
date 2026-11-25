@@ -116,6 +116,7 @@ export async function GET(req) {
                 b.plan_expires_at,
 
                 p.code,
+                p.is_free,
                 p.name AS plan_name,
                 p.description,
                 p.price,
@@ -283,7 +284,7 @@ export async function GET(req) {
                     e_events: `/dashboard/businesses/${business.id}/events-pro`,
                     directory: `/dashboard/businesses/${business.id}/directory`,
                     portal_public: `/dashboard/businesses/${business.id}/portal`,
-                }[business.panel_entry_key] || `/dashboard/businesses/${business.id}`));
+                }[Number(business.is_free) === 1 ? "directory" : business.panel_entry_key] || `/dashboard/businesses/${business.id}`));
 
 
         const baseUrl = getRequestBaseUrl(req);

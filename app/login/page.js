@@ -109,10 +109,10 @@ export default async function LoginPage({ searchParams }) {
     let panelEntryKey = parsed.panelEntryKey || "panel";
     try {
       const [entryRows] = await db.query(
-        "SELECT panel_entry_key FROM tags_businesses WHERE id=? LIMIT 1",
+        "SELECT b.panel_entry_key,p.is_free FROM tags_businesses b LEFT JOIN tags_plans p ON p.id=b.plan_id WHERE b.id=? LIMIT 1",
         [parsed.businessId]
       );
-      panelEntryKey = entryRows[0]?.panel_entry_key || "panel";
+      panelEntryKey = Number(entryRows[0]?.is_free) === 1 ? "directory" : (entryRows[0]?.panel_entry_key || "panel");
     } catch (error) {
       console.error("PANEL ENTRY LOGIN LOOKUP ERROR", error.message);
     }

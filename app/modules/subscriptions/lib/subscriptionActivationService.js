@@ -102,7 +102,7 @@ export async function markSubscriptionPaymentFailure({ subscriptionId, providerS
     [providerStatus, rawResponse ? JSON.stringify(rawResponse) : null, Number(subscriptionId)]
   );
   await db.query(
-    `INSERT INTO tags_subscription_audit_events (subscription_id,business_id,event_code,actor_type,idempotency_key,next_state_json,context_json) SELECT id,business_id,'payment.failed','provider',?,?,? FROM tags_subscriptions WHERE id=? ON DUPLICATE KEY UPDATE id=id`,
+    `INSERT INTO tags_subscription_audit_events (subscription_id,business_id,event_code,actor_type,idempotency_key,next_state_json,context_json) SELECT id,business_id,'payment.failed','provider',?,?,? FROM tags_subscriptions WHERE id=? ON DUPLICATE KEY UPDATE idempotency_key=VALUES(idempotency_key)`,
     [idempotencyKey, JSON.stringify({ providerStatus }), JSON.stringify(rawResponse || {}), Number(subscriptionId)]
   );
 }

@@ -4,6 +4,11 @@ import { getSubscriptionMercadoPagoPreapproval, searchSubscriptionMercadoPagoInv
 
 const invoiceDate = invoice => new Date(invoice?.debit_date || invoice?.date_created || invoice?.last_modified || 0);
 const paymentStatus = invoice => String(invoice?.payment?.status || invoice?.status || "pending");
+const addMonths = (value, months) => {
+  const date = new Date(value);
+  date.setMonth(date.getMonth() + Math.max(1, Number(months || 1)));
+  return date;
+};
 
 export async function inspectExistingMercadoPagoSubscription(preapprovalId) {
   const id = String(preapprovalId || "").trim();
@@ -30,19 +35,36 @@ export async function reconcileMercadoPagoSubscription(subscriptionId, { include
   const approved = invoices.filter(invoice => paymentStatus(invoice) === "approved" && invoice?.id).sort((a, b) => invoiceDate(a) - invoiceDate(b));
   const [[lastPayment]] = await db.query("SELECT paid_at FROM tags_subscription_payments WHERE subscription_id=? AND provider='mercadopago' AND status='approved' ORDER BY paid_at DESC,id DESC LIMIT 1", [subscription.id]);
   const cutoff = lastPayment?.paid_at ? new Date(lastPayment.paid_at) : null;
-  let pending = cutoff ? approved.filter(invoice => invoiceDate(invoice) > cutoff) : (includeLatestWhenEmpty ? approved.slice(-1) : []);
-  const [recorded] = pending.length ? await db.query(`SELECT provider_invoice_id FROM tags_subscription_payments WHERE provider='mercadopago' AND provider_invoice_id IN (${pending.map(() => "?").join(",")})`, pending.map(invoice => String(invoice.id))) : [[]];
-  const recordedIds = new Set(recorded.map(item => String(item.provider_invoice_id)));
-  pending = pending.filter(invoice => !recordedIds.has(String(invoice.id)));
+  let pending = cutoff ? approved.filter(invoice => invoiceDate(invoice) >= cutoff) : (includeLatestWhenEmpty ? approved.slice(-1) : []);
+  const [recorded] = pending.length ? await db.query(`
+    SELECT pay.provider_invoice_id,pay.notes,
+           EXISTS(
+             SELECT 1 FROM tags_subscription_audit_events event
+              WHERE event.idempotency_key=CONCAT('mercadopago:duplicate:',pay.provider_invoice_id)
+           ) duplicate_audited
+      FROM tags_subscription_payments pay
+     WHERE pay.provider='mercadopago'
+       AND pay.provider_invoice_id IN (${pending.map(() => "?").join(",")})
+  `, pending.map(invoice => String(invoice.id))) : [[]];
+  const recordedByInvoice = new Map(recorded.map(item => [String(item.provider_invoice_id), item]));
+  pending = pending.filter(invoice => {
+    const payment = recordedByInvoice.get(String(invoice.id));
+    if (!payment) return true;
+    return String(payment.notes || "").startsWith("Cobro automático duplicado") && Number(payment.duplicate_audited || 0) === 0;
+  });
   const processed = [];
   for (const invoice of pending) {
     const invoicePaidAt = invoiceDate(invoice);
+    const providerNextPaymentAt = resource.next_payment_date ? new Date(resource.next_payment_date) : null;
+    const automaticPeriodEnd = providerNextPaymentAt && providerNextPaymentAt > invoicePaidAt
+      ? providerNextPaymentAt
+      : addMonths(invoicePaidAt, resource.auto_recurring?.frequency || 1);
     const [[manualCoverage]] = await db.query(
       `SELECT id,period_start,period_end FROM tags_subscription_payments
        WHERE subscription_id=? AND status='approved' AND provider<>'mercadopago'
-         AND period_start IS NOT NULL AND period_end IS NOT NULL AND ?>=period_start AND ?<period_end
+         AND period_start IS NOT NULL AND period_end IS NOT NULL AND ?>=period_start AND ?<=period_end
        ORDER BY paid_at DESC,id DESC LIMIT 1`,
-      [subscription.id, invoicePaidAt, invoicePaidAt]
+      [subscription.id, invoicePaidAt, automaticPeriodEnd]
     );
     if (manualCoverage) {
       const [duplicatePayment] = await db.query(
@@ -56,7 +78,7 @@ export async function reconcileMercadoPagoSubscription(subscriptionId, { include
       await db.query(
         `INSERT INTO tags_subscription_audit_events (subscription_id,business_id,event_code,actor_type,idempotency_key,next_state_json,context_json)
          SELECT id,business_id,'payment.duplicate_detected','provider',?,?,? FROM tags_subscriptions WHERE id=?
-         ON DUPLICATE KEY UPDATE id=id`,
+         ON DUPLICATE KEY UPDATE idempotency_key=VALUES(idempotency_key)`,
         [`mercadopago:duplicate:${invoice.id}`, JSON.stringify({ paymentId, manualPaymentId: Number(manualCoverage.id) }), JSON.stringify({ providerInvoiceId: String(invoice.id), periodStart: manualCoverage.period_start, periodEnd: manualCoverage.period_end }), subscription.id]
       );
       processed.push(paymentId);

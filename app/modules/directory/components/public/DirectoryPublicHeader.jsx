@@ -1,4 +1,4 @@
-import { FaAward, FaBars, FaBriefcase, FaCircleInfo, FaGaugeHigh, FaHouse, FaMagnifyingGlass, FaRightFromBracket, FaRightToBracket, FaUser, FaXmark } from "react-icons/fa6";
+import { FaAward, FaBars, FaBriefcase, FaCircleInfo, FaGaugeHigh, FaHouse, FaMagnifyingGlass, FaMapLocationDot, FaRightFromBracket, FaRightToBracket, FaRoute, FaStore, FaUser, FaWandMagicSparkles, FaXmark } from "react-icons/fa6";
 import Link from "next/link";
 import Image from "next/image";
 import { cookies } from "next/headers";
@@ -19,7 +19,7 @@ function parseBrand(value) {
   try { return JSON.parse(value); } catch { return {}; }
 }
 
-export default async function DirectoryPublicHeader({ site, query = "", compact = true, showSearch = true }) {
+export default async function DirectoryPublicHeader({ site, query = "", compact = true, showSearch = true, territorialNavigation = false }) {
   const cookieStore = cookies();
   const sessionValue = cookieStore.get("tags_session")?.value || "";
   const sessionSignature = cookieStore.get("tags_session_sig")?.value || "";
@@ -77,11 +77,19 @@ export default async function DirectoryPublicHeader({ site, query = "", compact 
           {!isRuta100Cordoba && <span>{identitySlogan}</span>}
         </Link>
         <nav className="tags_directory_desktop_nav" aria-label="Navegación principal">
-          <Link href="/directorio"><FaHouse /> Inicio</Link>
-          <Link href="/experiencias-digitales"><FaCircleInfo /> Experiencias digitales</Link>
-          <Link href="/que-ofrecemos"><FaBriefcase /> Herramientas</Link>
-          <Link href="/directorio#rubros"><FaMagnifyingGlass /> Explorar</Link>
-          <Link href="/programas-de-fidelizacion"><FaAward /> Beneficios y Recompensas</Link>
+          {territorialNavigation && isRuta100Cordoba ? <>
+            <Link href="/directorio"><FaHouse /> Inicio</Link>
+            <Link href="/recorrido"><FaRoute /> Recorrido</Link>
+            <Link href="/experiencias"><FaWandMagicSparkles /> Experiencias</Link>
+            <Link href="/mapa"><FaMapLocationDot /> Mapa</Link>
+            <Link href="/directorio"><FaStore /> Prestadores</Link>
+          </> : <>
+            <Link href="/directorio"><FaHouse /> Inicio</Link>
+            <Link href="/experiencias-digitales"><FaCircleInfo /> Experiencias digitales</Link>
+            <Link href="/que-ofrecemos"><FaBriefcase /> Herramientas</Link>
+            <Link href="/directorio#rubros"><FaMagnifyingGlass /> Explorar</Link>
+            <Link href="/programas-de-fidelizacion"><FaAward /> Beneficios y Recompensas</Link>
+          </>}
           {destinationAssistant && <DestinationAssistantMenuButton label={isCalamuchitar ? "Muchi - Asistente Virtual" : destinationAssistant.menuLabel} href={isCalamuchitar ? "https://muchi.calamuchita.ar" : ""} />}
           <Link href="/publicar-mi-negocio" className="is_publish"><FaBriefcase /> Publicar mi negocio</Link>
           {personalUser ? <><Link href="/mi-cuenta" className="is_login"><FaUser /> Mi cuenta</Link><a href="/logout" className="is_logout"><FaRightFromBracket /> Cerrar sesión</a></> : authenticated ? <><a href={panelHref} className="is_login"><FaGaugeHigh /> Mi Panel</a><a href="/logout" className="is_logout"><FaRightFromBracket /> Cerrar sesión</a></> : <Link href="/login?choose=1" className="is_login"><FaRightToBracket /> Ingresar</Link>}

@@ -117,6 +117,7 @@ export default async function Page({ params }) {
             b.plan_expires_at,
 
             p.id AS plan_id,
+            p.is_free AS plan_is_free,
             p.code AS plan_code,
             p.name AS plan_name,
             p.description,
@@ -152,6 +153,10 @@ export default async function Page({ params }) {
     if (!business) {
 
         return redirect("/login");
+    }
+
+    if (Number(business.plan_is_free) === 1) {
+        return redirect(`/dashboard/businesses/${id}/directory`);
     }
 
     const businessStatus = {

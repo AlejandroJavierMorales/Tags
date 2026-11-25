@@ -5,8 +5,10 @@ import TagsSpinner from "@/app/components/TagsSpinner";
 import showAlert from "@/app/components/showAlert";
 import "./GuestExperienceAccountPanel.css";
 
-const EMPTY = { amount: "", concept: "Seña de reserva", paymentMethod: "cash", reference: "" };
+const EMPTY = { amount: "", concept: "Seña de reserva", paymentMethod: "cash", reference: "", notes: "" };
 const communicationLabel = code => code === "arrival_reminder_24h" ? "Recordatorio de ingreso · 24 horas" : code === "arrival_reminder" ? "Recordatorio de ingreso · 48 horas" : "Acceso a Mi Estadía";
+const paymentMethodLabel = value => ({ cash: "Efectivo", transfer: "Transferencia", debit: "Débito", credit: "Crédito", other: "Otro" }[value] || value || "No informado");
+const paymentDate = item => item.payment_received_at || item.occurred_at || item.created_at;
 
 export default function GuestExperienceAccountPanel({ businessId, guestAppId, stayId, onChanged }) {
     const [data, setData] = useState(null);
@@ -25,11 +27,7 @@ export default function GuestExperienceAccountPanel({ businessId, guestAppId, st
         event.preventDefault();
         setBusy(true);
         try {
-            const response = await fetch("/api/guest-experience/admin/account", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ businessId, guestAppId, stayId, ...form })
-            });
+            const response = await fetch("/api/guest-experience/admin/account", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ businessId, guestAppId, stayId, ...form }) });
             const payload = await response.json();
             if (!response.ok) return showAlert({ title: "No se pudo registrar", text: payload.error, icon: "error" });
             setForm(EMPTY);
@@ -53,10 +51,14 @@ export default function GuestExperienceAccountPanel({ businessId, guestAppId, st
             <label>Monto<input required type="number" min="0.01" step="0.01" value={form.amount} onChange={event => setForm({ ...form, amount: event.target.value })} /></label>
             <label>Concepto<input required value={form.concept} onChange={event => setForm({ ...form, concept: event.target.value })} /></label>
             <label>Medio<select value={form.paymentMethod} onChange={event => setForm({ ...form, paymentMethod: event.target.value })}><option value="cash">Efectivo</option><option value="transfer">Transferencia</option><option value="debit">Débito</option><option value="credit">Crédito</option><option value="other">Otro</option></select></label>
-            <label>Referencia<input value={form.reference} onChange={event => setForm({ ...form, reference: event.target.value })} /></label>
+            <label>Referencia<input placeholder="Comprobante u operación" value={form.reference} onChange={event => setForm({ ...form, reference: event.target.value })} /></label>
+            <label className="tags_guest_account_notes">Detalle / cuenta de destino<input placeholder="Ej. Transferido a cuenta Banco..." value={form.notes} onChange={event => setForm({ ...form, notes: event.target.value })} /></label>
             <button disabled={busy}>Imputar pago</button>
         </form>
-        <div className="tags_guest_account_entries">{data.entries.map(item => <div key={item.id}><span>{item.description}</span><strong className={Number(item.total_amount) < 0 ? "payment" : ""}>${Number(item.total_amount).toLocaleString("es-AR")}</strong></div>)}</div>
+        <div className="tags_guest_account_entries">{data.entries.map(item => <article key={item.id} className={item.entry_type === "payment" ? "is_payment" : ""}>
+            <div className="tags_guest_account_entry_main"><div><strong>{item.description}</strong>{item.entry_type === "payment" && <span>{paymentMethodLabel(item.payment_method)}</span>}</div><strong className={Number(item.total_amount) < 0 ? "payment" : ""}>${Math.abs(Number(item.total_amount)).toLocaleString("es-AR")}</strong></div>
+            <div className="tags_guest_account_entry_detail"><span><b>Fecha:</b> {new Date(paymentDate(item)).toLocaleString("es-AR")}</span>{item.entry_type === "payment" && <><span><b>Referencia:</b> {item.payment_reference || "Sin referencia"}</span><span className="wide"><b>Detalle:</b> {item.payment_notes || "Sin detalle adicional"}</span></>}</div>
+        </article>)}</div>
         <details className="tags_guest_communications_report"><summary>Historial de comunicaciones ({communications.length})</summary><div>{communications.map(item => <article key={item.id}><span>{communicationLabel(item.event_code)} · {item.channel}</span><strong>{item.status}</strong><small>{new Date(item.created_at).toLocaleString("es-AR")} · {item.recipient || "Sin destinatario"}</small>{item.last_error && <em>{item.last_error}</em>}</article>)}</div></details>
         {busy && <TagsSpinner size={100} logoSize={52} borderSize={4} background="rgba(255,255,255,.72)" />}
     </section>;

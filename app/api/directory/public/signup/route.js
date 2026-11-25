@@ -69,7 +69,13 @@ export async function POST(req) {
   const latitude = body.latitude === "" || body.latitude == null ? null : Number(body.latitude);
   const longitude = body.longitude === "" || body.longitude == null ? null : Number(body.longitude);
   const mode = body.mode === "deferred" ? "deferred" : "free";
-  if (!name || !/^\S+@\S+\.\S+$/.test(email) || !placeId || !taxonomyId || !planId) return Response.json({ error: "Completá nombre, email, localidad, rubro y modalidad" }, { status: 400 });
+  const missingFields = {};
+  if (!name) missingFields.name = "Ingresá el nombre del negocio.";
+  if (!/^\S+@\S+\.\S+$/.test(email)) missingFields.email = "Ingresá un email válido.";
+  if (!placeId) missingFields.placeId = "Seleccioná una localidad.";
+  if (!taxonomyId) missingFields.taxonomyId = "Seleccioná un rubro.";
+  if (!planId) missingFields.payment = "No se pudo determinar el plan de publicación. Recargá la página y volvé a intentarlo.";
+  if (Object.keys(missingFields).length) return Response.json({ error: "Revisá los campos indicados.", fieldErrors: missingFields }, { status: 400 });
 
   if (name.length < 2) return Response.json({ error: "El nombre del negocio no es válido" }, { status: 400 });
   if (body.phone && (!normalizedPhone || normalizedPhone.replace(/\D/g, "").length < 8)) return Response.json({ error: "El teléfono no tiene un formato válido" }, { status: 400 });
@@ -133,7 +139,7 @@ export async function POST(req) {
     const [subscriptionResult] = await conn.query("INSERT INTO tags_subscriptions (business_id,plan_id,status,payment_provider,amount,currency,started_at,expires_at,duration_months,source,next_billing_at,auto_renew,auto_disable_on_expire,grace_days,admin_override_until,admin_override_notes,created_at,updated_at) VALUES (?,?,?,?,?,?,?, ?,?,'manual',?,?,?,?,?,?,NOW(),NOW())", [businessId, planId, status, mode === "deferred" ? paymentMethod : "free", selectedAmount, plan.currency || "ARS", now, expires, mode === "deferred" ? durationMonths : 1, expires, 0, 1, 0, null, null]);
     subscriptionId = subscriptionResult.insertId;
     if (mode === "deferred" && paymentMethod !== "mercadopago") await conn.query(`INSERT INTO tags_subscription_payments (subscription_id,business_id,plan_id,amount,currency,provider,status,paid_at,period_start,period_end,notes,created_at) VALUES (?,?,?,?,?,?,'pending',NULL,NULL,NULL,'Pendiente de acreditación · alta pública',NOW())`, [subscriptionResult.insertId, businessId, planId, selectedAmount, plan.currency || "ARS", paymentMethod]);
-    await conn.query("UPDATE tags_businesses SET plan_id=?,subscription_status=?,plan_started_at=?,plan_expires_at=? WHERE id=?", [planId, status, now, expires, businessId]);
+    await conn.query("UPDATE tags_businesses SET plan_id=?,subscription_status=?,plan_started_at=?,plan_expires_at=?,panel_entry_key=IF(?=1,'directory',panel_entry_key) WHERE id=?", [planId, status, now, expires, Number(plan.is_free) === 1 ? 1 : 0, businessId]);
     await conn.query("INSERT INTO tags_business_addons (business_id,addon_code,quantity,status,started_at,expires_at,amount,currency,notes,created_at,updated_at) VALUES (?,?,1,'active',?,?,?,?,?,NOW(),NOW())", [businessId, "directory", now, expires, selectedAmount, plan.currency || "ARS", `Alta pública en ${site.name}`]);
     if (mode === "deferred" && plan.code === "directory_web_plus") {
       await conn.query("INSERT INTO tags_business_addons (business_id,addon_code,quantity,status,started_at,expires_at,amount,currency,notes,created_at,updated_at) VALUES (?,?,1,'active',?,?,?,?,?,NOW(),NOW())", [businessId, "client_reviews", now, expires, 0, plan.currency || "ARS", `Incluido en ${plan.name}`]);
@@ -167,7 +173,7 @@ export async function POST(req) {
     }
     await conn.commit();
     signupStage = "acceso";
-    accessToken = mode === "deferred" ? crypto.randomUUID() : null;
+    accessToken = crypto.randomUUID();
     if (accessToken) await db.query("INSERT INTO tags_auth_tokens (email,token,expires_at) VALUES (?,?,DATE_ADD(NOW(),INTERVAL 15 MINUTE))", [email, accessToken]);
   } catch (error) {
     await conn.rollback();

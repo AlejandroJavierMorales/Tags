@@ -28,11 +28,19 @@ export async function GET(req) {
         ,(SELECT MAX(c.created_at) FROM tags_guest_communications c WHERE c.stay_id=s.id AND c.event_code='arrival_reminder') last_reminder_sent_at
         ,(SELECT COUNT(*) FROM tags_guest_communications c WHERE c.stay_id=s.id) communication_count
         FROM tags_guest_stays s LEFT JOIN tags_guest_units u ON u.id=s.unit_id INNER JOIN tags_guest_people g ON g.id=s.primary_guest_id WHERE s.guest_app_id=? ORDER BY s.starts_at DESC LIMIT 500`, [app.id]);
+    await db.query("UPDATE tags_guest_booking_requests SET status='expired',resolved_at=NOW(),updated_at=NOW() WHERE guest_app_id=? AND status='pending_payment' AND hold_expires_at<=NOW()", [app.id]);
+    const [pendingRequests] = await db.query(`SELECT r.*,u.name unit_name,u.code unit_code
+        FROM tags_guest_booking_requests r INNER JOIN tags_guest_units u ON u.id=r.unit_id AND u.guest_app_id=r.guest_app_id
+        WHERE r.guest_app_id=? AND r.status IN ('pending_payment','expired')
+        ORDER BY FIELD(r.status,'pending_payment','expired'),r.created_at DESC LIMIT 500`, [app.id]);
     const stayIds = stays.map(item => item.id);
     let communications = [];
     if (stayIds.length) {
         const placeholders = stayIds.map(() => "?").join(",");
         [communications] = await db.query(`SELECT id,stay_id,event_code,channel,recipient,subject,status,sent_at,failed_at,last_error,created_at FROM tags_guest_communications WHERE direction='outbound' AND stay_id IN (${placeholders}) ORDER BY created_at DESC,id DESC`, stayIds);
+        const [quoteEvents] = await db.query(`SELECT CONCAT('quote-',e.id) id,s.id stay_id,e.event_type event_code,e.channel,e.recipient,CONCAT('Presupuesto ',q.quote_code) subject,COALESCE(e.delivery_status,'recorded') status,CASE WHEN e.delivery_status='sent' THEN e.created_at ELSE NULL END sent_at,NULL failed_at,JSON_UNQUOTE(JSON_EXTRACT(e.metadata_json,'$.error')) last_error,e.created_at FROM tags_guest_stays s INNER JOIN tags_guest_lodging_quotes q ON q.id=s.lodging_quote_id AND q.guest_app_id=s.guest_app_id INNER JOIN tags_guest_lodging_quote_events e ON e.quote_id=q.id AND e.guest_app_id=q.guest_app_id WHERE s.id IN (${placeholders}) AND e.event_type IN ('quote.sent','quote.whatsapp_opened')`, stayIds);
+        communications.push(...quoteEvents);
+        communications.sort((left,right)=>String(right.created_at).localeCompare(String(left.created_at)));
     }
     const communicationsByStay = communications.reduce((map,item) => { (map[item.stay_id] ||= []).push(item); return map; }, {});
     const staysWithCommunications = stays.map(item => ({ ...item, communications: communicationsByStay[item.id] || [] }));
@@ -42,5 +50,5 @@ export async function GET(req) {
     const canSeeStays = access.isOwner || access.permissions?.includes("guest.stays.view");
     const canManageSettings = access.isOwner || access.permissions?.includes("guest.settings.manage");
     const normalizedUnits = units.map(item => ({ ...item, features: parseGuestJson(item.features_json) }));
-    return Response.json({ ok: true, access: { isOwner: access.isOwner, isStaff: access.isStaff, permissions: access.permissions || [] }, app: { ...app, settings: canManageSettings ? parseGuestJson(app.settings_json) : {}, styles: canManageSettings ? parseGuestJson(app.styles_json) : {} }, units: canSeeStays || canManageSettings ? normalizedUnits : [], unitBlocks: canSeeStays || canManageSettings ? unitBlocks : [], guests: canSeeStays ? guests : [], stays: canSeeStays ? staysWithCommunications : [], wifiNetworks: canManageSettings ? wifiNetworks : [], themes: canManageSettings ? themes.map(item => ({ ...item, css_tokens: parseGuestJson(item.css_tokens) })) : [], portalThemeCode: canManageSettings ? portals[0]?.theme_code || null : null });
+    return Response.json({ ok: true, access: { isOwner: access.isOwner, isStaff: access.isStaff, permissions: access.permissions || [] }, app: { ...app, settings: canManageSettings ? parseGuestJson(app.settings_json) : {}, styles: canManageSettings ? parseGuestJson(app.styles_json) : {} }, units: canSeeStays || canManageSettings ? normalizedUnits : [], unitBlocks: canSeeStays || canManageSettings ? unitBlocks : [], guests: canSeeStays ? guests : [], stays: canSeeStays ? staysWithCommunications : [], pendingRequests: canSeeStays ? pendingRequests : [], wifiNetworks: canManageSettings ? wifiNetworks : [], themes: canManageSettings ? themes.map(item => ({ ...item, css_tokens: parseGuestJson(item.css_tokens) })) : [], portalThemeCode: canManageSettings ? portals[0]?.theme_code || null : null });
 }

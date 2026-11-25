@@ -4,6 +4,7 @@ import { useEffect,useMemo,useState } from "react";
 import { FaBell,FaCalendarDays,FaDoorOpen,FaEnvelope,FaPen, FaLink, FaPlus, FaTrash, FaUserSlash, FaWhatsapp, FaXmark } from "react-icons/fa6";
 import GuestExperienceOccupancyGrid from "./GuestExperienceOccupancyGrid";
 import GuestExperienceAccountPanel from "./GuestExperienceAccountPanel";
+import GuestExperienceBookingRequests from "./GuestExperienceBookingRequests";
 import showAlert from "@/app/components/showAlert";
 import { normalizeArgentinaWhatsapp } from "@/app/modules/qr-page/lib/normalizeContactFields";
 import "./GuestExperienceReservationsPanel.css";
@@ -14,23 +15,26 @@ import "./GuestExperienceReminderActions.css";
 import "./GuestExperienceCommunicationsReport.css";
 import "./GuestExperienceNoShow.css";
 
-const EMPTY = { firstName: "", lastName: "", documentNumber: "", email: "", phone: "", unitId: "", startsAt: "", endsAt: "", adults: 1, children: 0, nightlyRate: 0, depositPercentage: 0, expectedArrivalText: "", arrivalNotes: "", internalNotes: "" };
+const EMPTY = { quoteId: 0, firstName: "", lastName: "", documentNumber: "", email: "", phone: "", unitId: "", startsAt: "", endsAt: "", adults: 1, children: 0, nightlyRate: 0, depositPercentage: 0, expectedArrivalText: "", arrivalNotes: "", internalNotes: "", registerInitialPayment: false, initialPaymentAmount: "", initialPaymentMethod: "transfer", initialPaymentReference: "", initialPaymentNotes: "" };
 const plusDay = value => { const date = new Date(`${value}T12:00:00`); date.setDate(date.getDate() + 1); return date.toISOString().slice(0, 10); };
 const localDay = value => new Date(`${String(value||"").slice(0,10)}T12:00:00`);
-const communicationName = code => code==="arrival_reminder_24h" ? "Recordatorio de ingreso · 24 horas" : code==="arrival_reminder" ? "Recordatorio de ingreso · 48 horas" : code==="access_link" ? "Acceso a Mi Estadía" : code==="no_show_rebooking"||code==="no_show" ? "Aviso de reprogramación" : code;
+const communicationName = code => code==="quote.sent" ? "Presupuesto enviado" : code==="quote.whatsapp_opened" ? "Presupuesto preparado para WhatsApp" : code==="arrival_reminder_24h" ? "Recordatorio de ingreso · 24 horas" : code==="arrival_reminder" ? "Recordatorio de ingreso · 48 horas" : code==="access_link" ? "Reserva confirmada y acceso a Mi Estadía" : code==="payment_confirmed_reservation" ? "Pago registrado · reserva confirmada" : code==="payment_registered" ? "Pago adicional registrado" : code==="no_show_rebooking"||code==="no_show" ? "Aviso de reprogramación" : code;
 const money = (value,currency="ARS") => new Intl.NumberFormat("es-AR",{style:"currency",currency,maximumFractionDigits:2}).format(Number(value||0));
+const suggestedPayment = form => { const nights=(localDay(form.endsAt)-localDay(form.startsAt))/86400000,total=Number(form.nightlyRate||0)*(Number.isFinite(nights)&&nights>0?nights:1);return String(Number((total*Number(form.depositPercentage||0)/100).toFixed(2))||""); };
 const NO_SHOW_EMPTY={reason:"",financialAction:"credit",creditExpiresAt:"",totalAmount:0,paidAmount:0,pendingAmount:0,notifyGuest:true,subject:"",message:""};
 
-export default function GuestExperienceReservationsPanel({ data, busy, onCreate, onUpdate, onDelete, onNoShow, onInvite, onDeleteCommunication, onCheckout, onDataChanged, overlayOnly=false, rebookingsOnly=false, stayId=0, onClose, canManage=true, canCheckin=true }) {
-    const [form, setForm] = useState(EMPTY), [open, setOpen] = useState(false), [selected, setSelected] = useState(null), [editingId,setEditingId]=useState(null), [visibleRange,setVisibleRange]=useState(null),[stayFilter,setStayFilter]=useState("all"),[noShowStay,setNoShowStay]=useState(null),[noShowForm,setNoShowForm]=useState(NO_SHOW_EMPTY);
+export default function GuestExperienceReservationsPanel({ businessId, data, busy, onOpenQuotes, onCreate, onUpdate, onDelete, onNoShow, onInvite, onDeleteCommunication, onCheckout, onDataChanged, overlayOnly=false, rebookingsOnly=false, stayId=0, onClose, canManage=true, canCheckin=true }) {
+    const [form, setForm] = useState(EMPTY), [open, setOpen] = useState(false), [selected, setSelected] = useState(null), [editingId,setEditingId]=useState(null), [visibleRange,setVisibleRange]=useState(null),[stayFilter,setStayFilter]=useState("all"),[noShowStay,setNoShowStay]=useState(null),[noShowForm,setNoShowForm]=useState(NO_SHOW_EMPTY),[pricingNote,setPricingNote]=useState("");
     function changeStart(value) { setForm(current => ({ ...current, startsAt: value, endsAt: !current.endsAt || current.endsAt <= value ? plusDay(value) : current.endsAt })); }
     const defaultDeposit=Number(data.app.settings?.depositPercentage||0);
     function startFromGrid(unit, date) { setEditingId(null);setForm({ ...EMPTY, depositPercentage:defaultDeposit,unitId: String(unit.id), startsAt: date, endsAt: plusDay(date) }); setOpen(true); }
     function newReservation(){setEditingId(null);setForm({...EMPTY,depositPercentage:defaultDeposit});setOpen(true)}
+    useEffect(()=>{if(!open||editingId||form.quoteId||!form.unitId||!form.startsAt||!form.endsAt||form.endsAt<=form.startsAt)return;const controller=new AbortController(),timer=setTimeout(async()=>{try{const response=await fetch("/api/guest-experience/admin/quotes/pricing",{method:"POST",headers:{"Content-Type":"application/json"},signal:controller.signal,body:JSON.stringify({businessId,guestAppId:data.app.id,unitId:form.unitId,startsAt:form.startsAt,endsAt:form.endsAt,adults:form.adults,children:form.children})}),payload=await response.json();if(response.ok&&payload.unit?.configured){setForm(current=>({...current,nightlyRate:payload.unit.nightlyRate}));setPricingNote(`Tarifa calculada: ${money(payload.unit.total,payload.unit.currency)} total. Podés modificar el precio por noche.`)}else setPricingNote("")}catch(error){if(error.name!=="AbortError")setPricingNote("")}},350);return()=>{clearTimeout(timer);controller.abort()}},[open,editingId,form.quoteId,form.unitId,form.startsAt,form.endsAt,form.adults,form.children,businessId,data.app.id]);
     async function submit(event) { event.preventDefault(); const done=editingId?await onUpdate({...form,stayId:editingId}):await onCreate(form);if(done){setForm(EMPTY);setEditingId(null);setOpen(false);if(overlayOnly)onClose?.()} }
     function editReservation(item){const parts=String(item.guest_name||"").split(" ");setForm({...EMPTY,firstName:parts.shift()||"",lastName:parts.join(" "),documentNumber:item.document_number||"",email:item.guest_email||"",phone:item.guest_phone||"",unitId:String(item.unit_id),startsAt:String(item.starts_at).slice(0,10),endsAt:String(item.ends_at).slice(0,10),adults:item.adults||1,children:item.children||0,nightlyRate:item.nightly_rate||0,depositPercentage:item.deposit_percentage||0,expectedArrivalText:item.expected_arrival_text||"",arrivalNotes:item.arrival_notes||"",internalNotes:item.internal_notes||""});setEditingId(item.id);setSelected(null);setOpen(true)}
     useEffect(()=>{const id=Number(sessionStorage.getItem("tags_guest_edit_stay")||0);if(!id)return;sessionStorage.removeItem("tags_guest_edit_stay");const item=data.stays.find(stay=>Number(stay.id)===id);if(item)editReservation(item)},[]);
     useEffect(()=>{const id=Number(sessionStorage.getItem("tags_guest_open_stay")||0);if(!id)return;sessionStorage.removeItem("tags_guest_open_stay");const item=data.stays.find(stay=>Number(stay.id)===id);if(item)setSelected(item)},[]);
+    useEffect(()=>{const raw=sessionStorage.getItem("tags_guest_quote_to_reservation");if(!raw)return;sessionStorage.removeItem("tags_guest_quote_to_reservation");try{const quote=JSON.parse(raw),parts=String(quote.customer_name||"").trim().split(/\s+/);setEditingId(null);setForm({...EMPTY,quoteId:Number(quote.id),firstName:parts.shift()||"",lastName:parts.join(" "),email:quote.customer_email||"",phone:quote.customer_phone||"",unitId:String(quote.unit_id||""),startsAt:String(quote.starts_on||"").slice(0,10),endsAt:String(quote.ends_on||"").slice(0,10),adults:Number(quote.adults||1),children:Number(quote.children||0),nightlyRate:Number(quote.pricing_snapshot?.nightlyRate||quote.total_amount/Math.max(1,quote.nights)||0),depositPercentage:Number(quote.deposit_percentage||defaultDeposit),internalNotes:`Originada desde presupuesto ${quote.quote_code}`});setOpen(true)}catch{}},[]);
     useEffect(()=>{if(!overlayOnly||!stayId)return;const item=data.stays.find(stay=>Number(stay.id)===Number(stayId));if(item)setSelected(item)},[overlayOnly,stayId,data.stays]);
     async function deleteReservation(item){const reason="Cancelación manual desde la administración";const ok=await showAlert({title:"¿Cancelar esta reserva?",text:`${item.stay_code} · ${item.guest_name}\n\nLa unidad quedará disponible. La reserva, los pagos y el historial se conservarán.`,icon:"warning",showCancelButton:true,confirmButtonText:"Cancelar reserva",cancelButtonText:"Volver"});if(ok&&await onDelete(item.id,reason)){setSelected(null);if(overlayOnly)onClose?.()}}
     function reminderReady(item){const hours=(new Date(item.starts_at).getTime()-Date.now())/3600000;return hours>=0&&hours<=48}
@@ -48,10 +52,9 @@ export default function GuestExperienceReservationsPanel({ data, busy, onCreate,
 <h2>Reservas del alojamiento</h2>
 <p>La reserva nace con su titular y ocupa la unidad hasta el check-out o la cancelación.</p>
 </div>
-{canManage&&<button type="button" onClick={newReservation}>
-<FaPlus /> Nueva reserva</button>}
+{canManage&&<div className="tags_guest_reservation_create_actions"><button type="button" onClick={newReservation}><FaPlus /> Nueva reserva</button>{data.app.settings?.showOccupancyQuoteButton===true&&<button type="button" onClick={onOpenQuotes}><FaPlus /> Presupuesto</button>}</div>}
         </header>
-        <GuestExperienceOccupancyGrid units={data.units.filter(item => Number(item.is_active) === 1)} stays={data.stays} blocks={data.unitBlocks||[]} settings={data.app.settings||{}} onReservationClick={setSelected} onAvailableClick={canManage?startFromGrid:undefined} onRangeChange={setVisibleRange} />
+        <GuestExperienceOccupancyGrid units={data.units.filter(item => Number(item.is_active) === 1)} stays={data.stays} pendingRequests={data.pendingRequests||[]} blocks={data.unitBlocks||[]} settings={data.app.settings||{}} onReservationClick={setSelected} onPendingRequestClick={item=>document.getElementById(`booking-request-${item.id}`)?.scrollIntoView({behavior:"smooth",block:"center"})} onAvailableClick={canManage?startFromGrid:undefined} onRangeChange={setVisibleRange} />
         <div className="tags_guest_stay_filter"><label>Mostrar estadías<select value={stayFilter} onChange={event=>setStayFilter(event.target.value)}><option value="all">Todas las estadías</option><option value="pending">Pendientes de ingreso</option><option value="active">En curso</option><option value="rebooking">Pendientes de reprogramación</option><option value="cancelled">Canceladas</option></select></label></div>
         {!!pendingRebooking.length&&["all","rebooking"].includes(stayFilter)&&renderRebookings()}
         <div className="tags_guest_reservations_list">{listedStays.map(item => <article key={item.id}>
@@ -76,8 +79,16 @@ export default function GuestExperienceReservationsPanel({ data, busy, onCreate,
 <button title="Ver reserva" onClick={()=>setSelected(item)}><FaPen/></button>
 {canCheckin&&<button className="tags_guest_reservation_checkout_icon" title={item.status === "active" ? "Confirmar checkout" : "Se habilita después del check-in"} disabled={item.status !== "active"} onClick={() => onCheckout?.(item)}><FaDoorOpen /></button>}
 </div>
-<details className="tags_guest_reservation_communications"><summary>Comunicaciones enviadas ({item.communications?.length||0})</summary><div>{item.communications?.map(record=><div key={record.id}><strong>{communicationName(record.event_code)}</strong><span>{record.channel} · {record.status} · {new Date(record.created_at).toLocaleString("es-AR")}</span><small>{record.recipient||"Sin destinatario"}{record.subject?` · ${record.subject}`:""}</small>{record.last_error&&<em>{record.last_error}</em>}{canManage&&<button type="button" className="tags_guest_communication_delete" title="Eliminar comunicación" onClick={() => onDeleteCommunication?.(record, item)}><FaTrash /> Eliminar</button>}</div>)}{!item.communications?.length&&<p>No hay comunicaciones registradas.</p>}</div></details>
+<details className="tags_guest_reservation_communications"><summary>Comunicaciones enviadas ({item.communications?.length||0})</summary><div>{item.communications?.map(record=><div key={record.id}><strong>{communicationName(record.event_code)}</strong><span>{record.channel} · {record.status} · {new Date(record.created_at).toLocaleString("es-AR")}</span><small>{record.recipient||"Sin destinatario"}{record.subject?` · ${record.subject}`:""}</small>{record.last_error&&<em>{record.last_error}</em>}{canManage&&!String(record.id).startsWith("quote-")&&<button type="button" className="tags_guest_communication_delete" title="Eliminar comunicación" onClick={() => onDeleteCommunication?.(record, item)}><FaTrash /> Eliminar</button>}</div>)}{!item.communications?.length&&<p>No hay comunicaciones registradas.</p>}</div></details>
 </article>)}{stayFilter!=="rebooking"&&!listedStays.length&&<p className="tags_guest_reservations_empty">No hay estadías para el filtro y período seleccionados.</p>}</div></>}
+        {!rebookingsOnly && !overlayOnly && canManage && (
+          <GuestExperienceBookingRequests
+            businessId={businessId}
+            guestAppId={data.app.id}
+            app={data.app}
+            onDataChanged={onDataChanged}
+          />
+        )}
         {rebookingsOnly&&renderRebookings()}
         {open && <div className="tags_guest_reservations_backdrop" onMouseDown={() => !busy && setOpen(false)}>
 <section className="tags_guest_reservations_modal" onMouseDown={event => event.stopPropagation()}>
@@ -107,6 +118,7 @@ export default function GuestExperienceReservationsPanel({ data, busy, onCreate,
 </label>
 <label>Precio por noche<input type="number" min="0" step="0.01" value={form.nightlyRate} onChange={event => setForm({ ...form, nightlyRate: event.target.value })} />
 </label>
+{pricingNote&&<p className="tags_guest_reservation_pricing_note">{pricingNote}</p>}
 <label>Porcentaje de seña<input type="number" min="0" max="100" step="0.01" value={form.depositPercentage} onChange={event => setForm({ ...form, depositPercentage: event.target.value })} />
 </label>
 <label>Horario estimado de llegada<input type="text" placeholder="Ej. entre las 18 y las 19" value={form.expectedArrivalText} onChange={event => setForm({ ...form, expectedArrivalText: event.target.value })} />
@@ -114,9 +126,19 @@ export default function GuestExperienceReservationsPanel({ data, busy, onCreate,
 <label>Observaciones del huésped<input type="text" placeholder="Pedido especial, indicación importante…" value={form.arrivalNotes} onChange={event => setForm({ ...form, arrivalNotes: event.target.value })} />
 </label>
 </fieldset>
+{!editingId&&<fieldset className="tags_guest_initial_payment">
+<legend>Confirmación y pago</legend>
+<label className="tags_guest_payment_toggle"><input type="checkbox" checked={form.registerInitialPayment} onChange={event=>setForm({...form,registerInitialPayment:event.target.checked,initialPaymentAmount:event.target.checked?(form.initialPaymentAmount||suggestedPayment(form)):""})}/> Registrar un pago en este momento</label>
+{form.registerInitialPayment?<>
+<label>Importe recibido<input required type="number" min="0.01" step="0.01" value={form.initialPaymentAmount} onChange={event=>setForm({...form,initialPaymentAmount:event.target.value})}/></label>
+<label>Medio de pago<select value={form.initialPaymentMethod} onChange={event=>setForm({...form,initialPaymentMethod:event.target.value})}><option value="transfer">Transferencia</option><option value="cash">Efectivo</option><option value="debit">Débito</option><option value="credit">Crédito</option><option value="other">Otro</option></select></label>
+<label>Referencia<input type="text" placeholder="Comprobante u operación" value={form.initialPaymentReference} onChange={event=>setForm({...form,initialPaymentReference:event.target.value})}/></label>
+<label>Observaciones<input type="text" value={form.initialPaymentNotes} onChange={event=>setForm({...form,initialPaymentNotes:event.target.value})}/></label>
+</>:<p className="tags_guest_payment_pending_note">Sin pago quedará pendiente de confirmación, retendrá la unidad durante el plazo configurado y se enviarán los datos para pagar.</p>}
+</fieldset>}
 <div className="tags_guest_reservations_actions">
 <button type="button" onClick={() => setOpen(false)}>Cancelar</button>
-<button disabled={busy} type="submit">{editingId?"Guardar modificaciones":"Crear reserva"}</button>
+<button disabled={busy} type="submit">{editingId?"Guardar modificaciones":form.registerInitialPayment?"Registrar pago y confirmar":"Guardar pendiente de pago"}</button>
 </div>
 </form>
 </section>

@@ -1,17 +1,31 @@
 import { db } from "@/app/lib/tags-db";
 import { requireQRPageAccess } from "@/app/modules/qr-page/lib/requireQRPageAccess";
 import DirectoryWebBuilderClient from "@/app/modules/directory/components/admin/DirectoryWebBuilderClient";
+import BasicDirectoryProfile from "@/app/modules/directory/components/client/BasicDirectoryProfile";
 import { normalizeDirectoryDbValue } from "@/app/modules/directory/lib/normalizeDirectoryDbValue";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Administrar mi Web | Tags", robots: { index: false, follow: false } };
+
+export async function generateMetadata({ params }) {
+  const { id } = await params;
+  const [[site]] = await db.query(`SELECT s.name FROM tags_directory_listings l
+    INNER JOIN tags_directory_site_listings sl ON sl.listing_id=l.id
+    INNER JOIN tags_directory_sites s ON s.id=sl.site_id
+    WHERE l.business_id=? ORDER BY (sl.publication_status='published') DESC,sl.id LIMIT 1`, [Number(id)]);
+  return { title: `Panel de Administración | ${site?.name || "Tags"}`, robots: { index: false, follow: false } };
+}
 
 export default async function DirectoryBusinessPage({ params }) {
   const { id } = await params;
   const businessId = Number(id);
   const access = await requireQRPageAccess(businessId, { skipQRPageValidation: true });
   if (!access.ok) return <main className="tags_dashboard_page"><h2>Sin acceso</h2><p>{access.error}</p></main>;
+
+  const [[plan]] = await db.query("SELECT p.is_free,p.name FROM tags_businesses b LEFT JOIN tags_plans p ON p.id=b.plan_id WHERE b.id=? LIMIT 1", [businessId]);
+  if (access.session?.role !== "admin" && Number(plan?.is_free) === 1) {
+    return <BasicDirectoryProfile businessId={businessId} planName={plan?.name || "Basic"} />;
+  }
 
   const [rows] = await db.query(`SELECT p.qr_code_id,l.*,sl.slug,s.primary_host,s.name site_name,s.code site_code,
       (SELECT gp.name FROM tags_directory_listing_places lp INNER JOIN tags_geo_places gp ON gp.id=lp.place_id WHERE lp.listing_id=l.id AND lp.relation_type='location' ORDER BY lp.is_primary DESC LIMIT 1) locality_name

@@ -30,7 +30,7 @@ const whatsappUrl = (item, settings = {}) => {
   const phone = normalizeArgentinaWhatsapp(item.customer_phone);
   if (!phone) return "";
   const message = item.status === "pending_payment"
-    ? `Hola ${item.customer_name || ""}, aceptamos tu solicitud ${item.request_code} para ${item.unit_name}, del ${formatDate(item.starts_on)} al ${formatDate(item.ends_on)}. Total estadía: ${item.currency || "ARS"} ${Number(item.lodging_total || 0).toLocaleString("es-AR")}. Reserva ${Number(item.deposit_percentage || 0)}%: ${item.currency || "ARS"} ${Number(item.deposit_required_amount || 0).toLocaleString("es-AR")}. Realizá el pago antes del ${new Date(item.hold_expires_at).toLocaleString("es-AR")}. Datos de pago: ${settings.bankPaymentDetails || "consultanos para coordinar el pago"}. La reserva quedará confirmada cuando registremos el pago.`
+    ? `Hola ${item.customer_name || ""}, ${item.source === "manual_admin" ? `registramos tu reserva ${item.request_code}` : `aceptamos tu solicitud de reserva ${item.request_code}`} para ${item.unit_name}, del ${formatDate(item.starts_on)} al ${formatDate(item.ends_on)}. Total estadía: ${item.currency || "ARS"} ${Number(item.lodging_total || 0).toLocaleString("es-AR")}. Reserva ${Number(item.deposit_percentage || 0)}%: ${item.currency || "ARS"} ${Number(item.deposit_required_amount || 0).toLocaleString("es-AR")}. Realizá el pago antes del ${new Date(item.hold_expires_at).toLocaleString("es-AR")}. Datos de pago: ${settings.bankPaymentDetails || "consultanos para coordinar el pago"}. La reserva quedará confirmada cuando registremos el pago.`
     : `Hola ${item.customer_name || ""}, recibimos tu solicitud ${item.request_code} para ${item.unit_name}, del ${formatDate(item.starts_on)} al ${formatDate(item.ends_on)}. Me comunico desde el alojamiento para revisar los detalles de tu reserva.`;
   return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
 };
@@ -78,12 +78,33 @@ export default function GuestExperienceBookingRequests({ businessId, guestAppId,
     load(filters);
   }
 
+  async function resendPaymentInstructions(item) {
+    setBusy(true);
+    try {
+      const base = { businessId, guestAppId, requestId: item.id, notifyCustomer: true };
+      const previewResponse = await fetch("/api/guest-experience/admin/booking-requests/notify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...base, previewOnly: true }) });
+      const preview = await previewResponse.json().catch(() => ({}));
+      if (!previewResponse.ok) return showAlert({ title: "No se pudo preparar el aviso", text: preview.error || "Revisá la reserva pendiente.", icon: "error" });
+      const confirmed = await showAlert({ title: "Revisá el aviso antes de reenviarlo", text: `<div style="margin-bottom:12px;text-align:left;font-size:13px"><strong>Destinatario:</strong> ${String(item.customer_email || "Sin email").replace(/[<>&]/g, "")}<br><strong>Asunto:</strong> ${preview.subject}</div>${preview.html}`, icon: "info", isHtml: true, showCancelButton: true, confirmButtonText: "Confirmar y enviar", cancelButtonText: "Cancelar", width: "760px" });
+      if (!confirmed) return;
+      const response = await fetch("/api/guest-experience/admin/booking-requests/notify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(base) });
+      const payload = await response.json().catch(() => ({}));
+      await showAlert({ title: response.ok ? "Aviso enviado" : "No se pudo enviar", text: response.ok ? "Se reenviaron el detalle, el plazo y los datos de pago." : payload.error || "Revisá el email del cliente.", icon: response.ok ? "success" : "error" });
+    } finally { setBusy(false); }
+  }
+
   async function act(item, action) {
     const notifyCustomer = notifyById[item.id] !== false;
-    const accepted = await showAlert({
+    let paymentAmount = 0;
+    if (action === "payment_received") {
+      const entered = await showAlert({ title: item.status === "expired" ? "Confirmar pago recibido después del vencimiento" : "Registrar pago y confirmar la reserva", text: "Se validará nuevamente la disponibilidad antes de crear la estadía.", icon: "warning", input: "number", inputValue: Number(item.deposit_required_amount || 0), inputLabel: `Importe recibido (${item.currency || "ARS"})`, inputAttributes: { min: "0.01", step: "0.01" }, returnValue: true, showCancelButton: true, confirmButtonText: "Registrar y confirmar", cancelButtonText: "Volver" });
+      if (!entered) return;
+      paymentAmount = Number(entered);
+    }
+    const accepted = action === "payment_received" ? true : await showAlert({
       title: action === "approve" ? "¿Aceptar y enviar los datos de pago?" : action === "payment_received" ? "¿Registrar el pago y confirmar la reserva?" : action === "expire" ? "¿Vencer esta solicitud?" : action === "cancel" ? "¿Cancelar esta solicitud?" : "¿Rechazar esta solicitud?",
       text: `${
-        action === "approve" ? `${metadataOf(item).groupProposal ? "Todas las unidades" : "La unidad"} quedará${metadataOf(item).groupProposal ? "n" : ""} retenida${metadataOf(item).groupProposal ? "s" : ""} durante ${Number(app?.settings?.reservationPaymentHours || 48)} horas y se enviarán el presupuesto y los datos de pago.` : action === "payment_received" ? `Se volverá${metadataOf(item).groupProposal ? "n" : ""} a validar ${metadataOf(item).groupProposal ? "todas las unidades y se crearán las estadías" : "la unidad y se creará la estadía"} formal${metadataOf(item).groupProposal ? "es" : ""}; luego podrás enviar el acceso a Mi Estadía.` : "La solicitud dejará de ocupar inventario."
+        action === "approve" ? `${metadataOf(item).groupProposal ? "Todas las unidades" : "La unidad"} quedará${metadataOf(item).groupProposal ? "n" : ""} retenida${metadataOf(item).groupProposal ? "s" : ""} durante ${Number(app?.settings?.reservationPaymentHours || 48)} horas y se enviarán el detalle de la reserva y los datos de pago.` : action === "payment_received" ? `Se volverá${metadataOf(item).groupProposal ? "n" : ""} a validar ${metadataOf(item).groupProposal ? "todas las unidades y se crearán las estadías" : "la unidad y se creará la estadía"} formal${metadataOf(item).groupProposal ? "es" : ""}; luego podrás enviar el acceso a Mi Estadía.` : "La solicitud dejará de ocupar inventario."
       }${notifyCustomer ? " Se notificará al cliente por email cuando corresponda." : " No se notificará al cliente."}`,
       icon: "warning",
       showCancelButton: true,
@@ -97,7 +118,7 @@ export default function GuestExperienceBookingRequests({ businessId, guestAppId,
       const response = await fetch("/api/guest-experience/admin/booking-requests", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ businessId, guestAppId, requestId: item.id, action }),
+        body: JSON.stringify({ businessId, guestAppId, requestId: item.id, action, paymentAmount, paymentMethod: "transfer" }),
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
@@ -133,7 +154,7 @@ export default function GuestExperienceBookingRequests({ businessId, guestAppId,
             logo_url: app?.logo_url,
           },
           settings: app?.settings || {},
-          eventCode: "access_link",
+          eventCode: "payment_confirmed_reservation",
         });
         const sendAccepted = await showAlert({
           title: "Revisá el aviso por email antes de enviarlo",
@@ -154,7 +175,8 @@ export default function GuestExperienceBookingRequests({ businessId, guestAppId,
               guestAppId,
               stayId: payload.stayId,
               channel: "email",
-              eventCode: "access_link",
+              eventCode: "payment_confirmed_reservation",
+              paymentAmount,
             }),
           });
           notification = await notificationResponse.json().catch(() => ({}));
@@ -224,7 +246,7 @@ export default function GuestExperienceBookingRequests({ businessId, guestAppId,
       <div>
         {items.map((item) => {
           const groupProposal = metadataOf(item).groupProposal;
-          return <article key={item.id}>
+          return <article key={item.id} id={`booking-request-${item.id}`}>
             <header>
               <strong>{item.request_code}</strong>
               <b className={`is_${item.status}`}>{LABEL[item.status] || item.status}</b>
@@ -261,7 +283,7 @@ export default function GuestExperienceBookingRequests({ businessId, guestAppId,
                 <FaWhatsapp /> Conversar por WhatsApp
               </a>
             )}
-            {["held", "review_required", "pending_payment"].includes(item.status) && (
+            {["held", "review_required", "pending_payment", "expired"].includes(item.status) && (
               <footer>
                 <label className="tags_guest_booking_notify">
                   <input
@@ -277,11 +299,14 @@ export default function GuestExperienceBookingRequests({ businessId, guestAppId,
                   <span>Notificar al cliente</span>
                   {!item.customer_email && <small>Sin email cargado</small>}
                 </label>
-                {item.status !== "pending_payment" && <button onClick={() => act(item, "approve")}><FaCheck /> Aceptar y enviar pago</button>}
+                {["held", "review_required"].includes(item.status) && <button onClick={() => act(item, "approve")}><FaCheck /> Aceptar y enviar pago</button>}
                 {item.status === "pending_payment" && <button onClick={() => act(item, "payment_received")}><FaCheck /> Pago recibido · confirmar</button>}
+                {item.status === "pending_payment" && item.customer_email && <button type="button" onClick={() => resendPaymentInstructions(item)}><FaEnvelope /> Reenviar datos de pago</button>}
                 {item.status === "pending_payment" && <button className="is_reject" onClick={() => act(item, "expire")}><FaClock /> Vencer y liberar</button>}
                 {item.status === "pending_payment" && <button className="is_reject" onClick={() => act(item, "cancel")}><FaXmark /> Cancelar y liberar</button>}
-                {item.status !== "pending_payment" && <button className="is_reject" onClick={() => act(item, "reject")}><FaXmark /> Rechazar</button>}
+                {item.status === "expired" && <button onClick={() => act(item, "payment_received")}><FaCheck /> Pago tardío · confirmar</button>}
+                {item.status === "expired" && <button className="is_reject" onClick={() => act(item, "cancel")}><FaXmark /> Cancelar definitivamente</button>}
+                {["held", "review_required"].includes(item.status) && <button className="is_reject" onClick={() => act(item, "reject")}><FaXmark /> Rechazar</button>}
               </footer>
             )}
           </article>;

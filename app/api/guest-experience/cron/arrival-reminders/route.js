@@ -51,7 +51,7 @@ async function runArrivalReminders(req) {
         connection.release();
 
         const link = await getGuestVerificationUrl(db, stay.slug, token);
-        const subject = eventCode === "arrival_reminder_24h" ? `Tu ingreso es mañana · ${stay.app_name}` : "¡Tenés un ingreso a nuestras cabañas!";
+        const subject = eventCode === "arrival_reminder_24h" ? `Tu ingreso es mañana · ${stay.app_name}` : `Se acerca tu estadía · ${stay.app_name}`;
         const people = Number(stay.adults||0) + Number(stay.children||0);
         const period = `Ingreso: ${displayDate(stay.starts_at)} ${displayTime(settings.checkinTime || "15:00")}\nEgreso: ${displayDate(stay.ends_at)} ${displayTime(settings.checkoutTime || "10:00")}`;
         const precheckinDone = ["submitted","reviewed","checked_in"].includes(stay.precheckin_status);

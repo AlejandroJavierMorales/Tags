@@ -142,6 +142,13 @@ export default function DirectoryAdminClient() {
             if (!response.ok) throw new Error(payload.error || "No se pudo completar");
             if (payload.checkoutUrl) window.open(payload.checkoutUrl, "_blank", "noopener,noreferrer");
             await loadAutomaticSubscriptions();
+            if (action === "sync") await showAlert({
+                title: Number(payload.paymentsProcessed || 0) > 0 ? "Cobro conciliado" : "Sincronización completa",
+                text: Number(payload.paymentsProcessed || 0) > 0
+                    ? `Se incorporaron ${Number(payload.paymentsProcessed)} cobro(s) aprobado(s) y se actualizó la vigencia.`
+                    : `Mercado Pago fue consultado correctamente. Estado actual: ${payload.status || "sin informar"}. No había cobros nuevos para incorporar.`,
+                icon: "success"
+            });
         } catch (error) { showAlert({ title: "Error", text: error.message, icon: "error" }); }
         finally { setBusy(false); }
     }
